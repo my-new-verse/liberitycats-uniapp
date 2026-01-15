@@ -1,0 +1,564 @@
+{
+  "globalStyle": {
+    "navigationStyle": "default",
+    "navigationBarTitleText": "Liberty Cats",
+    "navigationBarBackgroundColor": "#ff6b03",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#FFFFFF",
+    "enablePullDownRefresh": true,
+    "onReachBottomDistance": 50
+  },
+  "easycom": {
+    "autoscan": true,
+    "custom": {
+      "^wd-(.*)": "wot-design-uni/components/wd-$1/wd-$1.vue",
+      "^(?!z-paging-refresh|z-paging-load-more)z-paging(.*)": "z-paging/components/z-paging$1/z-paging$1.vue"
+    }
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#FF6B03",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "black",
+    "height": "50px",
+    "fontSize": "10px",
+    "iconWidth": "32px",
+    "spacing": "3px",
+    "list": [
+      {
+        "iconPath": "static/LibertyCats/type=off.png",
+        "selectedIconPath": "static/LibertyCats/type=on.png",
+        "pagePath": "pages/tabbar/home"
+      },
+      {
+        "iconPath": "static/LibertyCats/type=off-1.png",
+        "selectedIconPath": "static/LibertyCats/type=on-1.png",
+        "pagePath": "pages/tabbar/mall"
+      },
+      {
+        "pagePath": "pages/tabbar/game",
+        "iconPath": "/static/images/game/game@2x.png",
+        "selectedIconPath": "/static/images/game/game@2x.png"
+      },
+      {
+        "iconPath": "static/LibertyCats/type=off-2.png",
+        "selectedIconPath": "static/LibertyCats/type=on-2.png",
+        "pagePath": "pages/tabbar/discover"
+      },
+      {
+        "iconPath": "static/LibertyCats/type=off-3.png",
+        "selectedIconPath": "static/LibertyCats/type=on-3.png",
+        "pagePath": "pages/tabbar/my"
+      }
+    ]
+  },
+  "pages": [
+    {
+      "path": "pages/tabbar/home",
+      "type": "home",
+      "layout": "default2",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "%home.page_title%"
+      }
+    },
+    {
+      "path": "pages/about/about",
+      "type": "page",
+      "style": {
+        "navigationBarTitleText": "关于"
+      }
+    },
+    {
+      "path": "pages/about/i18n",
+      "type": "page",
+      "style": {
+        "navigationBarTitleText": "%app.name%"
+      }
+    },
+    {
+      "path": "pages/callback/app",
+      "type": "page",
+      "layout": "default",
+      "style": {
+        "navigationBarTitleText": "数据回写"
+      }
+    },
+    {
+      "path": "pages/demo/detail_demo",
+      "type": "page",
+      "layout": "default",
+      "style": {
+        "navigationBarTitleText": "Demo 内页空模板"
+      }
+    },
+    {
+      "path": "pages/demo/list_demo",
+      "type": "page",
+      "layout": "default",
+      "style": {
+        "navigationBarTitleText": "Demo 模板"
+      }
+    },
+    {
+      "path": "pages/game/index",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "游戏中心",
+        "app-plus": {
+          "titleNView": {
+            "titleText": "游戏中心",
+            "buttons": [
+              {
+                "text": "关闭",
+                "fontSize": "14px",
+                "width": "80rpx",
+                "onclick": "closeGame"
+              }
+            ]
+          },
+          "webView": {
+            "hardwareAccelerated": true,
+            "domStorage": true,
+            "database": true,
+            "mixedContent": "compatibility",
+            "allowFileAccess": true,
+            "allowContentAccess": true,
+            "allowFileAccessFromFileURLs": true,
+            "allowUniversalAccessFromFileURLs": true,
+            "useWideViewPort": true,
+            "loadWithOverviewMode": true,
+            "cacheMode": "LOAD_DEFAULT"
+          }
+        }
+      }
+    },
+    {
+      "path": "pages/tabbar/discover",
+      "type": "page",
+      "layout": "default2",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "%discover.page_title%",
+        "enablePullDownRefresh": true,
+        "backgroundTextStyle": "dark",
+        "backgroundColor": "#f7f6f4",
+        "navigationBarTextStyle": "black",
+        "app-plus": {
+          "pullToRefresh": {
+            "style": "circle",
+            "color": "#ff6b03",
+            "offset": "140rpx"
+          }
+        }
+      }
+    },
+    {
+      "path": "pages/tabbar/game",
+      "type": "page",
+      "layout": "default2",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "首页",
+        "navigationBarTextStyle": "black",
+        "enablePullDownRefresh": false,
+        "app-plus": {
+          "pullToRefresh": {
+            "style": "circle",
+            "color": "#ff6b03",
+            "offset": "80rpx"
+          }
+        }
+      }
+    },
+    {
+      "path": "pages/tabbar/mall",
+      "type": "page",
+      "layout": "default2",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "首页",
+        "navigationBarTextStyle": "black",
+        "enablePullDownRefresh": true,
+        "app-plus": {
+          "pullToRefresh": {
+            "style": "circle",
+            "color": "#ff6b03",
+            "offset": "80rpx"
+          }
+        }
+      }
+    },
+    {
+      "path": "pages/tabbar/my",
+      "type": "page",
+      "layout": "default2",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "%my.page_title%"
+      }
+    },
+    {
+      "path": "pages/test/i18n",
+      "type": "page",
+      "style": {
+        "navigationBarTitleText": "%app.name%"
+      }
+    },
+    {
+      "path": "pages/test/index",
+      "type": "page",
+      "layout": "default",
+      "style": {
+        "navigationBarTitleText": "Test Page",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/test/safe",
+      "type": "page"
+    },
+    {
+      "path": "pages/cats/about/index",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f7f6f4"
+      }
+    },
+    {
+      "path": "pages/cats/address/add",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f7f6f4"
+      }
+    },
+    {
+      "path": "pages/cats/address/management",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f7f6f4"
+      }
+    },
+    {
+      "path": "pages/cats/address/select",
+      "type": "page",
+      "layout": "default",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "%address.select.page_title%"
+      }
+    },
+    {
+      "path": "pages/cats/agreement/detail",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/cats/asset/log",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f7f6f4"
+      }
+    },
+    {
+      "path": "pages/cats/bulletins/detail",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/cats/bulletins/list",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f7f6f4"
+      }
+    },
+    {
+      "path": "pages/cats/discord/auth2",
+      "type": "page"
+    },
+    {
+      "path": "pages/cats/faq/detail",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/cats/faq/list",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    {
+      "path": "pages/cats/favorite/list",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/cats/flow/cart",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/cats/flow/confirm_order",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f7f6f4"
+      }
+    },
+    {
+      "path": "pages/cats/goods/detail",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "%goods.detail.page_title%"
+      }
+    },
+    {
+      "path": "pages/cats/goods/search",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "%goods.search.page_title%"
+      }
+    },
+    {
+      "path": "pages/cats/kf/add",
+      "type": "page",
+      "layout": "default",
+      "style": {
+        "navigationBarTitleText": "%kf.add.page_title%"
+      }
+    },
+    {
+      "path": "pages/cats/login/login",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": ""
+      }
+    },
+    {
+      "path": "pages/cats/login/login_code",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": ""
+      }
+    },
+    {
+      "path": "pages/cats/news/detail",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/cats/notification/detail",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/cats/notification/list",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f7f6f4"
+      }
+    },
+    {
+      "path": "pages/cats/order/detail",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f7f6f4"
+      }
+    },
+    {
+      "path": "pages/cats/order/list",
+      "type": "page",
+      "layout": "default",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "%my_order.index.page_title%",
+        "backgroundColor": "#f7f6f4"
+      }
+    },
+    {
+      "path": "pages/cats/pay/index",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f7f6f4"
+      }
+    },
+    {
+      "path": "pages/cats/pay/result",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f7f6f4"
+      }
+    },
+    {
+      "path": "pages/cats/pledge/detail",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/cats/pledge/index",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f7f6f4"
+      }
+    },
+    {
+      "path": "pages/cats/pledge/ranking",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f7f6f4"
+      }
+    },
+    {
+      "path": "pages/cats/settings/avatar",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f7f6f4"
+      }
+    },
+    {
+      "path": "pages/cats/settings/currency",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f7f6f4"
+      }
+    },
+    {
+      "path": "pages/cats/settings/index",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f7f6f4"
+      }
+    },
+    {
+      "path": "pages/cats/settings/language",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/cats/settings/nickname",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f7f6f4"
+      }
+    },
+    {
+      "path": "pages/cats/settings/virtual_account",
+      "type": "page",
+      "layout": "default",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f7f6f4"
+      }
+    },
+    {
+      "path": "pages/cats/social/detail",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f7f6f4"
+      }
+    },
+    {
+      "path": "pages/cats/social/detail_sktiy_comment",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f7f6f4"
+      }
+    },
+    {
+      "path": "pages/cats/social/publish",
+      "type": "page",
+      "layout": "default",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "Publish"
+      }
+    },
+    {
+      "path": "pages/cats/upload/upload",
+      "type": "page"
+    },
+    {
+      "path": "pages/cats/webview/webview",
+      "type": "page",
+      "layout": "default",
+      "style": {
+        "navigationBarTitleText": ""
+      }
+    },
+    {
+      "path": "pages/cats/login/virtual/bind",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": ""
+      }
+    },
+    {
+      "path": "pages/cats/login/virtual/bind_code",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": ""
+      }
+    },
+    {
+      "path": "pages/cats/login/virtual/login",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": ""
+      }
+    },
+    {
+      "path": "pages/cats/login/virtual/login_code",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": ""
+      }
+    }
+  ],
+  "subPackages": []
+}

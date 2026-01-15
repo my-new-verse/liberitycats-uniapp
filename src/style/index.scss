@@ -1,0 +1,140 @@
+// @import './iconfont.css';
+
+@import './font';
+
+.test {
+  // 可以通过 @apply 多个样式封装整体样式
+  @apply mt-4 ml-4;
+
+  padding-top: 4px;
+  color: red;
+}
+
+:root,
+page {
+  // 修改按主题色
+  --wot-color-theme: #ff6b03;
+  --wot-divider-color: #ddd;
+
+  // 修改按钮背景色
+  --wot-button-primary-bg-color: #ff6b03;
+  //--------------------------------------
+  --liberty-cats-primary-color: #ff6b03; // 主题色
+  --liberty-cats-navigation-bar-background-color: #ff6b03; // 导航栏颜色
+  --liberty-cats-navigation-bar-font-color: #ffffff; // 导航栏字体颜色
+  --liberty-cats-page-background-color: #f7f6f4; // 页面背景主色
+  --liberty-cats-page-border-radius: 64rpx;
+  --liberty-cats-page-common-border-radius: 40rpx;
+  --wot-color-primary: #ff6b03;
+}
+
+.en {
+  * {
+    font-family: Montserrat;
+  }
+  .wd-message-box,
+  .wd-message-box__content,
+  .wd-message-box__title,
+  .wd-message-box__btn {
+    font-family: Montserrat !important;
+  }
+}
+
+.ja {
+  * {
+    //font-family: Montserrat;
+  }
+}
+
+.zh-Hans {
+  * {
+    //font-family: Alibaba PuHuiTi2;
+    font-family:
+      Alimama FangYuanTi VF,
+      sans-serif;
+    // .navTitle {
+    //   font-family: Alimama FangYuanTi VF;
+    // }
+  }
+
+  .wd-message-box,
+  .wd-message-box__content,
+  .wd-message-box__title,
+  .wd-message-box__btn {
+    font-family: Alimama FangYuanTi VF !important;
+  }
+}
+
+.zh-Hant {
+  * {
+    //font-family: Alibaba PuHuiTi2;
+    font-family: Alibaba PuHuiTi2;
+    // .navTitle {
+    //   font-family: Alimama FangYuanTi VF;
+    // }
+  }
+
+  .wd-message-box,
+  .wd-message-box__content,
+  .wd-message-box__title,
+  .wd-message-box__btn {
+    font-family: Alibaba PuHuiTi2 !important;
+  }
+}
+
+h1 {
+  font-size: 42rpx;
+  line-height: 54rpx;
+}
+
+h2 {
+  font-size: 38rpx;
+  line-height: 50rpx;
+}
+
+h3 {
+  font-size: 36rpx;
+  line-height: 46rpx;
+}
+
+h4 {
+  font-size: 32rpx;
+  line-height: 42rpx;
+}
+
+h5 {
+  font-size: 28rpx;
+  line-height: 38rpx;
+}
+
+h6 {
+  font-size: 24rpx;
+  line-height: 34rpx;
+}
+
+a {
+  color: #ff6b03;
+}
+
+table {
+  width: calc(100% - 10rpx); // 宽度自适应
+  //overflow: hidden;
+  border-collapse: collapse; // 合并边框，防止双线
+  background: #fff;
+  border: 2rpx solid #ddd;
+  border-radius: 8rpx;
+}
+
+table th,
+table td {
+  padding: 12rpx 16rpx; // 内边距
+  text-align: left; // 左对齐
+  word-break: break-all; // 内容自动换行
+  background: #fff;
+  border: 1px solid #ddd;
+}
+
+table th {
+  font-weight: bold;
+  background: #f7f6f4; // 表头背景色
+}

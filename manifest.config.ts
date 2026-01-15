@@ -1,0 +1,251 @@
+// manifest.config.ts
+import { defineManifestConfig } from '@uni-helper/vite-plugin-uni-manifest'
+import { platform } from 'node:os'
+import path from 'node:path'
+import { loadEnv } from 'vite'
+
+// 获取环境变量的范例
+const env = loadEnv(process.env.NODE_ENV!, path.resolve(process.cwd(), 'env'))
+const {
+  VITE_APP_TITLE,
+  VITE_UNI_APPID,
+  VITE_WX_APPID,
+  VITE_APP_PUBLIC_BASE,
+  VITE_FALLBACK_LOCALE,
+  VITE_APP_URL_SCHEMAS,
+} = env
+
+export default defineManifestConfig({
+  name: VITE_APP_TITLE,
+  appid: VITE_UNI_APPID,
+  description: '',
+  versionName: '1.0.197',
+  versionCode: '10197',
+  transformPx: false,
+  locale: VITE_FALLBACK_LOCALE, // 'zh-Hans'
+  h5: {
+    router: {
+      base: VITE_APP_PUBLIC_BASE,
+    },
+  },
+  /* 5+App特有相关 */
+  'app-plus': {
+    webView: {
+      userAgent:
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1',
+      allowsInlineMediaPlayback: true,
+      mediaPlaybackRequiresUserAction: false,
+    },
+    usingComponents: true,
+    nvueStyleCompiler: 'uni-app',
+    compilerVersion: 3,
+    compatible: {
+      ignoreVersion: true,
+    },
+    splashscreen: {
+      alwaysShowBeforeRender: false,
+      waiting: false,
+      autoclose: false,
+      delay: 0,
+    },
+    safearea: {
+      background: '#f7f6f4',
+      bottom: {
+        offset: 'none',
+      },
+    },
+    /* 模块配置 */
+    modules: {
+      Payment: {},
+      Camera: {},
+      OAuth: {}, // 必须有
+    },
+    /* 应用发布信息 */
+    distribute: {
+      /* android打包配置 */
+      android: {
+        minSdkVersion: 30,
+        targetSdkVersion: 30,
+        abiFilters: ['armeabi-v7a', 'arm64-v8a', 'x86'],
+        schemes: VITE_APP_URL_SCHEMAS,
+        permissions: [
+          '<uses-permission android:name="android.permission.CHANGE_NETWORK_STATE"/>',
+          '<uses-permission android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS"/>',
+          '<uses-permission android:name="android.permission.VIBRATE"/>',
+          '<uses-permission android:name="android.permission.READ_LOGS"/>',
+          '<uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>',
+          '<uses-feature android:name="android.hardware.camera.autofocus"/>',
+          '<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>',
+          '<uses-permission android:name="android.permission.CAMERA"/>',
+          '<uses-permission android:name="android.permission.GET_ACCOUNTS"/>',
+          '<uses-permission android:name="android.permission.READ_PHONE_STATE"/>',
+          '<uses-permission android:name="android.permission.CHANGE_WIFI_STATE"/>',
+          '<uses-permission android:name="android.permission.WAKE_LOCK"/>',
+          '<uses-permission android:name="android.permission.FLASHLIGHT"/>',
+          '<uses-feature android:name="android.hardware.camera"/>',
+          '<uses-permission android:name="android.permission.WRITE_SETTINGS"/>',
+        ],
+      },
+
+      /* ios打包配置 */
+      ios: {
+        deviceType: 'iphone',
+        urltypes: VITE_APP_URL_SCHEMAS,
+        capabilities: {
+          entitlements: {
+            'com.apple.developer.associated-domains': ['applinks:link.libertycats.app'],
+          },
+        },
+        entitlements: 'src/nativeResources/ios/UniApp.entitlements',
+        idfa: false,
+        privacyDescription: {
+          // 主描述（保持为空，使用本地化版本）
+          NSPhotoLibraryUsageDescription: '',
+          NSCameraUsageDescription: '',
+          NSLocationWhenInUseUsageDescription: '',
+          NSUserNotificationsUsageDescription: '',
+          NSPhotoLibraryAddUsageDescription: '',
+        },
+      },
+      /* SDK配置 */
+      sdkConfigs: {
+        payment: {
+          stripe: {
+            __platform__: ['ios', 'android'],
+            returnURL_ios: 'prod.libertyCats://stripe',
+          },
+          appleiap: {},
+        },
+        oauth: {
+          apple: {},
+        },
+      },
+      /* 图标配置 */
+      icons: {
+        android: {
+          hdpi: 'static/app/icons/72x72.png',
+          xhdpi: 'static/app/icons/96x96.png',
+          xxhdpi: 'static/app/icons/144x144.png',
+          xxxhdpi: 'static/app/icons/192x192.png',
+        },
+        ios: {
+          appstore: 'static/app/icons/1024x1024.png',
+          ipad: {
+            app: 'static/app/icons/76x76.png',
+            'app@2x': 'static/app/icons/152x152.png',
+            notification: 'static/app/icons/20x20.png',
+            'notification@2x': 'static/app/icons/40x40.png',
+            'proapp@2x': 'static/app/icons/167x167.png',
+            settings: 'static/app/icons/29x29.png',
+            'settings@2x': 'static/app/icons/58x58.png',
+            spotlight: 'static/app/icons/40x40.png',
+            'spotlight@2x': 'static/app/icons/80x80.png',
+          },
+          iphone: {
+            'app@2x': 'static/app/icons/120x120.png',
+            'app@3x': 'static/app/icons/180x180.png',
+            'notification@2x': 'static/app/icons/40x40.png',
+            'notification@3x': 'static/app/icons/60x60.png',
+            'settings@2x': 'static/app/icons/58x58.png',
+            'settings@3x': 'static/app/icons/87x87.png',
+            'spotlight@2x': 'static/app/icons/80x80.png',
+            'spotlight@3x': 'static/app/icons/120x120.png',
+          },
+        },
+      },
+      splashscreen: {
+        useOriginalMsgbox: true,
+        androidStyle: 'default',
+        android: {
+          xxhdpi: 'nativeResources/res/drawable-xxhdpi/splash.9.png',
+          xhdpi: 'nativeResources/res/drawable-xhdpi/splash.9.png',
+          hdpi: 'nativeResources/res/drawable-hdpi/splash.9.png',
+        },
+        iosStyle: 'storyboard',
+        ios: {
+          storyboard: 'nativeResources/IosCustomStoryboard/IosCustomStoryboard.zip',
+        },
+      },
+    },
+    locales: {
+      en: {
+        ios: {
+          privacyDescription: {
+            NSPhotoLibraryUsageDescription:
+              'We need access to your photo library to let you select and upload profile pictures, share content in the community, and save important information from the app to your device.',
+            NSCameraUsageDescription:
+              'We need access to your camera to let you take photos for your profile picture and share moments in the community.',
+            NSLocationWhenInUseUsageDescription:
+              'We need access to your location to show nearby users, enable location-based services, and provide personalized recommendations based on your area.',
+            NSUserNotificationsUsageDescription:
+              'We need to send you notifications about community interactions, system messages, and important account activities to keep you informed.',
+            NSPhotoLibraryAddUsageDescription:
+              'We need to save profile pictures, community posts, and other important content to your photo library for your convenience.',
+          },
+        },
+      },
+      'zh-Hans': {
+        ios: {
+          privacyDescription: {
+            NSPhotoLibraryUsageDescription:
+              '我们需要访问您的相册，以便您可以选择和上传头像、在社区分享内容，以及将应用中的重要信息保存到您的设备。',
+            NSCameraUsageDescription:
+              '我们需要访问您的相机，以便您可以拍摄照片用于设置头像和在社区发布动态。',
+            NSLocationWhenInUseUsageDescription:
+              '我们需要访问您的位置，以便显示附近的用户、启用基于位置的服务，并根据您所在的地区提供个性化推荐。',
+            NSUserNotificationsUsageDescription:
+              '我们需要向您发送有关社区互动、系统消息和重要账户活动的通知，以便您随时了解最新动态。',
+            NSPhotoLibraryAddUsageDescription:
+              '我们需要将头像、社区动态和其他重要内容保存到您的相册，以便您随时查看。',
+          },
+        },
+      },
+      'zh-Hant': {
+        ios: {
+          privacyDescription: {
+            NSPhotoLibraryUsageDescription:
+              '我們需要訪問您的相冊，以便您可以選擇和上傳頭像、在社區分享內容，以及將應用中的重要信息保存到您的設備。',
+            NSCameraUsageDescription:
+              '我們需要訪問您的相機，以便您可以拍攝照片用於設置頭像和在社區發布動態。',
+            NSLocationWhenInUseUsageDescription:
+              '我們需要訪問您的位置，以便顯示附近的用戶、啟用基於位置的服務，並根據您所在地區提供個性化推薦。',
+            NSUserNotificationsUsageDescription:
+              '我們需要向您發送有關社區互動、系統消息和重要賬戶活動的通知，以便您隨時了解最新動態。',
+            NSPhotoLibraryAddUsageDescription:
+              '我們需要將頭像、社區動態和其他重要內容保存到您的相冊，以便您隨時查看。',
+          },
+        },
+      },
+    },
+  },
+  /* 快应用特有相关 */
+  quickapp: {},
+  /* 小程序特有相关 */
+  'mp-weixin': {
+    appid: VITE_WX_APPID,
+    setting: {
+      urlCheck: false,
+    },
+    usingComponents: true,
+    // __usePrivacyCheck__: true,
+  },
+  'mp-alipay': {
+    usingComponents: true,
+    styleIsolation: 'shared',
+  },
+  'mp-baidu': {
+    usingComponents: true,
+  },
+  'mp-toutiao': {
+    usingComponents: true,
+  },
+  uniStatistics: {
+    enable: false,
+  },
+  vueVersion: '3',
+  app: {
+    webView: {
+      domain: 'mgt.libertycats.app',
+    },
+  },
+})

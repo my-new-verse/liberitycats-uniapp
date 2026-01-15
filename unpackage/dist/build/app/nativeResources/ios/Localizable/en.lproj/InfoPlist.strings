@@ -1,0 +1,7 @@
+NSPhotoLibraryUsageDescription = "We need access to your photo library to let you upload profile pictures and share photos in the app.";
+NSCameraUsageDescription = "We need access to your camera to let you take photos and share them in the app.";
+NSPhotoLibraryAddUsageDescription = "We need to save photos to your photo library when you download or save images from the app.";
+NSMicrophoneUsageDescription = "We need access to your microphone to record audio when you take videos in the app.";
+NSLocationWhenInUseUsageDescription = "We need your location to show nearby content and improve your experience.";
+NSLocationAlwaysAndWhenInUseUsageDescription = "We need your location to show nearby content and improve your experience, even when the app is in the background.";
+NSLocationAlwaysUsageDescription = "We need your location to show nearby content and improve your experience, even when the app is in the background.";

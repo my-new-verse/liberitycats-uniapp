@@ -1,0 +1,7 @@
+NSPhotoLibraryUsageDescription = "我们需要访问您的相册，以便您上传个人资料图片和在应用中分享照片。";
+NSCameraUsageDescription = "我们需要访问您的相机，以便您拍摄照片并在应用中分享。";
+NSPhotoLibraryAddUsageDescription = "我们需要将照片保存到您的相册，当您从应用下载或保存图片时。";
+NSMicrophoneUsageDescription = "我们需要访问您的麦克风，以便在您录制视频时录制音频。";
+NSLocationWhenInUseUsageDescription = "我们需要您的位置信息，以便显示附近内容并改善您的使用体验。";
+NSLocationAlwaysAndWhenInUseUsageDescription = "我们需要您的位置信息，以便在后台运行时也能显示附近内容并改善您的使用体验。";
+NSLocationAlwaysUsageDescription = "我们需要您的位置信息，以便在后台运行时也能显示附近内容并改善您的使用体验。";

@@ -1,0 +1,229 @@
+// social start
+.socialBox {
+  .socialOpBox {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 36rpx;
+    .opItem {
+      margin-right: 16rpx;
+      font-size: 28rpx;
+      font-weight: 400;
+      line-height: 33rpx;
+      color: #999999;
+    }
+
+    .opItem.active {
+      font-weight: 500;
+      color: #ff6b03;
+    }
+  }
+
+  .pubSocial {
+    position: fixed;
+    right: 40rpx;
+    /* #ifdef APP */
+    bottom: calc(120rpx + env(safe-area-inset-bottom) + 100rpx);
+    /* #endif */
+    /* #ifdef H5 */
+    bottom: 110rpx;
+    /* #endif */
+    //
+    z-index: 11;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 80rpx;
+    height: 80rpx;
+    background-color: #fff;
+    border-radius: 50%;
+    box-shadow: 0 6rpx 28rpx 4rpx rgba(0, 0, 0, 0.1);
+    .pubImg {
+      width: 52rpx;
+      height: 52rpx;
+      background-color: transparent;
+      background-image: url('@/static/images/pub_social@2x.png');
+      background-repeat: no-repeat;
+      background-size: 100% 100%;
+    }
+  }
+
+  .socialItem {
+    position: relative;
+    .delBox,
+    .jbBox {
+      position: absolute;
+      top: 0;
+      right: 0;
+      z-index: 9;
+      width: 40rpx;
+      height: 40rpx;
+      background-image: url('@/static/images/trush@2x.png');
+      background-repeat: no-repeat;
+      background-size: 100%;
+    }
+    .jbBox {
+      background-image: url('@/static/images/jb.png');
+    }
+    .socialHead {
+      display: flex;
+      align-items: center;
+      justify-content: start;
+      margin-bottom: 16rpx;
+      .avatarBox {
+        position: relative;
+        width: 64rpx;
+        height: 64rpx;
+        .avatar {
+          width: 100%;
+          height: 100%;
+          overflow: hidden;
+          background-color: #fafafa;
+          border: 2rpx solid #fafafa;
+          border-radius: 50%;
+        }
+        .levelIcon {
+          position: absolute;
+          right: -4rpx;
+          bottom: 4rpx;
+          z-index: 9;
+          width: 28rpx;
+          height: 28rpx;
+          image {
+            width: 100%;
+            height: 100%;
+          }
+        }
+      }
+      .name {
+        margin-left: 16rpx;
+        font-size: 28rpx;
+        font-weight: 500;
+        line-height: 44rpx;
+        color: #261000;
+      }
+      .tag {
+        padding: 6rpx 12rpx;
+        margin-left: 8rpx;
+        font-size: 20rpx;
+        font-weight: 600;
+        text-transform: uppercase;
+        border-radius: 12rpx;
+      }
+      .tag1 {
+        color: #ff6b03;
+        background: #fff7e5;
+      }
+      .tag2 {
+        color: #ac59ff;
+        background: #ece8f6;
+      }
+      .tag3 {
+        color: #ff0303;
+        background: #ffeaea;
+      }
+    }
+
+    .socialCntBox {
+      .socialCnt {
+        display: block;
+        width: 100%;
+        font-size: 28rpx;
+        font-weight: 400;
+        line-height: 36rpx;
+        color: #261000;
+        // 自动换行
+        word-break: break-all;
+        white-space: pre-line;
+      }
+      .socialMedia {
+        display: grid;
+
+        // 默认每行显示 3 个
+        grid-template-columns: repeat(3, 195rpx); // 每列固定宽度
+        gap: 16rpx; // 设置间距
+        margin-top: 20rpx;
+
+        // 当有 4 个时，每行显示 2 个
+        &.mediaImg4 {
+          grid-template-columns: repeat(2, 195rpx); // 每行 2 列，固定宽度
+          justify-content: start; // 调整两列之间的间距
+        }
+
+        .mediaImgItem {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 195rpx; // 宽度由网格控制
+          height: 195rpx;
+
+          // 当只有 1 个 item 时，高度为 auto，最小高度为 195rpx
+          &:only-child {
+            width: 620rpx;
+            height: auto;
+            //min-height: 195rpx;
+          }
+        }
+      }
+      .socialTime {
+        margin-top: 20rpx;
+        font-size: 24rpx;
+        font-weight: 400;
+        color: #999999;
+      }
+    }
+
+    .socialFoot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      height: 64rpx;
+      margin-top: 24rpx;
+      .socialBtnBox {
+        display: flex;
+        align-items: center;
+        .socialBtnIcon {
+          width: 40rpx;
+          height: 40rpx;
+          margin-right: 8rpx;
+          background-repeat: no-repeat;
+          background-position: center;
+          background-size: 100% 100%;
+        }
+        .socialBtnIcon.view {
+          background-image: url('@/static/images/view@2x.png');
+        }
+        .socialBtnIcon.share {
+          background-image: url('@/static/images/share@2x.png');
+        }
+        .socialBtnIcon.zan {
+          background-image: url('@/static/images/zan@2x.png');
+        }
+        .socialBtnIcon.zan.on {
+          background-image: url('@/static/images/zan_on@2x.png');
+        }
+        .socialBtnIcon.quote {
+          background-image: url('@/static/images/quote@2x.png');
+        }
+      }
+      .socialBtn {
+        font-size: 24rpx;
+        font-weight: 400;
+        line-height: 40rpx;
+        color: #999999;
+      }
+    }
+  }
+}
+.socialTips {
+  padding: 8rpx 12rpx;
+  margin: 30rpx 0;
+  font-size: 20rpx;
+  font-weight: 400;
+  line-height: 28rpx;
+  color: #999;
+  background-color: #fff7e5;
+  border-radius: 8rpx;
+}
+// social end

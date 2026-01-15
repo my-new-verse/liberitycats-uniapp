@@ -1,0 +1,32 @@
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: normal;
+  src: url('@/static/font/en/Montserrat-Regular.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 500;
+  src: url('@/static/font/en/Montserrat-Medium.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 600;
+  src: url('@/static/font/en/Montserrat-SemiBold.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Alimama FangYuanTi VF';
+  src: url('@/static/font/zh/AlimamaFangYuanTiVF-Thin.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Alibaba PuHuiTi2';
+  font-style: normal;
+  font-weight: normal;
+  src: url('@/static/font/zh/AlibabaPuHuiTi/AlibabaPuHuiTi-2-55-Regular.otf') format('opentype');
+}
