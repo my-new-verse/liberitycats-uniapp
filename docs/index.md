@@ -12,10 +12,10 @@
 - `src/components/`：通用业务组件
 - `src/layouts/`：页面布局（`default.vue`、`default2.vue`、`demo.vue`）
 - `src/store/`：状态管理（Pinia，`index.ts`、`user.ts`）
-- `src/service/`：网络请求封装（`index.ts`、`request.ts`、`route.ts`、`prototype.ts`）
 - `src/service/api/`：后端接口封装（按业务模块分文件，如 `user.ts`、`login.ts`、`game.ts` 等）
+- `src/service/home/`：首页相关接口
 - `src/hooks/`：组合式函数（`useRequest.ts`、`useUpload.ts`）
-- `src/interceptors/`：请求与路由拦截器
+- `src/interceptors/`：请求与路由拦截器（`request.ts`、`route.ts`、`prototype.ts`、`index.ts`）
 - `src/locale/`：i18n 多语言文件（`zh-Hans`、`zh-Hant`、`en`、`ja`）
 - `src/utils/`：工具方法（`http.ts`、`httpOut.ts`、`i18n.ts`、`platform.ts`）
 - `src/types/`：全局类型声明
