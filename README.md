@@ -1,86 +1,106 @@
-<p align="center">
-  <a href="https://github.com/feige996/unibest">
-    <img width="160" src="./src/static/logo.svg">
-  </a>
-</p>
+# Liberty Cats — UniApp 前端
 
-<h1 align="center">
-  <a href="https://github.com/feige996/unibest" target="_blank">unibest - 最好的 uniapp 开发框架</a>
-</h1>
+Liberty Cats 移动端多平台应用，基于 UniApp + Vue 3 构建，面向加密/NFT 用户，提供 NFT 质押、OKX 钱包集成、电商商城、社区互动、加密行情与休闲小游戏。
 
-<div align="center">
-旧仓库 codercup 进不去了，star 也拿不回来，这里也展示一下那个地址的 star.
+## 技术栈
 
-[![GitHub Repo stars](https://img.shields.io/github/stars/codercup/unibest?style=flat&logo=github)](https://github.com/codercup/unibest)
-[![GitHub forks](https://img.shields.io/github/forks/codercup/unibest?style=flat&logo=github)](https://github.com/codercup/unibest)
+| 类别 | 选型 |
+|------|------|
+| 框架 | UniApp 3 + Vue 3 + TypeScript |
+| 样式 | UnoCSS |
+| UI 组件 | wot-design-uni + z-paging |
+| 状态管理 | Pinia + pinia-plugin-persistedstate |
+| 多语言 | vue-i18n（en / zh-Hans / zh-Hant） |
+| 路由 | @uni-helper/vite-plugin-uni-pages（约定式） |
+| 构建 | Vite 5 |
+| 包管理 | pnpm（强制，preinstall 钩子限制） |
 
-</div>
+## 目标平台
 
-<div align="center">
+- iOS / Android App（主要）
+- H5
+- 微信小程序
 
-[![GitHub Repo stars](https://img.shields.io/github/stars/feige996/unibest?style=flat&logo=github)](https://github.com/feige996/unibest)
-[![GitHub forks](https://img.shields.io/github/forks/feige996/unibest?style=flat&logo=github)](https://github.com/feige996/unibest)
-[![star](https://gitee.com/feige996/unibest/badge/star.svg?theme=dark)](https://gitee.com/feige996/unibest/stargazers)
-[![fork](https://gitee.com/feige996/unibest/badge/fork.svg?theme=dark)](https://gitee.com/feige996/unibest/members)
-![node version](https://img.shields.io/badge/node-%3E%3D18-green)
-![pnpm version](https://img.shields.io/badge/pnpm-%3E%3D7.30-green)
-![GitHub package.json version (subfolder of monorepo)](https://img.shields.io/github/package-json/v/feige996/unibest)
-![GitHub License](https://img.shields.io/github/license/feige996/unibest)
+## 环境要求
 
-</div>
+- Node.js >= 18
+- pnpm >= 7.30
 
-`unibest` —— 最好的 `uniapp` 开发模板，由 `uniapp` + `Vue3` + `Ts` + `Vite5` + `UnoCss` + `wot-ui` + `z-paging` 构成，使用了最新的前端技术栈，无需依靠 `HBuilderX`，通过命令行方式运行 `web`、`小程序` 和 `App`（编辑器推荐 `VSCode`，可选 `webstorm`）。
+## 快速开始
 
-`unibest` 内置了 `约定式路由`、`layout布局`、`请求封装`、`请求拦截`、`登录拦截`、`UnoCSS`、`i18n多语言` 等基础功能，提供了 `代码提示`、`自动格式化`、`统一配置`、`代码片段` 等辅助功能，让你编写 `uniapp` 拥有 `best` 体验 （ `unibest 的由来`）。
+```bash
+pnpm install
+```
 
-![](https://raw.githubusercontent.com/andreasbm/readme/master/screenshots/lines/rainbow.png)
+## 开发
 
-<p align="center">
-  <a href="https://unibest.tech/" target="_blank">📖 文档地址(new)</a>
-  <span style="margin:0 10px;">|</span>
-  <a href="https://feige996.github.io/hello-unibest/" target="_blank">📱 DEMO 地址</a>
-</p>
+```bash
+pnpm dev:h5          # H5，访问 http://localhost:9000/
+pnpm dev:mp-weixin   # 微信小程序 → dist/dev/mp-weixin（用微信开发者工具导入）
+pnpm dev:app         # App → dist/dev/app（用 HBuilderX 导入并运行到基座）
+```
 
----
+## 构建
 
-注意旧的地址 [codercup](https://github.com/codercup/unibest) 我进不去了，使用新的 [feige996](https://github.com/feige996/unibest)。PR和 issue 也请使用新地址，否则无法合并。
+```bash
+pnpm build:h5        # H5 → dist/build/h5
+pnpm build:app       # App 生产包（执行 build-app.sh，再用 HBuilderX 云打包）
+```
 
-## ⚙️ 环境
+## 目录结构
 
-- node>=18
-- pnpm>=7.30
-- Vue Official>=2.1.10
-- TypeScript>=5.0
+```
+src/
+├── pages/                  # 主包页面
+│   ├── tabbar/             # 底部导航五大页面（home / mall / game / discover / my）
+│   └── cats/               # 业务功能页面
+│       ├── login/          # 邮箱 / Discord / Apple 登录
+│       ├── goods/          # 商品详情
+│       ├── order/          # 订单管理
+│       ├── pledge/         # NFT 质押
+│       ├── social/         # 社区帖子
+│       ├── news/           # 新闻资讯
+│       ├── settings/       # 用户设置
+│       ├── address/        # 收货地址
+│       ├── pay/            # 支付
+│       ├── notification/   # 通知
+│       └── ...
+├── pages-sub/              # 分包页面
+├── components/             # 跨页面通用组件
+├── layouts/                # 页面布局（default / default2 / demo）
+├── store/                  # Pinia 状态（user.ts）
+├── hooks/                  # useRequest / useUpload
+├── interceptors/           # 请求拦截 / 路由守卫 / 设备兼容补丁
+├── service/
+│   └── api/                # 后端接口（按模块分文件：login / user / goods / order / pledge / community / ...）
+├── utils/                  # http.ts / httpOut.ts / platform.ts / i18n.ts / index.ts
+├── locale/                 # 多语言资源（en / zh-Hans / zh-Hant）
+└── types/                  # 全局类型声明
 
-## &#x1F4C2; 快速开始
+pages.config.ts             # 路由与 tabbar 配置
+manifest.config.ts          # App 清单（图标 / 权限 / 支付 SDK / 深度链接）
+```
 
-执行 `pnpm create unibest` 创建项目
+## 核心功能
 
-执行 `pnpm i` 安装依赖
+- **NFT 质押** — 质押 LibertyCats NFT 获取活动积分，支持排行榜与赎回
+- **OKX 钱包** — App 深度链接连接 / 断开钱包，链上数据创建
+- **电商** — 商品浏览 / 购物车 / 订单 / 物流，支持 Stripe、OKX、Apple IAP 三种支付
+- **社区** — 图文发帖、评论、点赞、自定义 emoji、举报 / 拉黑
+- **发现** — 加密新闻（外部 API）、实时行情（USDT 计价）、法币换算
+- **小游戏** — Matchin' CAT（消消乐）、Jumpin' CAT（跳一跳），进入前通过 token 验证
+- **每日签到** — 连续签到计数与日历
+- **多语言** — 英文 / 简中 / 繁中，运行时切换
 
-执行 `pnpm dev` 运行 `H5`
+## 开发规范
 
-## 📦 运行（支持热更新）
+- API 接口统一写在 `src/service/api/`，一个文件对应一个业务模块
+- 路由通过文件约定自动生成，页面鉴权在 `<route-block>` 中声明 `needLogin: true`
+- 异步请求优先使用 `useRequest` hook 管理 loading / error / data 三态
+- 提交信息遵循 commitlint 规范（feat / fix / docs / refactor ...）
 
-- web平台： `pnpm dev:h5`, 然后打开 [http://localhost:9000/](http://localhost:9000/)。
-- weixin平台：`pnpm dev:mp-weixin` 然后打开微信开发者工具，导入本地文件夹，选择本项目的`dist/dev/mp-weixin` 文件。
-- APP平台：`pnpm dev:app`, 然后打开 `HBuilderX`，导入刚刚生成的`dist/dev/app` 文件夹，选择运行到模拟器(开发时优先使用)，或者运行的安卓/ios基座。
+## 文档
 
-## 🔗 发布
-
-- web平台： `pnpm build:h5`，打包后的文件在 `dist/build/h5`，可以放到web服务器，如nginx运行。如果最终不是放在根目录，可以在 `manifest.config.ts` 文件的 `h5.router.base` 属性进行修改。
-- weixin平台：`pnpm build:mp-weixin`, 打包后的文件在 `dist/build/mp-weixin`，然后通过微信开发者工具导入，并点击右上角的“上传”按钮进行上传。
-- APP平台：`pnpm build:app`, 然后打开 `HBuilderX`，导入刚刚生成的`dist/build/app` 文件夹，选择发行 - APP云打包。
-
-## 📄 License
-
-[MIT](https://opensource.org/license/mit/)
-
-Copyright (c) 2024 菲鸽
-
-## 捐赠
-
-<p align='center'>
-<img alt="special sponsor appwrite" src="./screenshots/pay-1.png" height="330" style="display:inline-block; height:330px;">
-<img alt="special sponsor appwrite" src="./screenshots/pay-2.png" height="330" style="display:inline-block; height:330px; margin-left:10px;">
-</p>
+- [`docs/index.md`](docs/index.md) — 项目概览
+- [`docs/architect.md`](docs/architect.md) — 技术架构
+- [`docs/business.md`](docs/business.md) — 业务逻辑
