@@ -43,13 +43,13 @@
             >
               <image :src="getImageUrl(userStore.userInfo.level.icon)" mode="widthFix" />
             </view>
-            <view class="gameIconBox">
+            <!-- <view class="gameIconBox">
               <view
                 class="gmAr"
                 :class="{ on: userStore.userInfo.bind_ar.third_open_id }"
                 @click="bindArGame"
               ></view>
-            </view>
+            </view> -->
           </template>
         </view>
       </view>
@@ -265,6 +265,17 @@
             </view>
           </view>
           <view class="menuBox">
+            <view class="menuItem" @click="toUrl('/pages/cats/posts/list', true)">
+              <view class="menuItemTitle">
+                <view class="icon2">
+                  <image class="iconImg" src="@/static/images/posts.png" mode="widthFix" />
+                </view>
+                <view class="title">{{ t('my.menu.my_post') }}</view>
+              </view>
+              <view class="menuItemRight">
+                <view class="arrow"></view>
+              </view>
+            </view>
             <view class="menuItem" @click="toUrl('/pages/cats/order/list', true)">
               <view class="menuItemTitle">
                 <view class="icon2">

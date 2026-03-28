@@ -125,3 +125,43 @@ export const blockUserApi = (id: number) => {
     id,
   })
 }
+
+// 关注
+export const createFollowApi = (memberId: number) => {
+  return http.post('/v1/community/follow/create', {
+    member_id: memberId,
+  })
+}
+
+// 取消关注
+export const deleteFollowApi = (memberId: number) => {
+  return http.post('/v1/community/follow/delete', {
+    member_id: memberId,
+  })
+}
+
+// 我的帖子列表
+export const getMyPostListApi = (page: number, search?: any) => {
+  return http.get<getCommunityPostListApiResponse>('/v1/community/post/member-posts', {
+    page,
+    ...search,
+  })
+}
+
+// 获取用户主页信息
+export const getMemberHomepageApi = (memberId: number) => {
+  return http.get('/v1/community/post/member-homepage', {
+    member_id: memberId,
+  })
+}
+
+export interface MemberHomepageResponse {
+  member_info: {
+    member_id: number
+    nickname: string
+    avatar: string
+    level: any
+  }
+  post_list: any[]
+  [key: string]: any
+}

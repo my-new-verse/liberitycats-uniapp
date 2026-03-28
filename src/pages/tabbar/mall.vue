@@ -18,7 +18,11 @@
 }
 </route>
 <template>
-  <view class="bg-white overflow-hidden page3" :class="[locale]">
+  <view
+    class="bg-white overflow-hidden page3"
+    :class="[locale]"
+    :style="{ '--safe-top-rpx': safeTopRpx + 'rpx' }"
+  >
     <view class="fixedBar" :style="{ height: safeTopRpx + 'rpx' }"></view>
     <view
       class="search"
@@ -395,7 +399,7 @@ const handleRefreshError = () => {
 .content {
   min-height: calc(100vh - 300rpx);
   padding: 40rpx;
-  padding-top: calc(env(safe-area-inset-top) + 100rpx);
+  padding-top: calc(var(--safe-top-rpx) + 100rpx);
 }
 
 .page3 {
@@ -450,7 +454,7 @@ const handleRefreshError = () => {
 
   .wd-tabs__nav {
     position: fixed;
-    top: env(safe-area-inset-top);
+    top: var(--safe-top-rpx);
     right: 0;
     left: 0;
     z-index: 96;

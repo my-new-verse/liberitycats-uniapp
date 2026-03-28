@@ -15,6 +15,13 @@
       >
         {{ t('discover.social.filter.latest') }}
       </view>
+      <view
+        class="opItem"
+        :class="{ active: socialFilter === 'following' }"
+        @click="handleFilterChange('following')"
+      >
+        {{ t('discover.social.filter.following') }}
+      </view>
     </view>
     <template v-if="socialList.data.length > 0">
       <view class="cell" v-for="item in socialList.data" :key="item.id">
@@ -26,7 +33,7 @@
           ></view>
           <view class="jbBox" v-else @click="reportPost(item)"></view>
           <view class="socialHead">
-            <view class="avatarBox">
+            <view class="avatarBox" @click="toUserHome(item.member_id)">
               <image
                 class="avatar"
                 :src="getImageUrl(item.member.avatar + '?x-oss-process=style/jzcq')"
@@ -35,7 +42,20 @@
                 <image :src="`/static/images/level/${item.member.level}.png`" mode="widthFix" />
               </view>
             </view>
-            <view class="name">{{ formatNickname(item.member.nickname, 22) }}</view>
+
+            <view class="nameWrap">
+              <view class="name">{{ formatNickname(item.member.nickname, 22) }}</view>
+
+              <view
+                v-if="!item.member.is_self"
+                class="followBtn"
+                :class="{ followed: item.member.is_following === 1 }"
+                @click="handleFollow(item)"
+              >
+                {{ item.member.is_following === 1 ? '取消关注' : '关注' }}
+              </view>
+            </view>
+
             <view v-if="item.tag?.name" class="tag" :class="item.tag?.extend_json?.class">
               {{ item.tag?.name }}
             </view>
@@ -145,6 +165,8 @@ import {
   deletePostApi,
   reportPostApi,
   blockUserApi,
+  createFollowApi,
+  deleteFollowApi,
 } from '@/service/api/community'
 
 import { useMessage, useToast } from 'wot-design-uni'
@@ -189,7 +211,17 @@ const handleFilterChange = (filter: string) => {
 // 加载社交数据
 const loadSocial = async (page = 1) => {
   try {
-    const res = await getCommunityPostListApi(page, { filter: socialFilter.value })
+    const params: any = {}
+    if (socialFilter.value === 'following') {
+      params.scope = 'following'
+      params.sort = 'latest'
+    } else {
+      params.scope = 'all'
+      params.sort = socialFilter.value
+    }
+
+    const res = await getCommunityPostListApi(page, params)
+
     if (page === 1) {
       socialList.value = res.data
     } else {
@@ -213,6 +245,42 @@ const loadSocial = async (page = 1) => {
       isRefreshing = false
     }
     console.error('Failed to load social:', error)
+  }
+}
+
+// 关注/取消关注
+const handleFollow = (item) => {
+  if (userStore.isLogin === false) {
+    toUrl('/pages/cats/login', true)
+    return
+  }
+
+  if (item.member.is_following === 1) {
+    deleteFollowApi(item.member_id).then((res) => {
+      if (res.code === 1) {
+        socialList.value.data.forEach((post) => {
+          if (post.member_id === item.member_id) {
+            post.member.is_following = 0
+          }
+        })
+        uni.showToast({ title: '已取消关注', icon: 'none' })
+      } else {
+        toast.show(res.msg || t('common.error'))
+      }
+    })
+  } else {
+    createFollowApi(item.member_id).then((res) => {
+      if (res.code === 1) {
+        socialList.value.data.forEach((post) => {
+          if (post.member_id === item.member_id) {
+            post.member.is_following = 1
+          }
+        })
+        uni.showToast({ title: '关注成功', icon: 'none' })
+      } else {
+        toast.show(res.msg || t('common.error'))
+      }
+    })
   }
 }
 
@@ -401,6 +469,13 @@ const handleReportUser = () => {
     })
     .catch(() => {})
 }
+
+// 跳转用户主页
+const toUserHome = (memberId: number) => {
+  uni.navigateTo({
+    url: `/pages/cats/user/home?member_id=${memberId}`,
+  })
+}
 </script>
 
 <style lang="scss" scoped>
@@ -408,5 +483,33 @@ const handleReportUser = () => {
 @import '/src/style/social';
 :deep(.reportSheet) {
   margin-bottom: calc(env(safe-area-inset-bottom) + 120rpx) !important;
+}
+
+.nameWrap {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.followBtn {
+  padding: 6rpx 14rpx;
+  border-radius: 50rpx;
+  background-color: #ff6b03;
+  color: #fff;
+  font-size: 22rpx;
+  line-height: 1.1;
+  text-align: center;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36rpx;
+  &.followed {
+    background-color: #ffffff;
+    color: #999;
+    border: 1rpx solid #ddd;
+  }
 }
 </style>

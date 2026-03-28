@@ -21,7 +21,7 @@
 </route>
 
 <template>
-  <view class="page3" :class="[locale]">
+  <view class="page3" :class="[locale]" :style="{ '--safe-top-rpx': safeTopRpx + 'rpx' }">
     <view class="fixedBar" :style="{ height: safeTopRpx + 'rpx' }"></view>
     <wd-tabs
       v-model="activeTab"
@@ -235,14 +235,14 @@ onReachBottom(() => {
 
 .content {
   min-height: calc(100vh - 300rpx);
-  padding-top: calc(env(safe-area-inset-top) + 100rpx);
+  padding-top: calc(var(--safe-top-rpx) + 100rpx);
 }
 
 :deep(.wd-tabs) {
   background-color: transparent;
   .wd-tabs__nav {
     position: fixed;
-    top: env(safe-area-inset-top);
+    top: var(--safe-top-rpx);
     left: 0;
     z-index: 96;
     background-color: #f7f6f4;

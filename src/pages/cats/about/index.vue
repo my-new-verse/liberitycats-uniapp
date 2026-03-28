@@ -28,7 +28,7 @@
 
           <view class="partnerBox" v-if="NftTradePartner && getServerOnOff('about_exchange_link')">
             <view class="partnerTitle">{{ t('about.block.nft_market') }}</view>
-            <view class="partnerItemBox">
+            <view class="partnerItemBox nft-partner-list">
               <template v-for="(item, index) in NftTradePartner.ads" :key="index">
                 <template v-if="index < 4">
                   <view class="partnerItem" @click="toAdUrl(item.url)">
@@ -90,8 +90,19 @@ const CommunityList = ref<getAdListByKeysApiResponse | null>(null)
 
 const getAdListByKeys = () => {
   getAdListByKeysApi(['app_home_nft_trade_partner', 'about_commonity_list']).then((res) => {
-    NftTradePartner.value = res.data.find((item) => item.quote_key === 'app_home_nft_trade_partner')
-    CommunityList.value = res.data.find((item) => item.quote_key === 'about_commonity_list')
+    const nftData = res.data.find((item) => item.quote_key === 'app_home_nft_trade_partner')
+    const communityData = res.data.find((item) => item.quote_key === 'about_commonity_list')
+
+    if (nftData && nftData.ads && nftData.ads.some((ad) => ad.name === 'MAGIC EDEN')) {
+      nftData.ads = nftData.ads.filter((ad) => ad.name !== 'MAGIC EDEN')
+    }
+
+    if (communityData && communityData.ads && communityData.ads.some((ad) => ad.name === 'ins')) {
+      communityData.ads = communityData.ads.filter((ad) => ad.name !== 'ins')
+    }
+
+    NftTradePartner.value = nftData
+    CommunityList.value = communityData
   })
 }
 const agreementsMap = ref<QuoteKeyAgreementList>()
@@ -185,6 +196,12 @@ onLoad(() => {
       width: 112rpx !important;
       height: 40rpx !important;
     }
+  }
+  .nft-partner-list {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 60rpx;
   }
 }
 

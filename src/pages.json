@@ -443,6 +443,13 @@
       }
     },
     {
+      "path": "pages/cats/posts/list",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/cats/settings/avatar",
       "type": "page",
       "style": {
@@ -518,6 +525,14 @@
     {
       "path": "pages/cats/upload/upload",
       "type": "page"
+    },
+    {
+      "path": "pages/cats/user/home",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "%user.homepage%"
+      }
     },
     {
       "path": "pages/cats/webview/webview",

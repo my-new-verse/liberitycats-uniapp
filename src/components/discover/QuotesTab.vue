@@ -1,91 +1,109 @@
 <template>
   <view>
-    <template v-if="getServerOnOff('about_exchange_link')">
-      <view class="cell" @click="openUrl(getServerOnOff('quote_okx_url', 'common', true))">
-        <view class="adCellBox">
-          <view class="adLeft">
-            <view class="titleBox">
-              <view class="title">{{ t('discover.tabs.quotes.okx.ad.title') }}</view>
-              <view class="gift"></view>
-            </view>
-            <view class="desc">
-              {{ t('discover.tabs.quotes.okx.ad.desc') }}
-            </view>
-          </view>
-          <view class="adRight">
-            <view class="arrow"></view>
-          </view>
+    <view class="socialOpBox">
+      <view class="opItem" :class="{ active: tabType === 'liberty' }" @click="changeTab('liberty')">
+        Liberty Cats
+      </view>
+      <view class="opItem" :class="{ active: tabType === 'hot' }" @click="changeTab('hot')">
+        热门榜
+      </view>
+    </view>
+
+    <template v-if="tabType === 'liberty'">
+      <view style="padding: 32rpx; background-color: #ffffff; border-radius: 32rpx">
+        <view class="web" :style="{ height: webHeightPx ? webHeightPx + 'px' : undefined }">
+          <web-view id="myWebView" src="https://lcat8.com"></web-view>
         </view>
       </view>
-      <view class="cell" @click="openUrl(getServerOnOff('quote_binance_url', 'common', true))">
-        <view class="adCellBox">
-          <view class="adLeft">
-            <view class="titleBox">
-              <view class="title">{{ t('discover.tabs.quotes.bian.ad.title') }}</view>
-              <view class="gift"></view>
+    </template>
+
+    <template v-if="tabType === 'hot'">
+      <template v-if="getServerOnOff('about_exchange_link')">
+        <view class="cell" @click="openUrl(getServerOnOff('quote_okx_url', 'common', true))">
+          <view class="adCellBox">
+            <view class="adLeft">
+              <view class="titleBox">
+                <view class="title">{{ t('discover.tabs.quotes.okx.ad.title') }}</view>
+                <view class="gift"></view>
+              </view>
+              <view class="desc">
+                {{ t('discover.tabs.quotes.okx.ad.desc') }}
+              </view>
             </view>
-            <view class="desc">
-              {{ t('discover.tabs.quotes.bian.ad.desc') }}
+            <view class="adRight">
+              <view class="arrow"></view>
             </view>
-          </view>
-          <view class="adRight">
-            <view class="arrow"></view>
           </view>
         </view>
-      </view>
-      <view class="cell" style="padding: 12rpx 32rpx" v-if="collectionDetail?.stats?.floorPrice">
-        <view class="quoteItem" style="margin-bottom: 0">
-          <view class="coinBox" style="width: 50%">
-            <view class="coinImg" style="overflow: hidden; border-radius: 50%">
-              <image :src="getImageUrl(collectionDetail.image)" mode="widthFix" />
+        <view class="cell" @click="openUrl(getServerOnOff('quote_binance_url', 'common', true))">
+          <view class="adCellBox">
+            <view class="adLeft">
+              <view class="titleBox">
+                <view class="title">{{ t('discover.tabs.quotes.bian.ad.title') }}</view>
+                <view class="gift"></view>
+              </view>
+              <view class="desc">
+                {{ t('discover.tabs.quotes.bian.ad.desc') }}
+              </view>
+            </view>
+            <view class="adRight">
+              <view class="arrow"></view>
+            </view>
+          </view>
+        </view>
+        <view class="cell" style="padding: 12rpx 32rpx" v-if="collectionDetail?.stats?.floorPrice">
+          <view class="quoteItem" style="margin-bottom: 0">
+            <view class="coinBox" style="width: 50%">
+              <view class="coinImg" style="overflow: hidden; border-radius: 50%">
+                <image :src="getImageUrl(collectionDetail.image)" mode="widthFix" />
+              </view>
+              <view class="coinInfo">
+                <view class="coinName">{{ collectionDetail.name }}</view>
+                <view class="chain">floor price</view>
+              </view>
+            </view>
+            <view
+              class="coinPrice"
+              style="justify-content: end; margin: 0; font-size: 36rpx; color: #ff6b03"
+            >
+              <view class="coinPricePrefix">$</view>
+              <view class="coinPriceTxt">
+                {{ formatNumber(collectionDetail?.stats.floorPrice, 4) }}
+              </view>
+            </view>
+          </view>
+        </view>
+      </template>
+      <view class="cell">
+        <view class="quoteOpBar">
+          <view>{{ t('discover.quotes.op.title') }}</view>
+          <view>{{ t('discover.quotes.op.currency_usdt') }}</view>
+        </view>
+        <view class="quoteItem" v-for="item in quotesList.data" :key="item.id">
+          <view class="coinBox">
+            <view class="coinImg">
+              <image :src="getImageUrl(item.icon)" mode="widthFix" />
             </view>
             <view class="coinInfo">
-              <view class="coinName">{{ collectionDetail.name }}</view>
-              <view class="chain">floor price</view>
+              <view class="coinName">{{ item.short_name }}</view>
+              <view class="chain">{{ item.name }}</view>
             </view>
           </view>
-          <view
-            class="coinPrice"
-            style="justify-content: end; margin: 0; font-size: 36rpx; color: #ff6b03"
-          >
+          <view class="coinPrice">
             <view class="coinPricePrefix">$</view>
-            <view class="coinPriceTxt">
-              {{ formatNumber(collectionDetail?.stats.floorPrice, 4) }}
-            </view>
+            <view class="coinPriceTxt">{{ item.price }}</view>
+          </view>
+          <view class="upDown" :class="{ down: item.up_down_rate > 0 }">
+            {{ (item.up_down_rate > 0 ? '+' : '') + item.up_down_rate }}%
           </view>
         </view>
       </view>
     </template>
-    <view class="cell">
-      <view class="quoteOpBar">
-        <view>{{ t('discover.quotes.op.title') }}</view>
-        <view>{{ t('discover.quotes.op.currency_usdt') }}</view>
-      </view>
-      <view class="quoteItem" v-for="item in quotesList.data" :key="item.id">
-        <view class="coinBox">
-          <view class="coinImg">
-            <image :src="getImageUrl(item.icon)" mode="widthFix" />
-          </view>
-          <view class="coinInfo">
-            <view class="coinName">{{ item.short_name }}</view>
-            <view class="chain">{{ item.name }}</view>
-          </view>
-        </view>
-        <view class="coinPrice">
-          <view class="coinPricePrefix">$</view>
-          <view class="coinPriceTxt">{{ item.price }}</view>
-        </view>
-        <view class="upDown" :class="{ down: item.up_down_rate > 0 }">
-          {{ (item.up_down_rate > 0 ? '+' : '') + item.up_down_rate }}%
-        </view>
-      </view>
-    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue'
-import { useToast } from 'wot-design-uni'
+import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import {
   getQuotesListApi,
   getQuotesListApiResponse,
@@ -96,6 +114,13 @@ import { formatNumber, getImageUrl, getServerOnOff, openUrl } from '@/utils'
 import { t } from '@/locale'
 
 type LoadMoreState = 'loading' | 'finished' | 'error' | 'success'
+
+// 获取屏幕边界到安全区域距离
+const { safeAreaInsets } = uni.getSystemInfoSync()
+const safeTopRpx = ref<number>(0)
+
+const navHeight = ref<number>(0)
+const cntPaddingTop = ref<number>(0)
 
 const props = defineProps<{
   state: LoadMoreState
@@ -120,11 +145,56 @@ const collectionDetail = ref<getCollectionDetailApiResponse>({
   },
 })
 
+const tabType = ref<'liberty' | 'hot'>('hot')
+const webHeightPx = ref<number>(0)
+
 let isRefreshing = false
 
 // 更新加载状态
 const updateState = (state: LoadMoreState) => {
   emit('update:state', state)
+}
+
+const measureRects = async () => {
+  return new Promise<{ webRect: any | null; tabbarRect: any | null }>((resolve) => {
+    const query = uni.createSelectorQuery()
+    let webRect: any | null = null
+    let tabbarRect: any | null = null
+    let called = 0
+
+    const done = () => {
+      called++
+      if (called >= 2) resolve({ webRect, tabbarRect })
+    }
+
+    query.select('.custom-tabbar').boundingClientRect((rect) => {
+      tabbarRect = rect || null
+      done()
+    })
+
+    query.select('.web').boundingClientRect((rect) => {
+      webRect = rect || null
+      done()
+    })
+
+    query.exec()
+  })
+}
+
+const updateWebHeight = async () => {
+  await nextTick()
+  const sys = uni.getSystemInfoSync()
+  const { windowHeight, windowWidth } = sys
+  const { webRect, tabbarRect } = await measureRects()
+  if (!webRect) return
+  const pxPerRpx = windowWidth / 750
+  const yellowPaddingBottomPx = 32 * pxPerRpx
+  const extraGapPx = 20 * pxPerRpx
+  const tabbarTopPx = tabbarRect?.top ?? windowHeight - (tabbarRect?.height || 0)
+  const webTopPx = webRect.top || 0
+  const nextHeight = tabbarTopPx - extraGapPx - yellowPaddingBottomPx - webTopPx
+  webHeightPx.value = Math.max(0, nextHeight)
+  await nextTick()
 }
 
 // 加载行情数据
@@ -183,8 +253,65 @@ watch(
   },
 )
 
-// 初始加载
+const fixWebViewForApp = async () => {
+  // #ifdef APP-PLUS
+  await nextTick()
+  setTimeout(async () => {
+    try {
+      const pages = getCurrentPages()
+      const page = pages[pages.length - 1]
+      const currentWebview = page.$getAppWebview()
+      const wv = currentWebview.children()[0]
+      if (!wv) return
+
+      const sys = uni.getSystemInfoSync()
+      const rpx2px = 750 / sys.windowWidth
+      const radiusPx = 32 / rpx2px
+
+      const { webRect } = await measureRects()
+      if (!webRect) return
+
+      wv.setStyle({
+        top: webRect.top || 0,
+        left: webRect.left || 0,
+        width: webRect.width || 0,
+        height: webRect.height || 0,
+        borderRadius: radiusPx,
+        scalable: true,
+      })
+
+      wv.show()
+    } catch (e) {
+      console.log('webview修复失败', e)
+    }
+  }, 300)
+  // #endif
+}
+
+const changeTab = async (type) => {
+  tabType.value = type
+
+  if (type === 'liberty') {
+    await nextTick()
+    await updateWebHeight()
+    fixWebViewForApp()
+  }
+}
+
 onMounted(() => {
+  const systemInfo = uni.getSystemInfoSync()
+  const statusBarHeight = systemInfo.statusBarHeight || 0
+
+  // 如果是Android设备，直接使用状态栏高度
+  // 如果是iOS设备，使用safeAreaInsets.top
+  safeTopRpx.value =
+    systemInfo.platform === 'android' ? statusBarHeight : safeAreaInsets?.top || statusBarHeight
+
+  // 转换为rpx
+  safeTopRpx.value = safeTopRpx.value / (systemInfo.windowWidth / 750)
+  navHeight.value = safeTopRpx.value + 80
+  cntPaddingTop.value = navHeight.value + 20
+
   loadQuotes()
   loadCollectionDetail()
   // 监听刷新事件
@@ -198,10 +325,33 @@ onMounted(() => {
 onUnmounted(() => {
   uni.$off('refreshQuotesTab')
 })
+
+onShow(() => {
+  tabType.value = 'hot'
+})
 </script>
 
 <style lang="scss" scoped>
 @import '/src/style/base';
+.socialOpBox {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 36rpx;
+  .opItem {
+    margin-right: 16rpx;
+    font-size: 28rpx;
+    font-weight: 400;
+    line-height: 33rpx;
+    color: #999999;
+  }
+
+  .opItem.active {
+    font-weight: 500;
+    color: #ff6b03;
+  }
+}
+
 .filterBox {
   display: flex;
   align-items: center;
@@ -338,5 +488,19 @@ onUnmounted(() => {
   font-style: normal;
   font-weight: 600;
   color: #ff6b03;
+}
+
+.web {
+  position: relative;
+  padding: 0;
+  border-radius: 32rpx;
+  overflow: hidden;
+
+  web-view {
+    width: 100%;
+    height: 100%;
+    border-radius: 24rpx;
+    overflow: hidden;
+  }
 }
 </style>
