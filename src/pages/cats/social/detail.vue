@@ -124,6 +124,8 @@
                 class="commentItem"
                 v-for="(item, index) in commentList.data"
                 :key="item.id || index"
+                :id="'commentItem_' + item.id"
+                :class="{ highlight: highlightId === `commentItem_${item.id}` }"
               >
                 <view class="avatarBox">
                   <image
@@ -333,6 +335,7 @@ const commentPopupVisible = ref(false)
 // const handleCloseCommentPopup = () => {
 //   commentPopupVisible.value = false
 // }
+const highlightId = ref('') // 要高亮的元素ID
 
 // 评论内容
 const commentContent = ref('')
@@ -605,7 +608,8 @@ onLoad((options) => {
             if (commentList.value?.data?.length === 0) {
               showCommentPopup()
             } else {
-              scrollToComment()
+              if (options.commentId) scrollToAnchor('commentItem_' + options.commentId)
+              else scrollToComment()
             }
             // uni.hideLoading()
           }, 3000)
@@ -850,6 +854,39 @@ const scrollToComment = () => {
       })
     }
   })
+}
+
+// 滚动到指定id的item锚点
+const scrollToAnchor = (targetId: string) => {
+  const query = uni.createSelectorQuery()
+  query.select('#' + targetId).boundingClientRect()
+  query.selectViewport().scrollOffset()
+  query.exec((res) => {
+    if (res[0] && res[1]) {
+      const commentTop = res[0].top
+      const scrollTop = res[1].scrollTop
+      // 计算目标位置，减去导航栏高度（假设为80rpx）
+      const targetY = scrollTop + commentTop - uni.upx2px(80)
+      uni.pageScrollTo({
+        scrollTop: targetY,
+        duration: 300,
+        complete: () => {
+          // 2. 滚动完成后高亮目标元素
+          highlightTargetElement(targetId)
+        },
+      })
+    }
+  })
+}
+
+// 高亮目标元素3秒（修复版，兼容多端）
+const highlightTargetElement = (targetId: string) => {
+  // 第一步：设置高亮
+  highlightId.value = targetId
+  // 第二步：3秒后取消高亮
+  setTimeout(() => {
+    highlightId.value = ''
+  }, 1000)
 }
 </script>
 
@@ -1222,6 +1259,10 @@ const scrollToComment = () => {
         }
       }
     }
+  }
+  .highlight {
+    background-color: #f0f0f0 !important; // 加!important确保覆盖原有样式
+    transition: background-color 0.3s ease;
   }
 }
 </style>

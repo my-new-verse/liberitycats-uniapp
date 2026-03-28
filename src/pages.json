@@ -364,6 +364,21 @@
       }
     },
     {
+      "path": "pages/cats/message/index",
+      "type": "page",
+      "layout": "default",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f7f6f4",
+        "enablePullDownRefresh": true,
+        "onReachBottomDistance": 50,
+        "pullDownRefresh": {
+          "color": "#ff4d4f",
+          "background": "#f7f6f4"
+        }
+      }
+    },
+    {
       "path": "pages/cats/news/detail",
       "type": "page",
       "style": {

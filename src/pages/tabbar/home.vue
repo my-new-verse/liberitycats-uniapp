@@ -26,7 +26,7 @@
               {{ userStore.userInfo.nickname || t('home.un_login_nickname') }}
             </view>
           </view>
-          <view class="message" @click="toUrl('/pages/cats/notification/list', true)">
+          <view class="message" @click="toUrl('/pages/cats/message/index', true)">
             <view class="msgDot" v-if="unreadCount > 0">
               <view>{{ unreadCount > 99 ? 99 : unreadCount }}</view>
               <view v-if="unreadCount > 99">+</view>

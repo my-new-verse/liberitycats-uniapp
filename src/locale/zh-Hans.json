@@ -66,6 +66,7 @@
   "my.menu.my_wishlist": "我的收藏",
   "my.menu.settings": "设置",
   "my.menu.about": "关于我们",
+  "my.menu.messageCenter": "消息中心",
   "my.refreshNftList.confirm": "每天只能刷新一次。确定要刷新吗？",
   "my.checkin_checked": "已签到",
   "my.asset.ccToken": "游戏专属",
@@ -362,5 +363,16 @@
     "microphone": "我们需要访问您的麦克风，以便在您录制视频时录制音频。",
     "locationWhenInUse": "我们需要您的位置信息，以便显示附近内容并改善您的使用体验。",
     "locationAlways": "我们需要您的位置信息，以便在后台运行时也能显示附近内容并改善您的使用体验。"
-  }
+  },
+  "notification.index.page_title": "消息中心",
+  "notification.index.all": "全部",
+  "notification.index.system": "系统",
+  "notification.index.community": "社区",
+  "notification.index.mall": "商城",
+  "notification.index.mark_read": "标记已读",
+  "notification.index.mark_read_success": "全部标为已读成功",
+  "notification.index.mark_single_read_success": "标记已读成功",
+  "notification.index.delete": "删除",
+  "notification.index.delete_success": "删除成功",
+  "notification.index.delete_batch_success": "批量删除成功"
 }

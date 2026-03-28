@@ -65,6 +65,7 @@
   "my.menu.my_wishlist": "My Wishlist",
   "my.menu.settings": "Settings",
   "my.menu.about": "About Us",
+  "my.menu.messageCenter": "Message Center",
   "my.refreshNftList.confirm": "You can only refresh once a day. Are you sure you want to refresh?",
   "my.checkin_checked": "checked",
   "my.asset.ccToken": "In-Game",
@@ -349,5 +350,17 @@
     "microphone": "We need access to your microphone to record audio when you take videos in the app.",
     "locationWhenInUse": "We need your location to show nearby content and improve your experience.",
     "locationAlways": "We need your location to show nearby content and improve your experience, even when the app is in the background."
-  }
+  },
+  "message.index.page_title": "Message",
+  "notification.index.page_title": "Message Center",
+  "notification.index.all": "All",
+  "notification.index.system": "System",
+  "notification.index.community": "Community",
+  "notification.index.mall": "Store",
+  "notification.index.mark_read": "Mark as Read",
+  "notification.index.mark_read_success": "All marked as read successfully",
+  "notification.index.mark_single_read_success": "Marked as read successfully",
+  "notification.index.delete": "Delete",
+  "notification.index.delete_success": "Deleted successfully",
+  "notification.index.delete_batch_success": "Bulk deleted successfully"
 }
