@@ -69,7 +69,7 @@
         @scrolltolower="onScrollToLower"
       >
         <view class="scrollCnt">
-          <template v-if="socialList.data.length > 0">
+          <template v-if="socialList.data?.length > 0">
             <view class="cell socialBox" v-for="item in socialList.data" :key="item.id">
               <view class="socialItem">
                 <view class="socialHead">

@@ -10,7 +10,7 @@
   <view>
     <custom-nav :title="t('my.menu.my_post')">
       <template #default>
-        <template v-if="socialList.data.length > 0">
+        <template v-if="socialList.data?.length > 0">
           <view class="cell socialBox" v-for="item in socialList.data" :key="item.id">
             <view class="socialItem">
               <view class="delBox" @click="handleDelPost(item.id)"></view>
