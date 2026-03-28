@@ -41,7 +41,7 @@
               toUrl('/pages/cats/agreement/detail?id=' + agreementsMap?.user_login_agreement.id)
             "
           >
-            《{{ agreementsMap?.user_login_agreement.i18n_content.name }}》
+            《{{ agreementsMap?.user_login_agreement?.i18n_content.name }}》
           </text>
           {{ t('login.agreement_2') }}
           <text
@@ -49,7 +49,7 @@
               toUrl('/pages/cats/agreement/detail?id=' + agreementsMap?.user_privacy_policy.id)
             "
           >
-            《{{ agreementsMap?.user_privacy_policy.i18n_content.name }}》
+            《{{ agreementsMap?.user_privacy_policy?.i18n_content.name }}》
           </text>
         </view>
       </view>
