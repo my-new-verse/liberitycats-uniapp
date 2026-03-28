@@ -43,6 +43,7 @@
             >
               <image :src="getImageUrl(userStore.userInfo.level.icon)" mode="widthFix" />
             </view>
+            <!-- 隐藏argame -->
             <!-- <view class="gameIconBox">
               <view
                 class="gmAr"
@@ -50,6 +51,13 @@
                 @click="bindArGame"
               ></view>
             </view> -->
+            <view class="points" @click="toUrl('/pages/cats/asset/log?assetKey=point', true)">
+              <view class="label">{{ t('my.asset.points') }}:</view>
+              <view class="amount">
+                {{ formatNumber(assetResp?.point.usable_balance || 0, 0) }}
+              </view>
+              <view class="unit">g</view>
+            </view>
           </template>
         </view>
       </view>
@@ -113,7 +121,7 @@
               <view class="scrollOp"><view class="opr"></view></view>
             </view>
           </view>
-
+          <!--
           <view class="NftBox" v-if="userStore.isLogin">
             <view class="titleBox">
               <view class="titleLeft nftTitle">
@@ -177,7 +185,7 @@
                 </view>
               </view>
             </view>
-          </view>
+          </view> -->
 
           <view class="NftBox" v-if="userStore.isLogin && getServerOnOff('enable_nft')">
             <view class="titleBox">
@@ -421,7 +429,7 @@ import {
   getAllAssetTotalBalanceApiResponse,
   getAssetTotalBalanceApi,
   refreshLevelApi,
-  bindArGameApi,
+  // bindArGameApi,
 } from '@/service/api/user'
 import { getServerI18nKey } from '@/utils/i18n'
 uni.hideTabBar()
@@ -811,6 +819,20 @@ const bindArGame = () => {
         font-weight: 600;
         line-height: 56rpx;
         color: #ffffff;
+      }
+      .points {
+        font-size: 24rpx;
+        font-style: normal;
+        line-height: 56rpx;
+        color: #ffffff;
+        display: flex;
+        .amount {
+          margin: 0 12rpx;
+          font-weight: 600;
+        }
+        .unit {
+          font-weight: 600;
+        }
       }
       .connect {
         display: flex;

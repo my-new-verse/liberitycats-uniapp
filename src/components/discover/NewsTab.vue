@@ -1,7 +1,9 @@
 <template>
   <view class="socialOpBox">
-    <view class="opItem" :class="{ active: tabType === -1 }" @click="changeTab(-1)">快讯</view>
-    <view class="opItem" :class="{ active: tabType === 0 }" @click="changeTab(0)">新闻</view>
+    <!-- <view class="opItem" :class="{ active: tabType === -1 }" @click="changeTab(-1)">快讯</view> -->
+    <view class="opItem" :class="{ active: tabType === 0 }" @click="changeTab(0)">
+      {{ t('discover.news.tag.news') }}
+    </view>
   </view>
 
   <template v-if="tabType === -1">
@@ -62,7 +64,8 @@ import { formatRelativeTime, formatTime, getImageUrl, toUrl } from '@/utils'
 import { getNewsListApi } from '@/service/api/news'
 import { t } from '@/locale'
 
-const tabType = ref(-1)
+const tabType = ref(0)
+// const tabType = ref(-1)
 
 type LoadMoreState = 'loading' | 'finished' | 'error' | 'success'
 
