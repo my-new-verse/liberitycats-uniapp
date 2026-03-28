@@ -78,10 +78,7 @@ import {
   handleMarkReadApi,
 } from '@/service/api/message'
 import CustomNav2 from '@/components/CustomNav/CustomNav2.vue'
-
-import CommunityMessageItem from '@/components/message/CommunityMessageItem.vue'
-import MallMessageItem from '@/components/message/MallMessageItem.vue'
-import SystemMessageItem from '@/components/message/SystemMessageItem.vue'
+import { useUserStore } from '@/store/user'
 import MessageItem from '@/components/message/MessageItem'
 // 建立 category -> 组件 的映射
 // const componentMap = {
@@ -90,8 +87,7 @@ import MessageItem from '@/components/message/MessageItem'
 //   system: SystemMessageItem,
 // } as const
 // 语言标识
-const locale = uni.getLocale()
-const toast = useToast()
+const userStore = useUserStore()
 
 // 滚动到顶部监听
 const scrollTop = ref<number>(0)
@@ -247,6 +243,11 @@ const handleCategoryChange = (prop) => {
 
 // 跳转到消息详情
 const toDetail = (notificationItem: any) => {
+  if (!userStore.isLogin) {
+    // toast.show(t('common.toast.pleaseLogin'))
+    toUrl('/pages/cats/login', true, false)
+    return
+  }
   let { category, context } = notificationItem
   switch (category) {
     case 'mall':
