@@ -202,6 +202,10 @@ const updateState = (state: string) => {
 
 const socialFilter = ref('latest')
 const handleFilterChange = (filter: string) => {
+  if (filter === 'following' && userStore.isLogin === false) {
+    toUrl('/pages/cats/login', true)
+    return
+  }
   socialFilter.value = filter
   socialList.value.data = []
   socialList.value.current_page = 0
