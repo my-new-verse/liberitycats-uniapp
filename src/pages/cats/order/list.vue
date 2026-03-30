@@ -33,14 +33,15 @@
               :ignoreCompositionEvent="false"
             />
           </view>
+          <view class="kf filterBtn" @click="handleFilter"></view>
           <view class="kf" @click="handleKf"></view>
         </view>
       </view>
       <view class="navBg">
-        <view class="pbl2">
+        <view class="pbl2" :class="showFilter ? 'pb2-overlay' : ''">
           <view class="fbg"></view>
         </view>
-        <view class="pbr2">
+        <view class="pbr2" :class="showFilter ? 'pb2-overlay' : ''">
           <view class="fbg"></view>
         </view>
       </view>
@@ -104,7 +105,44 @@
         </view>
       </template>
     </view>
-
+    <!--   1）  待支付：刚下单尚未付款，展示剩余支付时间、支持取消订单。
+    2） 待发货：已付款、商家备货中，对应后台的已付款（未出库）状态。
+    3） 待收货：已发货，展示物流信息，用户可查看进度或确认收货。
+    4） 全部：所有状态 -->
+    <wd-popup v-model="showFilter" position="bottom" round :style="{ height: '30%' }">
+      <view class="filter-popup">
+        <view class="filter-header">
+          <text class="filter-title">{{ t('my_order.index.filter.popupTitle') }}</text>
+          <wd-icon name="close" @click="showFilter = false" />
+        </view>
+        <view class="filter-section">
+          <text class="section-title">{{ t('my_order.index.filter.statusTitle') }}</text>
+          <wd-row>
+            <wd-col :span="8" v-for="status in statusOptions" :key="status.value">
+              <wd-button
+                size="medium"
+                type="info"
+                :custom-class="
+                  filterProps.filterStatus === status.value ? 'activeFilterBtn' : 'filterBtn1'
+                "
+                @click="handleStatusChange(status.value)"
+                style="margin-right: 6rpx; width: 80%"
+              >
+                {{ status.label }}
+              </wd-button>
+            </wd-col>
+          </wd-row>
+        </view>
+        <view class="filter-footer">
+          <wd-button custom-class="mainBtn1 mainBtn2" plain @click="handleReset">
+            {{ t('my_order.index.filter.reset') }}
+          </wd-button>
+          <wd-button custom-class="mainBtn1" @click="handleConfirm">
+            {{ t('my_order.index.filter.search') }}
+          </wd-button>
+        </view>
+      </view>
+    </wd-popup>
     <wd-loadmore :state="state" @reload="loadMore" />
     <wd-backtop :scrollTop="scrollTop"></wd-backtop>
   </view>
@@ -138,6 +176,36 @@ const navHeight = ref<number>(0)
 const navHeaderPaddingTop = ref<number>(0)
 const cntPaddingTop = ref<number>(0)
 
+const showFilter = ref<boolean>(false)
+
+// 订单状态选项
+const statusOptions = ref([
+  {
+    label: '待支付',
+    value: 'PENDING_PAY',
+    status: 0,
+  },
+  {
+    label: '待发货',
+    value: 'PENDING_SHIP',
+    status: 1,
+  },
+  {
+    label: '待收货',
+    value: 'PENDING_RECEIVE',
+    status: 2,
+  },
+  {
+    label: '全部',
+    value: 'ALL',
+    status: 3,
+  },
+])
+
+// 当前选中的订单状态（空值代表全部）
+const filterProps = ref({
+  filterStatus: 'ALL',
+})
 onMounted(() => {
   // 获取状态栏高度
   const systemInfo = uni.getSystemInfoSync()
@@ -190,7 +258,11 @@ const searchOrderKey = ref<string>('')
 const loadMore = () => {
   state.value = 'loading'
   uni.showLoading()
-  getOrderListApi(responseData.value?.current_page + 1, searchOrderKey.value)
+  getOrderListApi(
+    responseData.value?.current_page + 1,
+    searchOrderKey.value,
+    filterProps.value.filterStatus,
+  )
     .then((res) => {
       if (!res.data) return
       responseData.value.data = responseData.value.data.concat(res.data.data)
@@ -230,6 +302,23 @@ const handleSearch = () => {
 
 const handleKf = () => {
   toUrl('/pages/cats/kf/add', true)
+}
+// 切换选中状态
+const handleStatusChange = (value: string) => {
+  filterProps.value.filterStatus = value
+}
+
+const handleReset = () => {
+  filterProps.value.filterStatus = 'ALL'
+}
+
+const handleConfirm = () => {
+  showFilter.value = false
+  handleSearch()
+}
+
+const handleFilter = () => {
+  showFilter.value = true
 }
 </script>
 
@@ -322,6 +411,10 @@ const handleKf = () => {
         background-position: 100%;
         background-size: 100%;
       }
+
+      .filterBtn {
+        background-image: url('~@/static/images/filter.png');
+      }
     }
   }
 
@@ -354,10 +447,17 @@ const handleKf = () => {
         border-radius: var(--liberty-cats-page-common-border-radius) 0 0 0;
       }
     }
+
     .pbr2 {
       right: 0;
       .fbg {
         border-radius: 0 var(--liberty-cats-page-common-border-radius) 0 0;
+      }
+    }
+    .pb2-overlay {
+      background: inherit;
+      .fbg {
+        background: inherit;
       }
     }
   }
@@ -401,5 +501,84 @@ const handleKf = () => {
     margin-top: 12rpx;
     margin-left: auto;
   }
+}
+
+.filter-popup {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 30rpx;
+
+  .filter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 40rpx;
+
+    .filter-title {
+      font-size: 32rpx;
+      font-weight: 600;
+      margin: auto;
+    }
+  }
+
+  .filter-section {
+    margin-bottom: 24rpx;
+
+    .filterBtn1 {
+      min-width: 110px;
+      border-radius: 16rpx;
+    }
+
+    .activeFilterBtn {
+      min-width: 110px;
+      border-radius: 16rpx;
+      color: #ff6b03;
+      text-align: center;
+      background: rgba($color: #ff6b03, $alpha: 0.1);
+      border: 2rpx solid #ff6b03;
+    }
+
+    .section-title {
+      font-size: 32rpx;
+      font-style: normal;
+      font-weight: 500;
+      line-height: 38rpx;
+      color: #261000;
+      margin-bottom: 20rpx;
+      display: block;
+    }
+
+    .filter-options {
+      display: flex;
+      gap: 20rpx;
+    }
+  }
+
+  .filter-footer {
+    display: flex;
+    gap: 20rpx;
+    margin-top: 40rpx;
+    .mainBtn1 {
+      width: 100%;
+      height: 88rpx;
+      font-size: 32rpx;
+      font-style: normal;
+      font-weight: 600;
+      color: #ffffff;
+      text-align: center;
+      background: #ff6b03;
+    }
+
+    .mainBtn2 {
+      color: #ff6b03;
+      background: var(--liberty-cats-page-background-color);
+      border: 2rpx solid #ff6b03;
+    }
+  }
+}
+
+::v-deep .wd-overlay {
+  background: var(--wot-overlay-bg, rgba(0, 0, 0, 0.25));
 }
 </style>

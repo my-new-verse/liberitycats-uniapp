@@ -101,10 +101,15 @@ export interface GetOrderListResponse {
   last_page: number
 }
 
-export const getOrderListApi = (page: number, searchGoodsKeyword?: string) => {
+export const getOrderListApi = (
+  page: number,
+  searchGoodsKeyword?: string,
+  view_status?: string,
+) => {
   return http.get<GetOrderListResponse>('/v1/mall/order/get-order-list', {
     page,
     searchGoodsKeyword,
+    view_status,
   })
 }
 

@@ -41,12 +41,12 @@ const tabbarList = [
     selectedIconPath: '/static/LibertyCats/type=on-1.png',
     text: '商城',
   },
-  {
-    pagePath: '/pages/tabbar/game',
-    iconPath: '/static/images/game/game@2x.png',
-    selectedIconPath: '/static/images/game/game@2x.png',
-    text: '游戏',
-  },
+  // {
+  //   pagePath: '/pages/tabbar/game',
+  //   iconPath: '/static/images/game/game@2x.png',
+  //   selectedIconPath: '/static/images/game/game@2x.png',
+  //   text: '游戏',
+  // },
   {
     pagePath: '/pages/tabbar/discover',
     iconPath: '/static/LibertyCats/type=off-2.png',

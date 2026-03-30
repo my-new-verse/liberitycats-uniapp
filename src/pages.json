@@ -364,6 +364,13 @@
       }
     },
     {
+      "path": "pages/cats/message/index",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/cats/news/detail",
       "type": "page",
       "style": {
