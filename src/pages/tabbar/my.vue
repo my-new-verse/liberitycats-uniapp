@@ -776,6 +776,7 @@ const bindArGame = () => {
   height: 360rpx;
   padding-right: 48rpx;
   padding-left: 48rpx;
+  padding-top: 48rpx;
   background: linear-gradient(329deg, #ff6b03 0%, #ee941a 100%);
   .kf {
     position: absolute;
@@ -909,7 +910,7 @@ const bindArGame = () => {
   left: 0;
   z-index: 98;
 
-  margin-top: -64rpx;
+  margin-top: -18rpx;
   background-color: var(--liberty-cats-page-background-color);
   border-radius: var(--liberty-cats-page-border-radius) var(--liberty-cats-page-border-radius) 0 0;
   .scrollBox {

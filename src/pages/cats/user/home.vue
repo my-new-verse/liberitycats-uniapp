@@ -56,7 +56,7 @@
       <view
         v-if="!userInfo.is_self"
         class="followBtn"
-        :style="{ top: `calc(${kfBoxTop} + 176rpx)` }"
+        :style="{ top: `calc(${kfBoxTop} + 176rpx + 48rpx)` }"
         :class="{ followed: userInfo.is_following === 1 }"
         @click="handleFollow"
       >
@@ -438,6 +438,7 @@ const handleFollow = () => {
   left: 0;
   z-index: 98;
   height: 360rpx;
+  padding-top: 48rpx;
   padding-right: 48rpx;
   padding-left: 48rpx;
   background: linear-gradient(329deg, #ff6b03 0%, #ee941a 100%);
@@ -526,7 +527,7 @@ const handleFollow = () => {
   right: 0;
   left: 0;
   z-index: 98;
-  margin-top: -64rpx;
+  margin-top: -18rpx;
   background-color: var(--liberty-cats-page-background-color);
   border-radius: var(--liberty-cats-page-border-radius) var(--liberty-cats-page-border-radius) 0 0;
   .scrollBox {
@@ -558,6 +559,8 @@ const handleFollow = () => {
 
 .backBtn {
   position: absolute;
+  top: 36rpx;
+  left: 32rpx;
   width: 48rpx;
   height: 48rpx;
   display: flex;
