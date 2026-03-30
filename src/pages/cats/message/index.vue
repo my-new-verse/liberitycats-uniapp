@@ -1,67 +1,82 @@
 <route lang="json5" type="page">
 {
-  layout: 'default',
   style: {
     navigationStyle: 'custom',
-    backgroundColor: '#f7f6f4',
-    enablePullDownRefresh: true, // 核心：开启下拉刷新
-    onReachBottomDistance: 50, // 上拉加载触发距离（默认50rpx）
-    pullDownRefresh: {
-      color: '#ff4d4f', // 刷新动画颜色
-      background: '#f7f6f4', // 刷新区域背景
-    },
   },
 }
 </route>
 <template>
-  <!-- <page-meta :page-style="`overflow:${commentPopupVisible ? 'hidden' : 'visible'};`"></page-meta> -->
-  <view class="page3" :class="[locale]">
-    <custom-nav2 :title="t('notification.index.page_title')" pageBackgroundColor="#f7f6f4">
+  <view>
+    <wd-tabs
+      v-model="activeCategory"
+      @click="handleCategoryChange"
+      :line-width="20"
+      swipeable
+      :style="{ paddingTop: navHeight + 'rpx' }"
+    >
+      <wd-tab
+        v-for="item in categoryList"
+        :key="item.value"
+        :title="`${item.label}`"
+        :name="item.value"
+        :badge-props="item.badgeProps"
+      ></wd-tab>
+    </wd-tabs>
+    <custom-nav :title="t('notification.index.page_title')">
       <template #default>
-        <wd-tabs v-model="activeCategory" @click="handleCategoryChange" :line-width="20" swipeable>
-          <wd-tab
-            v-for="item in categoryList"
-            :key="item.value"
-            :title="`${item.label}`"
-            :name="item.value"
-            :badge-props="item.badgeProps"
-          ></wd-tab>
-        </wd-tabs>
-        <!-- 消息列表内容 -->
-        <view class="cnt">
-          <view></view>
-          <template v-if="listData.data.length > 0">
-            <view class="messageItem" v-for="(item, index) in listData.data" :key="item.id">
-              <wd-swipe-action>
-                <MessageItem :message="item" @click="toDetail(item)"></MessageItem>
-                <template #right>
-                  <view class="button" style="background: #4d80f0" @click="handleMarkAsRead(item)">
-                    {{ $t('notification.index.mark_read') }}
+        <template v-if="listData.data?.length > 0">
+          <view class="cell socialBox" v-for="item in listData.data" :key="item.id">
+            <wd-swipe-action>
+              <view class="socialItem" @click.stop="toDetail(item)">
+                <view class="socialHead">
+                  <view class="unread-dot" :class="{ hide: item.is_read }"></view>
+                  <view class="avatarBox">
+                    <wd-icon
+                      custom-class="avatar"
+                      :name="getIconName(item)"
+                      size="22px"
+                      :color="item.is_read ? '#999999' : '#ff4d4f'"
+                    />
                   </view>
-                  <!-- <view class="button" style="background: #fa4350" @click="handleDelete(item)">{{
-                    $t('notification.index.delete') }}</view> -->
-                </template>
-              </wd-swipe-action>
-            </view>
-          </template>
-          <template v-else>
-            <view class="emptyBox">
-              <view class="emptyImg"></view>
-              <view class="emptyText">{{ t('common.empty') }}</view>
-            </view>
-          </template>
-        </view>
-        <!-- 分页加载 + 回到顶部 -->
-        <wd-loadmore :state="state" @reload="loadMore" />
-        <wd-backtop :scrollTop="scrollTop"></wd-backtop>
+                  <view class="nameWrap">
+                    <view class="name" style="margin-left: 0">{{ item.i18n?.title || '' }}</view>
+                  </view>
+                </view>
+                <view class="socialCntBox">
+                  <view class="socialCnt">
+                    {{ item.i18n?.content || '' }}
+                  </view>
+                  <view class="socialTime">
+                    {{ formatRelativeTime(item.create_time) }}
+                  </view>
+                </view>
+              </view>
+              <template #right>
+                <view class="button" style="background: #4d80f0" @click="handleMarkAsRead(item)">
+                  {{ $t('notification.index.mark_read') }}
+                </view>
+              </template>
+            </wd-swipe-action>
+          </view>
+        </template>
+        <template v-else>
+          <view class="emptyBox">
+            <view class="emptyImg"></view>
+          </view>
+        </template>
       </template>
-    </custom-nav2>
+
+      <template #footer>
+        <wd-loadmore :state="state" @reload="loadMore" />
+        <wd-backtop :scrollTop="scrollTop" />
+      </template>
+    </custom-nav>
   </view>
 </template>
 
 <script lang="ts" setup>
 import i18n, { t } from '@/locale/index'
-import { formatTime, toUrl } from '@/utils'
+import { formatRelativeTime, toUrl } from '@/utils'
 import { useToast } from 'wot-design-uni'
 // 滚动加载类型
 import { LoadMoreState } from 'wot-design-uni/components/wd-loadmore/types'
@@ -77,16 +92,8 @@ import {
   UnreadByCategoryResponse,
   handleMarkReadApi,
 } from '@/service/api/message'
-import CustomNav2 from '@/components/CustomNav/CustomNav2.vue'
+import CustomNav from '@/components/CustomNav/CustomNav.vue'
 import { useUserStore } from '@/store/user'
-import MessageItem from '@/components/message/MessageItem'
-// 建立 category -> 组件 的映射
-// const componentMap = {
-//   community: CommunityMessageItem,
-//   mall: MallMessageItem,
-//   system: SystemMessageItem,
-// } as const
-// 语言标识
 const userStore = useUserStore()
 
 // 滚动到顶部监听
@@ -175,6 +182,10 @@ onMounted(() => {
   getNotificationUnreadCount()
   loadMore()
 })
+// 页面加载
+// onLoad(() => {
+//   loadMore()
+// })
 
 // 滚动到底部加载更多
 onReachBottom(() => {
@@ -186,7 +197,8 @@ onReachBottom(() => {
 // 获取各分类未读数量
 const getNotificationUnreadCount = () => {
   getNotificationUnreadCountApi().then((res) => {
-    if (res.data) {
+    console.log(res)
+    if (res.data !== null) {
       categoryList.value[0].badgeProps.modelValue = res.data
     }
   })
@@ -217,7 +229,12 @@ const loadMore = () => {
       console.log(res)
 
       if (!res.data) return
-      listData.value.data = listData.value.data.concat(res.data.data)
+      if (res.data.current_page === 1) {
+        listData.value.data = res.data.data
+      } else if (res.data.current_page > 1) {
+        listData.value.data = listData.value.data.concat(res.data.data)
+      }
+      // listData.value.data = listData.value.data.concat(res.data.data)
       listData.value.current_page = res.data.current_page
       listData.value.last_page = res.data.last_page
       // 加载完成
@@ -248,6 +265,7 @@ const toDetail = (notificationItem: any) => {
     toUrl('/pages/cats/login', true, false)
     return
   }
+  handleMarkAsRead(notificationItem)
   let { category, context } = notificationItem
   switch (category) {
     case 'mall':
@@ -290,7 +308,6 @@ const toDetail = (notificationItem: any) => {
     default:
       break
   }
-  handleMarkAsRead(notificationItem)
 }
 const handleMarkAsRead = (notificationItem: any) => {
   if (notificationItem?.is_read == 1) return
@@ -335,6 +352,8 @@ onPullDownRefresh(() => {
   listData.value.current_page = 0
   listData.value.last_page = 1
   loadMore()
+  getUnreadByCategory()
+  getNotificationUnreadCount()
   // 设置超时保护，防止刷新状态无限挂起
   setTimeout(() => {
     if (isRefreshing.value && !refreshError.value) {
@@ -343,192 +362,103 @@ onPullDownRefresh(() => {
     }
   }, 10000) // 10 秒超时保护
 })
+
+// 根据分类和子类型匹配图标
+const getIconName = (item: any) => {
+  const { category, subtype } = item
+  // 系统消息固定图标
+  if (category === 'system') return 'notification'
+  // 社区消息图标
+  if (category === 'community') {
+    switch (subtype) {
+      case 'comment':
+        return 'chat1'
+      case 'like':
+        return 'heart'
+      case 'follow':
+        return 'add'
+      default:
+        return 'chat1'
+    }
+  }
+  // 商城消息图标
+  if (category === 'mall') {
+    switch (subtype) {
+      case 'payment_reminder':
+        return 'creditcard'
+      case 'order_created':
+        return 'add-circle1'
+      case 'payment_success':
+        return 'check-circle'
+      default:
+        return 'chat1'
+    }
+  }
+  // 默认图标
+  return 'chat1'
+}
 </script>
 
 <style lang="scss" scoped>
 @import '/src/style/base';
+@import '/src/style/social';
 
 .page {
   background-color: var(--liberty-cats-page-background-color);
-  min-height: 100vh;
 }
 
-// 自定义导航栏
-.customNav {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 998;
-  width: 100%;
-  overflow: hidden;
-  height: calc(104rpx + var(--liberty-cats-page-common-border-radius) + env(safe-area-inset-top));
-
-  .navHeaderBg {
-    width: 100%;
-    height: 104rpx;
-    background-color: var(--liberty-cats-primary-color);
-    padding-top: calc(env(safe-area-inset-top));
-    overflow: hidden;
-
-    .navCnt {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      width: calc(100% - 48rpx);
-      height: 104rpx;
-      padding: 0 24rpx;
-      position: relative;
-
-      /* 左侧返回 */
-      .left {
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-        width: 64rpx;
-        height: 44rpx;
-        flex-shrink: 0;
-
-        image {
-          width: 44rpx;
-          height: 44rpx;
-        }
-      }
-
-      /* 中间标题 —— 真正居中 */
-      .navTitle {
-        position: absolute;
-        left: 50%;
-        transform: translateX(-50%);
-        top: 50%;
-        transform: translate(-50%, -50%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        max-width: 60%;
-        overflow: hidden;
-
-        font-size: 34rpx;
-        font-weight: 500;
-        color: #ffffff;
-        text-align: center;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-
-        &-text {
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-      }
-
-      /* 右侧按钮组 */
-      .rightBtns {
-        display: flex;
-        align-items: center;
-        gap: 20rpx;
-        /* 两个按钮之间的间距 */
-        flex-shrink: 0;
-      }
-
-      .markReadBtn {
-        font-size: 28rpx;
-        color: #fff;
-        white-space: nowrap;
-      }
-    }
-  }
-
-  .navBg {
-    display: flex;
-    justify-content: space-between;
-    width: 100%;
-    height: var(--liberty-cats-page-common-border-radius);
-    background-color: var(--liberty-cats-primary-color);
-
-    .pbl2,
-    .pbr2 {
-      width: var(--liberty-cats-page-common-border-radius);
-      height: var(--liberty-cats-page-common-border-radius);
-      background-color: #f7f6f4;
-      border-top-left-radius: var(--liberty-cats-page-common-border-radius);
-    }
-
-    .pbr2 {
-      border-top-left-radius: 0;
-      border-top-right-radius: var(--liberty-cats-page-common-border-radius);
-    }
-  }
+:deep(.cnt) {
+  background-color: var(--liberty-cats-page-background-color) !important;
 }
 
-// 分类Tab
-.categoryTab {
-  position: fixed;
-  left: 0;
-  right: 0;
-  z-index: 997;
+:deep(.fbg) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
+:deep(.avatar) {
   display: flex;
   align-items: center;
-  justify-content: space-around;
-  width: 100%;
-  height: 88rpx;
-  background-color: #fff;
-  border-bottom: 1rpx solid #eee;
+  border: 0 !important;
+  background-color: inherit !important;
+}
 
-  .tabItem {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    padding: 0 20rpx;
+:deep(.cnt) {
+  padding-top: calc(40px + var(--liberty-cats-page-common-border-radius)) !important;
+}
 
-    .tabTxt {
-      font-size: 28rpx;
-      color: #666;
-    }
+.nameWrap {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
 
-    .badge {
-      position: absolute;
-      top: 16rpx;
-      right: 0;
-      min-width: 32rpx;
-      height: 32rpx;
-      line-height: 32rpx;
-      padding: 0 8rpx;
-      font-size: 20rpx;
-      color: #fff;
-      background-color: #ff6b03;
-      border-radius: 16rpx;
-      text-align: center;
-    }
+:deep(.wd-tabs) {
+  background-color: transparent;
 
-    &.active {
-      .tabTxt {
-        color: #ff6b03;
-        font-weight: 600;
-      }
-    }
+  .wd-tabs__nav {
+    position: fixed;
+    // top: env(safe-area-inset-top);
+    width: 100vw;
+    left: 0;
+    z-index: 1;
+    // background-color: #f7f6f4;
   }
 }
 
-// 列表内容
-.cnt {
-  // padding-right: 0px !important;
-  // padding-left: 0px !important;
-  // padding-right: 0px !important;
-  padding-top: 88rpx !important;
-}
+/* 未读红点 */
+.unread-dot {
+  width: 8px;
+  height: 8px;
+  background: red;
+  border-radius: 50%;
+  margin-right: 8px;
+  // margin-top: 8px;
+  flex-shrink: 0;
 
-.messageItem {
-  // padding: 32rpx 24rpx;
-  // margin-bottom: 24rpx;
-  background-color: #fff;
-  border-bottom: 1px solid #f0f0f0;
-  padding: 0;
-  width: 100%;
-  border-radius: 32rpx;
+  &.hide {
+    display: none;
+  }
 }
-
 .button {
   // display: inline-block;
   display: inline-flex;
@@ -546,32 +476,7 @@ onPullDownRefresh(() => {
   // line-height: 100%;
 }
 
-:deep(.fixedBar) {
-  background-color: #f7f6f4;
-}
-
-.page3 {
-  position: relative;
-  min-height: 100vh;
-  background-color: #f7f6f4;
-}
-
-:deep(.wd-tabs) {
-  background-color: transparent;
-
-  .wd-tabs__nav {
-    position: fixed;
-    // top: env(safe-area-inset-top);
-    width: 100vw;
-    left: 0;
-    z-index: 96;
-    background-color: #f7f6f4;
-  }
-}
-
-:deep(.mallTabs) {
-  .wd-tabs__line {
-    background: var(--liberty-cats-primary-color);
-  }
+:deep(.fbg) {
+  background-color: #fff !important;
 }
 </style>
