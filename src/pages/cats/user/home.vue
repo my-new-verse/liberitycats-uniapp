@@ -42,6 +42,14 @@
           >
             <image :src="getImageUrl(userInfo?.level?.icon)" mode="widthFix" />
           </view>
+          <!-- 猫粮 -->
+          <view class="points">
+            <view class="label">{{ t('my.asset.points') }}:</view>
+            <view class="amount">
+              {{ formatNumber(userInfo?.cat_food_balance || 0, 0) }}
+            </view>
+            <view class="unit">g</view>
+          </view>
         </view>
       </view>
 
@@ -186,7 +194,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { t } from '@/locale/index'
-import { formatNickname, formatRelativeTime, getImageUrl, toUrl } from '@/utils'
+import { formatNickname, formatRelativeTime, getImageUrl, toUrl, formatNumber } from '@/utils'
 import { useUserStore } from '@/store/user'
 import { useToast, useMessage } from 'wot-design-uni'
 import { LoadMoreState } from 'wot-design-uni/components/wd-loadmore/types'
@@ -473,6 +481,20 @@ const handleFollow = () => {
         font-weight: 600;
         line-height: 56rpx;
         color: #ffffff;
+      }
+      .points {
+        font-size: 24rpx;
+        font-style: normal;
+        line-height: 56rpx;
+        color: #ffffff;
+        display: flex;
+        .amount {
+          margin: 0 12rpx;
+          font-weight: 600;
+        }
+        .unit {
+          font-weight: 600;
+        }
       }
       .level {
         height: 56rpx;
