@@ -21,7 +21,7 @@
               @click="toAdUrl('https://www.libertycatsnfts.com')"
               v-if="getServerOnOff('about_exchange_link')"
             >
-              <view>https://libertycatsnfts.com</view>
+              <view style="color: #000 !important">https://libertycatsnfts.com</view>
               <view class="dot"></view>
             </view>
           </view>
