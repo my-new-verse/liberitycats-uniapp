@@ -46,14 +46,14 @@
             <view class="nameWrap">
               <view class="name">{{ formatNickname(item.member.nickname, 22) }}</view>
 
-              <view
+              <!-- <view
                 v-if="!item.member.is_self"
                 class="followBtn"
                 :class="{ followed: item.member.is_following === 1 }"
                 @click="handleFollow(item)"
               >
                 {{ item.member.is_following === 1 ? '取消关注' : '关注' }}
-              </view>
+              </view> -->
             </view>
 
             <view v-if="item.tag?.name" class="tag" :class="item.tag?.extend_json?.class">
