@@ -254,6 +254,32 @@ export const getImageUrl = (path: string, useCache?: boolean) => {
   }
   return url
 }
+export const getStickerUrl = (path: string, useCache?: boolean) => {
+  if (!path) return ''
+  const systemConfig = uni.getStorageSync('systemConfigV2')?.config || {}
+  const systemInfo = uni.getSystemInfoSync()
+  const isIOS =
+    systemInfo.platform?.toLowerCase() === 'ios' || systemInfo.osName?.toLowerCase() === 'ios'
+  let url = ''
+  // 如果是 gif 格式，去掉 ? 及其后参数
+  if (!isIOS) {
+    if (path.match(/\.gif($|\?)/i)) {
+      // path = path.split('?')[0] + '?x-oss-process=image/resize,m_lfit,w_200,h_200,limit_1/format,gif'
+      path = path.split('?')[0] + '?x-oss-process=image/resize,w_200,h_200,m_fill/format,gif'
+    }
+  }
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    url = path
+  } else {
+    url = `${import.meta.env.VITE_IMAGE_HOST}${path}`
+  }
+  if (useCache) {
+    const md5Url = CryptoJS.MD5(url).toString()
+    url = getImageCache(url, md5Url)
+    // console.log('getImageUrl:', url)
+  }
+  return url
+}
 
 const getImageCache = (filePath, fileMd5) => {
   const storageKey = 'IMAGE_CACHE_INFO_' + fileMd5

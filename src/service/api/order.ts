@@ -53,6 +53,7 @@ export interface OrderDetailResponse {
   shipping_fee: string
   order_no: string
   order_status: number
+  orderStatusDesc: string
   pay_status: number
   pay_id: number
   logistics_id: number
