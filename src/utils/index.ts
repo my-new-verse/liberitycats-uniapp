@@ -254,6 +254,7 @@ export const getImageUrl = (path: string, useCache?: boolean) => {
   }
   return url
 }
+// 解决merge
 export const getStickerUrl = (path: string, useCache?: boolean) => {
   if (!path) return ''
   const systemConfig = uni.getStorageSync('systemConfigV2')?.config || {}

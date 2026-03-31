@@ -80,6 +80,7 @@
                 <view class="priceUnit">{{ item.order_currency }}</view>
               </view>
               <view class="statuBox">
+                <!-- 解决merge冲突 -->
                 {{ item.orderStatusDesc }}
               </view>
             </view>

@@ -666,6 +666,7 @@ const getCommentList = async () => {
     // 为每条评论预计算昵称，避免模板频繁调用格式化函数导致卡顿
     const mapped = (res.data.data || []).map((it: any) => {
       const imgs = Array.isArray(it?.images) ? it.images : []
+      // 解决merge
       const processedImages = imgs.map((u: string) => getStickerUrl(u))
       return {
         ...it,

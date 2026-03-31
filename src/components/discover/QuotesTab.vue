@@ -358,6 +358,7 @@ onMounted(async () => {
 })
 
 // 组件卸载时移除事件监听
+// 解决merge
 onUnmounted(() => {
   console.log('destroyWebView ========')
   destroyWebView()
