@@ -60,7 +60,13 @@
         :class="{ followed: userInfo.is_following === 1 }"
         @click="handleFollow"
       >
-        {{ userInfo.is_following === 1 ? '取消关注' : '关注' }}
+        <wd-button plain custom-class="follow-btn" size="small">
+          {{
+            userInfo.is_following === 1
+              ? t('social.index.user.unfollow')
+              : t('social.index.user.follow')
+          }}
+        </wd-button>
       </view>
     </view>
 
@@ -576,12 +582,6 @@ const handleFollow = () => {
   position: absolute;
   z-index: 99;
   right: 32rpx;
-  padding: 6rpx 14rpx;
-  border-radius: 50rpx;
-  background-color: #ffffff;
-  color: #999;
-  border: 1rpx solid #ddd;
-  font-size: 26rpx;
   line-height: 1.1;
   text-align: center;
   white-space: nowrap;
@@ -592,9 +592,16 @@ const handleFollow = () => {
   justify-content: center;
   min-height: 36rpx;
   &.followed {
-    background-color: #ffffff;
-    color: #999;
-    border: 1rpx solid #ddd;
+    // background-color: #ffffff;
+    // color: #999;
+    // border: 1rpx solid #ddd;
+  }
+}
+:deep() {
+  .follow-btn {
+    background: inherit !important;
+    border-color: #fff !important;
+    color: #fff !important;
   }
 }
 </style>
