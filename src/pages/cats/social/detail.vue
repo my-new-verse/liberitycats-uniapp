@@ -17,7 +17,7 @@
           <view class="socialBox">
             <view class="socialItem">
               <view class="socialHead">
-                <view class="avatarBox">
+                <view class="avatarBox" @click="toUserHome(postDetail?.member_id)">
                   <image
                     class="avatar"
                     :src="getImageUrl(postDetail?.member?.avatar + '?x-oss-process=style/jzcq')"
@@ -127,7 +127,7 @@
                 :id="'commentItem_' + item.id"
                 :class="{ highlight: highlightId === `commentItem_${item.id}` }"
               >
-                <view class="avatarBox">
+                <view class="avatarBox" @click="toUserHome(item.member_id)">
                   <image
                     class="avatar"
                     :src="getImageUrl(item.member.avatar + '?x-oss-process=style/jzcq')"
@@ -894,6 +894,13 @@ const highlightTargetElement = (targetId: string) => {
   setTimeout(() => {
     highlightId.value = ''
   }, 1000)
+}
+
+// 跳转用户主页
+const toUserHome = (memberId: number) => {
+  uni.navigateTo({
+    url: `/pages/cats/user/home?member_id=${memberId}`,
+  })
 }
 </script>
 
