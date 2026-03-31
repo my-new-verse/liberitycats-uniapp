@@ -155,6 +155,8 @@
   "social.detail.content.not_audit_seed_myself": "內容未稽核，僅自己可見",
   "social.index.post.report": "举报帖子",
   "social.index.user.block": "屏蔽用户",
+  "social.index.user.follow": "關注",
+  "social.index.user.unfollow": "取消關注",
 
   "news.detail.page_title": "新聞詳情",
 

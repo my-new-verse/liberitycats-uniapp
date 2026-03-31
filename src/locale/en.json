@@ -152,6 +152,8 @@
   "social.detail.content.not_audit_seed_myself": "Content not reviewed, only visible to oneself",
   "social.index.post.report": "Report Post",
   "social.index.user.block": "Block User",
+  "social.index.user.follow": "Follow",
+  "social.index.user.unfollow": "Unfollow",
 
   "news.detail.page_title": "News Detail",
 
