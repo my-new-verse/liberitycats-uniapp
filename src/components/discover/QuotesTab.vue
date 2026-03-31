@@ -8,15 +8,6 @@
         热门榜
       </view>
     </view>
-
-    <template v-if="tabType === 'liberty'">
-      <view style="padding: 32rpx; background-color: #ffffff; border-radius: 32rpx">
-        <view class="web" :style="{ height: webHeightPx ? webHeightPx + 'px' : undefined }">
-          <web-view id="myWebView" src="https://lcat8.com"></web-view>
-        </view>
-      </view>
-    </template>
-
     <template v-if="tabType === 'hot'">
       <template v-if="getServerOnOff('about_exchange_link')">
         <view class="cell" @click="openUrl(getServerOnOff('quote_okx_url', 'common', true))">
@@ -99,6 +90,32 @@
         </view>
       </view>
     </template>
+    <!-- #ifdef APP-PLUS -->
+    <view></view>
+    <view
+      style="padding: 32rpx; background-color: #ffffff; border-radius: 32rpx"
+      v-show="tabType === 'liberty'"
+    >
+      <view class="web" :style="{ height: webHeightPx ? webHeightPx + 'px' : undefined }">
+        <view>
+          <web-view id="myWebView" src="https://lcat8.com"></web-view>
+        </view>
+      </view>
+    </view>
+    <!-- #endif -->
+    <!-- #ifdef H5 -->
+    <template v-if="tabType === 'liberty'">
+      <view style="padding: 32rpx; background-color: #ffffff; border-radius: 32rpx">
+        <view class="web" :style="{ height: webHeightPx ? webHeightPx + 'px' : undefined }">
+          <web-view
+            v-show="tabType === 'liberty'"
+            id="myWebView"
+            src="https://lcat8.com"
+          ></web-view>
+        </view>
+      </view>
+    </template>
+    <!-- #endif -->
   </view>
 </template>
 
@@ -297,8 +314,24 @@ const changeTab = async (type) => {
     fixWebViewForApp()
   }
 }
+const destroyWebView = () => {
+  // #ifdef APP-PLUS
+  // 1. 获取当前页面的 WebView 实例
+  const pages = getCurrentPages()
+  const page = pages[pages.length - 1]
+  const currentWebview = page.$getAppWebview()
 
-onMounted(() => {
+  // 2. 查找子 WebView（<web-view> 是子窗口）
+  const children = currentWebview.children()
+  if (children.length > 0) {
+    const wv = children[0]
+    wv.close() // 关闭并销毁
+    // 或 wv.hide() 只是隐藏，不销毁
+  }
+  // #endif
+}
+
+onMounted(async () => {
   const systemInfo = uni.getSystemInfoSync()
   const statusBarHeight = systemInfo.statusBarHeight || 0
 
@@ -319,10 +352,15 @@ onMounted(() => {
     isRefreshing = true
     loadQuotes(1)
   })
+  await nextTick()
+  await updateWebHeight()
+  fixWebViewForApp()
 })
 
 // 组件卸载时移除事件监听
 onUnmounted(() => {
+  console.log('destroyWebView ========')
+  destroyWebView()
   uni.$off('refreshQuotesTab')
 })
 

@@ -73,10 +73,15 @@
             </view>
           </view>
           <view class="extend">
-            <view class="priceBox">
-              <view class="label">{{ t('my_order.index.actual_payment') }}</view>
-              <view class="price">{{ item.order_total_price }}</view>
-              <view class="priceUnit">{{ item.order_currency }}</view>
+            <view class="price-and-status">
+              <view class="priceBox">
+                <view class="label">{{ t('my_order.index.actual_payment') }}</view>
+                <view class="price">{{ item.order_total_price }}</view>
+                <view class="priceUnit">{{ item.order_currency }}</view>
+              </view>
+              <view class="statuBox">
+                {{ item.orderStatusDesc }}
+              </view>
             </view>
             <view class="detailBtn">
               <wd-button
@@ -128,7 +133,7 @@
                 @click="handleStatusChange(status.value)"
                 style="margin-right: 6rpx; width: 80%"
               >
-                {{ status.label }}
+                {{ t('my_order.index.filter.' + status.value) }}
               </wd-button>
             </wd-col>
           </wd-row>
@@ -181,22 +186,18 @@ const showFilter = ref<boolean>(false)
 // 订单状态选项
 const statusOptions = ref([
   {
-    label: '待支付',
     value: 'PENDING_PAY',
     status: 0,
   },
   {
-    label: '待发货',
     value: 'PENDING_SHIP',
     status: 1,
   },
   {
-    label: '待收货',
     value: 'PENDING_RECEIVE',
     status: 2,
   },
   {
-    label: '全部',
     value: 'ALL',
     status: 3,
   },
@@ -470,28 +471,50 @@ const handleFilter = () => {
   width: 100%;
   margin-top: 24rpx;
   margin-left: auto;
-  .priceBox {
+
+  .price-and-status {
     display: flex;
     align-items: baseline;
-    justify-content: flex-end;
     width: 100%;
     margin-left: auto;
-    color: #261000;
-    .label {
-      font-size: 28rpx;
-      font-weight: 400;
-      line-height: 33rpx;
-    }
-    .price {
-      margin: 24rpx 8rpx;
-      font-size: 28rpx;
-      font-weight: 500;
-      line-height: 33rpx;
-    }
-    .priceUnit {
-      font-size: 20rpx;
-      font-weight: 400;
+
+    .priceBox {
+      display: flex;
+      align-items: baseline;
+      justify-content: flex-start;
+      width: 100%;
+      margin-left: auto;
       color: #261000;
+
+      .label {
+        font-size: 28rpx;
+        font-weight: 400;
+        line-height: 33rpx;
+      }
+
+      .price {
+        margin: 24rpx 8rpx;
+        font-size: 28rpx;
+        font-weight: 500;
+        line-height: 33rpx;
+      }
+
+      .priceUnit {
+        font-size: 20rpx;
+        font-weight: 400;
+        color: #261000;
+      }
+    }
+
+    .statuBox {
+      display: flex;
+      align-items: baseline;
+      justify-content: flex-end;
+      width: 100%;
+      margin-left: auto;
+      font-size: 28rpx;
+      font-weight: bold;
+      color: var(--liberty-cats-primary-color);
     }
   }
 
@@ -559,6 +582,8 @@ const handleFilter = () => {
     display: flex;
     gap: 20rpx;
     margin-top: 40rpx;
+    margin-bottom: 28rpx;
+
     .mainBtn1 {
       width: 100%;
       height: 88rpx;

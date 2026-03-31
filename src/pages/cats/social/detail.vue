@@ -308,7 +308,14 @@ import {
   deletePostApi,
   reportPostApi,
 } from '@/service/api/community'
-import { formatNickname, formatRelativeTime, getImageUrl, openUrl, toUrl } from '@/utils'
+import {
+  formatNickname,
+  formatRelativeTime,
+  getImageUrl,
+  openUrl,
+  toUrl,
+  getStickerUrl,
+} from '@/utils'
 import { LoadMoreState } from 'wot-design-uni/components/wd-loadmore/types'
 import { useToast, useMessage } from 'wot-design-uni'
 import { useUserStore } from '@/store'
@@ -659,7 +666,7 @@ const getCommentList = async () => {
     // 为每条评论预计算昵称，避免模板频繁调用格式化函数导致卡顿
     const mapped = (res.data.data || []).map((it: any) => {
       const imgs = Array.isArray(it?.images) ? it.images : []
-      const processedImages = imgs.map((u: string) => getImageUrl(u))
+      const processedImages = imgs.map((u: string) => getStickerUrl(u))
       return {
         ...it,
         _nickname: formatNickname(it?.member?.nickname || '', 22),
