@@ -56,7 +56,7 @@
                         custom-class="mediaImgItem"
                         mode="widthFix"
                         :src="getImageUrl(image + '?x-oss-process=style/jzcq')"
-                        :preview-src="postDetail.images.map((item) => getImageUrl(item))"
+                        :preview-src="postDetail.images.map((item) => getImageUrl(item))[index]"
                         :enable-preview="true"
                       />
                     </template>
@@ -151,7 +151,7 @@
                         custom-class="mediaImg"
                         :src="img"
                         :enable-preview="true"
-                        :preview-src="item._previewImages"
+                        :preview-src="item._previewImages[index]"
                       />
                     </template>
                   </view>
@@ -667,7 +667,7 @@ const getCommentList = async () => {
     const mapped = (res.data.data || []).map((it: any) => {
       const imgs = Array.isArray(it?.images) ? it.images : []
       // 解决merge
-      const processedImages = imgs.map((u: string) => getStickerUrl(u))
+      const processedImages = imgs.map((u: string) => getImageUrl(u))
       return {
         ...it,
         _nickname: formatNickname(it?.member?.nickname || '', 22),

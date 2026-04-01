@@ -80,7 +80,7 @@
                   custom-class="mediaImgItem"
                   mode="widthFix"
                   :src="getImageUrl(item.images[0] + '?x-oss-process=style/sqdt')"
-                  :preview-src="item.images.map((item) => getImageUrl(item))"
+                  :preview-src="item.images.map((item) => getImageUrl(item))[0]"
                   :enable-preview="true"
                 />
               </template>
@@ -90,7 +90,7 @@
                     custom-class="mediaImgItem"
                     mode="widthFix"
                     :src="getImageUrl(image + '?x-oss-process=style/jzcq')"
-                    :preview-src="item.images.map((item) => getImageUrl(item))"
+                    :preview-src="item.images.map((item) => getImageUrl(item))[index]"
                     :enable-preview="true"
                   />
                 </template>

@@ -1,7 +1,12 @@
 <template>
   <view>
     <view class="socialOpBox">
-      <view class="opItem" :class="{ active: tabType === 'liberty' }" @click="changeTab('liberty')">
+      <view
+        class="opItem"
+        :class="{ active: tabType === 'liberty' }"
+        @click="changeTab('liberty')"
+        v-if="getServerOnOff('enable_quote')"
+      >
         Liberty Cats
       </view>
       <view class="opItem" :class="{ active: tabType === 'hot' }" @click="changeTab('hot')">
@@ -91,10 +96,9 @@
       </view>
     </template>
     <!-- #ifdef APP-PLUS -->
-    <view></view>
     <view
       style="padding: 32rpx; background-color: #ffffff; border-radius: 32rpx"
-      v-show="tabType === 'liberty'"
+      v-show="tabType === 'liberty' && getServerOnOff('enable_quote')"
     >
       <view class="web" :style="{ height: webHeightPx ? webHeightPx + 'px' : undefined }">
         <view>
@@ -104,7 +108,7 @@
     </view>
     <!-- #endif -->
     <!-- #ifdef H5 -->
-    <template v-if="tabType === 'liberty'">
+    <template v-if="tabType === 'liberty' && getServerOnOff('enable_quote')">
       <view style="padding: 32rpx; background-color: #ffffff; border-radius: 32rpx">
         <view class="web" :style="{ height: webHeightPx ? webHeightPx + 'px' : undefined }">
           <web-view
@@ -309,9 +313,11 @@ const changeTab = async (type) => {
   tabType.value = type
 
   if (type === 'liberty') {
-    await nextTick()
-    await updateWebHeight()
-    fixWebViewForApp()
+    if (getServerOnOff('enable_quote')) {
+      await nextTick()
+      await updateWebHeight()
+      fixWebViewForApp()
+    }
   }
 }
 const destroyWebView = () => {
@@ -352,16 +358,20 @@ onMounted(async () => {
     isRefreshing = true
     loadQuotes(1)
   })
-  await nextTick()
-  await updateWebHeight()
-  fixWebViewForApp()
+  if (getServerOnOff('enable_quote')) {
+    await nextTick()
+    await updateWebHeight()
+    fixWebViewForApp()
+  }
 })
 
 // 组件卸载时移除事件监听
 // 解决merge
 onUnmounted(() => {
   console.log('destroyWebView ========')
-  destroyWebView()
+  if (getServerOnOff('enable_quote')) {
+    destroyWebView()
+  }
   uni.$off('refreshQuotesTab')
 })
 
