@@ -153,13 +153,17 @@ $tabbar-active-color: #ff6b03;
 }
 
 // 中间按钮特殊样式
-.tabbar-item:nth-child(3) {
+.tabbar-item:nth-child(3):nth-last-child(3) {
   .tabbar-item-content {
     .tabbar-item__icon {
       width: $tabbar-center-icon-size;
       height: $tabbar-center-icon-size;
     }
   }
+}
+
+.tabbar-item:nth-child(2) {
+  top: 0.5rpx;
 }
 
 // 平板适配

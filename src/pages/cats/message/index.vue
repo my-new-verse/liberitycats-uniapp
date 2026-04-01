@@ -445,6 +445,12 @@ const getIconName = (item: any) => {
   }
 }
 
+:deep(.zh-Hans, .zh-Hant) {
+  .socialBox .socialItem .socialCntBox .socialCnt {
+    font-family: Alibaba PuHuiTi2 !important;
+  }
+}
+
 /* 未读红点 */
 .unread-dot {
   width: 8px;

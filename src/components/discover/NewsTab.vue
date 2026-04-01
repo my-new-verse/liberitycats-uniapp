@@ -1,6 +1,8 @@
 <template>
   <view class="socialOpBox">
-    <!-- <view class="opItem" :class="{ active: tabType === -1 }" @click="changeTab(-1)">快讯</view> -->
+    <view class="opItem" :class="{ active: tabType === -1 }" @click="changeTab(-1)">
+      {{ t('discover.news.tag.flash') }}
+    </view>
     <view class="opItem" :class="{ active: tabType === 0 }" @click="changeTab(0)">
       {{ t('discover.news.tag.news') }}
     </view>

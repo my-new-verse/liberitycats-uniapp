@@ -170,6 +170,7 @@
   "discover.social.filter.latest": "Latest",
   "discover.social.tag.official": "Official",
   "discover.news.tag.news": "News",
+  "discover.news.tag.flash": "Flash",
   "discover.quotes.op.title": "Quotes",
   "discover.quotes.op.currency_usdt": "USDT",
   "discover.tabs.fiat.toast.input_number": "Please enter a number",
