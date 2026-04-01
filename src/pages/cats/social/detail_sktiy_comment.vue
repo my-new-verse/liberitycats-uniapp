@@ -57,7 +57,7 @@
                       custom-class="mediaImgItem"
                       mode="widthFix"
                       :src="getImageUrl(image + '?x-oss-process=style/jzcq')"
-                      :preview-src="postDetail.images.map((item) => getImageUrl(item))"
+                      :preview-src="postDetail.images.map((item) => getImageUrl(item))[index]"
                       :enable-preview="true"
                     />
                   </template>
@@ -151,7 +151,7 @@
                       custom-class="mediaImg"
                       :src="getImageUrl(image)"
                       :enable-preview="true"
-                      :preview-src="item.images.map((item) => getImageUrl(item))"
+                      :preview-src="item.images.map((item) => getImageUrl(item))[index]"
                     />
                   </template>
                 </view>
