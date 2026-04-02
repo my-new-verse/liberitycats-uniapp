@@ -49,15 +49,18 @@
                   v-if="item.images.length > 0"
                   :class="{ mediaImg4: item.images.length === 4 }"
                 >
-                  <template v-for="(image, index) in item.images" :key="index">
+                  <view
+                    v-for="(image, index) in item.images"
+                    :key="index"
+                    @tap.stop="handlePreview(item.images, index)"
+                  >
                     <wd-img
                       custom-class="mediaImgItem"
                       mode="widthFix"
                       :src="getImageUrl(image + '?x-oss-process=style/jzcq')"
                       :enable-preview="false"
-                      @click.stop="handlePreview(item.images, index)"
                     />
-                  </template>
+                  </view>
                 </view>
                 <view class="socialTime">
                   {{ formatRelativeTime(item.create_time) }}
