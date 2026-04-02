@@ -24,7 +24,7 @@
                   />
                   <view class="levelIcon">
                     <image
-                      :src="`/static/images/level/${postDetail.member?.level}.png`"
+                      :src="`/static/images/level/${postDetail.member?.level_id}.png`"
                       mode="scaleToFill"
                     />
                   </view>
@@ -50,23 +50,13 @@
                   v-if="postDetail?.images?.length > 0"
                   :class="{ mediaImg4: postDetail.images.length === 4 }"
                 >
-                  <template v-if="postDetail.images.length > 1">
-                    <template v-for="(image, index) in postDetail.images" :key="index">
-                      <wd-img
-                        custom-class="mediaImgItem"
-                        mode="widthFix"
-                        :src="getImageUrl(image + '?x-oss-process=style/jzcq')"
-                        :preview-src="postDetail.images.map((item) => getImageUrl(item))[index]"
-                        :enable-preview="true"
-                      />
-                    </template>
-                  </template>
-                  <template v-else>
+                  <template v-for="(image, index) in postDetail.images" :key="index">
                     <wd-img
                       custom-class="mediaImgItem"
                       mode="widthFix"
-                      :src="getImageUrl(postDetail.images[0])"
-                      :enable-preview="true"
+                      :src="getImageUrl(image + '?x-oss-process=style/jzcq')"
+                      :enable-preview="false"
+                      @click="handlePreview(postDetail.images, index)"
                     />
                   </template>
                 </view>
@@ -150,8 +140,8 @@
                       <wd-img
                         custom-class="mediaImg"
                         :src="img"
-                        :enable-preview="true"
-                        :preview-src="item._previewImages[index]"
+                        :enable-preview="false"
+                        @click="handlePreview(item._previewImages, index, false)"
                       />
                     </template>
                   </view>
@@ -315,6 +305,7 @@ import {
   openUrl,
   toUrl,
   getStickerUrl,
+  handlePreview,
 } from '@/utils'
 import { LoadMoreState } from 'wot-design-uni/components/wd-loadmore/types'
 import { useToast, useMessage } from 'wot-design-uni'

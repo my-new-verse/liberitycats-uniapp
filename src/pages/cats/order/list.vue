@@ -456,12 +456,16 @@ const handleFilter = () => {
         border-radius: 0 var(--liberty-cats-page-common-border-radius) 0 0;
       }
     }
-    .pb2-overlay {
-      background: inherit;
-      .fbg {
-        background: inherit;
-      }
-    }
+    //   .pb2-overlay {
+    //     // background: inherit;
+    //     .fbg {
+    //       background: inherit;
+    // background-color: #000;
+    // // opacity: 0.25;
+    // z-index: 999;
+    // // background-color: var(--wot-overlay-bg, rgba(0, 0, 0, 0.25));;
+    //     }
+    //   }
   }
 }
 
@@ -606,5 +610,10 @@ const handleFilter = () => {
 
 ::v-deep .wd-overlay {
   background: var(--wot-overlay-bg, rgba(0, 0, 0, 0.25));
+  position: absolute !important;
+  z-index: 999 !important;
+}
+::v-deep .wd-popup-wrapper .wd-popup {
+  z-index: 1000 !important;
 }
 </style>

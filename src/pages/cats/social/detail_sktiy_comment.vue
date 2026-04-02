@@ -51,23 +51,13 @@
                 v-if="postDetail?.images?.length > 0"
                 :class="{ mediaImg4: postDetail.images.length === 4 }"
               >
-                <template v-if="postDetail.images.length > 1">
-                  <template v-for="(image, index) in postDetail.images" :key="index">
-                    <wd-img
-                      custom-class="mediaImgItem"
-                      mode="widthFix"
-                      :src="getImageUrl(image + '?x-oss-process=style/jzcq')"
-                      :preview-src="postDetail.images.map((item) => getImageUrl(item))[index]"
-                      :enable-preview="true"
-                    />
-                  </template>
-                </template>
-                <template v-else>
+                <template v-for="(image, index) in postDetail.images" :key="index">
                   <wd-img
                     custom-class="mediaImgItem"
                     mode="widthFix"
-                    :src="getImageUrl(postDetail.images[0])"
-                    :enable-preview="true"
+                    :src="getImageUrl(image + '?x-oss-process=style/jzcq')"
+                    :enable-preview="false"
+                    @click="handlePreview(postDetail.images, index)"
                   />
                 </template>
               </view>
@@ -150,8 +140,8 @@
                     <wd-img
                       custom-class="mediaImg"
                       :src="getImageUrl(image)"
-                      :enable-preview="true"
-                      :preview-src="item.images.map((item) => getImageUrl(item))[index]"
+                      :enable-preview="false"
+                      @click="handlePreview(item.images, index)"
                     />
                   </template>
                 </view>
@@ -308,7 +298,7 @@ import {
   deletePostApi,
   reportPostApi,
 } from '@/service/api/community'
-import { formatRelativeTime, getImageUrl, openUrl, toUrl } from '@/utils'
+import { formatRelativeTime, getImageUrl, openUrl, toUrl, handlePreview } from '@/utils'
 import { LoadMoreState } from 'wot-design-uni/components/wd-loadmore/types'
 import { useToast, useMessage } from 'wot-design-uni'
 import { useUserStore } from '@/store'

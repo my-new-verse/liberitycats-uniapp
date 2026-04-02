@@ -13,6 +13,7 @@
       :line-width="20"
       swipeable
       :style="{ paddingTop: navHeight + 'rpx' }"
+      custom-class="custom-tab"
     >
       <wd-tab
         v-for="item in categoryList"
@@ -481,8 +482,12 @@ const getIconName = (item: any) => {
   // color: white;
   // line-height: 100%;
 }
-
-:deep(.fbg) {
-  background-color: #fff !important;
+:deep(.custom-tab) {
+  .wd-tabs__nav {
+    background-color: var(--liberty-cats-page-background-color) !important;
+    font-family:
+      Alimama FangYuanTi VF,
+      sans-serif;
+  }
 }
 </style>

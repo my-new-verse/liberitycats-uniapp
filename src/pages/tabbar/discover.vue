@@ -21,7 +21,11 @@
 </route>
 
 <template>
-  <view class="page3" :class="[locale]" :style="{ '--safe-top-rpx': safeTopRpx + 'rpx' }">
+  <view
+    class="page3"
+    :class="[locale, isFixed ? 'is-fixed' : '']"
+    :style="{ '--safe-top-rpx': safeTopRpx + 'rpx' }"
+  >
     <view class="fixedBar" :style="{ height: safeTopRpx + 'rpx' }"></view>
     <wd-tabs
       v-model="activeTab"
@@ -76,6 +80,7 @@ const navHeight = ref<number>(0)
 const navHeaderPaddingTop = ref<number>(0)
 const cntPaddingTop = ref<number>(0)
 
+const isFixed = ref<boolean>(false)
 onMounted(() => {
   // 获取状态栏高度
   const systemInfo = uni.getSystemInfoSync()
@@ -102,6 +107,10 @@ onMounted(() => {
 
   uni.$on('switchToSocialTab', () => {
     activeTab.value = t('discover.tabs.social')
+  })
+  uni.$on('switchToChildTab', (tab: string | number) => {
+    if (tab === 'liberty') isFixed.value = true
+    else isFixed.value = false
   })
 })
 
@@ -155,7 +164,8 @@ const loadMore = () => {
 }
 
 // tab切换
-const tabChange = () => {
+const tabChange = (tabItem: any) => {
+  if (tabItem.index !== 2) isFixed.value = false
   state.value = 'loading'
 }
 
@@ -183,6 +193,7 @@ const handleRefreshError = () => {
 
 onUnmounted(() => {
   uni.$off('switchToSocialTab')
+  uni.$off('switchToLibertyCatsTab')
 })
 
 // 下拉刷新处理
@@ -291,5 +302,19 @@ onReachBottom(() => {
 
 .hidden {
   display: none;
+}
+.is-fixed {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* 溢出隐藏，禁止内部滚动 */
+  overflow: hidden;
+  /* 保留你原来的背景色，删除 min-height: 100vh（和 fixed 冲突） */
+  background-color: #f7f6f4;
+  /* 层级拉满，防止被其他元素覆盖 */
+  z-index: 999;
+  height: 100vh;
 }
 </style>

@@ -167,6 +167,16 @@ const collectionDetail = ref<getCollectionDetailApiResponse>({
 })
 
 const tabType = ref<'liberty' | 'hot'>('hot')
+watch(
+  tabType,
+  (newValue) => {
+    uni.$emit('switchToChildTab', newValue)
+  },
+  {
+    immediate: true,
+    flush: 'pre',
+  },
+)
 const webHeightPx = ref<number>(0)
 
 let isRefreshing = false
@@ -305,19 +315,16 @@ const fixWebViewForApp = async () => {
     } catch (e) {
       console.log('webview修复失败', e)
     }
-  }, 300)
+  }, 0)
   // #endif
 }
 
 const changeTab = async (type) => {
   tabType.value = type
-
-  if (type === 'liberty') {
-    if (getServerOnOff('enable_quote')) {
-      await nextTick()
-      await updateWebHeight()
-      fixWebViewForApp()
-    }
+  await updateWebHeight()
+  await nextTick()
+  if (type === 'liberty' && getServerOnOff('enable_quote')) {
+    fixWebViewForApp()
   }
 }
 const destroyWebView = () => {
@@ -376,7 +383,7 @@ onUnmounted(() => {
 })
 
 onShow(() => {
-  tabType.value = 'hot'
+  tabType.value = getServerOnOff('enable_quote') ? 'liberty' : 'hot'
 })
 </script>
 

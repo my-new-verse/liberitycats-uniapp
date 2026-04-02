@@ -33,6 +33,7 @@ type Member = {
   nickname: string
   avatar: string
   level: number
+  level_id: number
 }
 
 // 社区帖子列表

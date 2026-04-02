@@ -559,6 +559,23 @@ function handleImageClick(currentSrc: string, content: string) {
 }
 
 /**
+ * 多张图片预览
+ * @param images 当前图片列表
+ * @param needDealImg 是否需要用getImageUrl处理图片
+ */
+export const handlePreview = (images: string[], currentIndex: number = 0, needDealImg = true) => {
+  // 1. 生成完整图片URL数组
+  const urls: string[] = needDealImg ? images.map((item: string) => getImageUrl(item)) : images
+  // 2. 调用 uni-app 原生预览（支持左右滑动）
+  uni.previewImage({
+    current: currentIndex,
+    urls: urls, // 所有图片数组
+    indicator: 'number', // 显示页码
+    loop: true, // 循环滑动
+  })
+}
+
+/**
  * 从富文本中提取所有图片URL
  * @param content 富文本内容
  * @returns 图片URL数组

@@ -75,25 +75,14 @@
               v-if="item.images.length > 0"
               :class="{ mediaImg4: item.images.length === 4 }"
             >
-              <template v-if="item.images.length == 1">
+              <template v-for="(image, index) in item.images" :key="index">
                 <wd-img
                   custom-class="mediaImgItem"
                   mode="widthFix"
-                  :src="getImageUrl(item.images[0] + '?x-oss-process=style/sqdt')"
-                  :preview-src="item.images.map((item) => getImageUrl(item))[0]"
-                  :enable-preview="true"
+                  :src="getImageUrl(image + '?x-oss-process=style/jzcq')"
+                  :enable-preview="false"
+                  @click.stop="handlePreview(item.images, index)"
                 />
-              </template>
-              <template v-else-if="item.images.length > 1">
-                <template v-for="(image, index) in item.images" :key="index">
-                  <wd-img
-                    custom-class="mediaImgItem"
-                    mode="widthFix"
-                    :src="getImageUrl(image + '?x-oss-process=style/jzcq')"
-                    :preview-src="item.images.map((item) => getImageUrl(item))[index]"
-                    :enable-preview="true"
-                  />
-                </template>
               </template>
             </view>
             <view class="socialTime">
@@ -157,7 +146,14 @@
 <script lang="ts" setup>
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { t } from '@/locale/index'
-import { formatNickname, formatRelativeTime, getImageUrl, openUrl, toUrl } from '@/utils'
+import {
+  formatNickname,
+  formatRelativeTime,
+  getImageUrl,
+  openUrl,
+  toUrl,
+  handlePreview,
+} from '@/utils'
 import {
   getCommunityPostListApi,
   getCommunityPostListApiResponse,
