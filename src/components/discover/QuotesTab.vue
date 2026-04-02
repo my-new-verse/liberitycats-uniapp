@@ -10,7 +10,7 @@
         Liberty Cats
       </view>
       <view class="opItem" :class="{ active: tabType === 'hot' }" @click="changeTab('hot')">
-        热门榜
+        {{ t('discover.quotes.tag.hot') }}
       </view>
     </view>
     <template v-if="tabType === 'hot'">

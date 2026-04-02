@@ -223,7 +223,7 @@ onMounted(() => {
 
   navHeight.value = safeTopRpx.value + 40 + 104
   navHeaderPaddingTop.value = safeTopRpx.value
-  cntPaddingTop.value = navHeight.value - 20
+  cntPaddingTop.value = navHeight.value
 
   console.log('safeAreaInsets', safeAreaInsets)
   console.log('safeTopRpx.value', safeTopRpx.value)

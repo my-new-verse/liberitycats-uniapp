@@ -66,8 +66,7 @@ import { formatRelativeTime, formatTime, getImageUrl, toUrl } from '@/utils'
 import { getNewsListApi } from '@/service/api/news'
 import { t } from '@/locale'
 
-const tabType = ref(0)
-// const tabType = ref(-1)
+const tabType = ref(-1)
 
 type LoadMoreState = 'loading' | 'finished' | 'error' | 'success'
 
