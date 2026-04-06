@@ -7,7 +7,7 @@ export default defineUniPages({
     navigationBarBackgroundColor: '#ff6b03',
     navigationBarTextStyle: 'white',
     backgroundColor: '#FFFFFF',
-    enablePullDownRefresh: true, // 确保启用下拉刷新
+    enablePullDownRefresh: false, // 确保启用下拉刷新
     onReachBottomDistance: 50, // 设置触发上拉加载的距离
   },
   easycom: {
@@ -38,11 +38,11 @@ export default defineUniPages({
         selectedIconPath: 'static/LibertyCats/type=on-1.png',
         pagePath: 'pages/tabbar/mall',
       },
-      {
-        pagePath: 'pages/tabbar/game',
-        iconPath: '/static/images/game/game@2x.png',
-        selectedIconPath: '/static/images/game/game@2x.png',
-      },
+      // {
+      //   pagePath: 'pages/tabbar/game',
+      //   iconPath: '/static/images/game/game@2x.png',
+      //   selectedIconPath: '/static/images/game/game@2x.png',
+      // },
       {
         iconPath: 'static/LibertyCats/type=off-2.png',
         selectedIconPath: 'static/LibertyCats/type=on-2.png',

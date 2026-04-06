@@ -2,6 +2,14 @@
 {
   style: {
     navigationStyle: 'custom',
+    enablePullDownRefresh: true,
+    'app-plus': {
+      pullToRefresh: {
+        style: 'circle',
+        color: '#ff6b03',
+        offset: '80rpx',
+      },
+    },
   },
 }
 </route>

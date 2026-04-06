@@ -132,7 +132,6 @@
                   filterProps.filterStatus === status.value ? 'activeFilterBtn' : 'filterBtn1'
                 "
                 @click="handleStatusChange(status.value)"
-                style="margin-right: 6rpx; width: 80%"
               >
                 {{ t('my_order.index.filter.' + status.value) }}
               </wd-button>
@@ -267,7 +266,8 @@ const loadMore = () => {
   )
     .then((res) => {
       if (!res.data) return
-      responseData.value.data = responseData.value.data.concat(res.data.data)
+      if (res.data?.current_page === 1) responseData.value.data = res.data.data
+      else responseData.value.data = responseData.value.data.concat(res.data.data)
       responseData.value.current_page = res.data.current_page
       responseData.value.last_page = res.data.last_page
       if (responseData.value?.current_page === responseData.value?.last_page) {
@@ -311,7 +311,7 @@ const handleStatusChange = (value: string) => {
 }
 
 const handleReset = () => {
-  filterProps.value.filterStatus = 'ALL'
+  filterProps.value.filterStatus = ''
 }
 
 const handleConfirm = () => {
@@ -535,7 +535,7 @@ const handleFilter = () => {
   height: 100%;
   display: flex;
   flex-direction: column;
-  padding: 30rpx;
+  padding: 30rpx 18rpx;
 
   .filter-header {
     display: flex;
@@ -554,12 +554,16 @@ const handleFilter = () => {
     margin-bottom: 24rpx;
 
     .filterBtn1 {
-      min-width: 110px;
+      min-width: unset;
+      max-width: unset;
       border-radius: 16rpx;
+      width: 95%;
     }
 
     .activeFilterBtn {
-      min-width: 110px;
+      min-width: unset;
+      max-width: unset;
+      width: 95%;
       border-radius: 16rpx;
       color: #ff6b03;
       text-align: center;
@@ -615,5 +619,34 @@ const handleFilter = () => {
 }
 ::v-deep .wd-popup-wrapper .wd-popup {
   z-index: 1000 !important;
+}
+// 穿透组件样式，修改按钮内部文字布局
+::v-deep .wd-button {
+  height: auto !important;
+  white-space: pre-line !important;
+  word-break: keep-all !important;
+  line-height: 1.4 !important;
+  padding: 8rpx 0 !important;
+  margin-bottom: 6rpx;
+  border: 2rpx solid var(--wot-button-info-bg-color, #f0f0f0);
+}
+
+// 穿透修改按钮内部文本容器
+::v-deep .wd-button__text {
+  word-wrap: break-word !important; // 兼容旧版浏览器换行
+  line-height: inherit !important; // 继承父级行高
+  white-space: pre-line !important;
+  word-break: keep-all !important;
+  display: block !important;
+  text-align: center !important;
+}
+
+// 穿透修改按钮内容容器，取消flex单行限制
+::v-deep .wd-button__content {
+  height: auto !important;
+  min-height: auto !important;
+  flex-wrap: wrap !important; // 允许flex内容换行
+  align-items: center !important; // 垂直居中对齐
+  justify-content: center !important; // 水平居中对齐
 }
 </style>

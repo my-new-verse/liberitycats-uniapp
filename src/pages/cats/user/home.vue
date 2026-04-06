@@ -595,9 +595,12 @@ const handleFollow = () => {
 }
 :deep() {
   .follow-btn {
-    background: inherit !important;
+    background: var(--wot-button-primary-bg-color) !important;
     border-color: #fff !important;
     color: #fff !important;
+    // background-image: linear-gradient(90deg, rgba(232, 82, 18, 1) 0.00%, rgba(245, 148, 0, 1) 100.00%) !important;
+    width: 140rpx;
+    border-color: rgba(255, 208, 86, 1) !important;
   }
 }
 </style>

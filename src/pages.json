@@ -5,7 +5,7 @@
     "navigationBarBackgroundColor": "#ff6b03",
     "navigationBarTextStyle": "white",
     "backgroundColor": "#FFFFFF",
-    "enablePullDownRefresh": true,
+    "enablePullDownRefresh": false,
     "onReachBottomDistance": 50
   },
   "easycom": {
@@ -34,11 +34,6 @@
         "iconPath": "static/LibertyCats/type=off-1.png",
         "selectedIconPath": "static/LibertyCats/type=on-1.png",
         "pagePath": "pages/tabbar/mall"
-      },
-      {
-        "pagePath": "pages/tabbar/game",
-        "iconPath": "/static/images/game/game@2x.png",
-        "selectedIconPath": "/static/images/game/game@2x.png"
       },
       {
         "iconPath": "static/LibertyCats/type=off-2.png",
@@ -367,7 +362,15 @@
       "path": "pages/cats/message/index",
       "type": "page",
       "style": {
-        "navigationStyle": "custom"
+        "navigationStyle": "custom",
+        "enablePullDownRefresh": true,
+        "app-plus": {
+          "pullToRefresh": {
+            "style": "circle",
+            "color": "#ff6b03",
+            "offset": "80rpx"
+          }
+        }
       }
     },
     {
@@ -453,7 +456,15 @@
       "path": "pages/cats/posts/list",
       "type": "page",
       "style": {
-        "navigationStyle": "custom"
+        "navigationStyle": "custom",
+        "enablePullDownRefresh": true,
+        "app-plus": {
+          "pullToRefresh": {
+            "style": "circle",
+            "color": "#ff6b03",
+            "offset": "80rpx"
+          }
+        }
       }
     },
     {

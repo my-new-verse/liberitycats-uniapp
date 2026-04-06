@@ -286,8 +286,8 @@
   "my_order.index.filter.popupTitle": "訂單篩選",
   "my_order.index.filter.statusTitle": "訂單狀態",
   "my_order.index.filter.ALL": "全部",
-  "my_order.index.filter.PENDING_PAY": "待支付",
-  "my_order.index.filter.PENDING_SHIP": "待發貨",
+  "my_order.index.filter.PENDING_PAY": "待付款",
+  "my_order.index.filter.PENDING_SHIP": "待出貨",
   "my_order.index.filter.PENDING_RECEIVE": "待收貨",
 
   "my.wishlist.page_title": "收藏夾",

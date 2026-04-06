@@ -69,7 +69,7 @@ interface NavigateToOptions {
 interface RedirectToOptions extends NavigateToOptions {}
 
 interface SwitchTabOptions {
-  url: "/pages/tabbar/home" | "/pages/tabbar/mall" | "/pages/tabbar/game" | "/pages/tabbar/discover" | "/pages/tabbar/my"
+  url: "/pages/tabbar/home" | "/pages/tabbar/mall" | "/pages/tabbar/discover" | "/pages/tabbar/my"
 }
 
 type ReLaunchOptions = NavigateToOptions | SwitchTabOptions;
