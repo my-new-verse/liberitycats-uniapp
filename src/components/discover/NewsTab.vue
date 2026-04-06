@@ -13,7 +13,7 @@
       <template v-if="newsList.data.length > 0">
         <wd-steps :active="2" vertical dot class="kxBox">
           <template v-for="(item, index) in newsList.data" :key="index">
-            <wd-step @click="toUrl('/pages/cats/news/detail?id=' + item.id)">
+            <wd-step @click="toUrl('/pages/cats/news/detail?id=' + item.id)" custom-class="kx-step">
               <template v-slot:title>
                 {{ formatRelativeTime(item.create_time) }}
               </template>
@@ -180,6 +180,19 @@ const changeTab = (type: number) => {
       max-width: 100%;
     }
   }
+  .kx-step {
+    .wd-step__title,
+    .wd-step__description {
+      font-size: 28rpx !important;
+      font-family: Alibaba PuHuiTi2 !important;
+    }
+    .wd-step__description {
+      color: #333;
+    }
+    .wd-step__title {
+      color: var(--wot-steps-description-color, rgba(0, 0, 0, 0.45));
+    }
+  }
 }
 
 .zh-Hans {
@@ -269,6 +282,13 @@ const changeTab = (type: number) => {
     font-weight: 500;
     color: #ff6b03;
   }
+}
+::v-deep .wd-step.is-wait .wd-step__description {
+  color: var(--wot-steps-description-color, rgba(0, 0, 0, 0.45));
+}
+::v-deep .wd-step.is-process .wd-step__title,
+::v-deep .wd-step.is-finished .wd-step__title {
+  color: var(--wot-steps-finished-color, var(--wot-color-theme, #4d80f0));
 }
 // news end
 </style>
