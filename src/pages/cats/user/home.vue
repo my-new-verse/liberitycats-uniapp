@@ -396,14 +396,14 @@ const handleFollow = () => {
     deleteFollowApi(memberId.value).then((res) => {
       if (res.code === 1) {
         userInfo.value.is_following = 0
-        uni.showToast({ title: '已取消关注', icon: 'none' })
+        uni.showToast({ title: t('social.index.user.follow.canceled'), icon: 'none' })
       }
     })
   } else {
     createFollowApi(memberId.value).then((res) => {
       if (res.code === 1) {
         userInfo.value.is_following = 1
-        uni.showToast({ title: '关注成功', icon: 'none' })
+        uni.showToast({ title: t('social.index.user.follow.success'), icon: 'none' })
       }
     })
   }
