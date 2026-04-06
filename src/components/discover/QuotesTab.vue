@@ -7,7 +7,7 @@
         @click="changeTab('liberty')"
         v-if="getServerOnOff('enable_quote')"
       >
-        Liberty Cats
+        {{ t('discover.quotes.tag.liberty_cats') }}
       </view>
       <view class="opItem" :class="{ active: tabType === 'hot' }" @click="changeTab('hot')">
         {{ t('discover.quotes.tag.hot') }}

@@ -156,6 +156,8 @@
   "social.index.post.report": "举报帖子",
   "social.index.user.block": "屏蔽用户",
   "social.index.user.follow": "關注",
+  "social.index.user.follow.success": "關注成功",
+  "social.index.user.follow.canceled": "已取消關注",
   "social.index.user.unfollow": "取消關注",
 
   "news.detail.page_title": "新聞詳情",
@@ -175,7 +177,8 @@
   "discover.social.tag.official": "官方",
   "discover.news.tag.news": "新聞",
   "discover.news.tag.flash": "快訊",
-  "discover.quotes.tag.hot": "熱門榜",
+  "discover.quotes.tag.hot": "加密市場",
+  "discover.quotes.tag.liberty_cats": "Liberty Cats · 數據",
   "discover.quotes.op.title": "行情",
   "discover.quotes.op.currency_usdt": "USDT",
   "discover.tabs.fiat.toast.input_number": "請輸入有效數字",
