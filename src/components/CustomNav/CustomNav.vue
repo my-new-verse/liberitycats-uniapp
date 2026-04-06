@@ -9,6 +9,9 @@
           <view class="navTitle">
             <span class="navTitle-text">{{ props.title }}</span>
           </view>
+          <view class="rightIcon">
+            <slot name="right" />
+          </view>
         </view>
       </view>
       <view class="navBg">
@@ -161,6 +164,22 @@ const navigateBack = () => {
           text-overflow: ellipsis;
           white-space: nowrap;
         }
+      }
+      // ✅ 右侧按钮（新增）
+      .rightIcon {
+        position: absolute;
+        top: 50%;
+        right: 20rpx;
+        z-index: 2;
+        transform: translateY(-50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 60rpx;
+        height: 60rpx;
+        color: #fff;
+        font-size: 28rpx;
+        font-family: Alibaba PuHuiTi2;
       }
     }
   }
