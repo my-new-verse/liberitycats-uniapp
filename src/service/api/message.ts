@@ -44,11 +44,17 @@ export interface MarkCategoryReadResponse {
  * @param limit 每页条数
  */
 
-export const getNotificationListApi = (page: number, limit: number, category?: string) => {
+export const getNotificationListApi = (
+  page: number,
+  limit: number,
+  category?: string,
+  subtype?: 'like' | 'follow' | 'comment',
+) => {
   return http.get<getNotificationListResponse>('/v1/member/notification/list', {
     page,
     limit,
     category,
+    subtype,
   })
 }
 // 按分类的未读数量
@@ -66,16 +72,6 @@ export const getUnreadCountApi = () => {
 export function getNotificationUnreadByCategoryApi() {
   return http.get<UnreadByCategoryResponse>('/member/notification/unread-by-category')
 }
-
-// /**
-//  * 按分类标为已读
-//  * @param category 分类
-//  */
-// export function markCategoryReadApi(category: string) {
-//   return request.post<MarkCategoryReadResponse>('/member/notification/mark-category-read', {
-//     category
-//   })
-// }
 
 // /**
 //  * 获取消息详情
@@ -96,4 +92,14 @@ export function getNotificationUnreadCountApi() {
 // 单条标已读
 export const handleMarkReadApi = (id: string) => {
   return http.post<MarkCategoryReadResponse>('/v1/member/notification/mark-read', { id })
+}
+
+/**
+ * 按分类标为已读
+ * @param category 分类
+ */
+export function markCategoryReadApi(category: string) {
+  return http.post<MarkCategoryReadResponse>('/v1/member/notification/mark-category-read', {
+    category,
+  })
 }
