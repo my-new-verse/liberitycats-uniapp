@@ -385,10 +385,14 @@
   "notification.index.system": "系统",
   "notification.index.community": "社区",
   "notification.index.mall": "商城",
+  "notification.index.tab.likes": "赞",
+  "notification.index.tab.follow": "新增关注",
+  "notification.index.tab.comment": "评论",
   "notification.index.mark_read": "标记已读",
   "notification.index.mark_read_success": "全部标为已读成功",
   "notification.index.mark_single_read_success": "标记已读成功",
   "notification.index.delete": "删除",
   "notification.index.delete_success": "删除成功",
-  "notification.index.delete_batch_success": "批量删除成功"
+  "notification.index.delete_batch_success": "批量删除成功",
+  "notification.index.make_all_read": "全部已读"
 }

@@ -373,10 +373,14 @@
   "notification.index.system": "System",
   "notification.index.community": "Community",
   "notification.index.mall": "Store",
+  "notification.index.tab.likes": "Likes",
+  "notification.index.tab.follow": "New Follows",
+  "notification.index.tab.comment": "Comments",
   "notification.index.mark_read": "Mark as Read",
   "notification.index.mark_read_success": "All marked as read successfully",
   "notification.index.mark_single_read_success": "Marked as read successfully",
   "notification.index.delete": "Delete",
   "notification.index.delete_success": "Deleted successfully",
-  "notification.index.delete_batch_success": "Bulk deleted successfully"
+  "notification.index.delete_batch_success": "Bulk deleted successfully",
+  "notification.index.make_all_read": "All read"
 }

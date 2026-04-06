@@ -371,10 +371,14 @@
   "notification.index.system": "系統",
   "notification.index.community": "社群",
   "notification.index.mall": "商城",
+  "notification.index.tab.likes": "讚",
+  "notification.index.tab.follow": "新增關注",
+  "notification.index.tab.comment": "評論",
   "notification.index.mark_read": "標記已讀",
   "notification.index.mark_read_success": "全部標為已讀成功",
   "notification.index.mark_single_read_success": "標記已讀成功",
   "notification.index.delete": "刪除",
   "notification.index.delete_success": "刪除成功",
-  "notification.index.delete_batch_success": "批次刪除成功"
+  "notification.index.delete_batch_success": "批次刪除成功",
+  "notification.index.make_all_read": "全部已讀"
 }

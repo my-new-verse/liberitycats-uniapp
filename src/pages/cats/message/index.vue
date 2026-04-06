@@ -32,7 +32,34 @@
       ></wd-tab>
     </wd-tabs>
     <custom-nav :title="t('notification.index.page_title')">
+      <template #right>
+        <view class="read_all" @click="handleReadAll">
+          {{ $t('notification.index.make_all_read') }}
+        </view>
+      </template>
       <template #default>
+        <view class="tab-wrapper" v-if="activeCategory === 'community'">
+          <wd-segmented
+            :options="subtypeList"
+            v-model:value="activeSubtype"
+            custom-class="custom-segment"
+            :vibrate-short="true"
+            @click="handleSubtypeChange"
+          >
+            <template #label="{ option }">
+              <view class="tab-item">
+                <!-- 图标容器 -->
+                <view class="tab-icon" :class="option.iconBgClass">
+                  <wd-img custom-class="tab-icon-svg" mode="widthFix" :src="option.iconSrc" />
+                </view>
+                <!-- 文字 -->
+                <view class="tab-text" :class="{ active: activeSubtype === option.value }">
+                  {{ option.label }}
+                </view>
+              </view>
+            </template>
+          </wd-segmented>
+        </view>
         <template v-if="listData.data?.length > 0">
           <view class="cell socialBox" v-for="item in listData.data" :key="item.id">
             <wd-swipe-action>
@@ -80,6 +107,7 @@
         <wd-backtop :scrollTop="scrollTop" />
       </template>
     </custom-nav>
+    <wd-toast />
   </view>
 </template>
 
@@ -96,7 +124,7 @@ import {
   getUnreadByCategoryApi,
   getNotificationUnreadByCategoryApi,
   getNotificationUnreadCountApi,
-  // markCategoryReadApi,
+  markCategoryReadApi,
   getNotificationListResponse,
   UnreadByCategoryResponse,
   handleMarkReadApi,
@@ -104,7 +132,7 @@ import {
 import CustomNav from '@/components/CustomNav/CustomNav.vue'
 import { useUserStore } from '@/store/user'
 const userStore = useUserStore()
-
+const toast = useToast()
 // 滚动到顶部监听
 const scrollTop = ref<number>(0)
 onPageScroll((e) => {
@@ -131,14 +159,6 @@ const categoryList = ref([
     },
   },
   {
-    label: t('notification.index.system'),
-    value: 'system',
-    badgeProps: {
-      modelValue: 0,
-      right: '-8px',
-    },
-  },
-  {
     label: t('notification.index.community'),
     value: 'community',
     badgeProps: {
@@ -149,6 +169,14 @@ const categoryList = ref([
   {
     label: t('notification.index.mall'),
     value: 'mall',
+    badgeProps: {
+      modelValue: 0,
+      right: '-8px',
+    },
+  },
+  {
+    label: t('notification.index.system'),
+    value: 'system',
     badgeProps: {
       modelValue: 0,
       right: '-8px',
@@ -191,6 +219,55 @@ onMounted(() => {
   getNotificationUnreadCount()
   loadMore()
 })
+// 当前选中项
+const activeSubtype = ref<'like' | 'follow' | 'comment'>('like')
+
+// 分段器选项数据（1:1对应截图）
+// const subtypeList = ref([
+//   {
+//     value: 'like',
+//     label: t('notification.index.tab.likes'),
+//     icon: 'heart', // 替换为你项目的爱心图标名
+//   },
+//   {
+//     value: 'follow',
+//     label: t('notification.index.tab.follow'),
+//     icon: 'add', // 替换为你项目的用户图标名
+//   },
+//   {
+//     value: 'comment',
+//     label: t('notification.index.tab.comment'),
+//     icon: 'chat1', // 替换为你项目的消息气泡图标名
+//   }
+// ])
+// 分段器选项（1:1对应截图）
+const subtypeList = computed(() => [
+  {
+    value: 'like',
+    label: t('notification.index.tab.likes'),
+    icon: '❤️', // 也可替换为图标库图标名
+    iconClass: 'icon-like',
+    iconBgClass: 'bg-like',
+    iconSrc: '/static/images/like1.png',
+  },
+  {
+    value: 'follow',
+    label: t('notification.index.tab.follow'),
+    icon: '👤',
+    // icon: '👤',
+    iconClass: 'icon-follow',
+    iconBgClass: 'bg-follow',
+    iconSrc: '/static/images/user-add1.png',
+  },
+  {
+    value: 'comment',
+    label: t('notification.index.tab.comment'),
+    icon: '💬',
+    iconClass: 'icon-comment',
+    iconBgClass: 'bg-comment',
+    iconSrc: '/static/images/comment1.png',
+  },
+])
 // 页面加载
 // onLoad(() => {
 //   loadMore()
@@ -217,9 +294,9 @@ const getUnreadByCategory = () => {
     if (res.data) {
       console.log(res)
       let { community, mall, system } = res.data
-      categoryList.value[1].badgeProps.modelValue = system
-      categoryList.value[2].badgeProps.modelValue = community
-      categoryList.value[3].badgeProps.modelValue = mall
+      categoryList.value[3].badgeProps.modelValue = system
+      categoryList.value[1].badgeProps.modelValue = community
+      categoryList.value[2].badgeProps.modelValue = mall
     }
   })
 }
@@ -233,6 +310,7 @@ const loadMore = () => {
     listData.value.current_page + 1,
     listData.value.per_page,
     activeCategory.value && activeCategory.value !== 'all' ? activeCategory.value : '',
+    activeCategory.value === 'community' ? activeSubtype.value : null,
   )
     .then((res) => {
       console.log(res)
@@ -264,9 +342,16 @@ const handleCategoryChange = (prop) => {
   listData.value.data = []
   listData.value.current_page = 0
   listData.value.last_page = 1
+  if (prop.name === 'community') activeSubtype.value = 'like'
   loadMore()
 }
-
+const handleSubtypeChange = () => {
+  // 重置列表重新加载
+  listData.value.data = []
+  listData.value.current_page = 0
+  listData.value.last_page = 1
+  loadMore()
+}
 // 跳转到消息详情
 const toDetail = (notificationItem: any) => {
   if (!userStore.isLogin) {
@@ -290,8 +375,10 @@ const toDetail = (notificationItem: any) => {
        */
       switch (notificationItem?.subtype) {
         // 关注
-        // case 'follow':
-        //   break;
+        case 'follow':
+          let { participantMemberId } = context
+          toUrl('/pages/cats/user/home?member_id=' + participantMemberId)
+          break
         // 点赞
         case 'like':
           let { type, id } = interactionTarget
@@ -321,10 +408,53 @@ const toDetail = (notificationItem: any) => {
 const handleMarkAsRead = (notificationItem: any) => {
   if (notificationItem?.is_read == 1) return
   handleMarkReadApi(notificationItem?.id).then((res) => {
-    let findIndex = listData.value.data.findIndex((item) => item.id === notificationItem?.id)
-    listData.value.data[findIndex].is_read = 1
-    getNotificationUnreadCount()
-    getUnreadByCategory()
+    if (res.code === 1) {
+      let findIndex = listData.value.data.findIndex((item) => item.id === notificationItem?.id)
+      listData.value.data[findIndex].is_read = 1
+      getNotificationUnreadCount()
+      getUnreadByCategory()
+    } else {
+      toast.show(res.msg || t('common.error'))
+    }
+  })
+}
+// 全部已读
+const handleReadAll = () => {
+  if (activeCategory.value === 'all') {
+    Promise.all([asyncMakeRead('system'), asyncMakeRead('community'), asyncMakeRead('mall')])
+      .then(() => {
+        listData.value.data.forEach((item) => (item.is_read = 1))
+        getNotificationUnreadCount()
+        getUnreadByCategory()
+      })
+      .catch((err) => {
+        toast.show(err.msg || t('common.error'))
+      })
+  } else {
+    asyncMakeRead(activeCategory.value)
+      .then(() => {
+        listData.value.data.forEach((item) => (item.is_read = 1))
+        getNotificationUnreadCount()
+        getUnreadByCategory()
+      })
+      .catch((err) => {
+        toast.show(err.msg || t('common.error'))
+      })
+  }
+}
+const asyncMakeRead = (activeCategory: string) => {
+  return new Promise((resolve, reject) => {
+    markCategoryReadApi(activeCategory)
+      .then((res) => {
+        if (res.code === 1) {
+          resolve(res) // 抛出成功结果
+        } else {
+          reject(res)
+        }
+      })
+      .catch((err) => {
+        reject(err)
+      })
   })
 }
 const handleDelete = (notificationItem: any) => {}
@@ -385,7 +515,7 @@ const getIconName = (item: any) => {
       case 'like':
         return 'heart'
       case 'follow':
-        return 'add'
+        return 'user-add'
       default:
         return 'chat1'
     }
@@ -485,17 +615,111 @@ const getIconName = (item: any) => {
   padding: 0 15px;
   height: 100%;
   color: white;
-  // padding: 0 15px;
-  // height: 100%;
-  // color: white;
-  // line-height: 100%;
 }
 :deep(.custom-tab) {
+  z-index: 9;
   .wd-tabs__nav {
     background-color: var(--liberty-cats-page-background-color) !important;
     font-family:
       Alimama FangYuanTi VF,
       sans-serif;
   }
+}
+
+.tab-wrapper {
+  padding: 0;
+  background-color: var(--liberty-cats-page-background-color) !important;
+  // position: fixed;
+  // width: 100vw;
+  z-index: 7;
+  margin-bottom: 12rpx;
+  // border-top: 1px solid #f0f0f0;
+}
+
+// 穿透分段器组件，适配三栏布局
+::v-deep .custom-segment {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  .wd-segmented__item {
+    flex: 1;
+    border: none !important;
+    background-color: var(--liberty-cats-page-background-color) !important;
+    padding: 0;
+  }
+
+  // 隐藏默认选中态下划线，用自定义样式替代
+  .wd-segmented__item-active {
+    // background: transparent !important;
+    border: 1px solid red !important;
+  }
+}
+
+// 选项内部样式
+.tab-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
+  padding: 0;
+  border-radius: 32rpx;
+  transition: all 0.3s ease;
+}
+
+// 选中态背景（对应截图的浅蓝色背景）
+.tab-item.active {
+  // background: #f0f7ff;
+  background-color: var(--liberty-cats-page-background-color) !important;
+  font-family: 'Alimama FangYuanTi VF' !important;
+}
+
+// 图标容器
+.tab-icon {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48rpx;
+}
+
+// 三个图标对应不同背景色
+.bg-like {
+  background: #ffe5e5; // 粉色背景（赞）
+  background-color: rgba(255, 107, 3, 0.1);
+}
+.bg-follow {
+  background: #e5f0ff; // 浅蓝色背景（新增关注）
+  background-color: rgba(255, 107, 3, 0.1);
+}
+.bg-comment {
+  background: #e5f5e5; // 浅绿色背景（评论）
+  background-color: rgba(255, 107, 3, 0.1);
+}
+
+// 图标样式
+.tab-icon-svg {
+  width: 55%;
+}
+
+// 文字样式
+.tab-text {
+  font-size: 24rpx;
+  font-weight: 500;
+  color: #333;
+  transition: color 0.3s ease;
+  // font-family: Alibaba PuHuiTi2;
+  font-family: 'Alimama FangYuanTi VF' !important;
+  &.active {
+    color: var(--liberty-cats-primary-color);
+  }
+  span {
+    font-family: 'Alimama FangYuanTi VF' !important;
+    color: red;
+  }
+}
+::v-deep .wd-swipe-action__right {
+  right: -2rpx;
 }
 </style>
