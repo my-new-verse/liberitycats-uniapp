@@ -165,7 +165,9 @@ const collectionDetail = ref<getCollectionDetailApiResponse>({
     floorPrice: '',
   },
 })
+let webviewembed: any = null
 
+const webRectOption = ref({})
 const tabType = ref<'liberty' | 'hot'>('hot')
 watch(
   tabType,
@@ -291,9 +293,9 @@ const fixWebViewForApp = async () => {
     try {
       const pages = getCurrentPages()
       const page = pages[pages.length - 1]
-      const currentWebview = page.$getAppWebview()
-      const wv = currentWebview.children()[0]
-      if (!wv) return
+      // const currentWebview = page.$getAppWebview()
+      // const wv = currentWebview.children()[0]
+      // if (!wv) return
 
       const sys = uni.getSystemInfoSync()
       const rpx2px = 750 / sys.windowWidth
@@ -302,16 +304,34 @@ const fixWebViewForApp = async () => {
       const { webRect } = await measureRects()
       if (!webRect) return
 
-      wv.setStyle({
+      webRectOption.value = webRect
+      // wv.setStyle()
+      const wvStyle = {
         top: webRect.top || 0,
         left: webRect.left || 0,
         width: webRect.width || 0,
         height: webRect.height || 0,
         borderRadius: radiusPx,
         scalable: true,
-      })
+        progress: { color: '#ff6b03', height: '2px' }, //
+      }
 
-      wv.show()
+      webviewembed = plus.webview.create(
+        'https://x.com/libertycats_app?s=21&t=WgFwIbY7xp0aZtdoT0lwqw',
+        '',
+        wvStyle,
+      )
+      // embed.onloaded = embedLoaded
+      webviewembed.onerror = () => {
+        webviewembed.loadURL('/nativeResources/404.html')
+      }
+      // 把 webview 追加到当前页面（如果需要）
+      const currentWebview = page.$getAppWebview()
+      if (currentWebview) {
+        currentWebview.append(webviewembed)
+      }
+      webviewembed.show()
+      webviewembed.loadURL('/nativeResources/404.html')
     } catch (e) {
       console.log('webview修复失败', e)
     }
@@ -324,7 +344,10 @@ const changeTab = async (type) => {
   await updateWebHeight()
   await nextTick()
   if (type === 'liberty' && getServerOnOff('enable_quote')) {
-    fixWebViewForApp()
+    // fixWebViewForApp()
+    webviewembed.show()
+  } else {
+    webviewembed.hide()
   }
 }
 const destroyWebView = () => {
@@ -377,6 +400,13 @@ onMounted(async () => {
 onUnmounted(() => {
   console.log('destroyWebView ========')
   if (getServerOnOff('enable_quote')) {
+    // 先移除所有事件监听，避免内存泄漏
+    webviewembed.removeEventListener('loaded')
+    webviewembed.removeEventListener('loaderror')
+    // 关闭 webview
+    webviewembed.close()
+    // 置空实例
+    webviewembed = null
     destroyWebView()
   }
   uni.$off('refreshQuotesTab')

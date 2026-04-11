@@ -82,6 +82,8 @@ const cntPaddingTop = ref<number>(0)
 
 const isFixed = ref<boolean>(false)
 onMounted(() => {
+  // 预加载liberty cats
+  plus.webview.prefetchURL('https://lcat8.com')
   // 获取状态栏高度
   const systemInfo = uni.getSystemInfoSync()
   const statusBarHeight = systemInfo.statusBarHeight || 0
