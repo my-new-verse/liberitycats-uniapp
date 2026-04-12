@@ -102,7 +102,7 @@
     >
       <view class="web" :style="{ height: webHeightPx ? webHeightPx + 'px' : undefined }">
         <view>
-          <web-view id="myWebView" src="https://lcat8.com"></web-view>
+          <!-- <web-view id="myWebView" src="https://lcat8.com"></web-view> -->
         </view>
       </view>
     </view>
@@ -316,13 +316,10 @@ const fixWebViewForApp = async () => {
         progress: { color: '#ff6b03', height: '2px' }, //
       }
 
-      webviewembed = plus.webview.create(
-        'https://x.com/libertycats_app?s=21&t=WgFwIbY7xp0aZtdoT0lwqw',
-        '',
-        wvStyle,
-      )
+      webviewembed = plus.webview.create('https://lcat8.com', '', wvStyle)
       // embed.onloaded = embedLoaded
       webviewembed.onerror = () => {
+        console.log('0000000000000000000000')
         webviewembed.loadURL('/nativeResources/404.html')
       }
       // 把 webview 追加到当前页面（如果需要）
@@ -331,7 +328,7 @@ const fixWebViewForApp = async () => {
         currentWebview.append(webviewembed)
       }
       webviewembed.show()
-      webviewembed.loadURL('/nativeResources/404.html')
+      // webviewembed.loadURL('/nativeResources/404.html')
     } catch (e) {
       console.log('webview修复失败', e)
     }
