@@ -74,7 +74,7 @@
                       :color="item.is_read ? '#999999' : '#ff4d4f'"
                     />
                   </view>
-                  <view class="nameWrap">
+                  <view class="nameWrap" @click.stop="toUserHome(item.context.participantMemberId)">
                     <view class="name" style="margin-left: 0">{{ item.i18n?.title || '' }}</view>
                   </view>
                 </view>
@@ -535,6 +535,13 @@ const getIconName = (item: any) => {
   }
   // 默认图标
   return 'chat1'
+}
+
+// 跳转用户主页
+const toUserHome = (memberId: number) => {
+  uni.navigateTo({
+    url: `/pages/cats/user/home?member_id=${memberId}`,
+  })
 }
 </script>
 
