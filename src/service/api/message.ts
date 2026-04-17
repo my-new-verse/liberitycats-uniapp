@@ -29,6 +29,13 @@ export interface UnreadByCategoryResponse {
   system: number
   community: number
   mall: number
+  subtypes?: {
+    community: {
+      comment: number
+      like: number
+      follow: number
+    }
+  }
 }
 
 // 标为已读返回类型

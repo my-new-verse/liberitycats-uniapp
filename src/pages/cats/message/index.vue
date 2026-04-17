@@ -48,11 +48,17 @@
           >
             <template #label="{ option }">
               <view class="tab-item">
+                <!-- <view class="tab-icon-wrapper"> -->
                 <!-- 图标容器 -->
-                <view class="tab-icon" :class="option.iconBgClass">
-                  <wd-img custom-class="tab-icon-svg" mode="widthFix" :src="option.iconSrc" />
-                </view>
-                <!-- 文字 -->
+                <wd-badge
+                  :modelValue="unreadByCategory.subtypes?.community[option.value]"
+                  bg-color="#ff6b03"
+                  :max="99"
+                >
+                  <view class="tab-icon" :class="option.iconBgClass">
+                    <wd-img custom-class="tab-icon-svg" mode="widthFix" :src="option.iconSrc" />
+                  </view>
+                </wd-badge>
                 <view class="tab-text" :class="{ active: activeSubtype === option.value }">
                   {{ option.label }}
                 </view>
@@ -120,9 +126,7 @@ import { LoadMoreState } from 'wot-design-uni/components/wd-loadmore/types'
 // 消息中心接口&类型
 import {
   getNotificationListApi,
-  getUnreadCountApi,
   getUnreadByCategoryApi,
-  getNotificationUnreadByCategoryApi,
   getNotificationUnreadCountApi,
   markCategoryReadApi,
   getNotificationListResponse,
@@ -190,6 +194,13 @@ const unreadByCategory = ref<UnreadByCategoryResponse>({
   system: 0,
   community: 0,
   mall: 0,
+  subtypes: {
+    community: {
+      comment: 0,
+      like: 0,
+      follow: 0,
+    },
+  },
 })
 
 // 导航栏尺寸计算（适配多端安全区）
@@ -215,32 +226,11 @@ onMounted(() => {
   listData.value.data = []
   listData.value.current_page = 0
   listData.value.last_page = 1
-  getUnreadByCategory()
-  getNotificationUnreadCount()
   loadMore()
 })
 // 当前选中项
 const activeSubtype = ref<'like' | 'follow' | 'comment'>('like')
 
-// 分段器选项数据（1:1对应截图）
-// const subtypeList = ref([
-//   {
-//     value: 'like',
-//     label: t('notification.index.tab.likes'),
-//     icon: 'heart', // 替换为你项目的爱心图标名
-//   },
-//   {
-//     value: 'follow',
-//     label: t('notification.index.tab.follow'),
-//     icon: 'add', // 替换为你项目的用户图标名
-//   },
-//   {
-//     value: 'comment',
-//     label: t('notification.index.tab.comment'),
-//     icon: 'chat1', // 替换为你项目的消息气泡图标名
-//   }
-// ])
-// 分段器选项（1:1对应截图）
 const subtypeList = computed(() => [
   {
     value: 'like',
@@ -293,7 +283,8 @@ const getUnreadByCategory = () => {
   getUnreadByCategoryApi().then((res) => {
     if (res.data) {
       console.log(res)
-      let { community, mall, system } = res.data
+      const { community, mall, system } = res.data
+      unreadByCategory.value = res.data
       categoryList.value[3].badgeProps.modelValue = system
       categoryList.value[1].badgeProps.modelValue = community
       categoryList.value[2].badgeProps.modelValue = mall
@@ -334,6 +325,8 @@ const loadMore = () => {
       state.value = 'finished'
       uni.hideLoading()
     })
+  getUnreadByCategory()
+  getNotificationUnreadCount()
 }
 
 // 切换消息分类
@@ -491,8 +484,6 @@ onPullDownRefresh(() => {
   listData.value.current_page = 0
   listData.value.last_page = 1
   loadMore()
-  getUnreadByCategory()
-  getNotificationUnreadCount()
   // 设置超时保护，防止刷新状态无限挂起
   setTimeout(() => {
     if (isRefreshing.value && !refreshError.value) {
@@ -617,12 +608,21 @@ const getIconName = (item: any) => {
   color: white;
 }
 :deep(.custom-tab) {
-  z-index: 9;
+  background-color: var(--liberty-cats-page-background-color) !important;
+  z-index: 10;
   .wd-tabs__nav {
     background-color: var(--liberty-cats-page-background-color) !important;
     font-family:
       Alimama FangYuanTi VF,
       sans-serif;
+
+    height: var(--wot-tabs-nav-height, 88rpx);
+    .wd-tabs__nav-container {
+      height: 100%;
+      .wd-tabs__nav-item {
+        height: 100%;
+      }
+    }
   }
 }
 
@@ -664,6 +664,8 @@ const getIconName = (item: any) => {
   padding: 0;
   border-radius: 32rpx;
   transition: all 0.3s ease;
+  // overflow: visible !important;
+  padding-top: 18rpx;
 }
 
 // 选中态背景（对应截图的浅蓝色背景）
