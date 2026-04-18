@@ -36,30 +36,31 @@
       @change="tabChange"
       :safe-top="safeTopRpx + 'rpx'"
     >
-      <view class="content" :style="{ paddingTop: cntPaddingTop + 'rpx' }">
+      <view class="content" style="padding-top: 0">
         <block v-for="item in tabs" :key="item">
           <wd-tab :title="item" :name="item">
             <view class="componentContent" :class="{ hidden: activeTab !== item }">
               <component
-                v-if="activeTab === item"
+                v-if="activatedTabs.includes(item)"
                 :is="tabComponents[item]"
-                :state="state"
-                @update:state="updateState"
+                :state="getTabState(item)"
+                @update:state="(state) => updateState(item, state)"
                 @refresh-complete="handleRefreshComplete"
                 @refresh-error="handleRefreshError"
+                :cntPaddingTop="cntPaddingTop"
               />
             </view>
           </wd-tab>
         </block>
       </view>
     </wd-tabs>
-    <wd-loadmore :state="state" style="padding-bottom: 10rpx" />
+    <wd-loadmore :state="currentTabState" style="padding-bottom: 10rpx" />
     <wd-backtop :scrollTop="scrollTop"></wd-backtop>
   </view>
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { LoadMoreState } from 'wot-design-uni/components/wd-loadmore/types'
 import { useUserStore } from '@/store/user'
@@ -83,7 +84,7 @@ const cntPaddingTop = ref<number>(0)
 const isFixed = ref<boolean>(false)
 onMounted(() => {
   // 预加载liberty cats
-  plus.webview.prefetchURL('https://lcat8.com')
+  // plus.webview.prefetchURL('https://lcat8.com')
   // 获取状态栏高度
   const systemInfo = uni.getSystemInfoSync()
   const statusBarHeight = systemInfo.statusBarHeight || 0
@@ -132,6 +133,7 @@ const tabs = computed(() => [
   t('discover.tabs.fiat'),
 ])
 const activeTab = ref(t('discover.tabs.social'))
+const activatedTabs = ref<string[]>([activeTab.value])
 
 // tab组件映射
 const tabComponents = computed(() => ({
@@ -148,28 +150,71 @@ const tabComponentNameMaps = computed(() => ({
   [t('discover.tabs.fiat')]: 'FiatTab',
 }))
 
-// 加载状态
-const state = ref<LoadMoreState>('loading')
+// 按 tab 缓存加载状态，避免切换后触发重复请求
+const tabStates = ref<Record<string, LoadMoreState>>({})
+const currentTabState = computed<LoadMoreState>(() => tabStates.value[activeTab.value] || 'loading')
+const getTabState = (tabName: string): LoadMoreState => tabStates.value[tabName] || 'loading'
+
+const ensureTabState = (tabName: string) => {
+  if (!tabStates.value[tabName]) {
+    tabStates.value[tabName] = 'loading'
+  }
+}
+
+const ensureTabActivated = (tabName: string) => {
+  if (tabName && !activatedTabs.value.includes(tabName)) {
+    activatedTabs.value.push(tabName)
+  }
+}
 
 // 刷新状态追踪
 const isRefreshing = ref(false)
 const refreshError = ref(false)
 
 // 更新加载状态
-const updateState = (newState: LoadMoreState) => {
-  state.value = newState
+const updateState = (tabName: string, newState: LoadMoreState) => {
+  tabStates.value[tabName] = newState
 }
 
 // 加载更多
 const loadMore = () => {
-  state.value = 'loading'
+  updateState(activeTab.value, 'loading')
 }
 
 // tab切换
 const tabChange = (tabItem: any) => {
   if (tabItem.index !== 2) isFixed.value = false
-  state.value = 'loading'
 }
+
+const tabScrollTopMap = ref<Record<string, number>>({})
+const restoreTabScroll = (tabName: string) => {
+  nextTick(() => {
+    uni.pageScrollTo({
+      scrollTop: tabScrollTopMap.value[tabName] || 0,
+      duration: 0,
+    })
+  })
+}
+
+watch(
+  tabs,
+  (newTabs) => {
+    newTabs.forEach((tab) => {
+      ensureTabState(tab)
+    })
+  },
+  { immediate: true },
+)
+
+watch(activeTab, (newTab, oldTab) => {
+  ensureTabState(newTab)
+  ensureTabActivated(newTab)
+  if (oldTab) {
+    tabScrollTopMap.value[oldTab] = scrollTop.value
+  }
+  uni.$emit('discoverActiveTabChange', newTab)
+  restoreTabScroll(newTab)
+})
 
 // 处理刷新完成
 const handleRefreshComplete = () => {
@@ -196,6 +241,7 @@ const handleRefreshError = () => {
 onUnmounted(() => {
   uni.$off('switchToSocialTab')
   uni.$off('switchToLibertyCatsTab')
+  uni.$off('discoverActiveTabChange')
 })
 
 // 下拉刷新处理
@@ -221,8 +267,8 @@ onPullDownRefresh(() => {
 // 触发对应 tab 的分页加载
 onReachBottom(() => {
   // 只有在非加载状态下才触发新的加载
-  if (!['loading', 'finished'].includes(state.value)) {
-    state.value = 'loading'
+  if (!['loading', 'finished'].includes(currentTabState.value)) {
+    loadMore()
   }
 })
 </script>

@@ -37,6 +37,9 @@
   "common.no_data": "No Data",
   "common.request.error": "Request Error",
   "common.request.network.error": "Network Error,Change Network and Try Again",
+  "common.network.error.title": "Network Connection Unstable",
+  "common.network.error.description": "Please check your network connection",
+  "common.network.error.refresh": "Refresh",
   "common.btn.update_btn_txt": "Update Now",
 
   "home.page_title": "Home",

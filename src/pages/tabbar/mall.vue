@@ -42,8 +42,8 @@
     >
       <block v-for="item in tabList" :key="item">
         <wd-tab :title="`${item}`" :name="item">
-          <view class="content" :style="{ paddingTop: cntPaddingTop + 'rpx' }">
-            <view class="filterBox">
+          <view class="content" style="padding-top: 0">
+            <view class="filterBox" :style="{ height: cntPaddingTop + 64 + 'rpx' }">
               <view
                 class="filterItem active"
                 @click="
@@ -73,7 +73,7 @@
             </view>
 
             <template v-if="goodsList.data.length > 0">
-              <view class="goodsBox">
+              <view class="goodsBox" :style="{ paddingTop: cntPaddingTop + 64 + 32 + 'rpx' }">
                 <view
                   class="goodsItem"
                   v-for="item in goodsList.data"
@@ -104,7 +104,7 @@
                 </view>
               </view>
             </template>
-            <template v-else>
+            <template v-else-if="activeMallCache.hasLoaded">
               <view class="emptyBox">
                 <view class="emptyImg"></view>
                 <view class="emptyText">{{ t('common.empty') }}</view>
@@ -182,6 +182,37 @@ const currentTabIndex = ref(0)
 
 const filterIndex = ref(0)
 
+type MallFilterSearch = '' | 'new' | 'hot' | string
+type MallFilterOrder = 'asc' | 'desc' | string
+type MallFilter = {
+  order: MallFilterOrder
+  search: MallFilterSearch
+}
+type MallCache = {
+  goodsList: MallGoodsListResponse
+  filter: MallFilter
+  state: LoadMoreState
+  scrollTop: number
+  hasLoaded: boolean
+  isLoading: boolean
+}
+
+const createGoodsList = (): MallGoodsListResponse => ({
+  current_page: 0,
+  data: [],
+  last_page: 1,
+  hash: '',
+})
+
+const createMallCache = (filter: MallFilter = { order: 'desc', search: '' }): MallCache => ({
+  goodsList: createGoodsList(),
+  filter: { ...filter },
+  state: 'loading',
+  scrollTop: 0,
+  hasLoaded: false,
+  isLoading: false,
+})
+
 const goodsList = ref<MallGoodsListResponse>({
   current_page: 0,
   data: [],
@@ -195,6 +226,7 @@ onPageScroll((e) => {
   scrollTop.value = e.scrollTop
 })
 const state = ref<LoadMoreState>('loading')
+const mallCacheMap = ref<Record<string, MallCache>>({})
 
 const categoryList = ref<getGoodsCategoryApiResponse[]>([])
 onLoad(() => {
@@ -207,29 +239,89 @@ onLoad(() => {
         currentTabName.value = item.name
       }
     })
-    loadMore()
+    syncActiveCache()
+    if (!activeMallCache.value.hasLoaded) {
+      loadMore()
+    }
   })
 })
 
 onReachBottom(() => {
-  if (goodsList.value.current_page < goodsList.value.last_page) {
+  if (goodsList.value.current_page < goodsList.value.last_page && state.value !== 'loading') {
     loadMore()
   }
 })
 
-const mallFilter = reactive({
+const mallFilter = reactive<MallFilter>({
   order: 'desc',
   search: '',
 })
 
-const handleFilterChange = (search: string, order: string) => {
-  // filterIndex.value = index
-  mallFilter.search = search
-  mallFilter.order = order
+const getActiveCategory = () => categoryList.value[currentTabIndex.value]
+const getFilterKey = (filter = mallFilter) => `${filter.search || 'default'}:${filter.order}`
+const getMallCacheKey = (categoryId = getActiveCategory()?.id, filter = mallFilter) => {
+  return `${categoryId || 'unknown'}:${getFilterKey(filter)}`
+}
+const activeMallCache = computed(() => getMallCache(getMallCacheKey()))
 
-  goodsList.value.current_page = 0
-  goodsList.value.data = []
-  loadMore()
+const getMallCache = (cacheKey: string) => {
+  if (!mallCacheMap.value[cacheKey]) {
+    mallCacheMap.value[cacheKey] = createMallCache({ ...mallFilter })
+  }
+  return mallCacheMap.value[cacheKey]
+}
+
+const syncActiveCache = () => {
+  const cache = activeMallCache.value
+  goodsList.value = cache.goodsList
+  state.value = cache.state
+  mallFilter.search = cache.filter.search
+  mallFilter.order = cache.filter.order
+}
+
+const getPageScrollTop = () => {
+  return new Promise<number>((resolve) => {
+    uni
+      .createSelectorQuery()
+      .selectViewport()
+      .scrollOffset((res: any) => {
+        resolve(res?.scrollTop || 0)
+      })
+      .exec()
+  })
+}
+
+const saveActiveScrollTop = async () => {
+  activeMallCache.value.scrollTop = await getPageScrollTop()
+}
+
+const restoreCacheScrollTop = (cache: MallCache) => {
+  nextTick(() => {
+    uni.pageScrollTo({
+      scrollTop: cache.hasLoaded ? cache.scrollTop || 0 : 0,
+      duration: 0,
+    })
+  })
+}
+
+const applyMallCache = (cache: MallCache) => {
+  goodsList.value = cache.goodsList
+  state.value = cache.state
+  mallFilter.search = cache.filter.search
+  mallFilter.order = cache.filter.order
+}
+
+const handleFilterChange = async (search: string, order: string) => {
+  await saveActiveScrollTop()
+  // filterIndex.value = index
+  const nextFilter = { search, order }
+  const cache = getMallCache(getMallCacheKey(getActiveCategory()?.id, nextFilter))
+  cache.filter = { ...nextFilter }
+  applyMallCache(cache)
+  restoreCacheScrollTop(cache)
+  if (!cache.hasLoaded) {
+    loadMore()
+  }
 }
 
 // 创建一个函数来生成请求参数的hash
@@ -245,61 +337,93 @@ const createRequestHash = (params: any) => {
 
 const clickCount = ref(0)
 
-const loadMore = () => {
+const loadMore = async (refresh = false) => {
+  const currentCategory = getActiveCategory()
+  if (!currentCategory) return
+
+  const cache = activeMallCache.value
+  if (cache.isLoading) return
+
+  if (refresh) {
+    cache.goodsList = createGoodsList()
+    cache.hasLoaded = false
+    goodsList.value = cache.goodsList
+  }
+
+  cache.isLoading = true
+  cache.state = 'loading'
   state.value = 'loading'
-  const currentCategoryId = categoryList.value[currentTabIndex.value].id
+  const currentCategoryId = currentCategory.id
   clickCount.value += 1
+  const requestClickCount = clickCount.value
   const params = {
     category_id: currentCategoryId,
-    ...mallFilter,
-    abc: clickCount.value,
+    ...cache.filter,
+    abc: requestClickCount,
   }
 
   // 生成请求参数的hash
   const requestHash = createRequestHash(params)
 
   params.hash = requestHash
-  params.page = goodsList.value?.current_page + 1
+  params.page = cache.goodsList.current_page + 1
 
   if (!isRefreshing.value) {
     uni.showLoading()
   }
 
-  getMallGoodsListApi(params)
+  return getMallGoodsListApi(params)
     .then((res) => {
       if (!res.data) return
       const newParam = {
         category_id: currentCategoryId,
-        ...mallFilter,
-        abc: clickCount.value,
+        ...cache.filter,
+        abc: requestClickCount,
       }
       const newHash = createRequestHash(newParam)
       if (newHash === res.data.hash) {
-        goodsList.value.data = goodsList.value.data.concat(res.data.data)
-        goodsList.value.current_page = res.data.current_page
-        goodsList.value.last_page = res.data.last_page
+        cache.goodsList.data = cache.goodsList.data.concat(res.data.data)
+        cache.goodsList.current_page = res.data.current_page
+        cache.goodsList.last_page = res.data.last_page
+        cache.goodsList.hash = res.data.hash
+        cache.hasLoaded = true
       }
 
-      if (goodsList.value?.current_page === goodsList.value?.last_page) {
-        state.value = 'finished'
+      cache.state =
+        cache.goodsList.current_page >= cache.goodsList.last_page ? 'finished' : 'success'
+      if (activeMallCache.value === cache) {
+        goodsList.value = cache.goodsList
+        state.value = cache.state
       }
     })
+    .catch((error) => {
+      cache.state = 'error'
+      if (activeMallCache.value === cache) {
+        state.value = 'error'
+      }
+      throw error
+    })
     .finally(() => {
+      cache.isLoading = false
       uni.hideLoading()
     })
 }
 
-const tabChange = (e) => {
+const tabChange = async (e) => {
+  await saveActiveScrollTop()
   currentTabIndex.value = e.index
   currentTabName.value = e.name
 
+  filterIndex.value = 0
   mallFilter.search = ''
   mallFilter.order = 'desc'
-  filterIndex.value = 0
 
-  goodsList.value.current_page = 0
-  goodsList.value.data = []
-  loadMore()
+  const cache = activeMallCache.value
+  applyMallCache(cache)
+  restoreCacheScrollTop(cache)
+  if (!cache.hasLoaded) {
+    loadMore()
+  }
 }
 
 // 添加收藏
@@ -339,9 +463,7 @@ onPullDownRefresh(async () => {
 
   try {
     // 执行数据加载
-    goodsList.value.current_page = 0
-    goodsList.value.data = []
-    await loadMore()
+    await loadMore(true)
 
     // 计算已用时间
     const elapsed = Date.now() - startTime
@@ -476,10 +598,32 @@ const handleRefreshError = () => {
   display: flex;
   align-items: center;
   justify-content: start;
-  height: 64rpx;
+  // height: 64rpx;
   margin-bottom: 32rpx;
+  position: fixed;
+  width: 100vw;
+  z-index: 90;
+  background-color: #ffffff; // 必须设置背景色，否则滚动时下方内容会透出来
+  align-items: flex-end;
+  padding-bottom: 24rpx;
   //color: #999;
   //background-color: #efefef;
+
+  &.fixed-filter {
+    position: fixed;
+    left: 0;
+    right: 0;
+    z-index: 95;
+    padding: 0 40rpx;
+    background-color: #ffffff;
+    box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+  }
+
+  .filter-placeholder {
+    height: 64rpx;
+    margin-bottom: 32rpx;
+  }
+
   .filterItem {
     display: flex;
     align-items: center;

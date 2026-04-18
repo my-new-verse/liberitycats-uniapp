@@ -5,32 +5,40 @@
       <view class="wifi-icon">
         <wd-img src="/static/images/network_error.png" mode="widthFix" width="45vw"></wd-img>
       </view>
-      <view class="title">{{ title }}</view>
-      <view class="desc">{{ description }}</view>
-      <button class="refresh-btn" @click="handleRefresh">{{ refreshText }}</button>
+      <view class="title">{{ displayTitle }}</view>
+      <view class="desc">{{ displayDescription }}</view>
+      <button class="refresh-btn" @click="handleRefresh">{{ displayRefreshText }}</button>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { t } from '@/locale'
 
 const props = defineProps({
   title: {
     type: String,
-    default: '网络不太顺畅',
+    default: '',
   },
   description: {
     type: String,
-    default: '请检查网络连接',
+    default: '',
   },
   refreshText: {
     type: String,
-    default: '刷新',
+    default: '',
   },
 })
 
 const emit = defineEmits(['refresh'])
+
+// 使用国际化文本,如果 props 没有传值则使用默认国际化文本
+const displayTitle = computed(() => props.title || t('common.network.error.title'))
+const displayDescription = computed(
+  () => props.description || t('common.network.error.description'),
+)
+const displayRefreshText = computed(() => props.refreshText || t('common.network.error.refresh'))
 
 const handleRefresh = () => {
   emit('refresh')

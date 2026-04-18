@@ -1,5 +1,5 @@
 <template>
-  <view class="cell">
+  <view class="cell" :style="{ marginTop: cntPaddingTop + 20 + 'rpx' }">
     <view class="fiatItem" v-for="item in fiatList.data" :key="item.id">
       <view class="fiatBox">
         <view class="fiatImg">
@@ -38,7 +38,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { t } from '@/locale'
 import { getImageUrl } from '@/utils'
 import { getFiatItemResponse, getFiatListApi, getFiatListApiResponse } from '@/service/api/fiat'
@@ -48,6 +48,7 @@ const toast = useToast()
 
 const props = defineProps<{
   state: string
+  cntPaddingTop: number
 }>()
 
 const emit = defineEmits<{
@@ -63,15 +64,22 @@ const fiatList = ref<getFiatListApiResponse>({
 })
 
 let isRefreshing = false
+const hasInitialized = ref(false)
+const isLoading = ref(false)
+const loadState = ref<string>('loading')
 
 // 更新加载状态
 const updateState = (state: string) => {
+  loadState.value = state
   emit('update:state', state)
 }
 
 // 获取汇率数据
 const getCurrencyRate = async (page = 1) => {
+  if (isLoading.value) return
+
   try {
+    isLoading.value = true
     const res = await getFiatListApi(page)
     if (page === 1) {
       fiatList.value = res.data
@@ -88,6 +96,7 @@ const getCurrencyRate = async (page = 1) => {
 
     // 更新状态为非加载状态
     updateState('success')
+    hasInitialized.value = true
     // 如果是刷新操作，发出刷新完成事件
     if (isRefreshing && page === 1) {
       emit('refresh-complete')
@@ -101,6 +110,8 @@ const getCurrencyRate = async (page = 1) => {
       isRefreshing = false
     }
     toast.error((error as Error).message || '加载失败')
+  } finally {
+    isLoading.value = false
   }
 }
 
@@ -130,7 +141,10 @@ watch(
 
 // 初始加载
 onMounted(() => {
-  getCurrencyRate()
+  emit('update:state', loadState.value)
+  if (!hasInitialized.value) {
+    getCurrencyRate()
+  }
   // 监听刷新事件
   uni.$on('refreshFiatTab', () => {
     isRefreshing = true

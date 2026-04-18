@@ -6,6 +6,7 @@ export default defineUniPages({
     navigationBarTitleText: 'Liberty Cats',
     navigationBarBackgroundColor: '#ff6b03',
     navigationBarTextStyle: 'white',
+    bounce: 'none',
     backgroundColor: '#FFFFFF',
     enablePullDownRefresh: false, // 确保启用下拉刷新
     onReachBottomDistance: 50, // 设置触发上拉加载的距离

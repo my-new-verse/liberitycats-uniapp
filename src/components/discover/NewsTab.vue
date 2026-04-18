@@ -1,5 +1,5 @@
 <template>
-  <view class="socialOpBox">
+  <view class="socialOpBox" :style="{ height: cntPaddingTop + 20 + 'rpx' }">
     <view class="opItem" :class="{ active: tabType === -1 }" @click="changeTab(-1)">
       {{ t('discover.news.tag.flash') }}
     </view>
@@ -9,34 +9,39 @@
   </view>
 
   <template v-if="tabType === -1">
-    <view style="padding: 32rpx; background-color: #ffffff; border-radius: 32rpx">
-      <template v-if="newsList.data.length > 0">
-        <wd-steps :active="2" vertical dot class="kxBox">
-          <template v-for="(item, index) in newsList.data" :key="index">
-            <wd-step @click="toUrl('/pages/cats/news/detail?id=' + item.id)" custom-class="kx-step">
-              <template v-slot:title>
-                {{ formatRelativeTime(item.create_time) }}
-              </template>
-              <template v-slot:description>
-                {{ item.title }}
-                <view class="coverBox" v-if="item.cover">
-                  <image :src="item.cover" mode="widthFix" />
-                </view>
-              </template>
-            </wd-step>
-          </template>
-        </wd-steps>
-      </template>
-      <template v-else>
-        <view class="emptyBox">
-          <view class="emptyImg"></view>
-          <view class="emptyText">{{ t('common.empty') }}</view>
-        </view>
-      </template>
+    <view class="" :style="{ paddingTop: cntPaddingTop + 36 + 20 + 'rpx' }">
+      <view style="padding: 32rpx; background-color: #ffffff; border-radius: 32rpx">
+        <template v-if="newsList.data.length > 0">
+          <wd-steps :active="2" vertical dot class="kxBox">
+            <template v-for="(item, index) in newsList.data" :key="index">
+              <wd-step
+                @click="toUrl('/pages/cats/news/detail?id=' + item.id)"
+                custom-class="kx-step"
+              >
+                <template v-slot:title>
+                  {{ formatRelativeTime(item.create_time) }}
+                </template>
+                <template v-slot:description>
+                  {{ item.title }}
+                  <view class="coverBox" v-if="item.cover">
+                    <image :src="item.cover" mode="widthFix" />
+                  </view>
+                </template>
+              </wd-step>
+            </template>
+          </wd-steps>
+        </template>
+        <template v-else-if="activeNewsCache.hasInitialized">
+          <view class="emptyBox">
+            <view class="emptyImg"></view>
+            <view class="emptyText">{{ t('common.empty') }}</view>
+          </view>
+        </template>
+      </view>
     </view>
   </template>
   <template v-else>
-    <template v-if="newsList.data.length > 0">
+    <view v-if="newsList.data.length > 0" :style="{ paddingTop: cntPaddingTop + 36 + 20 + 'rpx' }">
       <view class="cell" v-for="(item, index) in newsList.data" :key="index">
         <view class="newsItem" @click="toUrl('/pages/cats/news/detail?id=' + item.id)">
           <view class="imgBox">
@@ -50,8 +55,8 @@
           </view>
         </view>
       </view>
-    </template>
-    <template v-else>
+    </view>
+    <template v-else-if="activeNewsCache.hasInitialized">
       <view class="emptyBox">
         <view class="emptyImg"></view>
         <view class="emptyText">{{ t('common.empty') }}</view>
@@ -61,12 +66,13 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { computed, nextTick, ref, watch, onMounted, onUnmounted } from 'vue'
 import { formatRelativeTime, formatTime, getImageUrl, toUrl } from '@/utils'
 import { getNewsListApi } from '@/service/api/news'
 import { t } from '@/locale'
 
-const tabType = ref(-1)
+type NewsTabType = -1 | 0
+const tabType = ref<NewsTabType>(-1)
 
 type LoadMoreState = 'loading' | 'finished' | 'error' | 'success'
 
@@ -78,6 +84,7 @@ interface NewsList {
 
 const props = defineProps<{
   state: LoadMoreState
+  cntPaddingTop: number
 }>()
 
 const emit = defineEmits<{
@@ -93,39 +100,113 @@ const newsList = ref<NewsList>({
 })
 
 let isRefreshing = false
+type NewsCache = {
+  list: NewsList
+  state: LoadMoreState
+  scrollTop: number
+  hasInitialized: boolean
+  isLoading: boolean
+}
+
+const createNewsList = (): NewsList => ({
+  data: [],
+  last_page: 1,
+  current_page: 0,
+})
+
+const createNewsCache = (): NewsCache => ({
+  list: createNewsList(),
+  state: 'loading',
+  scrollTop: 0,
+  hasInitialized: false,
+  isLoading: false,
+})
+
+const newsCacheMap = ref<Record<NewsTabType, NewsCache>>({
+  [-1]: createNewsCache(),
+  0: createNewsCache(),
+})
+const activeNewsCache = computed(() => newsCacheMap.value[tabType.value])
 
 // 更新加载状态
-const updateState = (state: LoadMoreState) => {
+const updateState = (state: LoadMoreState, type = tabType.value) => {
+  newsCacheMap.value[type].state = state
   emit('update:state', state)
 }
 
+const getPageScrollTop = () => {
+  return new Promise<number>((resolve) => {
+    uni
+      .createSelectorQuery()
+      .selectViewport()
+      .scrollOffset((res: any) => {
+        resolve(res?.scrollTop || 0)
+      })
+      .exec()
+  })
+}
+
+const saveCurrentScrollTop = async () => {
+  newsCacheMap.value[tabType.value].scrollTop = await getPageScrollTop()
+}
+
+const restoreScrollTop = (type: NewsTabType) => {
+  const cache = newsCacheMap.value[type]
+  nextTick(() => {
+    uni.pageScrollTo({
+      scrollTop: cache.hasInitialized ? cache.scrollTop || 0 : 0,
+      duration: 0,
+    })
+  })
+}
+
+const syncActiveCache = () => {
+  const cache = newsCacheMap.value[tabType.value]
+  newsList.value = cache.list
+  emit('update:state', cache.state)
+}
+
 // 加载新闻数据
-const loadNews = async (page = 1) => {
+const loadNews = async (page = 1, type = tabType.value) => {
+  const cache = newsCacheMap.value[type]
+  if (cache.isLoading) return
+
   try {
-    const res = await getNewsListApi(page, tabType.value)
+    cache.isLoading = true
+    const res = await getNewsListApi(page, type)
     if (page === 1) {
-      newsList.value = res.data
+      cache.list = res.data
     } else {
-      newsList.value.data = newsList.value.data.concat(res.data.data)
-      newsList.value.current_page = res.data.current_page
-      newsList.value.last_page = res.data.last_page
+      cache.list.data = cache.list.data.concat(res.data.data)
+      cache.list.current_page = res.data.current_page
+      cache.list.last_page = res.data.last_page
     }
 
     // 更新状态为非加载状态
-    updateState('success')
+    cache.state = 'success'
+    cache.hasInitialized = true
+    if (tabType.value === type) {
+      newsList.value = cache.list
+      updateState('success', type)
+    }
     // 如果是刷新操作，发出刷新完成事件
     if (isRefreshing && page === 1) {
       emit('refresh-complete')
       isRefreshing = false
     }
   } catch (error) {
-    updateState('error')
+    cache.state = 'error'
+    if (tabType.value === type) {
+      updateState('error', type)
+    }
     // 如果是刷新操作，发出刷新错误事件
     if (isRefreshing) {
       emit('refresh-error')
       isRefreshing = false
     }
     console.error('Failed to load news:', error)
+  } finally {
+    cache.isLoading = false
   }
 }
 
@@ -136,7 +217,7 @@ watch(
     if (newVal === 'loading') {
       // 检查是否还有更多数据可以加载
       if (newsList.value.current_page < newsList.value.last_page) {
-        loadNews(newsList.value.current_page + 1)
+        loadNews(newsList.value.current_page + 1, tabType.value)
       } else {
         // 如果没有更多数据，直接更新状态为完成
         updateState('finished')
@@ -147,11 +228,14 @@ watch(
 
 // 初始加载
 onMounted(() => {
-  loadNews()
+  syncActiveCache()
+  if (!newsCacheMap.value[tabType.value].hasInitialized) {
+    loadNews(1, tabType.value)
+  }
   // 监听刷新事件
   uni.$on('refreshNewsTab', () => {
     isRefreshing = true
-    loadNews(1)
+    loadNews(1, tabType.value)
   })
 })
 
@@ -160,12 +244,15 @@ onUnmounted(() => {
   uni.$off('refreshNewsTab')
 })
 
-const changeTab = (type: number) => {
+const changeTab = async (type: NewsTabType) => {
+  if (tabType.value === type) return
+  await saveCurrentScrollTop()
   tabType.value = type
-  newsList.value.data = []
-  newsList.value.current_page = 1
-  newsList.value.last_page = 1
-  loadNews()
+  syncActiveCache()
+  restoreScrollTop(type)
+  if (!newsCacheMap.value[type].hasInitialized) {
+    loadNews(1, type)
+  }
 }
 </script>
 
@@ -289,6 +376,14 @@ const changeTab = (type: number) => {
 ::v-deep .wd-step.is-process .wd-step__title,
 ::v-deep .wd-step.is-finished .wd-step__title {
   color: var(--wot-steps-finished-color, var(--wot-color-theme, #4d80f0));
+}
+.socialOpBox {
+  position: fixed;
+  width: 100vw;
+  z-index: 10;
+  align-items: flex-end !important;
+  background-color: var(--liberty-cats-page-background-color);
+  padding-bottom: 12rpx;
 }
 // news end
 </style>

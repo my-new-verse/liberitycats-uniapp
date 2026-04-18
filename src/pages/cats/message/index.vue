@@ -14,7 +14,10 @@
 }
 </route>
 <template>
-  <view>
+  <view
+    :class="activeCategory === 'community' ? 'community-cnt' : ''"
+    :style="{ '--message-nav-height': navHeight + 'rpx' }"
+  >
     <wd-tabs
       v-model="activeCategory"
       @click="handleCategoryChange"
@@ -66,7 +69,10 @@
             </template>
           </wd-segmented>
         </view>
-        <template v-if="listData.data?.length > 0">
+        <view
+          v-if="listData.data?.length > 0"
+          :class="activeCategory === 'community' ? 'com-socialBox' : ''"
+        >
           <view class="cell socialBox" v-for="item in listData.data" :key="item.id">
             <wd-swipe-action>
               <view class="socialItem" @click.stop="toDetail(item)">
@@ -77,7 +83,7 @@
                       custom-class="avatar"
                       :name="getIconName(item)"
                       size="22px"
-                      :color="item.is_read ? '#999999' : '#ff4d4f'"
+                      :color="item.is_read ? '#999999' : '#ff6b03'"
                     />
                   </view>
                   <view class="nameWrap" @click.stop="toUserHome(item.context.participantMemberId)">
@@ -100,9 +106,9 @@
               </template>
             </wd-swipe-action>
           </view>
-        </template>
+        </view>
         <template v-else>
-          <view class="emptyBox">
+          <view class="emptyBox" :class="{ 'com-emptyBox': activeCategory === 'community' }">
             <view class="emptyImg"></view>
           </view>
         </template>
@@ -141,16 +147,33 @@ const toast = useToast()
 const scrollTop = ref<number>(0)
 onPageScroll((e) => {
   scrollTop.value = e.scrollTop
+  saveCurrentScrollTop(e.scrollTop)
 })
 
 // 分页加载状态
 const state = ref<LoadMoreState>('loading')
-// 消息列表数据
-const listData = ref<getNotificationListResponse>({
+const createInitialListData = (): getNotificationListResponse => ({
   current_page: 0,
   data: [],
   last_page: 1,
   per_page: 15,
+})
+
+type NotificationSubtype = 'like' | 'follow' | 'comment'
+type NotificationCacheEntry = {
+  listData: getNotificationListResponse
+  state: LoadMoreState
+  loaded: boolean
+  loading: boolean
+  scrollTop: number
+}
+
+const createCacheEntry = (): NotificationCacheEntry => ({
+  listData: createInitialListData(),
+  state: 'loading',
+  loaded: false,
+  loading: false,
+  scrollTop: 0,
 })
 // 消息分类列表（对应接口category）
 const categoryList = ref([
@@ -189,6 +212,52 @@ const categoryList = ref([
 ])
 // 激活的分类
 const activeCategory = ref<string>('all')
+// 当前选中项
+const activeSubtype = ref<NotificationSubtype>('like')
+
+const listCache = reactive<Record<string, NotificationCacheEntry>>({})
+const getCacheKey = (category = activeCategory.value, subtype = activeSubtype.value) =>
+  category === 'community' ? `${category}:${subtype}` : category
+const currentCacheKey = ref(getCacheKey())
+const getCacheByKey = (key: string) => {
+  if (!listCache[key]) listCache[key] = createCacheEntry()
+  return listCache[key]
+}
+const getCurrentCache = () => getCacheByKey(getCacheKey())
+// 消息列表数据
+const listData = ref<getNotificationListResponse>(getCurrentCache().listData)
+const syncCurrentCache = () => {
+  const key = getCacheKey()
+  currentCacheKey.value = key
+  const cache = getCacheByKey(key)
+  listData.value = cache.listData
+  state.value = cache.state
+  scrollTop.value = cache.scrollTop
+}
+const saveCurrentScrollTop = (top = scrollTop.value) => {
+  getCacheByKey(currentCacheKey.value).scrollTop = top
+}
+const restoreCurrentScrollTop = () => {
+  const cache = getCacheByKey(currentCacheKey.value)
+  scrollTop.value = cache.scrollTop
+  nextTick(() => {
+    uni.pageScrollTo({
+      scrollTop: cache.scrollTop,
+      duration: 0,
+    })
+  })
+}
+const resetCacheEntry = (cache: NotificationCacheEntry) => {
+  const initialData = createInitialListData()
+  cache.listData.data = initialData.data
+  cache.listData.current_page = initialData.current_page
+  cache.listData.last_page = initialData.last_page
+  cache.listData.per_page = initialData.per_page
+  cache.state = 'loading'
+  cache.loaded = false
+  cache.loading = false
+  cache.scrollTop = 0
+}
 // 各分类未读数量
 const unreadByCategory = ref<UnreadByCategoryResponse>({
   system: 0,
@@ -223,13 +292,9 @@ onMounted(() => {
   navHeaderPaddingTop.value = safeTopRpx.value
   cntPaddingTop.value = navHeight.value + 88 // 导航栏+分类Tab高度
   // 初始化加载
-  listData.value.data = []
-  listData.value.current_page = 0
-  listData.value.last_page = 1
+  syncCurrentCache()
   loadMore()
 })
-// 当前选中项
-const activeSubtype = ref<'like' | 'follow' | 'comment'>('like')
 
 const subtypeList = computed(() => [
   {
@@ -293,36 +358,52 @@ const getUnreadByCategory = () => {
 }
 
 // 加载消息列表
-const loadMore = () => {
+const loadMore = (refresh = false) => {
+  const requestCategory = activeCategory.value
+  const requestSubtype = activeSubtype.value
+  const requestKey = getCacheKey(requestCategory, requestSubtype)
+  const cache = getCurrentCache()
+
+  if (cache.loading) return
+  if (refresh) resetCacheEntry(cache)
+
+  cache.loading = true
+  cache.state = 'loading'
   state.value = 'loading'
   uni.showLoading()
   // 传参：页码、分类
   getNotificationListApi(
-    listData.value.current_page + 1,
-    listData.value.per_page,
-    activeCategory.value && activeCategory.value !== 'all' ? activeCategory.value : '',
-    activeCategory.value === 'community' ? activeSubtype.value : null,
+    cache.listData.current_page + 1,
+    cache.listData.per_page,
+    requestCategory && requestCategory !== 'all' ? requestCategory : '',
+    requestCategory === 'community' ? requestSubtype : undefined,
   )
     .then((res) => {
       console.log(res)
 
       if (!res.data) return
       if (res.data.current_page === 1) {
-        listData.value.data = res.data.data
+        cache.listData.data = res.data.data
       } else if (res.data.current_page > 1) {
-        listData.value.data = listData.value.data.concat(res.data.data)
+        cache.listData.data = cache.listData.data.concat(res.data.data)
       }
       // listData.value.data = listData.value.data.concat(res.data.data)
-      listData.value.current_page = res.data.current_page
-      listData.value.last_page = res.data.last_page
+      cache.listData.current_page = res.data.current_page
+      cache.listData.last_page = res.data.last_page
+      cache.loaded = true
       // 加载完成
-      if (listData.value?.current_page === res.data.last_page) {
-        state.value = 'finished'
+      if (cache.listData?.current_page === res.data.last_page) {
+        cache.state = 'finished'
       }
       handleRefreshComplete()
     })
+    .catch(() => {
+      handleRefreshError()
+    })
     .finally(() => {
-      state.value = 'finished'
+      cache.loading = false
+      cache.state = 'finished'
+      if (getCacheKey() === requestKey) syncCurrentCache()
       uni.hideLoading()
     })
   getUnreadByCategory()
@@ -331,19 +412,24 @@ const loadMore = () => {
 
 // 切换消息分类
 const handleCategoryChange = (prop) => {
-  // 重置列表重新加载
-  listData.value.data = []
-  listData.value.current_page = 0
-  listData.value.last_page = 1
-  if (prop.name === 'community') activeSubtype.value = 'like'
-  loadMore()
+  saveCurrentScrollTop()
+  activeCategory.value = prop.name
+  syncCurrentCache()
+  restoreCurrentScrollTop()
+  const cache = getCurrentCache()
+  if (!cache.loaded) loadMore()
 }
-const handleSubtypeChange = () => {
-  // 重置列表重新加载
-  listData.value.data = []
-  listData.value.current_page = 0
-  listData.value.last_page = 1
-  loadMore()
+const handleSubtypeChange = (prop?: NotificationSubtype | { value?: NotificationSubtype }) => {
+  saveCurrentScrollTop()
+  if (typeof prop === 'string') {
+    activeSubtype.value = prop
+  } else if (prop?.value) {
+    activeSubtype.value = prop.value
+  }
+  syncCurrentCache()
+  restoreCurrentScrollTop()
+  const cache = getCurrentCache()
+  if (!cache.loaded) loadMore()
 }
 // 跳转到消息详情
 const toDetail = (notificationItem: any) => {
@@ -353,14 +439,14 @@ const toDetail = (notificationItem: any) => {
     return
   }
   handleMarkAsRead(notificationItem)
-  let { category, context } = notificationItem
+  const { category, context } = notificationItem
   switch (category) {
     case 'mall':
-      let { orderNo } = context
+      const { orderNo } = context
       toUrl('/pages/cats/order/detail?order_no=' + orderNo)
       break
     case 'community':
-      let { interactionTarget, rootPostId } = context
+      const { interactionTarget, rootPostId } = context
       /**
        *  rootPostId 所在帖子ID。
           interactionTarget：若 type === "Comment"，则 interactionTarget.id 定位被赞/被回复所在的那条评论ID；
@@ -369,12 +455,12 @@ const toDetail = (notificationItem: any) => {
       switch (notificationItem?.subtype) {
         // 关注
         case 'follow':
-          let { participantMemberId } = context
+          const { participantMemberId } = context
           toUrl('/pages/cats/user/home?member_id=' + participantMemberId)
           break
         // 点赞
         case 'like':
-          let { type, id } = interactionTarget
+          const { type, id } = interactionTarget
           if (type === 'Comment')
             toUrl(`/pages/cats/social/detail?id=${rootPostId}&showComment=${true}&commentId=${id}`)
           else toUrl('/pages/cats/social/detail?id=' + id)
@@ -402,8 +488,7 @@ const handleMarkAsRead = (notificationItem: any) => {
   if (notificationItem?.is_read == 1) return
   handleMarkReadApi(notificationItem?.id).then((res) => {
     if (res.code === 1) {
-      let findIndex = listData.value.data.findIndex((item) => item.id === notificationItem?.id)
-      listData.value.data[findIndex].is_read = 1
+      markNotificationReadInCache(notificationItem?.id)
       getNotificationUnreadCount()
       getUnreadByCategory()
     } else {
@@ -416,7 +501,7 @@ const handleReadAll = () => {
   if (activeCategory.value === 'all') {
     Promise.all([asyncMakeRead('system'), asyncMakeRead('community'), asyncMakeRead('mall')])
       .then(() => {
-        listData.value.data.forEach((item) => (item.is_read = 1))
+        markCategoryReadInCache()
         getNotificationUnreadCount()
         getUnreadByCategory()
       })
@@ -426,7 +511,7 @@ const handleReadAll = () => {
   } else {
     asyncMakeRead(activeCategory.value)
       .then(() => {
-        listData.value.data.forEach((item) => (item.is_read = 1))
+        markCategoryReadInCache(activeCategory.value)
         getNotificationUnreadCount()
         getUnreadByCategory()
       })
@@ -451,6 +536,19 @@ const asyncMakeRead = (activeCategory: string) => {
   })
 }
 const handleDelete = (notificationItem: any) => {}
+const markNotificationReadInCache = (notificationId: number | string) => {
+  Object.values(listCache).forEach((cache) => {
+    const findItem = cache.listData.data.find((item) => item.id === notificationId)
+    if (findItem) findItem.is_read = 1
+  })
+}
+const markCategoryReadInCache = (category?: string) => {
+  Object.values(listCache).forEach((cache) => {
+    cache.listData.data.forEach((item) => {
+      if (!category || item.category === category) item.is_read = 1
+    })
+  })
+}
 // 刷新状态追踪
 const isRefreshing = ref(false)
 const refreshError = ref(false)
@@ -479,11 +577,7 @@ const handleRefreshError = () => {
 onPullDownRefresh(() => {
   isRefreshing.value = true
   refreshError.value = false
-  // 重置列表重新加载
-  listData.value.data = []
-  listData.value.current_page = 0
-  listData.value.last_page = 1
-  loadMore()
+  loadMore(true)
   // 设置超时保护，防止刷新状态无限挂起
   setTimeout(() => {
     if (isRefreshing.value && !refreshError.value) {
@@ -560,9 +654,11 @@ const toUserHome = (memberId: number) => {
 }
 
 :deep(.cnt) {
-  padding-top: calc(40px + var(--liberty-cats-page-common-border-radius)) !important;
+  padding-top: calc(104rpx + var(--liberty-cats-page-common-border-radius)) !important;
 }
-
+:deep(.community-cnt .cnt) {
+  padding-top: 0 !important;
+}
 .nameWrap {
   display: flex;
   align-items: center;
@@ -587,12 +683,19 @@ const toUserHome = (memberId: number) => {
     font-family: Alibaba PuHuiTi2 !important;
   }
 }
+.com-socialBox {
+  padding-top: calc(104rpx + 180rpx);
+}
+.com-emptyBox {
+  padding-top: calc(104rpx + 180rpx);
+  box-sizing: border-box;
+}
 
 /* 未读红点 */
 .unread-dot {
   width: 8px;
   height: 8px;
-  background: red;
+  background: var(--liberty-cats-primary-color);
   border-radius: 50%;
   margin-right: 8px;
   // margin-top: 8px;
@@ -634,13 +737,16 @@ const toUserHome = (memberId: number) => {
 }
 
 .tab-wrapper {
-  padding: 0;
+  position: fixed;
+  top: calc(var(--message-nav-height) + 88rpx);
+  left: 0;
+  z-index: 9;
+  width: 100vw;
+  height: 180rpx;
+  padding: 0 40rpx;
+  margin: 0;
   background-color: var(--liberty-cats-page-background-color) !important;
-  // position: fixed;
-  // width: 100vw;
-  z-index: 7;
-  margin-bottom: 12rpx;
-  // border-top: 1px solid #f0f0f0;
+  box-sizing: border-box;
 }
 
 // 穿透分段器组件，适配三栏布局
@@ -648,17 +754,23 @@ const toUserHome = (memberId: number) => {
   background: transparent !important;
   border: none !important;
   padding: 0 !important;
+  width: 100%;
+  height: 100%;
   .wd-segmented__item {
     flex: 1;
     border: none !important;
     background-color: var(--liberty-cats-page-background-color) !important;
     padding: 0;
+    border-radius: 0 !important;
   }
 
   // 隐藏默认选中态下划线，用自定义样式替代
   .wd-segmented__item-active {
     // background: transparent !important;
     border: 1px solid red !important;
+  }
+  .wd-segmented__item--active {
+    height: auto !important;
   }
 }
 
@@ -730,5 +842,8 @@ const toUserHome = (memberId: number) => {
 }
 ::v-deep .wd-swipe-action__right {
   right: -2rpx;
+}
+:deep(.wd-badge__content) {
+  background-color: var(--liberty-cats-primary-color);
 }
 </style>

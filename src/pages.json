@@ -4,6 +4,7 @@
     "navigationBarTitleText": "Liberty Cats",
     "navigationBarBackgroundColor": "#ff6b03",
     "navigationBarTextStyle": "white",
+    "bounce": "none",
     "backgroundColor": "#FFFFFF",
     "enablePullDownRefresh": false,
     "onReachBottomDistance": 50

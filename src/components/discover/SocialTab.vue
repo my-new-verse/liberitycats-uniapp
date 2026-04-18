@@ -1,6 +1,6 @@
 <template>
   <view class="socialBox">
-    <view class="socialOpBox">
+    <view class="socialOpBox" :style="{ height: cntPaddingTop + 20 + 'rpx' }">
       <view
         class="opItem"
         :class="{ active: socialFilter === 'hot' }"
@@ -23,7 +23,10 @@
         {{ t('discover.social.filter.following') }}
       </view>
     </view>
-    <template v-if="socialList.data.length > 0">
+    <view
+      v-if="socialList.data.length > 0"
+      :style="{ paddingTop: cntPaddingTop + 36 + 20 + 'rpx' }"
+    >
       <view class="cell" v-for="item in socialList.data" :key="item.id">
         <view class="socialItem">
           <view
@@ -123,8 +126,8 @@
           </view>
         </view>
       </view>
-    </template>
-    <template v-else>
+    </view>
+    <template v-else-if="activeSocialCache.hasInitialized">
       <view class="emptyBox">
         <view class="emptyImg"></view>
       </view>
@@ -147,7 +150,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { computed, nextTick, ref, watch, onMounted, onUnmounted } from 'vue'
 import { t } from '@/locale/index'
 import {
   formatNickname,
@@ -178,6 +181,7 @@ const toast = useToast()
 
 const props = defineProps<{
   state: string
+  cntPaddingTop: number
 }>()
 
 const emit = defineEmits<{
@@ -193,61 +197,142 @@ const socialList = ref<getCommunityPostListApiResponse>({
 })
 
 let isRefreshing = false
+type SocialFilter = 'hot' | 'latest' | 'following'
+type LoadMoreState = 'loading' | 'finished' | 'error' | 'success'
+type SocialCache = {
+  list: getCommunityPostListApiResponse
+  state: LoadMoreState
+  scrollTop: number
+  hasInitialized: boolean
+  isLoading: boolean
+}
+
+const createSocialList = (): getCommunityPostListApiResponse => ({
+  current_page: 0,
+  data: [],
+  last_page: 1,
+})
+
+const createSocialCache = (): SocialCache => ({
+  list: createSocialList(),
+  state: 'loading',
+  scrollTop: 0,
+  hasInitialized: false,
+  isLoading: false,
+})
+
+const socialCacheMap = ref<Record<SocialFilter, SocialCache>>({
+  hot: createSocialCache(),
+  latest: createSocialCache(),
+  following: createSocialCache(),
+})
+const socialFilter = ref<SocialFilter>('latest')
+const activeSocialCache = computed(() => socialCacheMap.value[socialFilter.value])
 
 // 更新加载状态
-const updateState = (state: string) => {
+const updateState = (state: LoadMoreState, filter = socialFilter.value) => {
+  socialCacheMap.value[filter].state = state
   emit('update:state', state)
 }
 
-const socialFilter = ref('latest')
-const handleFilterChange = (filter: string) => {
+const getPageScrollTop = () => {
+  return new Promise<number>((resolve) => {
+    uni
+      .createSelectorQuery()
+      .selectViewport()
+      .scrollOffset((res: any) => {
+        resolve(res?.scrollTop || 0)
+      })
+      .exec()
+  })
+}
+
+const saveCurrentScrollTop = async () => {
+  socialCacheMap.value[socialFilter.value].scrollTop = await getPageScrollTop()
+}
+
+const restoreScrollTop = (filter: SocialFilter) => {
+  const cache = socialCacheMap.value[filter]
+  nextTick(() => {
+    uni.pageScrollTo({
+      scrollTop: cache.hasInitialized ? cache.scrollTop || 0 : 0,
+      duration: 0,
+    })
+  })
+}
+
+const syncActiveCache = () => {
+  const cache = socialCacheMap.value[socialFilter.value]
+  socialList.value = cache.list
+  emit('update:state', cache.state)
+}
+
+const handleFilterChange = async (filter: SocialFilter) => {
   if (filter === 'following' && userStore.isLogin === false) {
     toUrl('/pages/cats/login', true)
     return
   }
+  if (socialFilter.value === filter) return
+  await saveCurrentScrollTop()
   socialFilter.value = filter
-  socialList.value.data = []
-  socialList.value.current_page = 0
-  loadSocial()
+  syncActiveCache()
+  restoreScrollTop(filter)
+  if (!socialCacheMap.value[filter].hasInitialized) {
+    loadSocial(1, filter)
+  }
 }
 
 // 加载社交数据
-const loadSocial = async (page = 1) => {
+const loadSocial = async (page = 1, filter = socialFilter.value) => {
+  const cache = socialCacheMap.value[filter]
+  if (cache.isLoading) return
+
   try {
+    cache.isLoading = true
     const params: any = {}
-    if (socialFilter.value === 'following') {
+    if (filter === 'following') {
       params.scope = 'following'
       params.sort = 'latest'
     } else {
       params.scope = 'all'
-      params.sort = socialFilter.value
+      params.sort = filter
     }
 
     const res = await getCommunityPostListApi(page, params)
 
     if (page === 1) {
-      socialList.value = res.data
+      cache.list = res.data
     } else {
-      socialList.value.data = socialList.value.data.concat(res.data.data)
-      socialList.value.current_page = res.data.current_page
-      socialList.value.last_page = res.data.last_page
+      cache.list.data = cache.list.data.concat(res.data.data)
+      cache.list.current_page = res.data.current_page
+      cache.list.last_page = res.data.last_page
     }
 
     // 更新状态为非加载状态
-    updateState('success')
+    cache.state = 'success'
+    cache.hasInitialized = true
+    if (socialFilter.value === filter) {
+      socialList.value = cache.list
+      updateState('success', filter)
+    }
     // 如果是刷新操作，发出刷新完成事件
     if (isRefreshing && page === 1) {
       emit('refresh-complete')
       isRefreshing = false
     }
   } catch (error) {
-    updateState('error')
+    cache.state = 'error'
+    if (socialFilter.value === filter) {
+      updateState('error', filter)
+    }
     // 如果是刷新操作，发出刷新错误事件
     if (isRefreshing) {
       emit('refresh-error')
       isRefreshing = false
     }
     console.error('Failed to load social:', error)
+  } finally {
+    cache.isLoading = false
   }
 }
 
@@ -294,7 +379,7 @@ watch(
     if (newVal === 'loading') {
       // 检查是否还有更多数据可以加载
       if (socialList.value.current_page < socialList.value.last_page) {
-        loadSocial(socialList.value.current_page + 1)
+        loadSocial(socialList.value.current_page + 1, socialFilter.value)
       } else {
         // 如果没有更多数据，直接更新状态为完成
         updateState('finished')
@@ -369,11 +454,14 @@ const handleDelPost = (id: number) => {
 
 // 初始加载
 onMounted(() => {
-  loadSocial()
+  syncActiveCache()
+  if (!socialCacheMap.value[socialFilter.value].hasInitialized) {
+    loadSocial(1, socialFilter.value)
+  }
   // 监听刷新事件
   uni.$on('refreshSocialTab', () => {
     isRefreshing = true
-    loadSocial(1)
+    loadSocial(1, socialFilter.value)
   })
 })
 
@@ -514,5 +602,18 @@ const toUserHome = (memberId: number) => {
     color: #999;
     border: 1rpx solid #ddd;
   }
+}
+.socialOpBox {
+  position: fixed;
+  width: 100vw;
+  z-index: 10;
+  background-color: var(--liberty-cats-page-background-color);
+  align-items: flex-end !important;
+  padding-bottom: 12rpx;
+}
+:deep(.wd-sticky__container) {
+  width: 100vw;
+  z-index: 999;
+  background-color: #fff;
 }
 </style>
