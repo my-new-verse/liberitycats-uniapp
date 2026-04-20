@@ -86,8 +86,20 @@
                       :color="item.is_read ? '#999999' : '#ff6b03'"
                     />
                   </view>
-                  <view class="nameWrap" @click.stop="toUserHome(item.context.participantMemberId)">
-                    <view class="name" style="margin-left: 0">{{ item.i18n?.title || '' }}</view>
+                  <view class="nameWrap">
+                    <view class="name" style="margin-left: 0">
+                      <text>
+                        {{ item.display?.titleSegments?.[0]?.text || '' }}
+                        {{ item.display?.titleSegments?.[1]?.text || '' }}
+                      </text>
+                      <text
+                        v-if="item.display.titleSegments[2]"
+                        @click.stop="toUserHome(item.display.titleSegments[2].id)"
+                        style="font-weight: 700"
+                      >
+                        {{ ' ' + item.display.titleSegments?.[2]?.text || '' }}
+                      </text>
+                    </view>
                   </view>
                 </view>
                 <view class="socialCntBox">
