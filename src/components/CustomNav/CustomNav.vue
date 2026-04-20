@@ -107,7 +107,6 @@ const navigateBack = () => {
   z-index: 10;
   width: 100%;
   height: calc(104rpx + var(--liberty-cats-page-common-border-radius) + env(safe-area-inset-top));
-  overflow: hidden;
 
   .navHeaderBg {
     width: 100%;
@@ -132,6 +131,7 @@ const navigateBack = () => {
         width: 64rpx; // >= padding，保证不重叠
         height: 44rpx;
         transform: translateY(-50%);
+        pointer-events: auto;
         image {
           width: 44rpx;
           height: 44rpx;
@@ -180,15 +180,19 @@ const navigateBack = () => {
         color: #fff;
         font-size: 28rpx;
         font-family: Alibaba PuHuiTi2;
+        pointer-events: auto;
       }
     }
   }
 
   .navBg {
-    position: relative;
-    width: 100%;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
     height: var(--liberty-cats-page-common-border-radius);
     background-color: transparent;
+    pointer-events: none;
 
     .pbl2,
     .pbr2 {
