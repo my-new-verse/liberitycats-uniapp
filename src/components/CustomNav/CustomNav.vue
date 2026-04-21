@@ -189,7 +189,7 @@ const navigateBack = () => {
   .pbr2 {
     position: absolute;
     top: 100%;
-    z-index: 9;
+    z-index: 1;
     width: var(--liberty-cats-page-common-border-radius);
     height: var(--liberty-cats-page-common-border-radius);
     overflow: hidden;

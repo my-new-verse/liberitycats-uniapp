@@ -46,7 +46,6 @@
             :options="subtypeList"
             v-model:value="activeSubtype"
             custom-class="custom-segment"
-            :vibrate-short="true"
             @click="handleSubtypeChange"
           >
             <template #label="{ option }">
@@ -104,7 +103,7 @@
                 </view>
                 <view class="socialCntBox">
                   <view class="socialCnt">
-                    {{ item.i18n?.content || '' }}
+                    <rich-text :nodes="item?.i18n?.content" class="rich-text-ellipsis"></rich-text>
                   </view>
                   <view class="socialTime">
                     {{ formatRelativeTime(item.create_time) }}
@@ -112,7 +111,7 @@
                 </view>
               </view>
               <template #right>
-                <view class="button" style="background: #4d80f0" @click="handleMarkAsRead(item)">
+                <view class="button" style="background: #ff6b03" @click="handleMarkAsRead(item)">
                   {{ $t('notification.index.mark_read') }}
                 </view>
               </template>
@@ -685,7 +684,7 @@ const toUserHome = (memberId: number) => {
     // top: env(safe-area-inset-top);
     width: 100vw;
     left: 0;
-    z-index: 1;
+    z-index: 11;
     // background-color: #f7f6f4;
   }
 }
@@ -734,6 +733,8 @@ const toUserHome = (memberId: number) => {
   z-index: 10;
   .wd-tabs__nav {
     background-color: var(--liberty-cats-page-background-color) !important;
+    padding: 0 var(--liberty-cats-page-common-border-radius);
+    box-sizing: border-box;
     font-family:
       Alimama FangYuanTi VF,
       sans-serif;
@@ -741,6 +742,7 @@ const toUserHome = (memberId: number) => {
     height: var(--wot-tabs-nav-height, 88rpx);
     .wd-tabs__nav-container {
       height: 100%;
+      width: 100%;
       .wd-tabs__nav-item {
         height: 100%;
       }
@@ -857,5 +859,19 @@ const toUserHome = (memberId: number) => {
 }
 :deep(.wd-badge__content) {
   background-color: var(--liberty-cats-primary-color);
+}
+.rich-text-ellipsis {
+  width: 100%;
+  // line-height: 1.6; /* 统一行高，方便计算3行高度 */
+}
+
+:deep(.rich-text-ellipsis) {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1; /* 核心：限制3行 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* 兼容不支持 line-clamp 的环境，设置最大高度 */
+  // max-height: 4.8em; /* 3行 × 1.6行高 = 4.8em */
 }
 </style>
