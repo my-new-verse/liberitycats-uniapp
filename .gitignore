@@ -50,6 +50,8 @@ mp-360/
 
 # 其他缓存
 *.local
-*.tmp
-temp/node_modules/
-unpackage/
+
+# WeChat Mini Program & Others
+project.config.json
+project.private.config.json
+
