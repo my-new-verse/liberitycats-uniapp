@@ -117,6 +117,15 @@ onMounted(() => {
   })
 })
 
+onShow(() => {
+  uni.$emit('discoverPageVisibilityChange', true)
+  uni.$emit('discoverActiveTabChange', activeTab.value)
+})
+
+onHide(() => {
+  uni.$emit('discoverPageVisibilityChange', false)
+})
+
 // 页面滚动
 const scrollTop = ref(0)
 onPageScroll((e) => {
@@ -239,6 +248,7 @@ const handleRefreshError = () => {
 }
 
 onUnmounted(() => {
+  uni.$emit('discoverPageVisibilityChange', false)
   uni.$off('switchToSocialTab')
   uni.$off('switchToLibertyCatsTab')
   uni.$off('discoverActiveTabChange')

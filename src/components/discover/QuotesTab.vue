@@ -199,6 +199,8 @@ watch(
 )
 const webHeightPx = ref<number>(0)
 const webviewKey = ref(0)
+let isQuotesTabUnmounted = false
+const isQuotesParentTabActive = ref(false)
 
 let isRefreshing = false
 const hasLoadedCollection = ref(false)
@@ -313,11 +315,87 @@ const updateWebHeight = async () => {
   await nextTick()
 }
 
+const getCurrentPageWebview = () => {
+  // #ifdef APP-PLUS
+  const pages = getCurrentPages()
+  const page = pages[pages.length - 1]
+  return page?.$getAppWebview?.() || null
+  // #endif
+  return null
+}
+
+const removeWebviewListeners = (target?: any) => {
+  if (!target) return
+  target.onerror = null
+  target.onloaded = null
+  target.removeEventListener?.('loaded', handleWebviewLoaded)
+  target.removeEventListener?.('error', handleWebviewError)
+  target.removeEventListener?.('loaderror', handleWebviewError)
+  target.removeEventListener?.('receivedError', handleWebviewError)
+  target.removeEventListener?.('sslerror', handleWebviewError)
+  target.removeEventListener?.('httpError', handleWebviewError)
+}
+
+const getPageChildWebviews = () => {
+  // #ifdef APP-PLUS
+  const currentWebview = getCurrentPageWebview()
+  if (!currentWebview) return []
+  return currentWebview.children?.() || []
+  // #endif
+  return []
+}
+
+const hideAllPageWebviews = () => {
+  // #ifdef APP-PLUS
+  getPageChildWebviews().forEach((child: any) => {
+    try {
+      child.hide?.()
+    } catch (error) {
+      console.log('hide child webview failed', error)
+    }
+  })
+  // #endif
+}
+
+const destroyAllPageWebviews = () => {
+  // #ifdef APP-PLUS
+  const childWebviews = getPageChildWebviews()
+  childWebviews.forEach((child: any) => {
+    try {
+      removeWebviewListeners(child)
+      child.close?.()
+    } catch (error) {
+      console.log('close child webview failed', error)
+    }
+  })
+  if (webviewembed) {
+    removeWebviewListeners(webviewembed)
+    webviewembed = null
+  }
+  // #endif
+}
+
+const ensureLibertyWebviewReady = async () => {
+  // #ifdef APP-PLUS
+  if (!getServerOnOff('enable_quote')) return
+  if (!isQuotesParentTabActive.value || tabType.value !== 'liberty') return
+  if (webviewembed) {
+    setWebviewVisible(true)
+    return
+  }
+  await nextTick()
+  await updateWebHeight()
+  fixWebViewForApp()
+  // #endif
+}
+
 const setWebviewVisible = (visible: boolean) => {
   // #ifdef APP-PLUS
-  if (!webviewembed) return
-  if (visible && !hasWebviewError.value) webviewembed.show()
-  else webviewembed.hide()
+  if (visible && !hasWebviewError.value) {
+    webviewembed?.show?.()
+    return
+  }
+  hideAllPageWebviews()
   // #endif
 }
 
@@ -410,14 +488,12 @@ const handleWebviewError = (event?: any) => {
 // 监听错误状态，自动切换 Webview 显隐
 watch(hasWebviewError, (isError) => {
   // #ifdef APP-PLUS
-  if (!webviewembed) return
-
   if (isError) {
     // 出现错误时隐藏 Webview
-    webviewembed.hide()
+    hideAllPageWebviews()
   } else {
     // 错误解除且当前处于 liberty 标签页时显示 Webview
-    if (tabType.value === 'liberty') {
+    if (tabType.value === 'liberty' && webviewembed) {
       webviewembed.show()
     }
   }
@@ -428,11 +504,7 @@ watch(hasWebviewError, (isError) => {
 const handleWebviewReload = () => {
   console.log('用户点击了网络错误页的刷新按钮')
   // #ifdef APP-PLUS
-  // 销毁现有的 WebView 实例
-  if (webviewembed) {
-    webviewembed.close()
-    webviewembed = null
-  }
+  destroyAllPageWebviews()
   // #endif
 
   // 重置错误状态并重新创建 WebView
@@ -444,6 +516,7 @@ const handleWebviewReload = () => {
 const fixWebViewForApp = async () => {
   // #ifdef APP-PLUS
   await nextTick()
+  if (isQuotesTabUnmounted) return
   hasWebviewError.value = false // 开始加载前重置错误状态
 
   try {
@@ -456,11 +529,14 @@ const fixWebViewForApp = async () => {
 
     measureRects()
       .then(({ webRect }) => {
+        if (isQuotesTabUnmounted) return
         if (!webRect) {
           console.log('Failed to get webRect')
           hasWebviewError.value = true
           return
         }
+
+        destroyAllPageWebviews()
 
         webRectOption.value = webRect
 
@@ -500,7 +576,7 @@ const fixWebViewForApp = async () => {
           currentWebview.append(webviewembed)
         }
 
-        webviewembed.show()
+        setWebviewVisible(tabType.value === 'liberty')
       })
       .catch((e) => {
         console.log('webview创建失败', e)
@@ -524,33 +600,18 @@ const changeTab = async (type: QuotesTabType) => {
   }
   await nextTick()
   if (type === 'liberty' && getServerOnOff('enable_quote')) {
-    // fixWebViewForApp()
-    setWebviewVisible(true)
+    await ensureLibertyWebviewReady()
   } else {
-    setWebviewVisible(false)
+    hideAllPageWebviews()
   }
   if (type === 'hot' && !quotesCacheMap.value.hot.hasInitialized) {
     loadQuotes(1, 'hot')
   }
 }
-const destroyWebView = () => {
-  // #ifdef APP-PLUS
-  // 1. 获取当前页面的 WebView 实例
-  const pages = getCurrentPages()
-  const page = pages[pages.length - 1]
-  const currentWebview = page.$getAppWebview()
-
-  // 2. 查找子 WebView（<web-view> 是子窗口）
-  const children = currentWebview.children()
-  if (children.length > 0) {
-    const wv = children[0]
-    wv.close() // 关闭并销毁
-    // 或 wv.hide() 只是隐藏，不销毁
-  }
-  // #endif
-}
 
 onMounted(async () => {
+  isQuotesTabUnmounted = false
+  isQuotesParentTabActive.value = true
   const systemInfo = uni.getSystemInfoSync()
   const statusBarHeight = systemInfo.statusBarHeight || 0
 
@@ -582,44 +643,41 @@ onMounted(async () => {
     }
   })
   uni.$on('discoverActiveTabChange', (tabName: string) => {
-    const isQuotesTab = tabName === t('discover.tabs.quotes')
-    const shouldShow = isQuotesTab && tabType.value === 'liberty' && getServerOnOff('enable_quote')
-    setWebviewVisible(shouldShow)
+    isQuotesParentTabActive.value = tabName === t('discover.tabs.quotes')
+    if (!isQuotesParentTabActive.value) {
+      hideAllPageWebviews()
+      return
+    }
+    ensureLibertyWebviewReady()
   })
-  if (getServerOnOff('enable_quote') && !webviewembed) {
-    await nextTick()
-    await updateWebHeight()
-    fixWebViewForApp()
-  }
+  uni.$on('discoverPageVisibilityChange', (visible: boolean) => {
+    if (visible) {
+      if (isQuotesParentTabActive.value) ensureLibertyWebviewReady()
+      return
+    }
+    destroyAllPageWebviews()
+  })
+  await ensureLibertyWebviewReady()
 })
 
 // 组件卸载时移除事件监听
 // 解决merge
 onUnmounted(() => {
   console.log('destroyWebView ========')
-  if (getServerOnOff('enable_quote')) {
-    // 先移除所有事件监听，避免内存泄漏
-    if (webviewembed) {
-      webviewembed.removeEventListener?.('loaded', handleWebviewLoaded)
-      webviewembed.removeEventListener?.('error', handleWebviewError)
-      webviewembed.removeEventListener?.('loaderror', handleWebviewError)
-      webviewembed.removeEventListener?.('receivedError', handleWebviewError)
-      webviewembed.removeEventListener?.('sslerror', handleWebviewError)
-      webviewembed.removeEventListener?.('httpError', handleWebviewError)
-      // 关闭 webview
-      webviewembed.close()
-      // 置空实例
-      webviewembed = null
-      destroyWebView()
-    }
-  }
+  isQuotesTabUnmounted = true
+  destroyAllPageWebviews()
   uni.$off('discoverActiveTabChange')
+  uni.$off('discoverPageVisibilityChange')
   uni.$off('refreshQuotesTab')
 })
 
 onShow(() => {
   syncActiveCache()
-  setWebviewVisible(tabType.value === 'liberty' && getServerOnOff('enable_quote'))
+  if (!isQuotesParentTabActive.value) {
+    hideAllPageWebviews()
+    return
+  }
+  ensureLibertyWebviewReady()
 })
 </script>
 
