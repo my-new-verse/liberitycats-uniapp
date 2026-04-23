@@ -549,9 +549,10 @@ const fixWebViewForApp = async () => {
           scalable: true,
           progress: { color: '#ff6b03', height: '2px' },
         }
-        console.log('-----', wvStyle)
-        const webviewUrl: string = 'https://lcat8.com'
+        const webviewUrl: string =
+          getServerOnOff('quote_chart_url', 'common', true) || 'https://lcat8.com'
         // const webviewUrl: string = 'https://x.com/libertycats_app?s=21&t=WgFwIbY7xp0aZtdoT0lwqw'
+        console.log('-----', webviewUrl)
         // 创建新的 webview 实例
         webviewembed = plus.webview.create(webviewUrl, '', wvStyle)
 

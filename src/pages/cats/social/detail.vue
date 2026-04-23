@@ -17,7 +17,7 @@
           <view class="socialBox">
             <view class="socialItem">
               <view class="socialHead">
-                <view class="avatarBox" @click="toUserHome(postDetail?.member_id)">
+                <view class="avatarBox" @click="debouncedToUserHomeRef?.(postDetail?.member_id)">
                   <image
                     class="avatar"
                     :src="getImageUrl(postDetail?.member?.avatar + '?x-oss-process=style/jzcq')"
@@ -117,7 +117,7 @@
                 :id="'commentItem_' + item.id"
                 :class="{ highlight: highlightId === `commentItem_${item.id}` }"
               >
-                <view class="avatarBox" @click="toUserHome(item.member_id)">
+                <view class="avatarBox" @click="debouncedToUserHomeRef?.(item.member_id)">
                   <image
                     class="avatar"
                     :src="getImageUrl(item.member.avatar + '?x-oss-process=style/jzcq')"
@@ -590,18 +590,25 @@ const emotionList = ref<getCommunityEmotionListItem[]>([])
 const commentSearch = ref('latest')
 
 onLoad((options) => {
+  console.log('======', options)
+
   if (options.id) {
     postId.value = Number(options.id)
     // uni.showLoading()
-    // 获取评论列表
-    getCommentList()
-    getCommunityPostDetailApi(Number(options.id))
-      .then((res) => {
+    Promise.allSettled([
+      getCommentList(),
+      getCommunityPostDetailApi(Number(options.id)).then((res) => {
         postDetail.value = res.data
-      })
-      .finally(() => {
-        if (options.showComment === 'true') {
-          uni.hideLoading()
+      }),
+    ]).finally(() => {
+      if (options.showComment === 'true') {
+        uni.hideLoading()
+        if (options.commentId) {
+          setTimeout(() => {
+            if (commentList.value?.data?.length) scrollToAnchor('commentItem_' + options.commentId)
+            // uni.hideLoading()
+          }, 1000)
+        } else {
           setTimeout(() => {
             if (commentList.value?.data?.length === 0) {
               showCommentPopup()
@@ -609,16 +616,12 @@ onLoad((options) => {
               scrollToComment()
             }
             // uni.hideLoading()
-          }, 3000)
-          setTimeout(() => {
-            if (options.commentId && commentList.value?.data?.length !== 0)
-              scrollToAnchor('commentItem_' + options.commentId)
-            // uni.hideLoading()
           }, 1000)
-        } else {
-          uni.hideLoading()
         }
-      })
+      } else {
+        uni.hideLoading()
+      }
+    })
 
     // 加载表情列表
     getCommunityEmotionListByCategoryApi().then((res) => {
@@ -758,6 +761,8 @@ const toShare = (post: getPostDetailResponse) => {
 
 // 使用 ref 来存储防抖函数的引用
 const debouncedCreateComment = ref<(() => Promise<void>) | null>(null)
+const debouncedToUserHomeRef = ref<((memberId: number) => void) | null>(null)
+
 onMounted(() => {
   // 确保只初始化一次
   if (!debouncedCreateCommentRef.value) {
@@ -770,6 +775,20 @@ onMounted(() => {
       {
         leading: false,
         trailing: true,
+      },
+    )
+  }
+
+  if (!debouncedToUserHomeRef.value) {
+    debouncedToUserHomeRef.value = debounce(
+      (memberId: number) => {
+        if (!memberId) return
+        toUserHome(memberId)
+      },
+      300,
+      {
+        leading: true,
+        trailing: false,
       },
     )
   }
