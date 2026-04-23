@@ -3,6 +3,52 @@ import { isMp } from './platform'
 import { t } from '@/locale'
 import CryptoJS from 'crypto-js'
 
+let navigationLocked = false
+let navigationUnlockTimer: ReturnType<typeof setTimeout> | null = null
+type NavigationLifecycleCallbacks = {
+  success: () => void
+  fail: () => void
+  complete: () => void
+}
+
+const unlockNavigation = () => {
+  navigationLocked = false
+  if (navigationUnlockTimer) {
+    clearTimeout(navigationUnlockTimer)
+    navigationUnlockTimer = null
+  }
+}
+
+const scheduleNavigationUnlock = (delay = 800) => {
+  if (navigationUnlockTimer) {
+    clearTimeout(navigationUnlockTimer)
+  }
+  navigationUnlockTimer = setTimeout(() => {
+    unlockNavigation()
+  }, delay)
+}
+
+const runNavigationOnce = (navigate: (callbacks: NavigationLifecycleCallbacks) => void) => {
+  if (navigationLocked) return false
+
+  navigationLocked = true
+  scheduleNavigationUnlock()
+
+  navigate({
+    success: () => {
+      scheduleNavigationUnlock()
+    },
+    fail: () => {
+      unlockNavigation()
+    },
+    complete: () => {
+      scheduleNavigationUnlock(300)
+    },
+  })
+
+  return true
+}
+
 const getLastPage = () => {
   // getCurrentPages() 至少有1个元素，所以不再额外判断
   // const lastPage = getCurrentPages().at(-1)
@@ -221,6 +267,60 @@ export const toUrl = (url: string, needLogin?: boolean, redirect?: boolean) => {
       })
     }
   }
+}
+export const toUrlOnce = (url: string, needLogin?: boolean, redirect?: boolean) => {
+  const hasToken = uni.getStorageSync('hasToken')
+  if (needLogin) {
+    if (hasToken) {
+      if (redirect) {
+        runNavigationOnce((callbacks) => {
+          uni.redirectTo({
+            url,
+            ...callbacks,
+          })
+        })
+      } else {
+        runNavigationOnce((callbacks) => {
+          uni.navigateTo({
+            url,
+            ...callbacks,
+          })
+        })
+      }
+    } else {
+      runNavigationOnce((callbacks) => {
+        uni.navigateTo({
+          url: '/pages/cats/login/login',
+          ...callbacks,
+        })
+      })
+    }
+  } else {
+    if (redirect) {
+      runNavigationOnce((callbacks) => {
+        uni.redirectTo({
+          url,
+          ...callbacks,
+        })
+      })
+    } else {
+      runNavigationOnce((callbacks) => {
+        uni.navigateTo({
+          url,
+          ...callbacks,
+        })
+      })
+    }
+  }
+}
+
+export const navigateToOnce = (url: string) => {
+  return runNavigationOnce((callbacks) => {
+    uni.navigateTo({
+      url,
+      ...callbacks,
+    })
+  })
 }
 
 export const todoMsg = () => {
@@ -569,7 +669,7 @@ export const handlePreview = (images: string[], currentIndex: number = 0, needDe
   // 2. 调用 uni-app 原生预览（支持左右滑动）
   uni.previewImage({
     current: currentIndex,
-    urls: urls, // 所有图片数组
+    urls, // 所有图片数组
     indicator: 'number', // 显示页码
     loop: true, // 循环滑动
   })
