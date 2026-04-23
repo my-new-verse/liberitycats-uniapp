@@ -74,7 +74,7 @@
         >
           <view class="cell socialBox" v-for="item in listData.data" :key="item.id">
             <wd-swipe-action>
-              <view class="socialItem" @click.stop="toDetail(item)">
+              <view class="socialItem" @click.stop="debouncedToDetailRef?.(item)">
                 <view class="socialHead">
                   <view class="unread-dot" :class="{ hide: item.is_read }"></view>
                   <view class="avatarBox">
@@ -93,7 +93,7 @@
                       </text>
                       <text
                         v-if="item.display.titleSegments[2]"
-                        @click.stop="toUserHome(item.display.titleSegments[2].id)"
+                        @click.stop="debouncedToUserHomeRef?.(item.display.titleSegments[2].id)"
                         style="font-weight: 700"
                       >
                         {{ ' ' + item.display.titleSegments?.[2]?.text || '' }}
@@ -136,7 +136,7 @@
 
 <script lang="ts" setup>
 import i18n, { t } from '@/locale/index'
-import { formatRelativeTime, toUrl } from '@/utils'
+import { formatRelativeTime, toUrlOnce, toUrl } from '@/utils'
 import { useToast } from 'wot-design-uni'
 // 滚动加载类型
 import { LoadMoreState } from 'wot-design-uni/components/wd-loadmore/types'
@@ -152,6 +152,7 @@ import {
 } from '@/service/api/message'
 import CustomNav from '@/components/CustomNav/CustomNav.vue'
 import { useUserStore } from '@/store/user'
+import { debounce } from 'lodash-es'
 const userStore = useUserStore()
 const toast = useToast()
 // 滚动到顶部监听
@@ -290,6 +291,8 @@ const navHeight = ref<number>(0)
 const navHeaderPaddingTop = ref<number>(0)
 const cntPaddingTop = ref<number>(0)
 
+const debouncedToDetailRef = ref<((notificationItem: any) => void) | null>(null)
+const debouncedToUserHomeRef = ref<((memberId: number) => void) | null>(null)
 onMounted(() => {
   // 状态栏高度转rpx
   const systemInfo = uni.getSystemInfoSync()
@@ -305,6 +308,19 @@ onMounted(() => {
   // 初始化加载
   syncCurrentCache()
   loadMore()
+  if (!debouncedToDetailRef.value) {
+    debouncedToDetailRef.value = debounce(toDetail, 300, {
+      leading: true,
+      trailing: false,
+    })
+  }
+
+  if (!debouncedToUserHomeRef.value) {
+    debouncedToUserHomeRef.value = debounce(toUserHome, 300, {
+      leading: true,
+      trailing: false,
+    })
+  }
 })
 
 const subtypeList = computed(() => [
@@ -454,7 +470,7 @@ const toDetail = (notificationItem: any) => {
   switch (category) {
     case 'mall':
       const { orderNo } = context
-      toUrl('/pages/cats/order/detail?order_no=' + orderNo)
+      toUrlOnce('/pages/cats/order/detail?order_no=' + orderNo)
       break
     case 'community':
       const { interactionTarget, rootPostId } = context
@@ -467,19 +483,21 @@ const toDetail = (notificationItem: any) => {
         // 关注
         case 'follow':
           const { participantMemberId } = context
-          toUrl('/pages/cats/user/home?member_id=' + participantMemberId)
+          toUrlOnce('/pages/cats/user/home?member_id=' + participantMemberId)
           break
         // 点赞
         case 'like':
           const { type, id } = interactionTarget
           if (type === 'Comment')
-            toUrl(`/pages/cats/social/detail?id=${rootPostId}&showComment=${true}&commentId=${id}`)
-          else toUrl('/pages/cats/social/detail?id=' + id)
+            toUrlOnce(
+              `/pages/cats/social/detail?id=${rootPostId}&showComment=${true}&commentId=${id}`,
+            )
+          else toUrlOnce('/pages/cats/social/detail?id=' + id)
           break
         // 评论
         case 'comment':
           // 评论的话，都要跳到对应的评论，现在的评论只能评论帖子
-          toUrl(
+          toUrlOnce(
             `/pages/cats/social/detail?id=${rootPostId}&showComment=${true}&commentId=${context?.commentId}`,
           )
           break
@@ -489,7 +507,7 @@ const toDetail = (notificationItem: any) => {
 
       break
     case 'system':
-      toUrl('/pages/cats/notification/detail?id=' + notificationItem.id)
+      toUrlOnce('/pages/cats/notification/detail?id=' + notificationItem.id)
       break
     default:
       break
@@ -635,10 +653,13 @@ const getIconName = (item: any) => {
 
 // 跳转用户主页
 const toUserHome = (memberId: number) => {
-  uni.navigateTo({
-    url: `/pages/cats/user/home?member_id=${memberId}`,
-  })
+  toUrlOnce(`/pages/cats/user/home?member_id=${memberId}`)
 }
+
+onUnmounted(() => {
+  ;(debouncedToDetailRef.value as any)?.cancel?.()
+  ;(debouncedToUserHomeRef.value as any)?.cancel?.()
+})
 </script>
 
 <style lang="scss" scoped>
