@@ -7,7 +7,7 @@
       pullToRefresh: {
         style: 'circle',
         color: '#ff6b03',
-        offset: '80rpx',
+        offset: '140rpx',
       },
     },
   },
@@ -22,7 +22,6 @@
       v-model="activeCategory"
       @click="handleCategoryChange"
       :line-width="20"
-      swipeable
       :style="{ paddingTop: navHeight + 'rpx' }"
       custom-class="custom-tab"
     >
@@ -69,56 +68,74 @@
           </wd-segmented>
         </view>
         <view
-          v-if="listData.data?.length > 0"
+          v-show="listData.data?.length > 0"
           :class="activeCategory === 'community' ? 'com-socialBox' : ''"
         >
-          <view class="cell socialBox" v-for="item in listData.data" :key="item.id">
-            <wd-swipe-action>
-              <view class="socialItem" @click.stop="debouncedToDetailRef?.(item)">
-                <view class="socialHead">
-                  <view class="unread-dot" :class="{ hide: item.is_read }"></view>
-                  <view class="avatarBox">
-                    <wd-icon
-                      custom-class="avatar"
-                      :name="getIconName(item)"
-                      size="22px"
-                      :color="item.is_read ? '#999999' : '#ff6b03'"
-                    />
+          <view class="cell socialBox" v-for="(item, index) in listData.data" :key="item.id">
+            <view
+              class="item-wrapper"
+              @touchend.stop="onTouchWrapperEnd($event, index)"
+              @touchcancel.stop="onTouchWrapperEnd($event, index)"
+            >
+              <view
+                class="item-inner"
+                :style="{ transform: `translateX(${item.offsetX}px)`, transition: item.transition }"
+                @touchstart.stop="onTouchStart($event, index)"
+                @touchmove.stop="onTouchMove($event, index)"
+                @touchend.stop="onTouchEnd($event, index)"
+                @touchcancel.stop="onTouchEnd($event, index)"
+              >
+                <view class="item-content socialItem" @click.stop="handleDetailClick(item)">
+                  <view class="socialHead">
+                    <view class="unread-dot" :class="{ hide: item.is_read }"></view>
+                    <view class="avatarBox">
+                      <wd-icon
+                        custom-class="avatar"
+                        :name="getIconName(item)"
+                        size="22px"
+                        :color="item.is_read ? '#999999' : '#ff6b03'"
+                      />
+                    </view>
+                    <view class="nameWrap">
+                      <view class="name" style="margin-left: 0">
+                        <text>
+                          {{ item.display?.titleSegments?.[0]?.text || '' }}
+                          {{ item.display?.titleSegments?.[1]?.text || '' }}
+                        </text>
+                        <view
+                          v-if="item.display.titleSegments[2]"
+                          class="name-link"
+                          @click.stop="handleUserHomeClick(item)"
+                        >
+                          <text style="font-weight: 700">
+                            {{ ' ' + item.display.titleSegments?.[2]?.text || '' }}
+                          </text>
+                        </view>
+                      </view>
+                    </view>
                   </view>
-                  <view class="nameWrap">
-                    <view class="name" style="margin-left: 0">
-                      <text>
-                        {{ item.display?.titleSegments?.[0]?.text || '' }}
-                        {{ item.display?.titleSegments?.[1]?.text || '' }}
-                      </text>
-                      <text
-                        v-if="item.display.titleSegments[2]"
-                        @click.stop="debouncedToUserHomeRef?.(item.display.titleSegments[2].id)"
-                        style="font-weight: 700"
-                      >
-                        {{ ' ' + item.display.titleSegments?.[2]?.text || '' }}
-                      </text>
+                  <view class="socialCntBox">
+                    <view class="socialCnt">
+                      <rich-text
+                        :nodes="item?.i18n?.content"
+                        class="rich-text-ellipsis"
+                      ></rich-text>
+                    </view>
+                    <view class="socialTime">
+                      {{ formatRelativeTime(item.create_time) }}
                     </view>
                   </view>
                 </view>
-                <view class="socialCntBox">
-                  <view class="socialCnt">
-                    <rich-text :nodes="item?.i18n?.content" class="rich-text-ellipsis"></rich-text>
-                  </view>
-                  <view class="socialTime">
-                    {{ formatRelativeTime(item.create_time) }}
+                <view class="item-actions">
+                  <view class="action-btn delete" @click.stop="handleMarkAsRead(item)">
+                    {{ $t('notification.index.mark_read') }}
                   </view>
                 </view>
               </view>
-              <template #right>
-                <view class="button" style="background: #ff6b03" @click="handleMarkAsRead(item)">
-                  {{ $t('notification.index.mark_read') }}
-                </view>
-              </template>
-            </wd-swipe-action>
+            </view>
           </view>
         </view>
-        <template v-else>
+        <template v-show="!listData.data?.length">
           <view class="emptyBox" :class="{ 'com-emptyBox': activeCategory === 'community' }">
             <view class="emptyImg"></view>
           </view>
@@ -292,7 +309,7 @@ const navHeaderPaddingTop = ref<number>(0)
 const cntPaddingTop = ref<number>(0)
 
 const debouncedToDetailRef = ref<((notificationItem: any) => void) | null>(null)
-const debouncedToUserHomeRef = ref<((memberId: number) => void) | null>(null)
+const debouncedToUserHomeRef = ref<((notificationItem: any) => void) | null>(null)
 onMounted(() => {
   // 状态栏高度转rpx
   const systemInfo = uni.getSystemInfoSync()
@@ -460,6 +477,15 @@ const handleSubtypeChange = (prop?: NotificationSubtype | { value?: Notification
 }
 // 跳转到消息详情
 const toDetail = (notificationItem: any) => {
+  if (shouldSuppressSwipeTap(notificationItem)) {
+    clearSwipeTapSuppressed()
+    return
+  }
+  if (notificationItem.opened || notificationItem.offsetX !== 0) {
+    // 如果滑块是开着的，则执行关闭逻辑
+    closeSwipe(notificationItem)
+    return
+  }
   if (!userStore.isLogin) {
     // toast.show(t('common.toast.pleaseLogin'))
     toUrl('/pages/cats/login', true, false)
@@ -513,15 +539,23 @@ const toDetail = (notificationItem: any) => {
       break
   }
 }
+const handleDetailClick = (notificationItem: any) => {
+  debouncedToDetailRef.value?.(notificationItem)
+}
 const handleMarkAsRead = (notificationItem: any) => {
-  if (notificationItem?.is_read == 1) return
+  if (notificationItem?.is_read == 1) {
+    closeSwipe(notificationItem)
+    return
+  }
   handleMarkReadApi(notificationItem?.id).then((res) => {
     if (res.code === 1) {
       markNotificationReadInCache(notificationItem?.id)
       getNotificationUnreadCount()
       getUnreadByCategory()
+      closeSwipe(notificationItem)
     } else {
       toast.show(res.msg || t('common.error'))
+      closeSwipe(notificationItem)
     }
   })
 }
@@ -652,8 +686,164 @@ const getIconName = (item: any) => {
 }
 
 // 跳转用户主页
-const toUserHome = (memberId: number) => {
+const toUserHome = (notificationItem: any) => {
+  if (shouldSuppressSwipeTap(notificationItem)) {
+    clearSwipeTapSuppressed()
+    return
+  }
+  const memberId = notificationItem?.display.titleSegments[2].id
+  if (notificationItem.opened || notificationItem.offsetX !== 0) {
+    // 如果滑块是开着的，则执行关闭逻辑
+    closeSwipe(notificationItem)
+    return
+  }
   toUrlOnce(`/pages/cats/user/home?member_id=${memberId}`)
+}
+const handleUserHomeClick = (notificationItem: any) => {
+  debouncedToUserHomeRef.value?.(notificationItem)
+}
+// 按钮宽度 (px)
+const BUTTON_WIDTH = 112
+
+interface ChatItem {
+  id: number
+  nickname: string
+  lastMsg: string
+  avatar: string
+  offsetX: number // 当前偏移量
+  transition: string // 动画
+}
+const swipeTouchState = reactive({
+  activeIndex: -1,
+  startX: 0,
+  startY: 0,
+  startOffset: 0,
+  currentOffset: 0,
+  horizontalLocked: false,
+  dragging: false,
+  suppressTapItemId: '',
+  suppressTapUntil: 0,
+})
+const markSwipeTapSuppressed = (item: any) => {
+  swipeTouchState.suppressTapItemId = String(item?.id ?? '')
+  swipeTouchState.suppressTapUntil = Date.now() + 320
+}
+const shouldSuppressSwipeTap = (item: any) =>
+  swipeTouchState.suppressTapItemId === String(item?.id ?? '') &&
+  Date.now() < swipeTouchState.suppressTapUntil
+const clearSwipeTapSuppressed = () => {
+  swipeTouchState.suppressTapItemId = ''
+  swipeTouchState.suppressTapUntil = 0
+}
+
+const onTouchStart = (e: TouchEvent, index: number) => {
+  e.stopPropagation?.()
+  // 开始触摸时关闭所有其他已打开的项
+  listData.value.data.forEach((item, i) => {
+    if (i !== index) {
+      item.offsetX = 0
+      item.transition = 'transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1)'
+    }
+  })
+
+  const touch = e.touches?.[0]
+  if (!touch) return
+
+  swipeTouchState.activeIndex = index
+  swipeTouchState.startX = touch.clientX
+  swipeTouchState.startY = touch.clientY
+  swipeTouchState.startOffset = listData.value.data[index].offsetX || 0
+  swipeTouchState.currentOffset = swipeTouchState.startOffset
+  swipeTouchState.horizontalLocked = false
+  swipeTouchState.dragging = false
+  listData.value.data[index].transition = 'none'
+}
+
+const onTouchMove = (e: TouchEvent, index: number) => {
+  if (swipeTouchState.activeIndex !== index) return
+  e.stopPropagation?.()
+  const touch = e.touches?.[0]
+  if (!touch) return
+  const currentItem = listData.value.data[index]
+
+  const deltaX = touch.clientX - swipeTouchState.startX
+  const deltaY = touch.clientY - swipeTouchState.startY
+
+  if (!swipeTouchState.horizontalLocked) {
+    if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 8) return
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 8) {
+      swipeTouchState.horizontalLocked = true
+    } else {
+      return
+    }
+  }
+
+  swipeTouchState.dragging = true
+  e.preventDefault?.()
+  let nextOffset = swipeTouchState.startOffset + deltaX
+  if (nextOffset < -BUTTON_WIDTH) nextOffset = -BUTTON_WIDTH
+  if (nextOffset > 0) nextOffset = 0
+
+  swipeTouchState.currentOffset = nextOffset
+  currentItem.offsetX = nextOffset
+}
+
+const onTouchEnd = (e: TouchEvent, index: number) => {
+  if (swipeTouchState.activeIndex !== index) return
+  e.stopPropagation?.()
+
+  const currentItem = listData.value.data[index]
+  currentItem.transition = 'transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1)'
+
+  // 已展开状态下的轻点，直接收起，不再等 click 事件二次触发
+  if (!swipeTouchState.dragging && swipeTouchState.startOffset < 0) {
+    markSwipeTapSuppressed(currentItem)
+    currentItem.offsetX = 0
+    swipeTouchState.activeIndex = -1
+    swipeTouchState.startOffset = 0
+    swipeTouchState.currentOffset = 0
+    swipeTouchState.horizontalLocked = false
+    swipeTouchState.dragging = false
+    return
+  }
+
+  const currentOffset = swipeTouchState.dragging
+    ? swipeTouchState.currentOffset
+    : swipeTouchState.startOffset
+  const movedLeft = currentOffset < swipeTouchState.startOffset
+
+  if (currentOffset <= -BUTTON_WIDTH + 2) {
+    currentItem.offsetX = -BUTTON_WIDTH
+  } else if (currentOffset >= -2) {
+    currentItem.offsetX = 0
+  } else if (movedLeft && currentOffset <= -BUTTON_WIDTH / 3) {
+    currentItem.offsetX = -BUTTON_WIDTH
+  } else if (!movedLeft && currentOffset >= (-BUTTON_WIDTH * 2) / 3) {
+    currentItem.offsetX = 0
+  } else if (Math.abs(currentOffset) >= BUTTON_WIDTH / 2) {
+    currentItem.offsetX = -BUTTON_WIDTH
+  } else {
+    currentItem.offsetX = 0
+  }
+
+  swipeTouchState.activeIndex = -1
+  swipeTouchState.startOffset = 0
+  swipeTouchState.currentOffset = 0
+  swipeTouchState.horizontalLocked = false
+  swipeTouchState.dragging = false
+}
+const onTouchWrapperEnd = (e: TouchEvent, index: number) => {
+  if (swipeTouchState.activeIndex !== index) return
+  onTouchEnd(e, index)
+}
+// 提取关闭滑块的公共方法
+const closeSwipe = (item: any) => {
+  // 给一个丝滑的动画时间
+  item.transition = 'transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1)'
+  // 位移归零
+  item.offsetX = 0
+  // 状态置为关闭
+  item.opened = false
 }
 
 onUnmounted(() => {
@@ -695,6 +885,18 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 12rpx;
+}
+
+.name {
+  pointer-events: none;
+}
+
+.name-link {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  flex: 0 0 auto;
+  pointer-events: auto;
 }
 
 :deep(.wd-tabs) {
@@ -894,5 +1096,55 @@ onUnmounted(() => {
   text-overflow: ellipsis;
   /* 兼容不支持 line-clamp 的环境，设置最大高度 */
   // max-height: 4.8em; /* 3行 × 1.6行高 = 4.8em */
+}
+
+.item-wrapper {
+  width: 100%;
+  overflow: hidden; // 隐藏超出的按钮
+}
+
+.item-inner {
+  display: flex;
+  width: calc(100% + 112px - 5px);
+  will-change: transform;
+  /* 确保初始状态也足够温和 */
+  transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+  // margin: 16rpx;
+  touch-action: pan-y;
+}
+
+.item-content {
+  width: 100vw; // 确保内容撑满屏幕宽度
+  box-sizing: border-box;
+  align-items: center;
+  padding: 16rpx;
+  .label {
+    font-size: 32rpx;
+    font-style: normal;
+    font-weight: 500;
+    line-height: 48rpx;
+    color: #261000;
+  }
+}
+
+.item-actions {
+  width: 112px; // 与 JS 中的 BUTTON_WIDTH 一致
+  display: flex;
+
+  .action-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 28rpx;
+    border-radius: 0 34rpx 34rpx 0;
+    &.delete {
+      background-color: #ff6b03;
+    }
+  }
+}
+::v-deep .cell {
+  padding: 16rpx;
 }
 </style>
