@@ -216,6 +216,13 @@
       "type": "page"
     },
     {
+      "path": "pages/webview/index",
+      "type": "page",
+      "style": {
+        "navigationBarTitleText": "LCAT AI"
+      }
+    },
+    {
       "path": "pages/cats/about/index",
       "type": "page",
       "style": {

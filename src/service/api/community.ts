@@ -59,11 +59,17 @@ export const getCommunityPostDetailApi = (id: number) => {
 }
 
 // 社区帖子评论列表
-export const getCommunityPostCommentListApi = (id: number, sort: string, page: number) => {
+export const getCommunityPostCommentListApi = (
+  id: number,
+  sort: string,
+  page: number,
+  secondary_preview_limit: number = 1,
+) => {
   return http.get<getCommunityPostListApiResponse>('/v1/community/post/get-comment-list', {
     id,
     sort,
     page,
+    secondary_preview_limit,
   })
 }
 
@@ -75,11 +81,17 @@ export const likePostApi = (id: number) => {
 }
 
 // 评论帖子
-export const commitPostApi = (id: number, content: string, images: string[]) => {
+export const commitPostApi = (
+  id: number,
+  content: string,
+  images: string[],
+  request_id: string,
+) => {
   return http.post('/v1/community/post/commit', {
     id,
     content,
     images,
+    request_id,
   })
 }
 
@@ -165,4 +177,42 @@ export interface MemberHomepageResponse {
   }
   post_list: any[]
   [key: string]: any
+}
+
+export interface ReplyToMember {
+  id: number
+  nickname: string
+  avatar: string
+}
+
+export interface CommentItem extends getPostDetailResponse {
+  reply_count?: number
+  hidden_reply_count?: number
+  reply_preview?: CommentItem[]
+
+  reply_to_id?: number
+  reply_member_id?: number
+  is_post_author?: number
+  is_l1_author?: number
+  reply_to_member?: ReplyToMember
+}
+
+export interface CommentListResponse {
+  current_page: number
+  data: CommentItem[]
+  last_page: number
+}
+
+export interface CommentThreadResponse {
+  items: CommentItem[]
+  next_last_id: string
+  has_more: number
+}
+
+export const getCommunityPostThreadApi = (id: number, limit: number = 20, last_id?: string) => {
+  return http.get<CommentThreadResponse>('/v1/community/post/get-comment-thread', {
+    id,
+    limit,
+    last_id,
+  })
 }

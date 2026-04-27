@@ -154,6 +154,11 @@
   "social.index.report_post_confirm_txt": "確定举报？",
   "social.index.report_user_confirm_txt": "确定屏蔽用户吗？",
   "social.detail.comment.placeholder": "添加評論",
+  "social.detail.comment.reply_to": "回覆 ",
+  "social.detail.comment.expand": "展開 ",
+  "social.detail.comment.reply": "則回覆",
+  "social.detail.comment.more": "展開更多回覆",
+  "social.detail.comment.reply_prefix": "回覆 ",
   "social.detail.comment.btn.send": "發表",
   "social.detail.content.not_audit_seed_myself": "內容未稽核，僅自己可見",
   "social.index.post.report": "举报帖子",
@@ -162,6 +167,7 @@
   "social.index.user.follow.success": "關注成功",
   "social.index.user.follow.canceled": "已取消關注",
   "social.index.user.unfollow": "取消關注",
+  "social.share.to": "分享至",
 
   "news.detail.page_title": "新聞詳情",
 
