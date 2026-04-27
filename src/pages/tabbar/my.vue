@@ -392,6 +392,7 @@
 
       <wd-message-box selector="wd-message-box-slot2"></wd-message-box>
     </view>
+    <FloatingCat />
   </view>
 </template>
 
@@ -432,6 +433,9 @@ import {
   // bindArGameApi,
 } from '@/service/api/user'
 import { getServerI18nKey } from '@/utils/i18n'
+
+import FloatingCat from '@/components/FloatingCat.vue'
+
 uni.hideTabBar()
 
 const userStore = useUserStore()

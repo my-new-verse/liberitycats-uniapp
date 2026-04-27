@@ -18,6 +18,7 @@ interface NavigateToOptions {
        "/pages/test/i18n" |
        "/pages/test/index" |
        "/pages/test/safe" |
+       "/pages/webview/index" |
        "/pages/cats/about/index" |
        "/pages/cats/address/add" |
        "/pages/cats/address/management" |
