@@ -151,12 +151,18 @@
   "social.index.report_post_confirm_txt": "Are you sure to report post?",
   "social.index.report_user_confirm_txt": "Are you sure to block user?",
   "social.detail.comment.placeholder": "Add Comments",
+  "social.detail.comment.reply_to": "Reply to",
+  "social.detail.comment.expand": "View ",
+  "social.detail.comment.reply": "replies",
+  "social.detail.comment.reply_prefix": "Reply",
+  "social.detail.comment.more": "View more replies",
   "social.detail.comment.btn.send": "Send",
   "social.detail.content.not_audit_seed_myself": "Content not reviewed, only visible to oneself",
   "social.index.post.report": "Report Post",
   "social.index.user.block": "Block User",
   "social.index.user.follow": "Follow",
   "social.index.user.unfollow": "Unfollow",
+  "social.share.to": "Share to",
 
   "news.detail.page_title": "News Detail",
 

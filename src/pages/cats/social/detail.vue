@@ -116,8 +116,9 @@
                 :key="item.id || index"
                 :id="'commentItem_' + item.id"
                 :class="{ highlight: highlightId === `commentItem_${item.id}` }"
+                @click.stop="showCommentPopup('l1', item)"
               >
-                <view class="avatarBox" @click="toUserHome(item.member_id)">
+                <view class="avatarBox" @click.stop="toUserHome(item.member_id)">
                   <image
                     class="avatar"
                     :src="getImageUrl(item.member.avatar + '?x-oss-process=style/jzcq')"
@@ -148,16 +149,99 @@
                   <view class="commentFoot">
                     <view class="time">{{ item._time }}</view>
                     <view class="rightBox">
-                      <view class="likeBox" @click="likeComment(item.id)">
+                      <view class="likeBox" @click.stop="likeComment(item.id)">
                         <view class="likeIcon" :class="{ on: item.is_liked === 1 }"></view>
                         <view class="likeTxt">{{ item.like_count }}</view>
                       </view>
                       <view
                         class="delBox"
                         v-if="userStore.userInfo?.member_id === item.member_id"
-                        @click="handleDelPost(item.id)"
+                        @click.stop="handleDelPost(item.id, 'l1')"
                       ></view>
-                      <view class="jbBox" v-else @click="handleReportPost(item.id)"></view>
+                      <view class="jbBox" v-else @click.stop="handleReportPost(item.id)"></view>
+                    </view>
+                  </view>
+
+                  <!-- 二级评论 -->
+                  <view
+                    class="replyList"
+                    v-if="item.reply_preview && item.reply_preview.length > 0"
+                  >
+                    <view class="replyListCnt">
+                      <view
+                        class="replyItem"
+                        v-for="reply in item.reply_preview"
+                        :key="reply.id"
+                        @click.stop="handleReplyL2(reply, item)"
+                      >
+                        <view class="replyHeader">
+                          <image
+                            class="replyAvatar"
+                            :src="getImageUrl(reply.member.avatar + '?x-oss-process=style/jzcq')"
+                            mode="aspectFill"
+                            @click.stop="toUserHome(reply.member.id)"
+                          />
+                          <view class="replyNickname" @click.stop="toUserHome(reply.member.id)">
+                            <text class="nickname">{{ reply.member.nickname }}</text>
+                          </view>
+                        </view>
+
+                        <view class="replyContent">
+                          <view class="commentCnt" v-if="reply.reply_to_id !== item.id">
+                            {{ t('social.detail.comment.reply_prefix') }}
+                            <text
+                              class="nickname replyNickname"
+                              @click.stop="toUserHome(reply.member.id)"
+                            >
+                              {{ reply.reply_to_member.nickname }}
+                            </text>
+                            {{ ': ' }}{{ reply.content }}
+                          </view>
+                          <view class="commentCnt" v-else>
+                            {{ reply.content }}
+                          </view>
+
+                          <view class="commentFoot">
+                            <view class="time">{{ reply._time }}</view>
+                            <view class="rightBox">
+                              <view class="likeBox" @click.stop="likeReply(reply, item.id)">
+                                <view class="likeIcon" :class="{ on: reply.is_liked === 1 }"></view>
+                                <view class="likeTxt">{{ reply.like_count }}</view>
+                              </view>
+                              <view
+                                class="delBox"
+                                v-if="userStore.userInfo?.member_id === reply.member_id"
+                                @click.stop="handleDelPost(reply.id, 'l2', item)"
+                              ></view>
+                              <view
+                                class="jbBox"
+                                v-else
+                                @click.stop="handleReplyReportPost(reply, item.id)"
+                              ></view>
+                            </view>
+                          </view>
+                        </view>
+                      </view>
+                    </view>
+
+                    <view
+                      class="replyCollapse"
+                      v-if="item.hidden_reply_count > 0 || item.has_more === 1"
+                      @click.stop="expandReplies(item)"
+                    >
+                      <template v-if="item.isExpandedStarted">
+                        <text v-if="item.has_more === 1">
+                          {{ t('social.detail.comment.more') }}
+                        </text>
+                      </template>
+
+                      <template v-else>
+                        <text>
+                          {{ t('social.detail.comment.expand') + item.hidden_reply_count }}
+                          {{ t('social.detail.comment.reply') }}
+                        </text>
+                      </template>
+                      <view class="arrow"></view>
                     </view>
                   </view>
                 </view>
@@ -168,7 +252,7 @@
       </template>
       <template #footer>
         <view class="fixedCommentBox" style="padding-bottom: env(safe-area-inset-bottom)">
-          <view class="commentTextArea" @click="showCommentPopup">
+          <view class="commentTextArea" @click="showCommentPopup('post')">
             {{ t('social.detail.comment.placeholder') }}
           </view>
         </view>
@@ -186,7 +270,7 @@
             <view class="commentTextAreaBox">
               <wd-textarea
                 v-model="commentContent"
-                :placeholder="t('social.detail.comment.placeholder')"
+                :placeholder="placeholderText"
                 :maxlength="140"
                 show-word-limit
                 auto-height
@@ -297,6 +381,7 @@ import {
   getCommunityEmotionListItem,
   deletePostApi,
   reportPostApi,
+  getCommunityPostThreadApi,
 } from '@/service/api/community'
 import {
   formatNickname,
@@ -322,6 +407,37 @@ const locale = uni.getLocale()
 const userStore = useUserStore()
 const toast = useToast()
 const message = useMessage('wd-message-box-slot')
+
+const postId = ref<number>(0)
+
+const currentRequestId = ref('')
+
+const generateUUID = () => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0
+    const v = c === 'x' ? r : (r & 0x3) | 0x8
+    return v.toString(16)
+  })
+}
+
+// 被回复的目标
+const replyTarget = ref<{
+  id: number
+  nickname: string
+  type: 'post' | 'l1' | 'l2'
+  parentId?: number
+}>({
+  id: postId.value,
+  nickname: '',
+  type: 'post',
+})
+
+const placeholderText = computed(() => {
+  if (replyTarget.value.type !== 'post' && replyTarget.value.nickname) {
+    return `${t('social.detail.comment.reply_to')} @${replyTarget.value.nickname}`
+  }
+  return t('social.detail.comment.placeholder')
+})
 
 // 滚动到顶部
 const scrollTop = ref<number>(0)
@@ -355,14 +471,53 @@ const publishComment = async () => {
   sendLoading.value = true
 
   try {
-    const res = await commitPostApi(postId.value, commentContent.value, customEmojiList.value)
+    const requestId = generateUUID()
+    const res = await commitPostApi(
+      replyTarget.value.id,
+      commentContent.value,
+      customEmojiList.value,
+      requestId,
+    )
+
     if (res.code === 1) {
       toast.show(t('common.toast.comment_success'))
-      // 评论成功后，重置状态
-      commentList.value.current_page = 0
-      commentList.value.data = []
-      await getCommentList()
-      // 关闭评论弹出层
+
+      const type = replyTarget.value.type
+
+      if (type === 'l1' || type === 'l2') {
+        // 所属的一级评论id
+        const parentId = type === 'l1' ? replyTarget.value.id : replyTarget.value.parentId
+
+        const parentComment = commentList.value.data.find((item) => item.id === parentId)
+
+        // 展开状态（hidden_reply_count为0），局部刷新二级列表
+        if (parentComment && parentComment.hidden_reply_count === 0) {
+          const threadRes = await getCommunityPostThreadApi(parentId, 100)
+          if (threadRes.code === 1) {
+            // 格式化信息
+            parentComment.reply_preview = threadRes.data.items.map((re: any) => {
+              const reImgs = Array.isArray(re?.images) ? re.images : []
+              const reProcessedImgs = reImgs.map((u: string) => getImageUrl(u))
+              return {
+                ...re,
+                _nickname: formatNickname(re?.member?.nickname || '', 22),
+                _time: formatRelativeTime(re?.create_time),
+                _images: reProcessedImgs,
+                _previewImages: reProcessedImgs,
+              }
+            })
+          }
+        } else {
+          commentList.value.current_page = 0
+          commentList.value.data = []
+          await getCommentList()
+        }
+      } else {
+        commentList.value.current_page = 0
+        commentList.value.data = []
+        await getCommentList()
+      }
+
       handleCloseCommentPopup()
       commentContent.value = ''
       customEmojiList.value = []
@@ -395,11 +550,26 @@ const commentTextarea = ref()
 const shouldFocus = ref(false)
 
 // 修改showCommentPopup方法
-const showCommentPopup = () => {
+const showCommentPopup = (type: 'post' | 'l1' = 'post', targetItem?: any) => {
   if (userStore.isLogin === false) {
     toUrl('/pages/cats/login', true)
     return
   }
+
+  if (type === 'l1' && targetItem) {
+    replyTarget.value = {
+      id: targetItem.id, // 一级评论ID
+      nickname: targetItem.member?.nickname || '',
+      type: 'l1',
+    }
+  } else {
+    replyTarget.value = {
+      id: postId.value, // 帖子ID
+      nickname: '',
+      type: 'post',
+    }
+  }
+
   commentPopupVisible.value = true
   // 重置焦点状态
   shouldFocus.value = false
@@ -583,7 +753,6 @@ const deleteCustomEmoji = (src: string) => {
 
 // onload 获取帖子详情和评论列表
 const postDetail = ref<getPostDetailResponse>({} as getPostDetailResponse)
-const postId = ref<number>(0)
 
 const emotionList = ref<getCommunityEmotionListItem[]>([])
 
@@ -659,6 +828,22 @@ const getCommentList = async () => {
       const imgs = Array.isArray(it?.images) ? it.images : []
       // 解决merge
       const processedImages = imgs.map((u: string) => getImageUrl(u))
+
+      // --- 二级评论格式化处理 ---
+      if (it.reply_preview && it.reply_preview.length > 0) {
+        it.reply_preview = it.reply_preview.map((re: any) => {
+          const reImgs = Array.isArray(re?.images) ? re.images : []
+          const reProcessedImgs = reImgs.map((u: string) => getImageUrl(u))
+          return {
+            ...re,
+            _nickname: formatNickname(re?.member?.nickname || '', 22),
+            _time: formatRelativeTime(re?.create_time),
+            _images: reProcessedImgs,
+            _previewImages: reProcessedImgs,
+          }
+        })
+      }
+
       return {
         ...it,
         _nickname: formatNickname(it?.member?.nickname || '', 22),
@@ -784,12 +969,12 @@ const handleLoadComments = (sort: string) => {
   getCommentList()
 }
 
-const handleDelPost = (id: number) => {
+const handleDelPost = (id: number, type: 'l1' | 'l2', parentItem?: any) => {
   if (!userStore.isLogin) {
     toUrl('/pages/cats/login/login', true)
     return
   }
-  //  删除并刷新页面（或者删去当前列表项）
+
   message
     .confirm({
       msg: t('social.index.del_post_confirm_txt'),
@@ -797,9 +982,21 @@ const handleDelPost = (id: number) => {
     .then(() => {
       uni.showLoading()
       deletePostApi(id)
-        .then((res) => {
+        .then(async (res) => {
           if (res.data?.result == 1) {
-            commentList.value.data = commentList.value.data.filter((item) => item.id !== id)
+            toast.show(t('common.toast.del_success'))
+
+            if (type === 'l1') {
+              commentList.value.data = commentList.value.data.filter((it) => it.id !== id)
+            } else if (type === 'l2' && parentItem) {
+              const beforeLen = parentItem.reply_preview.length
+              parentItem.reply_preview = parentItem.reply_preview.filter((r: any) => r.id !== id)
+              const afterLen = parentItem.reply_preview.length
+
+              if (beforeLen !== afterLen) {
+                parentItem.commit_count = Math.max(0, (parentItem.commit_count || 0) - 1)
+              }
+            }
           } else {
             toast.show(res.msg || t('common.toast.del_failed'))
           }
@@ -811,6 +1008,34 @@ const handleDelPost = (id: number) => {
     .catch(() => {})
 }
 
+const handleReplyReportPost = (replyItem: any, itemId: number) => {
+  if (!userStore.isLogin) {
+    toUrl('/pages/cats/login/login', true)
+    return
+  }
+  message
+    .confirm({
+      msg: t('social.index.report_post_confirm_txt'),
+    })
+    .then(() => {
+      uni.showLoading()
+      reportPostApi(replyItem.id)
+        .then((res) => {
+          if (res.data?.result === 1) {
+            const targetComment = commentList.value.data.find((item) => item.id === itemId)
+            if (targetComment) {
+              targetComment.reply_preview = targetComment.reply_preview.filter(
+                (reply) => reply.id !== replyItem.id,
+              )
+            }
+          }
+        })
+        .finally(() => {
+          uni.hideLoading()
+        })
+    })
+    .catch(() => {})
+}
 const handleReportPost = (id: number) => {
   if (!userStore.isLogin) {
     toUrl('/pages/cats/login/login', true)
@@ -893,6 +1118,109 @@ const toUserHome = (memberId: number) => {
   uni.navigateTo({
     url: `/pages/cats/user/home?member_id=${memberId}`,
   })
+}
+
+// 二级评论点赞
+const likeReply = async (replyItem: any, itemId: number) => {
+  if (userStore.isLogin === false) {
+    toUrl('/pages/cats/login', true)
+    return
+  }
+  // uni.showLoading()
+  likePostApi(replyItem.id)
+    .then((res) => {
+      if (res.code !== 1) {
+        toast.show(res.msg || t('common.error'))
+        return
+      }
+      const targetComment = commentList.value.data.find((item) => item.id === itemId)
+      if (targetComment) {
+        const targetReply = targetComment.reply_preview.find((reply) => reply.id === replyItem.id)
+
+        if (targetReply) {
+          targetReply.like_count = res.data.like_count || 0
+          targetReply.is_liked = res.data.is_liked || 0
+        }
+      }
+    })
+    .finally(() => {
+      // uni.hideLoading()
+    })
+}
+
+const handleReplyL2 = (replyItem: any, parentItem: any) => {
+  if (!userStore.isLogin) {
+    toUrl('/pages/cats/login/login', true)
+    return
+  }
+
+  replyTarget.value = {
+    id: replyItem.id,
+    nickname: replyItem.member?.nickname || '',
+    type: 'l2',
+    parentId: parentItem.id,
+  }
+  currentRequestId.value = generateUUID()
+  commentPopupVisible.value = true
+
+  shouldFocus.value = false
+  customEmojiList.value = []
+  currentOpBtn.value = 'keyboard'
+  expressionCategory.value = -1
+
+  nextTick(() => {
+    setTimeout(() => {
+      shouldFocus.value = true
+    }, 100)
+  })
+}
+
+const expandReplies = async (item: any) => {
+  if (!item.id || item.has_more === 0) return
+
+  uni.showLoading({ title: '加载中...' })
+
+  try {
+    let fetchLimit = 5
+    if (!item.next_last_id) {
+      item.next_last_id = item.reply_preview[0].id
+      const hiddenCount = item.hidden_reply_count || 0
+      fetchLimit = hiddenCount > 5 ? 5 : hiddenCount
+    }
+    const res = await getCommunityPostThreadApi(item.id, fetchLimit, item.next_last_id)
+    if (res.code === 1) {
+      // 格式化新数据
+      const newReplies = (res.data.items || []).map((re: any) => {
+        const reImgs = Array.isArray(re?.images) ? re.images : []
+        const reProcessedImgs = reImgs.map((u: string) => getImageUrl(u))
+        return {
+          ...re,
+          _nickname: formatNickname(re?.member?.nickname || '', 22),
+          _time: formatRelativeTime(re?.create_time),
+          _images: reProcessedImgs,
+          _previewImages: reProcessedImgs,
+        }
+      })
+
+      if (!item.reply_preview) item.reply_preview = []
+      item.reply_preview = [...item.reply_preview, ...newReplies]
+
+      item.next_last_id = res.data.next_last_id
+      item.has_more = res.data.has_more
+
+      if (!item.isExpandedStarted) {
+        item.isExpandedStarted = true
+      }
+
+      if (item.has_more === 0) {
+        item.hidden_reply_count = 0
+      }
+    }
+  } catch (error) {
+    console.error('展开失败:', error)
+  } finally {
+    uni.hideLoading()
+  }
 }
 </script>
 
@@ -1269,6 +1597,112 @@ const toUserHome = (memberId: number) => {
   .highlight {
     background-color: #f0f0f0 !important; // 加!important确保覆盖原有样式
     transition: background-color 0.3s ease;
+  }
+}
+
+.replyList {
+  //   margin-left: 80rpx;
+  margin-top: 16rpx;
+}
+.replyCollapse {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  font-size: 24rpx;
+  color: #999;
+  .arrow {
+    width: 0;
+    height: 0;
+    border-left: 6rpx solid transparent;
+    border-right: 6rpx solid transparent;
+    border-top: 6rpx solid #999;
+    transition: transform 0.2s;
+    &.up {
+      transform: rotate(180deg);
+    }
+  }
+}
+.replyListCnt {
+  margin-top: 12rpx;
+}
+.replyItem {
+  margin-bottom: 16rpx;
+}
+.replyHeader {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 6rpx;
+}
+.replyAvatar {
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: 50%;
+  background: #f5f5f5;
+}
+.replyContent {
+  padding-left: 48rpx;
+}
+.replyCollapse {
+  padding-left: 48rpx;
+}
+
+.share-container {
+  background-color: #fff;
+  padding: 40rpx 0 60rpx;
+  position: relative;
+
+  .close-icon {
+    position: absolute;
+    right: 30rpx;
+    top: 30rpx;
+    padding: 10rpx;
+    z-index: 10;
+
+    &:active {
+      opacity: 0.6;
+    }
+  }
+
+  .share-title {
+    text-align: center;
+    margin-bottom: 50rpx;
+
+    font-size: 28rpx;
+    font-weight: 600;
+    line-height: 44rpx;
+    color: #261000;
+    font-family:
+      Alimama FangYuanTi VF,
+      sans-serif;
+  }
+
+  .share-grid {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 0 20rpx;
+
+    .share-item {
+      width: 25%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 20rpx;
+
+      .share-icon {
+        width: 46rpx;
+        height: 46rpx;
+        margin-bottom: 16rpx;
+      }
+
+      .share-text {
+        font-size: 24rpx;
+        color: #666;
+        font-family:
+          Alimama FangYuanTi VF,
+          sans-serif;
+      }
+    }
   }
 }
 </style>
