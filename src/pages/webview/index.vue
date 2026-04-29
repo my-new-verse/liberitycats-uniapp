@@ -6,7 +6,7 @@
 }
 </route>
 <template>
-  <web-view :src="targetUrl"></web-view>
+  <web-view :src="targetUrl" style="background-color: #ff6b03"></web-view>
 </template>
 
 <script setup lang="ts">
