@@ -201,6 +201,17 @@
                             {{ reply.content }}
                           </view>
 
+                          <view class="commentMedia" v-if="reply?._images?.length > 0">
+                            <template v-for="(img, index) in reply._images" :key="index">
+                              <wd-img
+                                custom-class="mediaImg"
+                                :src="img"
+                                :enable-preview="false"
+                                @click="handlePreview(reply._previewImages, index, false)"
+                              />
+                            </template>
+                          </view>
+
                           <view class="commentFoot">
                             <view class="time">{{ reply._time }}</view>
                             <view class="rightBox">
