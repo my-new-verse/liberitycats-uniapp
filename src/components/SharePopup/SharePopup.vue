@@ -87,8 +87,9 @@ const handleShareClick = async (type: 'discord' | 'X' | 'copy') => {
       break
     }
     case 'copy': {
-      const copyLink =
-        import.meta.env.VITE_SERVER_BASEURL + '/v1/community/post/share-to-twitter?id=' + post.id
+      //   const copyLink =
+      //     import.meta.env.VITE_SERVER_BASEURL + '/v1/community/post/share-to-twitter?id=' + post.id
+      const copyLink = 'https://download.libertycats.app'
       uni.setClipboardData({
         data: copyLink,
         success: () => {
