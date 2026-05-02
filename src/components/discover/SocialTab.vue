@@ -127,7 +127,7 @@
 
               <view class="socialBtn" style="margin-left: 10rpx">{{ item.like_count }}</view>
             </view>
-            <view class="socialBtnBox" @click="toShare(item)">
+            <view class="socialBtnBox" @click="handleOpenShare(item)">
               <view class="socialBtnIcon share"></view>
             </view>
           </view>
@@ -145,6 +145,7 @@
     </view>
   </view>
   <wd-message-box selector="wd-message-box-slot" />
+  <SharePopup ref="shareRef" />
   <wd-toast />
   <wd-action-sheet
     custom-class="reportSheet"
@@ -177,6 +178,7 @@ import {
   createFollowApi,
   deleteFollowApi,
 } from '@/service/api/community'
+import SharePopup from '@/components/SharePopup/SharePopup.vue'
 
 import { useMessage, useToast } from 'wot-design-uni'
 
@@ -437,20 +439,6 @@ const likePost = (id: number) => {
     })
 }
 
-const toShare = (post: getCommunityPostListApiResponse['data'][number]) => {
-  if (userStore.isLogin === false) {
-    toUrl('/pages/cats/login', true)
-    return
-  }
-  let twitterUrl = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(post.content)
-  if (post.images.length > 0) {
-    const twitterCardUrl =
-      import.meta.env.VITE_SERVER_BASEURL + '/v1/community/post/share-to-twitter?id=' + post.id
-    twitterUrl += '&url=' + encodeURIComponent(twitterCardUrl)
-  }
-  openUrl(twitterUrl)
-}
-
 const handleDelPost = (id: number) => {
   if (!userStore.isLogin) {
     toUrl('/pages/cats/login/login', true)
@@ -590,6 +578,11 @@ const toUserHome = (memberId: number) => {
   uni.navigateTo({
     url: `/pages/cats/user/home?member_id=${memberId}`,
   })
+}
+
+const shareRef = ref<any>(null)
+const handleOpenShare = (item: any) => {
+  shareRef.value?.openSharePopup(item)
 }
 </script>
 

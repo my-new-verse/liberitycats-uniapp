@@ -91,7 +91,7 @@
                     {{ postDetail.like_count }}
                   </view>
                 </view>
-                <view class="socialBtnBox" @click="toShare(postDetail)">
+                <view class="socialBtnBox" @click="handleOpenShare(postDetail)">
                   <view class="socialBtnIcon share"></view>
                 </view>
               </view>
@@ -418,6 +418,7 @@
       </template>
     </custom-nav2>
     <wd-message-box selector="wd-message-box-slot" />
+    <SharePopup ref="shareRef" />
   </view>
 </template>
 
@@ -451,6 +452,9 @@ import { useUserStore } from '@/store'
 import { debounce } from 'lodash-es'
 
 import CustomNav2 from '@/components/CustomNav/CustomNav2.vue'
+import SharePopup from '@/components/SharePopup/SharePopup.vue'
+
+import { ref } from 'vue'
 
 // 防抖
 const debouncedCreateCommentRef = ref<(() => Promise<void>) | null>(null)
@@ -1006,20 +1010,6 @@ const likeComment = (item: any) => {
 }
 // 点赞 end
 
-const toShare = (post: getPostDetailResponse) => {
-  if (userStore.isLogin === false) {
-    toUrl('/pages/cats/login', true)
-    return
-  }
-  let twitterUrl = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(post.content)
-  if (post.images.length > 0) {
-    const twitterCardUrl =
-      import.meta.env.VITE_SERVER_BASEURL + '/v1/community/post/share-to-twitter?id=' + post.id
-    twitterUrl += '&url=' + encodeURIComponent(twitterCardUrl)
-  }
-  openUrl(twitterUrl)
-}
-
 // 使用 ref 来存储防抖函数的引用
 const debouncedCreateComment = ref<(() => Promise<void>) | null>(null)
 onMounted(() => {
@@ -1315,6 +1305,11 @@ const expandReplies = async (item: any) => {
   } finally {
     uni.hideLoading()
   }
+}
+
+const shareRef = ref<any>(null)
+const handleOpenShare = (item: any) => {
+  shareRef.value?.openSharePopup(item)
 }
 </script>
 
