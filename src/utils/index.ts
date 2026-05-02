@@ -915,3 +915,31 @@ export const getServerOnOff = (key: string, platformKey?: string, getValue?: boo
     ? systemConfig?.[platformKey2]?.[key]
     : systemConfig?.[platformKey2]?.[key] !== '0'
 }
+export const getChatImageUrl = (
+  path: string,
+  width: number,
+  height: number,
+  useCache?: boolean,
+) => {
+  if (!path) return ''
+  let url = ''
+  const imageExtRegex = /\.(jpg|jpeg|png|webp)($|\?)/i
+  const matchResult = path.match(imageExtRegex)
+  if (matchResult) {
+    const ext = matchResult[1].toLowerCase()
+
+    // 4. 拼接新的 OSS 处理 URL，format 替换为对应的后缀
+    path = `${path.split('?')[0]}?x-oss-process=image/resize,w_${width / 2},h_${height / 2},m_fill/format,${ext}`
+  }
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    url = path
+  } else {
+    url = `${import.meta.env.VITE_IMAGE_HOST}${path}`
+  }
+  if (useCache) {
+    const md5Url = CryptoJS.MD5(url).toString()
+    url = getImageCache(url, md5Url)
+    // console.log('getImageUrl:', url)
+  }
+  return url
+}

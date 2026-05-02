@@ -22,34 +22,42 @@
       >
         {{ t('discover.social.filter.following') }}
       </view>
+      <view
+        class="opItem"
+        :class="{ active: socialFilter === 'groupChat' }"
+        @click="handleFilterChange('groupChat')"
+      >
+        {{ t('discover.social.filter.groupChat') }}
+      </view>
     </view>
-    <view
-      v-if="socialList.data.length > 0"
-      :style="{ paddingTop: cntPaddingTop + 36 + 20 + 'rpx' }"
-    >
-      <view class="cell" v-for="item in socialList.data" :key="item.id">
-        <view class="socialItem">
-          <view
-            class="delBox"
-            v-if="item.member_id === userStore.userInfo?.member_id"
-            @click="handleDelPost(item.id)"
-          ></view>
-          <view class="jbBox" v-else @click="reportPost(item)"></view>
-          <view class="socialHead">
-            <view class="avatarBox" @click="toUserHome(item.member_id)">
-              <image
-                class="avatar"
-                :src="getImageUrl(item.member.avatar + '?x-oss-process=style/jzcq')"
-              />
-              <view class="levelIcon">
-                <image :src="`/static/images/level/${item.member.level}.png`" mode="widthFix" />
+    <template v-if="socialFilter !== 'groupChat'">
+      <view
+        v-if="socialList.data.length > 0"
+        :style="{ paddingTop: cntPaddingTop + 36 + 20 + 'rpx' }"
+      >
+        <view class="cell" v-for="item in socialList.data" :key="item.id">
+          <view class="socialItem">
+            <view
+              class="delBox"
+              v-if="item.member_id === userStore.userInfo?.member_id"
+              @click="handleDelPost(item.id)"
+            ></view>
+            <view class="jbBox" v-else @click="reportPost(item)"></view>
+            <view class="socialHead">
+              <view class="avatarBox" @click="toUserHome(item.member_id)">
+                <image
+                  class="avatar"
+                  :src="getImageUrl(item.member.avatar + '?x-oss-process=style/jzcq')"
+                />
+                <view class="levelIcon">
+                  <image :src="`/static/images/level/${item.member.level}.png`" mode="widthFix" />
+                </view>
               </view>
-            </view>
 
-            <view class="nameWrap">
-              <view class="name">{{ formatNickname(item.member.nickname, 22) }}</view>
+              <view class="nameWrap">
+                <view class="name">{{ formatNickname(item.member.nickname, 22) }}</view>
 
-              <!-- <view
+                <!-- <view
                 v-if="!item.member.is_self"
                 class="followBtn"
                 :class="{ followed: item.member.is_following === 1 }"
@@ -57,85 +65,90 @@
               >
                 {{ item.member.is_following === 1 ? '取消关注' : '关注' }}
               </view> -->
-            </view>
+              </view>
 
-            <view v-if="item.tag?.name" class="tag" :class="item.tag?.extend_json?.class">
-              {{ item.tag?.name }}
-            </view>
-          </view>
-          <view
-            class="socialCntBox"
-            @click="toUrl('/pages/cats/social/detail?id=' + item.id, false)"
-          >
-            <view class="socialCnt">
-              <view class="socialTips" v-if="item.is_approved === 0">
-                {{ t('social.detail.content.not_audit_seed_myself') }}
-              </view>
-              {{ item.content }}
-            </view>
-            <view
-              class="socialMedia"
-              v-if="item.images.length > 0"
-              :class="{ mediaImg4: item.images.length === 4 }"
-            >
-              <view
-                v-for="(image, index) in item.images"
-                :key="index"
-                @tap.stop="handlePreview(item.images, index)"
-              >
-                <wd-img
-                  custom-class="mediaImgItem"
-                  mode="widthFix"
-                  :src="getImageUrl(image + '?x-oss-process=style/jzcq')"
-                  :enable-preview="false"
-                />
+              <view v-if="item.tag?.name" class="tag" :class="item.tag?.extend_json?.class">
+                {{ item.tag?.name }}
               </view>
             </view>
-            <view class="socialTime">
-              {{ formatRelativeTime(item.create_time) }}
-            </view>
-          </view>
-          <view class="socialFoot">
             <view
-              class="socialBtnBox"
+              class="socialCntBox"
               @click="toUrl('/pages/cats/social/detail?id=' + item.id, false)"
             >
-              <view class="socialBtnIcon view"></view>
-              <view class="socialBtn">{{ item.view_count }}</view>
-            </view>
-            <view
-              class="socialBtnBox"
-              @click="
-                toUrl('/pages/cats/social/detail?id=' + item.id + '&showComment=false', false)
-              "
-            >
-              <view class="socialBtnIcon quote"></view>
-              <view class="socialBtn">{{ item.commit_count }}</view>
-            </view>
-            <view class="socialBtnBox">
+              <view class="socialCnt">
+                <view class="socialTips" v-if="item.is_approved === 0">
+                  {{ t('social.detail.content.not_audit_seed_myself') }}
+                </view>
+                {{ item.content }}
+              </view>
               <view
-                class="socialBtnIcon zan"
-                :class="{ on: item.is_liked === 1 }"
-                @click="likePost(item.id)"
-              ></view>
-              <view class="socialBtn">{{ item.like_count }}</view>
+                class="socialMedia"
+                v-if="item.images.length > 0"
+                :class="{ mediaImg4: item.images.length === 4 }"
+              >
+                <view
+                  v-for="(image, index) in item.images"
+                  :key="index"
+                  @tap.stop="handlePreview(item.images, index)"
+                >
+                  <wd-img
+                    custom-class="mediaImgItem"
+                    mode="widthFix"
+                    :src="getImageUrl(image + '?x-oss-process=style/jzcq')"
+                    :enable-preview="false"
+                  />
+                </view>
+              </view>
+              <view class="socialTime">
+                {{ formatRelativeTime(item.create_time) }}
+              </view>
             </view>
-            <view class="socialBtnBox" @click="toShare(item)">
-              <view class="socialBtnIcon share"></view>
+            <view class="socialFoot">
+              <view
+                class="socialBtnBox"
+                @click="toUrl('/pages/cats/social/detail?id=' + item.id, false)"
+              >
+                <view class="socialBtnIcon view"></view>
+                <view class="socialBtn">{{ item.view_count }}</view>
+              </view>
+              <view
+                class="socialBtnBox"
+                @click="
+                  toUrl('/pages/cats/social/detail?id=' + item.id + '&showComment=false', false)
+                "
+              >
+                <view class="socialBtnIcon quote"></view>
+                <view class="socialBtn">{{ item.commit_count }}</view>
+              </view>
+              <view class="socialBtnBox">
+                <view
+                  class="socialBtnIcon zan"
+                  :class="{ on: item.is_liked === 1 }"
+                  @click="likePost(item.id)"
+                ></view>
+                <view class="socialBtn">{{ item.like_count }}</view>
+              </view>
+              <view class="socialBtnBox" @click="toShare(item)">
+                <view class="socialBtnIcon share"></view>
+              </view>
             </view>
           </view>
         </view>
       </view>
-    </view>
-    <template v-else-if="activeSocialCache.hasInitialized">
-      <view class="emptyBox">
-        <view class="emptyImg"></view>
+      <template v-else-if="activeSocialCache.hasInitialized">
+        <view class="emptyBox">
+          <view class="emptyImg"></view>
+        </view>
+      </template>
+      <view class="pubSocial" @click="toUrl('/pages/cats/social/publish', true)">
+        <view class="pubImg"></view>
       </view>
     </template>
-
-    <view class="pubSocial" @click="toUrl('/pages/cats/social/publish', true)">
-      <view class="pubImg"></view>
-    </view>
+    <template v-else>
+      <view :style="{ paddingTop: cntPaddingTop + 36 + 20 + 'rpx' }">
+        <group-chat v-if="groupChatReady" :key="groupChatRenderKey"></group-chat>
+      </view>
+    </template>
   </view>
   <wd-message-box selector="wd-message-box-slot" />
   <wd-toast />
@@ -174,6 +187,7 @@ import {
 import { useMessage, useToast } from 'wot-design-uni'
 
 import { useUserStore } from '@/store'
+import GroupChat from '@/components/GroupChat.vue'
 
 const userStore = useUserStore()
 const message = useMessage('wd-message-box-slot')
@@ -197,7 +211,7 @@ const socialList = ref<getCommunityPostListApiResponse>({
 })
 
 let isRefreshing = false
-type SocialFilter = 'hot' | 'latest' | 'following'
+type SocialFilter = 'hot' | 'latest' | 'following' | 'groupChat'
 type LoadMoreState = 'loading' | 'finished' | 'error' | 'success'
 type SocialCache = {
   list: getCommunityPostListApiResponse
@@ -225,9 +239,30 @@ const socialCacheMap = ref<Record<SocialFilter, SocialCache>>({
   hot: createSocialCache(),
   latest: createSocialCache(),
   following: createSocialCache(),
+  groupChat: createSocialCache(), // 群聊模式也需要缓存结构（虽然不使用）
 })
-const socialFilter = ref<SocialFilter>('latest')
+// const socialFilter = ref<SocialFilter>('latest')
+const socialFilter = ref<SocialFilter>('groupChat')
+const groupChatRenderKey = ref(0)
+const groupChatReady = ref(false)
+let groupChatReadyTimer: ReturnType<typeof setTimeout> | null = null
 const activeSocialCache = computed(() => socialCacheMap.value[socialFilter.value])
+const ensureGroupChatReady = () => {
+  if (groupChatReady.value || groupChatReadyTimer) return
+  groupChatReadyTimer = setTimeout(() => {
+    groupChatReady.value = true
+    groupChatReadyTimer = null
+  }, 80)
+}
+
+const refreshGroupChatIfActive = () => {
+  if (socialFilter.value === 'groupChat') {
+    ensureGroupChatReady()
+    socialCacheMap.value.groupChat.state = 'finished'
+    emit('update:state', 'finished')
+    groupChatRenderKey.value += 1
+  }
+}
 
 // 更新加载状态
 const updateState = (state: LoadMoreState, filter = socialFilter.value) => {
@@ -248,6 +283,7 @@ const getPageScrollTop = () => {
 }
 
 const saveCurrentScrollTop = async () => {
+  if (socialFilter.value === 'groupChat') return
   socialCacheMap.value[socialFilter.value].scrollTop = await getPageScrollTop()
 }
 
@@ -272,12 +308,21 @@ const handleFilterChange = async (filter: SocialFilter) => {
     toUrl('/pages/cats/login', true)
     return
   }
-  if (socialFilter.value === filter) return
+  if (filter === 'groupChat') {
+    refreshGroupChatIfActive()
+    if (socialFilter.value === filter) return
+  } else if (socialFilter.value === filter) {
+    return
+  }
   await saveCurrentScrollTop()
   socialFilter.value = filter
   syncActiveCache()
+  if (filter === 'groupChat') {
+    ensureGroupChatReady()
+    updateState('finished', filter)
+  }
   restoreScrollTop(filter)
-  if (!socialCacheMap.value[filter].hasInitialized) {
+  if (socialFilter.value !== 'groupChat' && !socialCacheMap.value[filter].hasInitialized) {
     loadSocial(1, filter)
   }
 }
@@ -376,6 +421,11 @@ const handleFollow = (item) => {
 watch(
   () => props.state,
   (newVal) => {
+    // 群聊模式不需要加载更多
+    if (socialFilter.value === 'groupChat') {
+      if (newVal === 'loading') updateState('finished')
+      return
+    }
     if (newVal === 'loading') {
       // 检查是否还有更多数据可以加载
       if (socialList.value.current_page < socialList.value.last_page) {
@@ -454,20 +504,40 @@ const handleDelPost = (id: number) => {
 
 // 初始加载
 onMounted(() => {
-  syncActiveCache()
-  if (!socialCacheMap.value[socialFilter.value].hasInitialized) {
-    loadSocial(1, socialFilter.value)
+  if (socialFilter.value !== 'groupChat') {
+    syncActiveCache()
+    if (!socialCacheMap.value[socialFilter.value].hasInitialized) {
+      loadSocial(1, socialFilter.value)
+    }
+  } else {
+    ensureGroupChatReady()
+    updateState('finished', 'groupChat')
   }
   // 监听刷新事件
   uni.$on('refreshSocialTab', () => {
+    if (socialFilter.value === 'groupChat') {
+      refreshGroupChatIfActive()
+      emit('refresh-complete')
+      return
+    }
     isRefreshing = true
     loadSocial(1, socialFilter.value)
+  })
+  uni.$on('discoverActiveTabChange', (tabName: string) => {
+    if (tabName === t('discover.tabs.social') && socialFilter.value === 'groupChat') {
+      refreshGroupChatIfActive()
+    }
   })
 })
 
 // 组件卸载时移除事件监听
 onUnmounted(() => {
+  if (groupChatReadyTimer) {
+    clearTimeout(groupChatReadyTimer)
+    groupChatReadyTimer = null
+  }
   uni.$off('refreshSocialTab')
+  uni.$off('discoverActiveTabChange')
 })
 
 const reportShow = ref<boolean>(false)
