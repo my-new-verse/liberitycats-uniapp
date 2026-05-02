@@ -74,10 +74,24 @@
                   <view class="socialBtn">{{ postDetail.commit_count }}</view>
                 </view>
                 <view class="socialBtnBox" @click="likePost(postDetail.id)">
-                  <view class="socialBtnIcon zan" :class="{ on: postDetail.is_liked === 1 }"></view>
-                  <view class="socialBtn">{{ postDetail.like_count }}</view>
+                  <view class="zanWrapper">
+                    <image
+                      class="Icon"
+                      :src="
+                        postDetail.is_liked === 1
+                          ? '/static/images/unlike.png'
+                          : '/static/images/like.png'
+                      "
+                      mode="aspectFit"
+                      :style="{ opacity: postDetail.currentGif ? 0 : 1 }"
+                    />
+                    <image :src="postDetail.currentGif" class="Icon" mode="aspectFit" />
+                  </view>
+                  <view class="socialBtn" style="margin-left: 10rpx">
+                    {{ postDetail.like_count }}
+                  </view>
                 </view>
-                <view class="socialBtnBox" @click="toShare(postDetail)">
+                <view class="socialBtnBox" @click="handleOpenShare(postDetail)">
                   <view class="socialBtnIcon share"></view>
                 </view>
               </view>
@@ -149,9 +163,23 @@
                   <view class="commentFoot">
                     <view class="time">{{ item._time }}</view>
                     <view class="rightBox">
-                      <view class="likeBox" @click.stop="likeComment(item.id)">
-                        <view class="likeIcon" :class="{ on: item.is_liked === 1 }"></view>
-                        <view class="likeTxt">{{ item.like_count }}</view>
+                      <view class="likeBox" @click.stop="likeComment(item)">
+                        <view class="zanWrapper">
+                          <image
+                            class="Icon"
+                            :src="
+                              item.is_liked === 1
+                                ? '/static/images/unlike.png'
+                                : '/static/images/like.png'
+                            "
+                            mode="aspectFit"
+                            :style="{ opacity: item.currentGif ? 0 : 1 }"
+                          />
+                          <image :src="item.currentGif" class="Icon" mode="aspectFit" />
+                        </view>
+                        <view class="likeTxt" style="margin-left: 10rpx">
+                          {{ item.like_count }}
+                        </view>
                       </view>
                       <view
                         class="delBox"
@@ -216,8 +244,22 @@
                             <view class="time">{{ reply._time }}</view>
                             <view class="rightBox">
                               <view class="likeBox" @click.stop="likeReply(reply, item.id)">
-                                <view class="likeIcon" :class="{ on: reply.is_liked === 1 }"></view>
-                                <view class="likeTxt">{{ reply.like_count }}</view>
+                                <view class="zanWrapper">
+                                  <image
+                                    class="Icon"
+                                    :src="
+                                      reply.is_liked === 1
+                                        ? '/static/images/unlike.png'
+                                        : '/static/images/like.png'
+                                    "
+                                    mode="aspectFit"
+                                    :style="{ opacity: reply.currentGif ? 0 : 1 }"
+                                  />
+                                  <image :src="reply.currentGif" class="Icon" mode="aspectFit" />
+                                </view>
+                                <view class="likeTxt" style="margin-left: 10rpx">
+                                  {{ reply.like_count }}
+                                </view>
                               </view>
                               <view
                                 class="delBox"
@@ -376,6 +418,7 @@
       </template>
     </custom-nav2>
     <wd-message-box selector="wd-message-box-slot" />
+    <SharePopup ref="shareRef" />
   </view>
 </template>
 
@@ -409,6 +452,9 @@ import { useUserStore } from '@/store'
 import { debounce } from 'lodash-es'
 
 import CustomNav2 from '@/components/CustomNav/CustomNav2.vue'
+import SharePopup from '@/components/SharePopup/SharePopup.vue'
+
+import { ref } from 'vue'
 
 // 防抖
 const debouncedCreateCommentRef = ref<(() => Promise<void>) | null>(null)
@@ -430,6 +476,9 @@ const generateUUID = () => {
     return v.toString(16)
   })
 }
+
+const GIF_LIKE = '/static/images/like_action.gif'
+const GIF_UNLIKE = '/static/images/unlike_action.gif'
 
 // 被回复的目标
 const replyTarget = ref<{
@@ -914,46 +963,55 @@ const likePost = (id: number) => {
       }
       postDetail.value.like_count = res.data.like_count || 0
       postDetail.value.is_liked = res.data.is_liked || 0
+
+      const timestamp = new Date().getTime()
+      if (postDetail.value.is_liked === 1) {
+        postDetail.value.currentGif = `${GIF_LIKE}?t=${timestamp}`
+      } else {
+        postDetail.value.currentGif = `${GIF_UNLIKE}?t=${timestamp}`
+      }
+
+      setTimeout(() => {
+        postDetail.value.currentGif = ''
+      }, 1000)
     })
     .finally(() => {
       // uni.hideLoading()
     })
 }
 
-const likeComment = (id: number) => {
+const likeComment = (item: any) => {
   if (userStore.isLogin === false) {
     toUrl('/pages/cats/login', true)
     return
   }
   // uni.showLoading()
-  likePostApi(id)
+  likePostApi(item.id)
     .then((res) => {
       if (res.code !== 1) {
         toast.show(res.msg || t('common.error'))
         return
       }
-      commentList.value.data.find((item) => item.id === id).like_count = res.data.like_count || 0
-      commentList.value.data.find((item) => item.id === id).is_liked = res.data.is_liked || 0
+
+      item.like_count = res.data.like_count || 0
+      item.is_liked = res.data.is_liked || 0
+
+      const timestamp = new Date().getTime()
+      if (item.is_liked === 1) {
+        item.currentGif = `${GIF_LIKE}?t=${timestamp}`
+      } else {
+        item.currentGif = `${GIF_UNLIKE}?t=${timestamp}`
+      }
+
+      setTimeout(() => {
+        item.currentGif = ''
+      }, 1000)
     })
     .finally(() => {
       // uni.hideLoading()
     })
 }
 // 点赞 end
-
-const toShare = (post: getPostDetailResponse) => {
-  if (userStore.isLogin === false) {
-    toUrl('/pages/cats/login', true)
-    return
-  }
-  let twitterUrl = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(post.content)
-  if (post.images.length > 0) {
-    const twitterCardUrl =
-      import.meta.env.VITE_SERVER_BASEURL + '/v1/community/post/share-to-twitter?id=' + post.id
-    twitterUrl += '&url=' + encodeURIComponent(twitterCardUrl)
-  }
-  openUrl(twitterUrl)
-}
 
 // 使用 ref 来存储防抖函数的引用
 const debouncedCreateComment = ref<(() => Promise<void>) | null>(null)
@@ -1174,6 +1232,17 @@ const likeReply = async (replyItem: any, itemId: number) => {
         if (targetReply) {
           targetReply.like_count = res.data.like_count || 0
           targetReply.is_liked = res.data.is_liked || 0
+
+          const timestamp = new Date().getTime()
+          if (targetReply.is_liked === 1) {
+            targetReply.currentGif = `${GIF_LIKE}?t=${timestamp}`
+          } else {
+            targetReply.currentGif = `${GIF_UNLIKE}?t=${timestamp}`
+          }
+
+          setTimeout(() => {
+            targetReply.currentGif = ''
+          }, 1000)
         }
       }
     })
@@ -1255,6 +1324,11 @@ const expandReplies = async (item: any) => {
   } finally {
     uni.hideLoading()
   }
+}
+
+const shareRef = ref<any>(null)
+const handleOpenShare = (item: any) => {
+  shareRef.value?.openSharePopup(item)
 }
 </script>
 
@@ -1591,18 +1665,27 @@ const expandReplies = async (item: any) => {
           .likeBox {
             display: flex;
             align-items: center;
-            justify-content: center;
-            .likeIcon {
-              width: 32rpx;
-              height: 32rpx;
-              //background-image: url('@/static/images/comment_like@2x.png');
-              background-image: url('@/static/images/zan@2x.png');
-              background-repeat: no-repeat;
-              background-size: 100% 100%;
+            // justify-content: center;
+            .zanWrapper {
+              width: 60rpx !important;
+              height: 60rpx !important;
+              position: relative !important;
+              display: inline-flex !important;
+              align-items: center;
+              justify-content: center;
+              flex-shrink: 0 !important;
+              vertical-align: middle;
+              margin: 0 -19rpx !important;
+              overflow: visible !important;
             }
-            .likeIcon.on {
-              //background-image: url('@/static/images/comment_like_on@2x.png');
-              background-image: url('@/static/images/zan_on@2x.png');
+            .Icon {
+              position: absolute !important;
+              width: 100% !important;
+              height: 100% !important;
+              left: 0 !important;
+              top: 0 !important;
+              display: block !important;
+              pointer-events: none !important;
             }
             .likeTxt {
               margin-left: 4rpx;
@@ -1737,6 +1820,28 @@ const expandReplies = async (item: any) => {
           sans-serif;
       }
     }
+  }
+}
+.zanWrapper {
+  width: 70rpx !important;
+  height: 70rpx !important;
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0 !important;
+  vertical-align: middle;
+  margin: 0 -19rpx !important;
+  overflow: visible !important;
+
+  .Icon {
+    position: absolute !important;
+    width: 100% !important;
+    height: 100% !important;
+    left: 0 !important;
+    top: 0 !important;
+    display: block !important;
+    pointer-events: none !important;
   }
 }
 </style>

@@ -75,62 +75,35 @@
               class="socialCntBox"
               @click="toUrl('/pages/cats/social/detail?id=' + item.id, false)"
             >
-              <view class="socialCnt">
-                <view class="socialTips" v-if="item.is_approved === 0">
-                  {{ t('social.detail.content.not_audit_seed_myself') }}
-                </view>
-                {{ item.content }}
-              </view>
-              <view
-                class="socialMedia"
-                v-if="item.images.length > 0"
-                :class="{ mediaImg4: item.images.length === 4 }"
-              >
-                <view
-                  v-for="(image, index) in item.images"
-                  :key="index"
-                  @tap.stop="handlePreview(item.images, index)"
-                >
-                  <wd-img
-                    custom-class="mediaImgItem"
-                    mode="widthFix"
-                    :src="getImageUrl(image + '?x-oss-process=style/jzcq')"
-                    :enable-preview="false"
-                  />
-                </view>
-              </view>
-              <view class="socialTime">
-                {{ formatRelativeTime(item.create_time) }}
-              </view>
+              <view class="socialBtnIcon view"></view>
+              <view class="socialBtn">{{ item.view_count }}</view>
             </view>
-            <view class="socialFoot">
-              <view
-                class="socialBtnBox"
-                @click="toUrl('/pages/cats/social/detail?id=' + item.id, false)"
-              >
-                <view class="socialBtnIcon view"></view>
-                <view class="socialBtn">{{ item.view_count }}</view>
+            <view
+              class="socialBtnBox"
+              @click="
+                toUrl('/pages/cats/social/detail?id=' + item.id + '&showComment=false', false)
+              "
+            >
+              <view class="socialBtnIcon quote"></view>
+              <view class="socialBtn">{{ item.commit_count }}</view>
+            </view>
+            <view class="socialBtnBox">
+              <view class="zanWrapper" @click.stop="likePost(item.id)">
+                <image
+                  class="Icon"
+                  :src="
+                    item.is_liked === 1 ? '/static/images/unlike.png' : '/static/images/like.png'
+                  "
+                  mode="aspectFit"
+                  :style="{ opacity: item.currentGif ? 0 : 1 }"
+                />
+                <image :src="item.currentGif" class="Icon" mode="aspectFit" />
               </view>
-              <view
-                class="socialBtnBox"
-                @click="
-                  toUrl('/pages/cats/social/detail?id=' + item.id + '&showComment=false', false)
-                "
-              >
-                <view class="socialBtnIcon quote"></view>
-                <view class="socialBtn">{{ item.commit_count }}</view>
-              </view>
-              <view class="socialBtnBox">
-                <view
-                  class="socialBtnIcon zan"
-                  :class="{ on: item.is_liked === 1 }"
-                  @click="likePost(item.id)"
-                ></view>
-                <view class="socialBtn">{{ item.like_count }}</view>
-              </view>
-              <view class="socialBtnBox" @click="toShare(item)">
-                <view class="socialBtnIcon share"></view>
-              </view>
+
+              <view class="socialBtn" style="margin-left: 10rpx">{{ item.like_count }}</view>
+            </view>
+            <view class="socialBtnBox" @click="handleOpenShare(item)">
+              <view class="socialBtnIcon share"></view>
             </view>
           </view>
         </view>
@@ -151,6 +124,7 @@
     </template>
   </view>
   <wd-message-box selector="wd-message-box-slot" />
+  <SharePopup ref="shareRef" />
   <wd-toast />
   <wd-action-sheet
     custom-class="reportSheet"
@@ -183,6 +157,7 @@ import {
   createFollowApi,
   deleteFollowApi,
 } from '@/service/api/community'
+import SharePopup from '@/components/SharePopup/SharePopup.vue'
 
 import { useMessage, useToast } from 'wot-design-uni'
 
@@ -442,6 +417,9 @@ watch(
   { immediate: true },
 )
 
+const GIF_LIKE = '/static/images/like_action.gif'
+const GIF_UNLIKE = '/static/images/unlike_action.gif'
+
 // 点赞
 const likePost = (id: number) => {
   if (userStore.isLogin === false) {
@@ -452,8 +430,22 @@ const likePost = (id: number) => {
   likePostApi(id)
     .then((res) => {
       if (res.code === 1) {
-        socialList.value.data.find((item) => item.id === id).like_count = res.data.like_count || 0
-        socialList.value.data.find((item) => item.id === id).is_liked = res.data.is_liked || 0
+        const targetItem = socialList.value.data.find((item) => item.id === id)
+        if (targetItem) {
+          targetItem.like_count = res.data.like_count || 0
+          targetItem.is_liked = res.data.is_liked || 0
+
+          const timestamp = new Date().getTime()
+          if (targetItem.is_liked === 1) {
+            targetItem.currentGif = `${GIF_LIKE}?t=${timestamp}`
+          } else {
+            targetItem.currentGif = `${GIF_UNLIKE}?t=${timestamp}`
+          }
+
+          setTimeout(() => {
+            targetItem.currentGif = ''
+          }, 1000)
+        }
       } else {
         toast.show(res.msg || t('common.error'))
       }
@@ -461,20 +453,6 @@ const likePost = (id: number) => {
     .finally(() => {
       // uni.hideLoading()
     })
-}
-
-const toShare = (post: getCommunityPostListApiResponse['data'][number]) => {
-  if (userStore.isLogin === false) {
-    toUrl('/pages/cats/login', true)
-    return
-  }
-  let twitterUrl = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(post.content)
-  if (post.images.length > 0) {
-    const twitterCardUrl =
-      import.meta.env.VITE_SERVER_BASEURL + '/v1/community/post/share-to-twitter?id=' + post.id
-    twitterUrl += '&url=' + encodeURIComponent(twitterCardUrl)
-  }
-  openUrl(twitterUrl)
 }
 
 const handleDelPost = (id: number) => {
@@ -637,6 +615,11 @@ const toUserHome = (memberId: number) => {
     url: `/pages/cats/user/home?member_id=${memberId}`,
   })
 }
+
+const shareRef = ref<any>(null)
+const handleOpenShare = (item: any) => {
+  shareRef.value?.openSharePopup(item)
+}
 </script>
 
 <style lang="scss" scoped>
@@ -685,5 +668,27 @@ const toUserHome = (memberId: number) => {
   width: 100vw;
   z-index: 999;
   background-color: #fff;
+}
+.zanWrapper {
+  width: 70rpx !important;
+  height: 70rpx !important;
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0 !important;
+  vertical-align: middle;
+  margin: 0 -19rpx !important;
+  overflow: visible !important;
+
+  .Icon {
+    position: absolute !important;
+    width: 100% !important;
+    height: 100% !important;
+    left: 0 !important;
+    top: 0 !important;
+    display: block !important;
+    pointer-events: none !important;
+  }
 }
 </style>
