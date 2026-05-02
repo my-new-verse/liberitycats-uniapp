@@ -12,17 +12,17 @@
       @touchend="onDragEnd"
       @click="handleCatClick"
     >
-      <view class="cat-body" :class="{ 'is-dragging-body': isDragging }">
+      <view class="cat-body" :class="{ 'is-dragging-body': false }">
         <image
-          src="/static/images/cat.png"
+          :src="`/static/images/${currentImgName}.gif`"
           class="cat-img normal-img"
-          :class="{ hidden: isDragging }"
+          :class="{ hidden: false }"
           mode="aspectFit"
         />
         <image
-          src="/static/images/cat_drag.png"
+          src="/static/images/01.png"
           class="cat-img drag-img"
-          :class="{ show: isDragging }"
+          :class="{ show: false }"
           mode="aspectFit"
         />
       </view>
@@ -38,7 +38,7 @@ import { useUserStore } from '@/store'
 
 const userStore = useUserStore()
 
-const ICON_SIZE_RPX = 80
+const ICON_SIZE_RPX = 120
 const PADDING_RPX = 10
 const sysInfo = uni.getSystemInfoSync()
 const rpxToPx = sysInfo.screenWidth / 750
@@ -50,6 +50,8 @@ const lastY = ref(0)
 
 const isDragging = ref(false)
 const hasMoved = ref(false)
+
+const currentImgName = ref('01')
 
 const onTouchStart = () => {
   hasMoved.value = false
@@ -63,6 +65,13 @@ const onChange = (e: any) => {
     }
     lastX.value = e.detail.x
     lastY.value = e.detail.y
+    const screenWidthPx = sysInfo.screenWidth
+    const iconSizePx = ICON_SIZE_RPX * rpxToPx
+    if (lastX.value + iconSizePx / 2 > screenWidthPx / 2) {
+      currentImgName.value = '02' // 靠右侧
+    } else {
+      currentImgName.value = '01' // 靠左侧
+    }
   }
 }
 
@@ -83,8 +92,10 @@ const onDragEnd = () => {
     let targetX = 0
     if (lastX.value + iconSizePx / 2 > screenWidthPx / 2) {
       targetX = screenWidthPx - iconSizePx - paddingPx
+      currentImgName.value = '02'
     } else {
       targetX = paddingPx
+      currentImgName.value = '01'
     }
 
     if (x.value === targetX) x.value = targetX + 0.1
@@ -117,7 +128,8 @@ const handleCatClick = () => {
 onMounted(() => {
   const iconSizePx = ICON_SIZE_RPX * rpxToPx
   const paddingPx = PADDING_RPX * rpxToPx
-  x.value = sysInfo.screenWidth - iconSizePx - paddingPx
+  //   x.value = sysInfo.screenWidth - iconSizePx - paddingPx
+  x.value = paddingPx // 默认靠左
   y.value = sysInfo.screenHeight * 0.7
   lastX.value = x.value
   lastY.value = y.value
@@ -135,8 +147,8 @@ onMounted(() => {
   z-index: 9999;
 }
 .movable-view {
-  width: 80rpx;
-  height: 80rpx;
+  width: 120rpx;
+  height: 120rpx;
   pointer-events: auto;
 }
 .cat-body {
@@ -155,8 +167,8 @@ onMounted(() => {
   position: absolute;
   top: 0;
   left: 0;
-  width: 80rpx;
-  height: 80rpx;
+  width: 120rpx;
+  height: 120rpx;
   transition: opacity 0.2s ease-in-out;
   will-change: opacity;
 }

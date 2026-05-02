@@ -113,12 +113,19 @@
               <view class="socialBtn">{{ item.commit_count }}</view>
             </view>
             <view class="socialBtnBox">
-              <view
-                class="socialBtnIcon zan"
-                :class="{ on: item.is_liked === 1 }"
-                @click="likePost(item.id)"
-              ></view>
-              <view class="socialBtn">{{ item.like_count }}</view>
+              <view class="zanWrapper" @click.stop="likePost(item.id)">
+                <image
+                  class="Icon"
+                  :src="
+                    item.is_liked === 1 ? '/static/images/unlike.png' : '/static/images/like.png'
+                  "
+                  mode="aspectFit"
+                  :style="{ opacity: item.currentGif ? 0 : 1 }"
+                />
+                <image :src="item.currentGif" class="Icon" mode="aspectFit" />
+              </view>
+
+              <view class="socialBtn" style="margin-left: 10rpx">{{ item.like_count }}</view>
             </view>
             <view class="socialBtnBox" @click="toShare(item)">
               <view class="socialBtnIcon share"></view>
@@ -392,6 +399,9 @@ watch(
   { immediate: true },
 )
 
+const GIF_LIKE = '/static/images/like_action.gif'
+const GIF_UNLIKE = '/static/images/unlike_action.gif'
+
 // 点赞
 const likePost = (id: number) => {
   if (userStore.isLogin === false) {
@@ -402,8 +412,22 @@ const likePost = (id: number) => {
   likePostApi(id)
     .then((res) => {
       if (res.code === 1) {
-        socialList.value.data.find((item) => item.id === id).like_count = res.data.like_count || 0
-        socialList.value.data.find((item) => item.id === id).is_liked = res.data.is_liked || 0
+        const targetItem = socialList.value.data.find((item) => item.id === id)
+        if (targetItem) {
+          targetItem.like_count = res.data.like_count || 0
+          targetItem.is_liked = res.data.is_liked || 0
+
+          const timestamp = new Date().getTime()
+          if (targetItem.is_liked === 1) {
+            targetItem.currentGif = `${GIF_LIKE}?t=${timestamp}`
+          } else {
+            targetItem.currentGif = `${GIF_UNLIKE}?t=${timestamp}`
+          }
+
+          setTimeout(() => {
+            targetItem.currentGif = ''
+          }, 1000)
+        }
       } else {
         toast.show(res.msg || t('common.error'))
       }
@@ -615,5 +639,27 @@ const toUserHome = (memberId: number) => {
   width: 100vw;
   z-index: 999;
   background-color: #fff;
+}
+.zanWrapper {
+  width: 70rpx !important;
+  height: 70rpx !important;
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0 !important;
+  vertical-align: middle;
+  margin: 0 -19rpx !important;
+  overflow: visible !important;
+
+  .Icon {
+    position: absolute !important;
+    width: 100% !important;
+    height: 100% !important;
+    left: 0 !important;
+    top: 0 !important;
+    display: block !important;
+    pointer-events: none !important;
+  }
 }
 </style>
