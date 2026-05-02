@@ -1,6 +1,6 @@
 <template>
   <view class="page" :class="[locale]">
-    <view class="customNav" :style="{ height: navHeight + 'rpx' }">
+    <view class="customNav" :style="{ height: navFixedHeight + 'rpx' }">
       <view class="navHeaderBg" :style="{ paddingTop: navHeaderPaddingTop + 'rpx' }">
         <view class="navCnt">
           <view class="left" @click="navigateBack()">
@@ -14,13 +14,11 @@
           </view>
         </view>
       </view>
-      <view class="navBg">
-        <view class="pbl2">
-          <view class="fbg" :style="{ backgroundColor: props.pageBackgroundColor }"></view>
-        </view>
-        <view class="pbr2">
-          <view class="fbg" :style="{ backgroundColor: props.pageBackgroundColor }"></view>
-        </view>
+      <view class="pbl2">
+        <view class="fbg" :style="{ backgroundColor: props.pageBackgroundColor }"></view>
+      </view>
+      <view class="pbr2">
+        <view class="fbg" :style="{ backgroundColor: props.pageBackgroundColor }"></view>
       </view>
     </view>
     <view
@@ -55,6 +53,7 @@ const { safeAreaInsets } = uni.getSystemInfoSync()
 const safeTopRpx = ref<number>(0)
 
 const navHeight = ref<number>(0)
+const navFixedHeight = ref<number>(0)
 const navHeaderPaddingTop = ref<number>(0)
 const cntPaddingTop = ref<number>(0)
 const defaultCntHeight = ref('auto')
@@ -72,7 +71,8 @@ onMounted(() => {
   // 转换为rpx
   safeTopRpx.value = safeTopRpx.value / (systemInfo.windowWidth / 750)
 
-  navHeight.value = safeTopRpx.value + 40 + 104
+  navFixedHeight.value = safeTopRpx.value + 104
+  navHeight.value = navFixedHeight.value + 40
   navHeaderPaddingTop.value = safeTopRpx.value
   cntPaddingTop.value = navHeight.value
 
@@ -106,8 +106,7 @@ const navigateBack = () => {
   left: 0;
   z-index: 10;
   width: 100%;
-  height: calc(104rpx + var(--liberty-cats-page-common-border-radius) + env(safe-area-inset-top));
-  overflow: hidden;
+  height: calc(104rpx + env(safe-area-inset-top));
 
   .navHeaderBg {
     width: 100%;
@@ -132,6 +131,7 @@ const navigateBack = () => {
         width: 64rpx; // >= padding，保证不重叠
         height: 44rpx;
         transform: translateY(-50%);
+        pointer-events: auto;
         image {
           width: 44rpx;
           height: 44rpx;
@@ -180,44 +180,40 @@ const navigateBack = () => {
         color: #fff;
         font-size: 28rpx;
         font-family: Alibaba PuHuiTi2;
+        pointer-events: auto;
       }
     }
   }
 
-  .navBg {
-    position: relative;
-    width: 100%;
+  .pbl2,
+  .pbr2 {
+    position: absolute;
+    top: 100%;
+    z-index: 1;
+    width: var(--liberty-cats-page-common-border-radius);
     height: var(--liberty-cats-page-common-border-radius);
-    background-color: transparent;
+    overflow: hidden;
+    background-color: var(--liberty-cats-primary-color);
+    pointer-events: none;
 
-    .pbl2,
-    .pbr2 {
-      position: absolute;
-      top: 0;
-      z-index: 9;
-      width: var(--liberty-cats-page-common-border-radius);
-      height: var(--liberty-cats-page-common-border-radius);
-      overflow: hidden;
-      background-color: var(--liberty-cats-primary-color);
-
-      .fbg {
-        width: 100%;
-        height: 100%;
-        background-color: #fff;
-      }
+    .fbg {
+      width: 100%;
+      height: 100%;
+      background-color: #fff;
+      pointer-events: none;
     }
+  }
 
-    .pbl2 {
-      left: 0;
-      .fbg {
-        border-radius: var(--liberty-cats-page-common-border-radius) 0 0 0;
-      }
+  .pbl2 {
+    left: 0;
+    .fbg {
+      border-radius: var(--liberty-cats-page-common-border-radius) 0 0 0;
     }
-    .pbr2 {
-      right: 0;
-      .fbg {
-        border-radius: 0 var(--liberty-cats-page-common-border-radius) 0 0;
-      }
+  }
+  .pbr2 {
+    right: 0;
+    .fbg {
+      border-radius: 0 var(--liberty-cats-page-common-border-radius) 0 0;
     }
   }
 }

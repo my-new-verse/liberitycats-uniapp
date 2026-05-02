@@ -786,11 +786,15 @@ onLoad((options) => {
             if (commentList.value?.data?.length === 0) {
               showCommentPopup()
             } else {
-              if (options.commentId) scrollToAnchor('commentItem_' + options.commentId)
-              else scrollToComment()
+              scrollToComment()
             }
             // uni.hideLoading()
           }, 3000)
+          setTimeout(() => {
+            if (options.commentId && commentList.value?.data?.length !== 0)
+              scrollToAnchor('commentItem_' + options.commentId)
+            // uni.hideLoading()
+          }, 1000)
         } else {
           uni.hideLoading()
         }
