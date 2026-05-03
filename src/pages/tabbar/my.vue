@@ -430,7 +430,7 @@ import {
   getAllAssetTotalBalanceApiResponse,
   getAssetTotalBalanceApi,
   refreshLevelApi,
-  // bindArGameApi,
+  bindArGameApi,
 } from '@/service/api/user'
 import { getServerI18nKey } from '@/utils/i18n'
 

@@ -54,14 +54,18 @@
         </template>
       </wd-notice-bar>
       <view id="message-list-root" class="message-list">
+        <view class="virtual-spacer" :style="{ height: `${virtualTopSpacer}px` }"></view>
         <view
-          v-for="(msg, localIndex) in messages"
+          v-for="(msg, localIndex) in visibleMessages"
           :key="msg.id"
           :id="'msg-row-' + msg.id"
           class="virtual-message-item"
           :data-message-id="msg.id"
         >
-          <view v-if="shouldShowTimeDivider(localIndex)" class="time-divider">
+          <view
+            v-if="shouldShowTimeDivider(getVisibleMessageIndex(localIndex))"
+            class="time-divider"
+          >
             <text class="divider-time">{{ formatRelativeTime(msg.create_time) }}</text>
           </view>
 
@@ -137,7 +141,6 @@
                       :style="getImageMessageBoxStyle(msg)"
                     >
                       <wd-img
-                        v-if="shouldRenderImageMessage(msg, localIndex)"
                         custom-class="chat-img-custom"
                         mode="aspectFill"
                         :width="`${getImageMessageBoxSize(msg).width}px`"
@@ -147,9 +150,6 @@
                         radius="24rpx"
                         @load="handleImageMessageLoaded(msg.id)"
                       />
-                      <view v-else class="img-placeholder">
-                        <view class="img-placeholder-shimmer"></view>
-                      </view>
                     </view>
                     <view v-else-if="msg.message_type === 'rich'" class="text-bubble">
                       <view v-for="(richItem, index) in msg.payload?.parts" :key="index">
@@ -162,15 +162,11 @@
                           :style="getEmotionMessageBoxStyle()"
                         >
                           <image
-                            v-if="shouldRenderRichEmotionMessage(msg, localIndex, index)"
                             :src="getRichEmotionMessageSrc(richItem.emotion_id)"
                             mode="aspectFill"
                             class="emotion-img"
                             @load="handleEmotionMessageLoaded(msg.id, index)"
                           />
-                          <view v-else class="img-placeholder">
-                            <view class="img-placeholder-shimmer"></view>
-                          </view>
                         </view>
                       </view>
                     </view>
@@ -180,7 +176,6 @@
                       :style="getEmotionMessageBoxStyle()"
                     >
                       <image
-                        v-if="shouldRenderEmotionMessage(msg, localIndex)"
                         :src="getEmotionMessageSrc(msg)"
                         mode="aspectFill"
                         class="emotion-img"
@@ -225,7 +220,10 @@
                       <text class="reaction-emoji">👍</text>
                     </view>
                   </view>
-                  <text v-if="msg.local_status === 'failed'" class="message-status failed">
+                  <text v-if="msg.local_status === 'sending'" class="message-status">
+                    {{ t('group.chat.sending') }}
+                  </text>
+                  <text v-else-if="msg.local_status === 'failed'" class="message-status failed">
                     {{ t('group.chat.sendFailed') }}
                   </text>
                 </wd-popover>
@@ -233,6 +231,7 @@
             </template>
           </view>
         </view>
+        <view class="virtual-spacer" :style="{ height: `${virtualBottomSpacer}px` }"></view>
         <!-- 底部锚点，用于滚动定位 -->
         <view id="scroll-bottom-anchor" style="height: 120rpx"></view>
       </view>
@@ -377,7 +376,7 @@
 import { ref, nextTick, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/store'
-import { getImageUrl, toUrl, formatRelativeTime, getChatImageUrl } from '@/utils'
+import { getImageUrl, toUrl, formatRelativeTime } from '@/utils'
 import { EchoPrivateChannelClient } from '@/utils/echoPrivateChannelClient'
 import { useToast } from 'wot-design-uni'
 import { debounce } from 'lodash-es'
@@ -445,7 +444,6 @@ const commentPopupVisible = ref(false)
 const hasMoreHistory = ref(true)
 const nextBeforeMessageId = ref<number | null>(null)
 const loadingMoreHistory = ref(false)
-const canTriggerHistoryLoad = ref(true)
 // 获取屏幕边界到安全区域距离
 const { safeAreaInsets } = uni.getSystemInfoSync()
 const safeTopRpx = ref<number>(0)
@@ -466,8 +464,6 @@ const DEFAULT_RICH_MESSAGE_HEIGHT = 120
 const VIRTUAL_BUFFER_COUNT = 12
 const SCROLL_UPDATE_THRESHOLD = 120
 const IMAGE_RENDER_PRELOAD_PX = 180
-const TOP_HISTORY_TRIGGER_PX = 20
-const TOP_HISTORY_RESET_PX = 80
 const virtualRange = ref({
   start: 0,
   end: 0,
@@ -476,7 +472,6 @@ const virtualTopSpacer = ref(0)
 const virtualBottomSpacer = ref(0)
 let lastVirtualScrollTop = 0
 let virtualRangeMeasureTimer: ReturnType<typeof setTimeout> | null = null
-let lastPageScrollTop = 0
 const navigateBack = () => {
   uni.navigateBack({ delta: 1 })
 }
@@ -560,6 +555,8 @@ const getClientDeviceId = () => {
 
 const createClientLocalMessageId = () => {
   const clientMessageSequence = messages.value[messages.value.length - 1]?.id || 0
+  console.log('clientMessageSequence', clientMessageSequence)
+
   return `${Date.now().toString(36)}-${clientMessageSequence.toString(36)}`
 }
 
@@ -610,6 +607,7 @@ const getEstimatedMessageHeight = (message: ChatMessage) => {
   const textLength = message.payload?.text?.length || 0
   return Math.max(DEFAULT_MESSAGE_HEIGHT, 72 + Math.ceil(textLength / 18) * 24)
 }
+
 const getImageMessageBoxSize = (message: ChatMessage) => {
   const systemInfo = uni.getSystemInfoSync()
   const maxWidth = Math.min(Math.round(systemInfo.windowWidth * 0.52), 220)
@@ -660,7 +658,6 @@ const getEmotionMessageBoxStyle = () => {
 
 const getImageMessageSrc = (message: ChatMessage) => {
   const thumbUrl = message.payload?.thumb_url || ''
-  // const thumbUrl = message.payload?.url || ''
   if (thumbUrl && !thumbUrl.includes('NaN')) {
     return thumbUrl
   }
@@ -739,13 +736,6 @@ const getTotalMessageHeight = () => {
   return messagePrefixHeights.value[messagePrefixHeights.value.length - 1] || 0
 }
 
-const isNearBottom = (threshold = 120) => {
-  const visibleHeight = viewportHeight.value || uni.getSystemInfoSync().windowHeight || 0
-  const totalHeight = getTotalMessageHeight()
-  const distanceToBottom = messageListTop.value + totalHeight - (scrollTop.value + visibleHeight)
-  return distanceToBottom <= threshold
-}
-
 const findMessageIndexByOffset = (offset: number) => {
   ensureMessagePrefixHeights()
 
@@ -789,7 +779,16 @@ const scheduleVisibleMessageMeasurement = () => {
   }, 48)
 }
 
+// 简化虚拟列表的更新逻辑
 const updateVirtualRange = (currentScrollTop = scrollTop.value, force = false) => {
+  // 如果消息数量很少，无需虚拟列表
+  if (messages.value.length < 20) {
+    virtualRange.value = { start: 0, end: messages.value.length - 1 }
+    virtualTopSpacer.value = 0
+    virtualBottomSpacer.value = 0
+    return
+  }
+
   if (messages.value.length === 0) {
     virtualRange.value = { start: 0, end: 0 }
     virtualTopSpacer.value = 0
@@ -817,11 +816,14 @@ const updateVirtualRange = (currentScrollTop = scrollTop.value, force = false) =
   const totalHeight = getTotalMessageHeight()
   virtualBottomSpacer.value = Math.max(0, totalHeight - virtualTopSpacer.value - renderedHeight)
 
+  // 简化测量调度
   if (rangeChanged || force) {
-    scheduleVisibleMessageMeasurement()
+    // 直接测量，而不是使用定时器
+    measureVisibleMessages()
   }
 }
 
+// 简化测量函数
 const measureVisibleMessages = () => {
   nextTick(() => {
     const query = uni.createSelectorQuery()
@@ -940,6 +942,12 @@ const resolveMessageStatePayload = (payload: any) => {
   return null
 }
 
+const shouldBackfillByRoomSeq = (incomingMessage: ChatMessage) => {
+  const lastRoomSeq = getLastRoomSeq()
+  if (!lastRoomSeq || !incomingMessage?.room_seq) return false
+  return incomingMessage.room_seq > lastRoomSeq + 1
+}
+
 const syncLatestMessages = async () => {
   const lastMessageId = getLastMessageId()
   if (lastMessageId) {
@@ -953,87 +961,76 @@ const syncLatestMessages = async () => {
   await loadHistoryMessages()
 }
 
-const keepViewportAtLastMessage = async () => {
+const backfillMissingMessagesByRoomSeq = async (incomingMessage: ChatMessage) => {
   const lastMessageId = getLastMessageId()
   if (!lastMessageId) return
 
-  await nextTick()
-  scrollToBottom()
-}
-
-const dedupeMessages = (messageList: ChatMessage[]) => {
-  const dedupedMessages: ChatMessage[] = []
-  const idIndexMap = new Map<number, number>()
-  const clientMessageIdIndexMap = new Map<string, number>()
-
-  messageList.forEach((message) => {
-    const matchedIndexById = typeof message.id === 'number' ? idIndexMap.get(message.id) : undefined
-    const matchedIndexByClientMessageId = message.client_message_id
-      ? clientMessageIdIndexMap.get(message.client_message_id)
-      : undefined
-
-    const matchedIndex = matchedIndexById ?? matchedIndexByClientMessageId
-
-    if (typeof matchedIndex === 'number') {
-      const mergedMessage = {
-        ...dedupedMessages[matchedIndex],
-        ...message,
-      }
-      dedupedMessages.splice(matchedIndex, 1, mergedMessage)
-
-      idIndexMap.set(mergedMessage.id, matchedIndex)
-      if (mergedMessage.client_message_id) {
-        clientMessageIdIndexMap.set(mergedMessage.client_message_id, matchedIndex)
-      }
-      return
-    }
-
-    dedupedMessages.push(message)
-    const nextIndex = dedupedMessages.length - 1
-    idIndexMap.set(message.id, nextIndex)
-    if (message.client_message_id) {
-      clientMessageIdIndexMap.set(message.client_message_id, nextIndex)
-    }
+  await fetchLatestMessages({
+    afterMessageId: Number(lastMessageId),
+    stopAtMessageId: incomingMessage.id,
+    scrollToLatest: false,
   })
-
-  return dedupedMessages
 }
 
 const upsertChatMessage = async (incomingMessage: ChatMessage, scrollToLatest = false) => {
   if (!incomingMessage?.id) return
+}
+
+// 简化页面滚动处理
+onPageScroll((event) => {
+  scrollTop.value = event.scrollTop
+
+  // 减少虚拟范围更新频率
+  if (!isProgrammaticPageScroll.value) {
+    // 使用防抖，避免过于频繁的更新
+    clearTimeout(window.pageScrollDebounceTimer)
+    window.pageScrollDebounceTimer = setTimeout(() => {
+      updateVirtualRange(event.scrollTop, false)
+    }, 100)
+  }
+
+  if (isProgrammaticPageScroll.value) {
+    lastPageScrollTop = event.scrollTop
+    return
+  }
+
+  lastPageScrollTop = event.scrollTop
+})
+
+// 添加全局变量定义
+declare global {
+  interface Window {
+    pageScrollDebounceTimer: any
+  }
+}
+
 
   const mergedMessage: ChatMessage = {
     ...incomingMessage,
     local_status: 'sent',
   }
 
-  const existingClientMessageIndex = mergedMessage.client_message_id
-    ? messages.value.findIndex((msg) => msg.client_message_id === mergedMessage.client_message_id)
-    : -1
-
-  if (existingClientMessageIndex > -1) {
-    messages.value.splice(existingClientMessageIndex, 1, {
-      ...messages.value[existingClientMessageIndex],
+  const existingIndex = messages.value.findIndex((msg) => msg.id === mergedMessage.id)
+  if (existingIndex > -1) {
+    messages.value.splice(existingIndex, 1, {
+      ...messages.value[existingIndex],
       ...mergedMessage,
     })
+  } else if (
+    mergedMessage.client_message_id &&
+    updateChatMessageByClientMessageId(mergedMessage.client_message_id, mergedMessage)
+  ) {
+    // noop: temporary local message replaced in place
   } else {
-    const existingIndex = messages.value.findIndex((msg) => msg.id === mergedMessage.id)
-    if (existingIndex > -1) {
-      messages.value.splice(existingIndex, 1, {
-        ...messages.value[existingIndex],
-        ...mergedMessage,
-      })
-    } else {
-      messages.value.push(mergedMessage)
-    }
+    messages.value.push(mergedMessage)
   }
 
-  messages.value = dedupeMessages(sortMessagesByRoomSeq(messages.value))
+  messages.value = sortMessagesByRoomSeq(messages.value)
   rebuildMessagePrefixHeights()
   updateVirtualRange(scrollTop.value, true)
 
   if (scrollToLatest) {
-    scrollToBottom()
+    scrollToMessage(incomingMessage.id)
   }
 
   if (roomDetail.value?.room.id) {
@@ -1041,7 +1038,13 @@ const upsertChatMessage = async (incomingMessage: ChatMessage, scrollToLatest = 
   }
 }
 
+const handleIncomingMessage = async (payload: any) => {
+  await handleRealtimeEvent('GroupMessageEvent', payload)
+}
+
 const handleRealtimeEvent = async (eventName: string, payload: any) => {
+  console.log('[GroupChat] realtime event payload', eventName, payload)
+
   if (payload?.room_id && payload.room_id !== roomDetail.value?.room.id) return
 
   const message = resolveIncomingMessage(payload)
@@ -1049,15 +1052,19 @@ const handleRealtimeEvent = async (eventName: string, payload: any) => {
 
   if (normalizedEventName === 'message.created' || normalizedEventName === 'GroupMessageEvent') {
     if (message?.id) {
-      const isSelf = message.sender?.member_id === userStore.userInfo.member_id ? 1 : 0
-      // if (!isSelf) {
-      //   await upsertChatMessage(message, false)
-      // } else
-      //   await upsertChatMessage(message, true)
-      // }
-      await upsertChatMessage({ ...message, is_self: isSelf }, false)
-      return true
+      if (shouldBackfillByRoomSeq(message)) {
+        await backfillMissingMessagesByRoomSeq(message)
+      }
+      const isSelf = message.sender?.member_id === userStore.userInfo.member_id
+      if (!isSelf) {
+        await upsertChatMessage(message, true)
+      } else if (message.client_message_id) {
+        await upsertChatMessage(message, false)
+      }
+      return
     }
+
+    await syncLatestMessages()
     return
   }
 
@@ -1067,26 +1074,26 @@ const handleRealtimeEvent = async (eventName: string, payload: any) => {
   ) {
     if (message?.id) {
       await upsertChatMessage(message, false)
-      return true
+      return
     }
 
     if (normalizedEventName === 'message.state_changed') {
       const statePayload = resolveMessageStatePayload(payload)
       if (statePayload && applyMessageDisplayStatus(statePayload)) {
-        return true
+        return
       }
     }
+
+    await syncLatestMessages()
     return
   }
 
   if (message?.id) {
     await upsertChatMessage(message, false)
-    return true
+    return
   }
-}
 
-const handleIncomingMessage = async (payload: any) => {
-  await handleRealtimeEvent('GroupMessageEvent', payload)
+  await syncLatestMessages()
 }
 
 const initChatSocketClient = () => {
@@ -1097,9 +1104,7 @@ const initChatSocketClient = () => {
     wsHost: import.meta.env.VITE_WS_HOST || 'test-app.libertycats.app',
     authEndpoint: import.meta.env.VITE_SERVER_BASEURL.replace('/api', '') + '/broadcasting/auth',
     getToken: () => userStore.userInfo.token || uni.getStorageSync('token'),
-    forceTLS: true,
-    enabledTransports: ['wss'],
-    debug: false,
+    debug: true,
     eventHandlers: {
       GroupMessageEvent: handleIncomingMessage,
       '.GroupMessageEvent': handleIncomingMessage,
@@ -1113,35 +1118,35 @@ const initChatSocketClient = () => {
         handleRealtimeEvent('.message.reaction_changed', payload),
     },
     beforeReconnect: async () => {
-      // reconnect only
+      await syncLatestMessages()
     },
     onMessage: handleIncomingMessage,
-    onAllEvent: () => {
-      // noop
+    onAllEvent: (eventName, data) => {
+      console.log('[GroupChat] listenToAll event:', eventName, data)
     },
-    onSubscribed: () => {
-      // noop
+    onSubscribed: (privateChannelName) => {
+      console.log('[GroupChat] subscribed channel:', privateChannelName)
     },
-    onAuthStart: () => {
-      // noop
+    onAuthStart: (payload) => {
+      console.log('[GroupChat] start auth request', payload)
     },
-    onAuthResponse: () => {
-      // noop
+    onAuthResponse: (payload) => {
+      console.log('[GroupChat] auth response', payload)
     },
-    onConnectionConnected: () => {
-      // noop
+    onConnectionConnected: (payload) => {
+      console.log('[GroupChat] Echo connected', payload)
     },
     onConnectionDisconnected: () => {
-      // noop
+      console.log('[GroupChat] Echo disconnected')
     },
-    onConnectionStateChange: () => {
-      // noop
+    onConnectionStateChange: (states) => {
+      console.log('[GroupChat] Echo state change:', states)
     },
-    onConnectionError: () => {
-      // noop
+    onConnectionError: (error) => {
+      console.error('[GroupChat] Echo connection error:', error)
     },
-    onPrivateChannelError: () => {
-      // noop
+    onPrivateChannelError: (error) => {
+      console.error('[GroupChat] private channel error:', error)
     },
   })
 
@@ -1153,6 +1158,11 @@ const subscribeChatRoomChannel = () => {
   if (!roomId) return
 
   const channelName = getPrivateChannelName(roomId)
+  console.log('[GroupChat] subscribing channel', {
+    roomId,
+    channelName,
+    privateChannelName: `private-${channelName}`,
+  })
   initChatSocketClient().subscribe(channelName)
 }
 
@@ -1169,6 +1179,7 @@ const resumeChatAfterForeground = async () => {
     return
   }
 
+  await syncLatestMessages()
   await initChatSocketClient().handlePageShow()
   subscribeChatRoomChannel()
 }
@@ -1182,9 +1193,8 @@ const loadRoomDetail = async () => {
       roomDetail.value = res.data
       routeRoomId.value = res.data.room.id
 
-      // 先加载历史消息，再连接群聊私有频道
+      // 先加载历史消息，再连接 Echo 私有频道
       await loadHistoryMessages()
-      await keepViewportAtLastMessage()
       refreshViewportMetrics()
       subscribeChatRoomChannel()
     } else {
@@ -1215,6 +1225,7 @@ const loadHistoryMessages = async () => {
       updateVirtualRange(scrollTop.value, true)
       hasMoreHistory.value = res.data.has_more_history === 1
       nextBeforeMessageId.value = res.data.next_before_message_id || null
+      console.log(messages.value)
 
       for (let index = 0; index < messageList.length; index++) {
         const item = messageList[index]
@@ -1225,8 +1236,8 @@ const loadHistoryMessages = async () => {
       // 加载完历史消息后，标记为已读并滚动到最后一条消息
       if (messageList.length > 0) {
         const lastMessage = messageList[messageList.length - 1]
-        // ✅ 贴到底部锚点，保证最后一条消息真正贴底
-        lastMessage && scrollToBottom()
+        // ✅ 滚动到最后一条消息
+        lastMessage && scrollToMessage(lastMessage.id)
         await markAsRead(roomId, lastMessage.id)
       }
     }
@@ -1263,9 +1274,14 @@ const loadMoreHistoryMessages = async () => {
       const prependMessages = olderMessages.filter((msg) => !existingMessageIds.has(msg.id))
       if (prependMessages.length === 0) return
 
-      messages.value = sortMessagesByRoomSeq([...prependMessages, ...messages.value])
+      // 使用 unshift 一次性添加所有消息
+      messages.value.unshift(...sortMessagesByRoomSeq(prependMessages))
       rebuildMessagePrefixHeights()
+
+      // 确保更新虚拟范围
       updateVirtualRange(scrollTop.value, true)
+
+      // 保持消息视口位置
       await keepMessageViewportPosition(beforeMessageId, anchorSnapshot)
     }
   } catch (error) {
@@ -1280,27 +1296,11 @@ const handleScrollToUpper = async () => {
 }
 
 onPageScroll((event) => {
-  const previousScrollTop = lastPageScrollTop
   scrollTop.value = event.scrollTop
   updateVirtualRange(event.scrollTop, false)
-
-  if (event.scrollTop > TOP_HISTORY_RESET_PX) {
-    canTriggerHistoryLoad.value = true
-  }
-
-  const isScrollingUp = event.scrollTop <= previousScrollTop
-  if (
-    canTriggerHistoryLoad.value &&
-    isScrollingUp &&
-    event.scrollTop <= TOP_HISTORY_TRIGGER_PX &&
-    !loadingMoreHistory.value &&
-    hasMoreHistory.value
-  ) {
-    canTriggerHistoryLoad.value = false
+  if (event.scrollTop <= 20) {
     handleScrollToUpper()
   }
-
-  lastPageScrollTop = event.scrollTop
 })
 
 // 标记消息为已读
@@ -1308,6 +1308,8 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
   try {
     const res = await markMessageReadApi(roomId, lastReadMessageId)
     if (res.code === 1) {
+      console.log('标记已读成功，未读数:', res.data.unread_count)
+      // 可以在这里更新房间详情的未读数
       if (roomDetail.value) {
         roomDetail.value.room.unread_count = res.data.unread_count
       }
@@ -1372,7 +1374,7 @@ const fetchLatestMessages = async (params?: {
     if (!lastMessage) return
 
     if (params?.scrollToLatest !== false) {
-      scrollToBottom()
+      scrollToMessage(lastMessage.id)
     }
 
     await markAsRead(roomId, latestPulledMessageId || lastMessage.id)
@@ -1429,11 +1431,13 @@ onMounted(() => {
 })
 
 onHide(() => {
+  console.log('onHide')
   chatSocketClient.value?.handlePageHide()
 })
 
 onShow(() => {
   resumeChatAfterForeground()
+  refreshViewportMetrics()
 })
 
 // 在组件卸载时清理防抖函数
@@ -1493,14 +1497,12 @@ const createLocalPendingMessage = (
   } satisfies ChatMessage
 }
 
-const insertLocalPendingMessage = (message: ChatMessage, shouldScrollToBottom = false) => {
+const insertLocalPendingMessage = (message: ChatMessage) => {
   messages.value.push(message)
   messages.value = sortMessagesByRoomSeq(messages.value)
   rebuildMessagePrefixHeights()
   updateVirtualRange(scrollTop.value, true)
-  if (shouldScrollToBottom) {
-    scrollToBottom()
-  }
+  scrollToMessage(message.id)
 }
 
 const markLocalMessageFailed = (clientMessageId: string | undefined) => {
@@ -1558,11 +1560,18 @@ const validateBeforeSend = (): boolean => {
   if (roomDetail.value.speaking.is_member_muted === 1) {
     toast.show(roomDetail.value.speaking.reason || t('group.chat.muted'))
     return false
-  }
+const shouldRenderImageMessage = (message: ChatMessage, index: number) => {
+  // 直接渲染，不再使用复杂的可视区域检测
+  return true
+}
 
-  // 7. client_message_id 幂等性由 createClientMessageId() 保证，每次生成唯一 ID
-  // 该函数使用设备ID + 用户ID + 群ID + 序列号 + UUID v5 确保唯一性
+const shouldRenderEmotionMessage = (message: ChatMessage, index: number) => {
+  // 直接渲染，不再使用复杂的可视区域检测
+  return true
+}
 
+const shouldRenderRichEmotionMessage = (message: ChatMessage, index: number, partIndex: number) => {
+  // 直接渲染，不再使用复杂的可视区域检测
   return true
 }
 
@@ -1585,7 +1594,6 @@ const sendMsg = async () => {
   if (sendLoading.value) return
   sendLoading.value = true
   let pendingClientMessageId = ''
-  const shouldScrollToBottomAfterSend = isNearBottom()
 
   try {
     let messageType: ChatMessageType
@@ -1632,10 +1640,7 @@ const sendMsg = async () => {
 
     const clientMessageId = createClientMessageId()
     pendingClientMessageId = clientMessageId
-    insertLocalPendingMessage(
-      createLocalPendingMessage(clientMessageId, messageType, payload),
-      shouldScrollToBottomAfterSend,
-    )
+    insertLocalPendingMessage(createLocalPendingMessage(clientMessageId, messageType, payload))
     // 使用 HTTP API 发送消息
     console.log(roomDetail.value.room.id, messageType, clientMessageId, payload)
     const res = await sendChatMessageApi(
@@ -1650,13 +1655,10 @@ const sendMsg = async () => {
       handleCloseCommentPopup()
       commentContent.value = ''
       customEmojiList.value = []
-      await appendChatMessage(
-        {
-          ...res.data.message,
-          client_message_id: res.data.message.client_message_id || clientMessageId,
-        },
-        shouldScrollToBottomAfterSend,
-      )
+      await appendChatMessage({
+        ...res.data.message,
+        client_message_id: res.data.message.client_message_id || clientMessageId,
+      })
     } else {
       removeLocalMessageByClientMessageId(clientMessageId)
       toast.show(res.msg || '发送失败')
@@ -1673,8 +1675,9 @@ const sendMsg = async () => {
 /**
  * ✅ 追加消息到本地列表并标记已读
  */
-const appendChatMessage = async (newMsg: ChatMessage, shouldScrollToBottom = true) => {
-  await upsertChatMessage(newMsg, shouldScrollToBottom)
+const appendChatMessage = async (newMsg: ChatMessage) => {
+  console.log(newMsg)
+  await upsertChatMessage(newMsg, true)
 }
 // 发布评论 end
 
@@ -1901,8 +1904,6 @@ const handleChooseImage = async () => {
     }
     // 3. 获取图片信息
     const imageInfo = await getImageInfo(tempFilePath)
-    console.log('imageInfo', imageInfo)
-
     // 4. 校验图片尺寸
     if (imageInfo.width > MAX_UPLOAD_IMAGE_WIDTH || imageInfo.height > MAX_UPLOAD_IMAGE_HEIGHT) {
       toast.show(IMAGE_LIMIT_HINT)
@@ -1938,16 +1939,9 @@ const handleChooseImage = async () => {
         }
       }
     }
-    // #ifdef H5
+
     // 6. 上传图片到 OSS
     await uploadImageToOss(finalPath, tempFileType, tempFileName)
-    // #endif
-    // #ifndef H5
-    const { tempFileName1, tempFileType1 } = getTempFileInfo(tempFilePath)
-    console.log(tempFileType1, tempFilePath, 'tempFileType, tempFileName')
-    // 6. 上传图片到 OSS
-    await uploadImageToOss(finalPath, 'image/' + imageInfo.type, tempFileName1)
-    // #endif
   } catch (error) {
     console.error('handleChooseImage error:', error)
     if (error?.errMsg !== 'chooseImage:fail cancel') {
@@ -1955,40 +1949,7 @@ const handleChooseImage = async () => {
     }
   }
 }
-/**
- * 解析本地临时图片路径，获取文件名和文件类型
- * @param {string} filePath 本地文件路径
- * @returns { tempFileName: string, tempFileType: string }
- */
-const getTempFileInfo = (filePath) => {
-  if (!filePath) return { tempFileName: '', tempFileType: '' }
 
-  // 1. 获取最后一段文件名（如 1522437259-compressed-IMG_0006.jpg）
-  const fileNameWithExt = filePath.split('/').pop()
-
-  // 2. 找到最后一个 . 分割文件名和后缀
-  const lastDotIndex = fileNameWithExt.lastIndexOf('.')
-  if (lastDotIndex === -1) {
-    return {
-      tempFileName: fileNameWithExt,
-      tempFileType: 'image/png', // 默认
-    }
-  }
-
-  // 3. 截取纯文件名（不带后缀）
-  const tempFileName = fileNameWithExt.substring(0, lastDotIndex)
-
-  // 4. 获取后缀
-  const ext = fileNameWithExt.substring(lastDotIndex + 1).toLowerCase()
-
-  // 5. 拼接文件类型
-  const tempFileType = `image/${ext}`
-
-  return {
-    tempFileName1: tempFileName,
-    tempFileType1: tempFileType,
-  }
-}
 /**
  * ✅ 上传图片到 OSS 并发送消息
  */
@@ -2045,7 +2006,7 @@ const uploadImageToOss = async (filePath: string, mimeType: string, fileName: st
     // 4. 构建图片 URL
     const originalUrl = `${ossConfig.value.host}/${key}`
     // 5. 生成缩略图 URL
-    const thumbUrl = getChatImageUrl(originalUrl, imageInfo.width, imageInfo.height)
+    const thumbUrl = getImageUrl(originalUrl, imageInfo.width, imageInfo.height)
     const payload: ChatMessagePayload = {
       url: originalUrl,
       thumb_url: thumbUrl,
@@ -2054,7 +2015,6 @@ const uploadImageToOss = async (filePath: string, mimeType: string, fileName: st
       mime: mimeType,
       size: fileSize,
     }
-    console.log(payload, 'payload')
     // 6. 创建客户端消息 ID
     const clientMessageId = createClientMessageId()
     pendingClientMessageId = clientMessageId
@@ -2132,9 +2092,14 @@ const toggleReaction = async (msg: ChatMessage, reactionType: string, reactionVa
 }
 
 const messages = ref<ChatMessage[]>([])
+const visibleMessages = computed(() => {
+  if (messages.value.length === 0) return []
+  return messages.value.slice(virtualRange.value.start, virtualRange.value.end + 1)
+})
+const getVisibleMessageIndex = (localIndex: number) => virtualRange.value.start + localIndex
 watch(
   () =>
-    messages.value.map(
+    visibleMessages.value.map(
       (message) =>
         `${message.id}:${message.display_status || 'normal'}:${message.local_status || 'sent'}:${message.reaction_summary?.length || 0}`,
     ),
@@ -2350,36 +2315,42 @@ const loadedImg = () => {
 }
 
 const handleImageMessageLoaded = (messageId: number) => {
-  markImageMessageRendered(messageId)
-  loadedImg()
+  // 更新渲染缓存标记，但简化处理逻辑
+  if (!messageId) return
+  renderedImageMessageMap.value[messageId] = true
+  // 触发测量更新
+  scheduleVisibleMessageMeasurement()
 }
 
 const handleEmotionMessageLoaded = (messageId: number, partIndex?: number) => {
-  markEmotionMessageRendered(messageId, partIndex)
+  const cacheKey = getEmotionRenderCacheKey(messageId, partIndex)
+  if (!messageId) return
+  renderedEmotionMessageMap.value[cacheKey] = true
 }
 
 watch(
-  () => messages.value.map((message) => `${message.id}:${message.message_type}`),
+  () => visibleMessages.value.map((message) => `${message.id}:${message.message_type}`),
   () => {
-    messages.value.forEach((message, localIndex) => {
+    visibleMessages.value.forEach((message, localIndex) => {
       if (message.message_type !== 'image') return
-      shouldRenderImageMessage(message, localIndex)
+      shouldRenderImageMessage(message, getVisibleMessageIndex(localIndex))
     })
   },
   { flush: 'post' },
 )
 
 watch(
-  () => messages.value.map((message) => `${message.id}:${message.message_type}:emotion`),
+  () => visibleMessages.value.map((message) => `${message.id}:${message.message_type}:emotion`),
   () => {
-    messages.value.forEach((message, localIndex) => {
+    visibleMessages.value.forEach((message, localIndex) => {
+      const visibleIndex = getVisibleMessageIndex(localIndex)
       if (message.message_type === 'emotion') {
-        shouldRenderEmotionMessage(message, localIndex)
+        shouldRenderEmotionMessage(message, visibleIndex)
       }
       if (message.message_type === 'rich') {
         message.payload?.parts?.forEach((part, partIndex) => {
           if (part.type !== 'emotion') return
-          shouldRenderRichEmotionMessage(message, localIndex, partIndex)
+          shouldRenderRichEmotionMessage(message, visibleIndex, partIndex)
         })
       }
     })
@@ -2470,15 +2441,6 @@ const scrollToMessage = (messageId: number | string) => {
       Math.max(0, viewportHeight.value * 0.35)
     uni.pageScrollTo({
       scrollTop: Math.max(0, targetScrollTop),
-      duration: 0,
-    })
-  })
-}
-
-const scrollToBottom = () => {
-  nextTick(() => {
-    uni.pageScrollTo({
-      selector: '#scroll-bottom-anchor',
       duration: 0,
     })
   })

@@ -39,11 +39,11 @@ export default defineUniPages({
         selectedIconPath: 'static/LibertyCats/type=on-1.png',
         pagePath: 'pages/tabbar/mall',
       },
-      // {
-      //   pagePath: 'pages/tabbar/game',
-      //   iconPath: '/static/images/game/game@2x.png',
-      //   selectedIconPath: '/static/images/game/game@2x.png',
-      // },
+      {
+        pagePath: 'pages/tabbar/game',
+        iconPath: '/static/images/game/game@2x.png',
+        selectedIconPath: '/static/images/game/game@2x.png',
+      },
       {
         iconPath: 'static/LibertyCats/type=off-2.png',
         selectedIconPath: 'static/LibertyCats/type=on-2.png',
