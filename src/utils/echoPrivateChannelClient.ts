@@ -1,5 +1,4 @@
-import Echo from 'laravel-echo'
-import Pusher from 'pusher-js'
+import { ReconnectingWebSocket } from './reconnectingWebSocket'
 
 type ConnectionState = {
   current?: string
@@ -33,15 +32,20 @@ type EchoPrivateChannelClientOptions = {
   onPrivateChannelError?: (error: any) => void
 }
 
+const PUSHER_PROTOCOL_VERSION = '7'
+const PUSHER_CLIENT_NAME = 'uniapp'
+const PUSHER_CLIENT_VERSION = '1.0.0'
+
 export class EchoPrivateChannelClient {
-  private echo: InstanceType<typeof Echo> | null = null
-  private channel: any = null
-  private subscribedChannelName = ''
+  private socket: ReconnectingWebSocket | null = null
   private currentChannelName = ''
-  private reconnectAttempts = 0
-  private reconnectTimer: ReturnType<typeof setTimeout> | null = null
+  private subscribedChannelName = ''
+  private pendingChannelName = ''
+  private currentSocketId = ''
+  private connectionState = 'disconnected'
   private manuallyClosed = true
   private keepAliveOnHide = false
+  private isAuthorizing = false
   private readonly defaultEventNames = ['GroupMessageEvent', '.GroupMessageEvent']
 
   constructor(private readonly options: EchoPrivateChannelClientOptions) {}
@@ -51,43 +55,24 @@ export class EchoPrivateChannelClient {
 
     this.currentChannelName = channelName
     this.manuallyClosed = false
-    this.ensureEcho()
-    if (!this.echo) return
+    this.ensureSocket()
 
-    const privateChannelName = `private-${channelName}`
-    if (this.subscribedChannelName === privateChannelName) return
+    if (this.isConnected()) {
+      await this.subscribeCurrentChannel()
+      return
+    }
 
-    this.leaveCurrentChannel()
-    this.log('subscribing channel', {
-      channelName,
-      privateChannelName,
-    })
-
-    const channel = this.echo.private(channelName)
-    const eventHandlers = this.getEventHandlers()
-    Object.entries(eventHandlers).forEach(([eventName, handler]) => {
-      channel.listen(eventName, handler)
-    })
-    channel.listenToAll?.((eventName: string, data: any) => {
-      this.options.onAllEvent?.(eventName, data)
-    })
-    channel.error?.((error: any) => {
-      this.options.onPrivateChannelError?.(error)
-    })
-    channel.subscribed?.(() => {
-      this.options.onSubscribed?.(privateChannelName)
-    })
-
-    this.channel = channel
-    this.subscribedChannelName = privateChannelName
+    this.socket?.connect()
   }
 
   disconnect(manual = true) {
     this.manuallyClosed = manual
-    this.clearReconnectTimer()
     this.leaveCurrentChannel()
-    this.echo?.disconnect()
-    this.echo = null
+    this.updateConnectionState('disconnected')
+    this.currentSocketId = ''
+    this.isAuthorizing = false
+    this.socket?.disconnect()
+    this.socket = null
   }
 
   destroy() {
@@ -97,7 +82,7 @@ export class EchoPrivateChannelClient {
   }
 
   isConnected() {
-    return this.getConnection()?.state === 'connected'
+    return this.connectionState === 'connected' && !!this.currentSocketId
   }
 
   setKeepAliveOnHide(value: boolean) {
@@ -108,191 +93,221 @@ export class EchoPrivateChannelClient {
     this.keepAliveOnHide = false
     if (!this.currentChannelName) return
     if (this.isConnected()) return
-    await this.reconnect('foreground_resume')
+
+    await this.options.beforeReconnect?.('foreground_resume')
+    this.manuallyClosed = false
+    this.ensureSocket()
+    this.socket?.connect()
   }
 
   handlePageHide() {
-    if (this.keepAliveOnHide) {
-      this.log('keep socket alive while page hides')
-      return
-    }
-
+    if (this.keepAliveOnHide) return
     this.disconnect(true)
   }
 
-  private ensureEcho() {
-    if (this.echo) return
+  private ensureSocket() {
+    if (this.socket) return
 
-    const token = this.options.getToken()
-    if (!token) return
-    ;(globalThis as any).Pusher = Pusher
-
-    this.echo = new Echo({
-      broadcaster: 'pusher',
-      key: this.options.key,
-      wsHost: this.options.wsHost,
-      forceTLS: this.options.forceTLS ?? true,
-      cluster: this.options.cluster ?? 'mt1',
-      enabledTransports: this.options.enabledTransports ?? ['ws', 'wss'],
-      activityTimeout: this.options.activityTimeout ?? 30000,
-      pongTimeout: this.options.pongTimeout ?? 15000,
-      authEndpoint: this.options.authEndpoint,
-      auth: {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: 'application/json',
-        },
-      },
-      authorizer: (channel: any) => {
-        return {
-          authorize: (socketId: string, callback: Function) => {
-            this.options.onAuthStart?.({
-              socket_id: socketId,
-              channel_name: channel.name,
-              endpoint: this.options.authEndpoint,
-            })
-
-            uni.request({
-              url: this.options.authEndpoint,
-              method: 'POST',
-              header: {
-                Accept: 'application/json',
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/x-www-form-urlencoded',
-              },
-              data: this.encodeFormBody({
-                socket_id: socketId,
-                channel_name: channel.name,
-              }),
-              success: (res) => {
-                this.options.onAuthResponse?.({
-                  statusCode: res.statusCode,
-                  data: res.data,
-                })
-
-                if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
-                  callback(null, res.data)
-                  return
-                }
-
-                callback(new Error(`频道鉴权失败(${res.statusCode || 'unknown'})`), res.data)
-              },
-              fail: (error) => {
-                this.options.onConnectionError?.(error)
-                callback(error, null)
-              },
-            })
-          },
-        }
-      },
+    this.socket = new ReconnectingWebSocket(this.buildSocketUrl(), {
+      reconnectInterval: this.options.reconnectInterval ?? 3000,
+      maxReconnectAttempts: this.options.maxReconnectAttempts ?? 10,
+      debug: this.options.debug ?? false,
     })
 
-    this.bindConnectionEvents(this.echo)
-  }
-
-  private bindConnectionEvents(echoInstance: InstanceType<typeof Echo>) {
-    const connection = (echoInstance.connector as any)?.pusher?.connection
-    if (!connection?.bind) return
-
-    connection.bind('connected', () => {
-      this.resetReconnectState()
-      this.options.onConnectionConnected?.({
-        socketId: connection.socket_id,
-        state: connection.state,
-      })
+    this.socket.onOpen(() => {
+      this.updateConnectionState('connecting')
     })
 
-    connection.bind('error', (error: any) => {
-      this.options.onConnectionError?.(error)
-      const errorCode = error?.data?.code || error?.error?.data?.code || error?.code
-      if (errorCode === 4201) {
-        this.scheduleReconnect('pusher_pong_timeout')
-      }
+    this.socket.onMessage((packet) => {
+      void this.handleSocketPacket(packet)
     })
 
-    connection.bind('disconnected', () => {
+    this.socket.onClose(() => {
+      this.currentSocketId = ''
+      this.isAuthorizing = false
+      this.subscribedChannelName = ''
+      this.pendingChannelName = ''
       this.options.onConnectionDisconnected?.()
-      this.scheduleReconnect('disconnected')
+      this.updateConnectionState('disconnected')
     })
 
-    connection.bind('state_change', (states: ConnectionState) => {
-      this.options.onConnectionStateChange?.(states)
-      if (states?.current === 'connected') {
-        this.resetReconnectState()
-        return
-      }
-
-      if (states?.current === 'unavailable' || states?.current === 'failed') {
-        this.scheduleReconnect(`state_${states.current}`)
-      }
+    this.socket.onError((error) => {
+      this.options.onConnectionError?.(error)
     })
   }
 
-  private async reconnect(reason: string) {
-    if (!this.currentChannelName) return
+  private async handleSocketPacket(packet: any) {
+    const eventName = packet?.event
+    const data = packet?.data
 
-    this.log('reconnecting chat socket', reason)
-    this.disconnect(false)
-    await this.options.beforeReconnect?.(reason)
-    await this.subscribe(this.currentChannelName)
-  }
+    if (!eventName) return
 
-  private scheduleReconnect(reason: string) {
-    if (this.manuallyClosed) return
-    if (this.keepAliveOnHide) return
-    if (this.reconnectTimer) return
-    if (this.reconnectAttempts >= (this.options.maxReconnectAttempts ?? 10)) {
-      this.log('reconnect stopped: max attempts reached', {
-        reason,
-        attempts: this.reconnectAttempts,
+    if (eventName === 'pusher:connection_established') {
+      this.currentSocketId = data?.socket_id || ''
+      this.updateConnectionState('connected')
+      this.options.onConnectionConnected?.({
+        socketId: this.currentSocketId,
+        state: this.connectionState,
       })
+      await this.subscribeCurrentChannel()
       return
     }
 
-    this.reconnectAttempts += 1
-    const reconnectInterval = this.options.reconnectInterval ?? 3000
-    this.log('schedule reconnect', {
-      reason,
-      attempt: this.reconnectAttempts,
-      delay: reconnectInterval,
+    if (
+      eventName === 'pusher_internal:subscription_succeeded' ||
+      eventName === 'pusher:subscription_succeeded'
+    ) {
+      this.subscribedChannelName = this.pendingChannelName || this.subscribedChannelName
+      this.pendingChannelName = ''
+      if (this.subscribedChannelName) {
+        this.options.onSubscribed?.(this.subscribedChannelName)
+      }
+      return
+    }
+
+    if (eventName === 'pusher:error') {
+      this.options.onPrivateChannelError?.(data)
+      return
+    }
+
+    this.options.onAllEvent?.(eventName, data)
+
+    const handler = this.getEventHandler(eventName)
+    if (handler) {
+      await handler(data)
+      return
+    }
+
+    await this.options.onMessage(data)
+  }
+
+  private async subscribeCurrentChannel() {
+    if (!this.currentChannelName || !this.currentSocketId || this.isAuthorizing) return
+
+    const privateChannelName = this.ensurePrivateChannelName(this.currentChannelName)
+    if (this.subscribedChannelName === privateChannelName) return
+
+    const token = this.options.getToken()
+    if (!token) return
+
+    this.isAuthorizing = true
+    try {
+      const authResponse = await this.authorizeChannel(
+        privateChannelName,
+        this.currentSocketId,
+        token,
+      )
+      this.pendingChannelName = privateChannelName
+
+      const payload: Record<string, any> = {
+        channel: privateChannelName,
+        auth: authResponse?.auth || '',
+      }
+
+      if (authResponse?.channel_data) {
+        payload.channel_data = authResponse.channel_data
+      }
+
+      this.socket?.sendJson({
+        event: 'pusher:subscribe',
+        data: payload,
+      })
+    } finally {
+      this.isAuthorizing = false
+    }
+  }
+
+  private authorizeChannel(channelName: string, socketId: string, token: string) {
+    this.options.onAuthStart?.({
+      socket_id: socketId,
+      channel_name: channelName,
+      endpoint: this.options.authEndpoint,
     })
 
-    this.reconnectTimer = setTimeout(async () => {
-      this.reconnectTimer = null
-      await this.reconnect(reason)
-    }, reconnectInterval)
+    return new Promise<any>((resolve, reject) => {
+      uni.request({
+        url: this.options.authEndpoint,
+        method: 'POST',
+        header: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        data: this.encodeFormBody({
+          socket_id: socketId,
+          channel_name: channelName,
+        }),
+        success: (res) => {
+          this.options.onAuthResponse?.({
+            statusCode: res.statusCode,
+            data: res.data,
+          })
+
+          if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+            resolve(res.data)
+            return
+          }
+
+          const error = new Error(`频道鉴权失败(${res.statusCode || 'unknown'})`)
+          this.options.onPrivateChannelError?.(error)
+          reject(error)
+        },
+        fail: (error) => {
+          this.options.onConnectionError?.(error)
+          reject(error)
+        },
+      })
+    })
   }
 
   private leaveCurrentChannel() {
-    if (this.subscribedChannelName && this.echo) {
-      this.echo.leave(this.subscribedChannelName.replace(/^private-/, ''))
-    }
-
-    if (this.channel?.stopListening) {
-      Object.keys(this.getEventHandlers()).forEach((eventName) => {
-        this.channel.stopListening(eventName)
+    const channelName = this.subscribedChannelName || this.pendingChannelName
+    if (channelName) {
+      this.socket?.sendJson({
+        event: 'pusher:unsubscribe',
+        data: {
+          channel: channelName,
+        },
       })
-      this.channel.stopListeningToAll?.()
     }
 
-    this.channel = null
     this.subscribedChannelName = ''
+    this.pendingChannelName = ''
   }
 
-  private getConnection() {
-    return (this.echo?.connector as any)?.pusher?.connection
+  private ensurePrivateChannelName(channelName: string) {
+    return channelName.startsWith('private-') ? channelName : `private-${channelName}`
   }
 
-  private clearReconnectTimer() {
-    if (this.reconnectTimer) {
-      clearTimeout(this.reconnectTimer)
-      this.reconnectTimer = null
+  private buildSocketUrl() {
+    const protocol = this.resolveTransportProtocol()
+    const normalizedHost = this.options.wsHost.replace(/^wss?:\/\//, '')
+    const query = [
+      `protocol=${PUSHER_PROTOCOL_VERSION}`,
+      `client=${PUSHER_CLIENT_NAME}`,
+      `version=${PUSHER_CLIENT_VERSION}`,
+      'flash=false',
+    ].join('&')
+
+    return `${protocol}://${normalizedHost}/app/${this.options.key}?${query}`
+  }
+
+  private resolveTransportProtocol() {
+    const transports = this.options.enabledTransports ?? ['wss']
+    if (this.options.forceTLS !== false) {
+      return 'wss'
     }
+
+    return transports.includes('ws') ? 'ws' : 'wss'
   }
 
-  private resetReconnectState() {
-    this.clearReconnectTimer()
-    this.reconnectAttempts = 0
+  private updateConnectionState(current: string) {
+    const previous = this.connectionState
+    this.connectionState = current
+    this.options.onConnectionStateChange?.({
+      current,
+      previous,
+    })
   }
 
   private encodeFormBody(payload: Record<string, string>) {
@@ -301,14 +316,15 @@ export class EchoPrivateChannelClient {
       .join('&')
   }
 
-  private log(message: string, payload?: any) {
-    if (!this.options.debug) return
-    if (typeof payload === 'undefined') {
-      console.log('[EchoPrivateChannelClient]', message)
-      return
-    }
+  private getEventHandler(eventName: string) {
+    const handlers = this.getEventHandlers()
+    if (handlers[eventName]) return handlers[eventName]
 
-    console.log('[EchoPrivateChannelClient]', message, payload)
+    const normalizedEventName = eventName.startsWith('.') ? eventName.slice(1) : eventName
+    if (handlers[normalizedEventName]) return handlers[normalizedEventName]
+
+    const dotPrefixedEventName = `.${normalizedEventName}`
+    return handlers[dotPrefixedEventName]
   }
 
   private getEventHandlers() {

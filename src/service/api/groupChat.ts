@@ -1,6 +1,6 @@
 import { http } from '@/utils/http'
 
-export type ChatMessageType = 'text' | 'image' | 'emotion' | 'rich' | 'system'
+export type ChatMessageType = 'text' | 'image' | 'emotion' | 'rich' | 'system' | 'system'
 
 export interface ChatRoomLastMessage {
   message_id: number
