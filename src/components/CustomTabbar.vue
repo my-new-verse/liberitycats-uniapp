@@ -22,13 +22,14 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
+import { getServerOnOff } from '@/utils'
 
 const props = defineProps<{
   current?: number
 }>()
 
 const current = ref(props.current || 0)
-const tabbarList = [
+const tabbarList = ref([
   {
     pagePath: '/pages/tabbar/home',
     iconPath: '/static/LibertyCats/type=off.png',
@@ -59,7 +60,7 @@ const tabbarList = [
     selectedIconPath: '/static/LibertyCats/type=on-3.png',
     text: '我的',
   },
-]
+])
 
 const handleTabClick = (index: number, url: string) => {
   if (current.value === index) return
@@ -73,17 +74,27 @@ const updateCurrentTab = () => {
   if (!pages.length) return
   const currentPage = pages[pages.length - 1]
   const currentPath = '/' + currentPage.route
-  const currentIndex = tabbarList.findIndex((item) => item.pagePath === currentPath)
+  const currentIndex = tabbarList.value.findIndex((item) => item.pagePath === currentPath)
   if (currentIndex !== -1) {
     current.value = currentIndex
   }
 }
 
 onShow(updateCurrentTab)
-
+const showGame = () => {
+  const gameOption = {
+    pagePath: '/pages/tabbar/game',
+    iconPath: '/static/images/game/game@2x.png',
+    selectedIconPath: '/static/images/game/game@2x.png',
+    text: '游戏',
+  }
+  if (!getServerOnOff('minigame_enable', 'common')) return
+  tabbarList.value.splice(2, 0, gameOption)
+}
 // 添加页面切换监听
 onMounted(() => {
   // 初始化时更新一次
+  showGame()
   updateCurrentTab()
 })
 </script>

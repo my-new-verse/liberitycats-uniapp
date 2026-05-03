@@ -75,35 +75,69 @@
               class="socialCntBox"
               @click="toUrl('/pages/cats/social/detail?id=' + item.id, false)"
             >
-              <view class="socialBtnIcon view"></view>
-              <view class="socialBtn">{{ item.view_count }}</view>
-            </view>
-            <view
-              class="socialBtnBox"
-              @click="
-                toUrl('/pages/cats/social/detail?id=' + item.id + '&showComment=false', false)
-              "
-            >
-              <view class="socialBtnIcon quote"></view>
-              <view class="socialBtn">{{ item.commit_count }}</view>
-            </view>
-            <view class="socialBtnBox">
-              <view class="zanWrapper" @click.stop="likePost(item.id)">
-                <image
-                  class="Icon"
-                  :src="
-                    item.is_liked === 1 ? '/static/images/unlike.png' : '/static/images/like.png'
-                  "
-                  mode="aspectFit"
-                  :style="{ opacity: item.currentGif ? 0 : 1 }"
-                />
-                <image :src="item.currentGif" class="Icon" mode="aspectFit" />
+              <view class="socialCnt">
+                <view class="socialTips" v-if="item.is_approved === 0">
+                  {{ t('social.detail.content.not_audit_seed_myself') }}
+                </view>
+                {{ item.content }}
               </view>
-
-              <view class="socialBtn" style="margin-left: 10rpx">{{ item.like_count }}</view>
+              <view
+                class="socialMedia"
+                v-if="item.images.length > 0"
+                :class="{ mediaImg4: item.images.length === 4 }"
+              >
+                <view
+                  v-for="(image, index) in item.images"
+                  :key="index"
+                  @tap.stop="handlePreview(item.images, index)"
+                >
+                  <wd-img
+                    custom-class="mediaImgItem"
+                    mode="widthFix"
+                    :src="getImageUrl(image + '?x-oss-process=style/jzcq')"
+                    :enable-preview="false"
+                  />
+                </view>
+              </view>
+              <view class="socialTime">
+                {{ formatRelativeTime(item.create_time) }}
+              </view>
             </view>
-            <view class="socialBtnBox" @click="handleOpenShare(item)">
-              <view class="socialBtnIcon share"></view>
+            <view class="socialFoot">
+              <view
+                class="socialBtnBox"
+                @click="toUrl('/pages/cats/social/detail?id=' + item.id, false)"
+              >
+                <view class="socialBtnIcon view"></view>
+                <view class="socialBtn">{{ item.view_count }}</view>
+              </view>
+              <view
+                class="socialBtnBox"
+                @click="
+                  toUrl('/pages/cats/social/detail?id=' + item.id + '&showComment=false', false)
+                "
+              >
+                <view class="socialBtnIcon quote"></view>
+                <view class="socialBtn">{{ item.commit_count }}</view>
+              </view>
+              <view class="socialBtnBox">
+                <view class="zanWrapper" @click.stop="likePost(item.id)">
+                  <image
+                    class="Icon"
+                    :src="
+                      item.is_liked === 1 ? '/static/images/unlike.png' : '/static/images/like.png'
+                    "
+                    mode="aspectFit"
+                    :style="{ opacity: item.currentGif ? 0 : 1 }"
+                  />
+                  <image :src="item.currentGif" class="Icon" mode="aspectFit" />
+                </view>
+
+                <view class="socialBtn" style="margin-left: 10rpx">{{ item.like_count }}</view>
+              </view>
+              <view class="socialBtnBox" @click="handleOpenShare(item)">
+                <view class="socialBtnIcon share"></view>
+              </view>
             </view>
           </view>
         </view>
@@ -186,7 +220,7 @@ const socialList = ref<getCommunityPostListApiResponse>({
 })
 
 let isRefreshing = false
-type SocialFilter = 'hot' | 'latest' | 'following' | 'groupChat'
+type SocialFilter = 'hot' | 'latest' | 'following'
 type LoadMoreState = 'loading' | 'finished' | 'error' | 'success'
 type SocialCache = {
   list: getCommunityPostListApiResponse
@@ -216,8 +250,7 @@ const socialCacheMap = ref<Record<SocialFilter, SocialCache>>({
   following: createSocialCache(),
   groupChat: createSocialCache(), // 群聊模式也需要缓存结构（虽然不使用）
 })
-// const socialFilter = ref<SocialFilter>('latest')
-const socialFilter = ref<SocialFilter>('groupChat')
+const socialFilter = ref<SocialFilter>('latest')
 const groupChatRenderKey = ref(0)
 const groupChatReady = ref(false)
 let groupChatReadyTimer: ReturnType<typeof setTimeout> | null = null

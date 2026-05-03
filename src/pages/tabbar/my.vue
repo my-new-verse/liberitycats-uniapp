@@ -44,13 +44,13 @@
               <image :src="getImageUrl(userStore.userInfo.level.icon)" mode="widthFix" />
             </view>
             <!-- 隐藏argame -->
-            <!-- <view class="gameIconBox">
+            <view class="gameIconBox" v-if="getServerOnOff('ar_enable', 'common')">
               <view
                 class="gmAr"
-                :class="{ on: userStore.userInfo.bind_ar.third_open_id }"
+                :class="{ on: userStore.userInfo?.bind_ar?.third_open_id }"
                 @click="bindArGame"
               ></view>
-            </view> -->
+            </view>
             <view class="points" @click="toUrl('/pages/cats/asset/log?assetKey=point', true)">
               <view class="label">{{ t('my.asset.points') }}:</view>
               <view class="amount">

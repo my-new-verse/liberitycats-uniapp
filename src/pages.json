@@ -36,6 +36,11 @@
         "selectedIconPath": "static/LibertyCats/type=on-1.png",
         "pagePath": "pages/tabbar/mall"
       },
+       {
+        "iconPath": "/static/images/game/game@2x.png",
+        "selectedIconPath": "/static/images/game/game@2x.png",
+        "pagePath": "pages/tabbar/game"
+      },
       {
         "iconPath": "static/LibertyCats/type=off-2.png",
         "selectedIconPath": "static/LibertyCats/type=on-2.png",
@@ -376,7 +381,7 @@
           "pullToRefresh": {
             "style": "circle",
             "color": "#ff6b03",
-            "offset": "80rpx"
+            "offset": "140rpx"
           }
         }
       }
@@ -534,6 +539,24 @@
     {
       "path": "pages/cats/social/detail_sktiy_comment",
       "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f7f6f4"
+      }
+    },
+    {
+      "path": "pages/cats/social/group_chat",
+      "type": "page",
+      "layout": "default",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f7f6f4"
+      }
+    },
+    {
+      "path": "pages/cats/social/group_members",
+      "type": "page",
+      "layout": "default",
       "style": {
         "navigationStyle": "custom",
         "backgroundColor": "#f7f6f4"
