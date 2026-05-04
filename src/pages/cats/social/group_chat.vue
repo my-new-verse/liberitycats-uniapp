@@ -141,6 +141,7 @@
                       :style="getImageMessageBoxStyle(msg)"
                     >
                       <wd-img
+                        v-if="shouldRenderImageMessage(msg, getVisibleMessageIndex(localIndex))"
                         custom-class="chat-img-custom"
                         mode="aspectFill"
                         :width="`${getImageMessageBoxSize(msg).width}px`"
@@ -150,6 +151,9 @@
                         radius="24rpx"
                         @load="handleImageMessageLoaded(msg.id)"
                       />
+                      <view v-else class="img-placeholder">
+                        <view class="img-placeholder-shimmer"></view>
+                      </view>
                     </view>
                     <view v-else-if="msg.message_type === 'rich'" class="text-bubble">
                       <view v-for="(richItem, index) in msg.payload?.parts" :key="index">
@@ -162,11 +166,21 @@
                           :style="getEmotionMessageBoxStyle()"
                         >
                           <image
+                            v-if="
+                              shouldRenderRichEmotionMessage(
+                                msg,
+                                getVisibleMessageIndex(localIndex),
+                                index,
+                              )
+                            "
                             :src="getRichEmotionMessageSrc(richItem.emotion_id)"
                             mode="aspectFill"
                             class="emotion-img"
                             @load="handleEmotionMessageLoaded(msg.id, index)"
                           />
+                          <view v-else class="img-placeholder">
+                            <view class="img-placeholder-shimmer"></view>
+                          </view>
                         </view>
                       </view>
                     </view>
@@ -176,6 +190,7 @@
                       :style="getEmotionMessageBoxStyle()"
                     >
                       <image
+                        v-if="shouldRenderEmotionMessage(msg, getVisibleMessageIndex(localIndex))"
                         :src="getEmotionMessageSrc(msg)"
                         mode="aspectFill"
                         class="emotion-img"
@@ -779,16 +794,7 @@ const scheduleVisibleMessageMeasurement = () => {
   }, 48)
 }
 
-// 简化虚拟列表的更新逻辑
 const updateVirtualRange = (currentScrollTop = scrollTop.value, force = false) => {
-  // 如果消息数量很少，无需虚拟列表
-  if (messages.value.length < 20) {
-    virtualRange.value = { start: 0, end: messages.value.length - 1 }
-    virtualTopSpacer.value = 0
-    virtualBottomSpacer.value = 0
-    return
-  }
-
   if (messages.value.length === 0) {
     virtualRange.value = { start: 0, end: 0 }
     virtualTopSpacer.value = 0
@@ -816,14 +822,11 @@ const updateVirtualRange = (currentScrollTop = scrollTop.value, force = false) =
   const totalHeight = getTotalMessageHeight()
   virtualBottomSpacer.value = Math.max(0, totalHeight - virtualTopSpacer.value - renderedHeight)
 
-  // 简化测量调度
   if (rangeChanged || force) {
-    // 直接测量，而不是使用定时器
-    measureVisibleMessages()
+    scheduleVisibleMessageMeasurement()
   }
 }
 
-// 简化测量函数
 const measureVisibleMessages = () => {
   nextTick(() => {
     const query = uni.createSelectorQuery()
@@ -974,36 +977,6 @@ const backfillMissingMessagesByRoomSeq = async (incomingMessage: ChatMessage) =>
 
 const upsertChatMessage = async (incomingMessage: ChatMessage, scrollToLatest = false) => {
   if (!incomingMessage?.id) return
-}
-
-// 简化页面滚动处理
-onPageScroll((event) => {
-  scrollTop.value = event.scrollTop
-
-  // 减少虚拟范围更新频率
-  if (!isProgrammaticPageScroll.value) {
-    // 使用防抖，避免过于频繁的更新
-    clearTimeout(window.pageScrollDebounceTimer)
-    window.pageScrollDebounceTimer = setTimeout(() => {
-      updateVirtualRange(event.scrollTop, false)
-    }, 100)
-  }
-
-  if (isProgrammaticPageScroll.value) {
-    lastPageScrollTop = event.scrollTop
-    return
-  }
-
-  lastPageScrollTop = event.scrollTop
-})
-
-// 添加全局变量定义
-declare global {
-  interface Window {
-    pageScrollDebounceTimer: any
-  }
-}
-
 
   const mergedMessage: ChatMessage = {
     ...incomingMessage,
@@ -1250,7 +1223,7 @@ const loadMoreHistoryMessages = async () => {
   const roomId = roomDetail.value?.room.id || routeRoomId.value
   if (!roomId || loadingMoreHistory.value || !hasMoreHistory.value) return
 
-  const beforeMessageId = getFirstMessageId()
+  const beforeMessageId = nextBeforeMessageId.value || getFirstMessageId()
   if (!beforeMessageId) return
 
   loadingMoreHistory.value = true
@@ -1274,14 +1247,9 @@ const loadMoreHistoryMessages = async () => {
       const prependMessages = olderMessages.filter((msg) => !existingMessageIds.has(msg.id))
       if (prependMessages.length === 0) return
 
-      // 使用 unshift 一次性添加所有消息
-      messages.value.unshift(...sortMessagesByRoomSeq(prependMessages))
+      messages.value = sortMessagesByRoomSeq([...prependMessages, ...messages.value])
       rebuildMessagePrefixHeights()
-
-      // 确保更新虚拟范围
       updateVirtualRange(scrollTop.value, true)
-
-      // 保持消息视口位置
       await keepMessageViewportPosition(beforeMessageId, anchorSnapshot)
     }
   } catch (error) {
@@ -1560,18 +1528,11 @@ const validateBeforeSend = (): boolean => {
   if (roomDetail.value.speaking.is_member_muted === 1) {
     toast.show(roomDetail.value.speaking.reason || t('group.chat.muted'))
     return false
-const shouldRenderImageMessage = (message: ChatMessage, index: number) => {
-  // 直接渲染，不再使用复杂的可视区域检测
-  return true
-}
+  }
 
-const shouldRenderEmotionMessage = (message: ChatMessage, index: number) => {
-  // 直接渲染，不再使用复杂的可视区域检测
-  return true
-}
+  // 7. client_message_id 幂等性由 createClientMessageId() 保证，每次生成唯一 ID
+  // 该函数使用设备ID + 用户ID + 群ID + 序列号 + UUID v5 确保唯一性
 
-const shouldRenderRichEmotionMessage = (message: ChatMessage, index: number, partIndex: number) => {
-  // 直接渲染，不再使用复杂的可视区域检测
   return true
 }
 
@@ -2315,17 +2276,12 @@ const loadedImg = () => {
 }
 
 const handleImageMessageLoaded = (messageId: number) => {
-  // 更新渲染缓存标记，但简化处理逻辑
-  if (!messageId) return
-  renderedImageMessageMap.value[messageId] = true
-  // 触发测量更新
-  scheduleVisibleMessageMeasurement()
+  markImageMessageRendered(messageId)
+  loadedImg()
 }
 
 const handleEmotionMessageLoaded = (messageId: number, partIndex?: number) => {
-  const cacheKey = getEmotionRenderCacheKey(messageId, partIndex)
-  if (!messageId) return
-  renderedEmotionMessageMap.value[cacheKey] = true
+  markEmotionMessageRendered(messageId, partIndex)
 }
 
 watch(
