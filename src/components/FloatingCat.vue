@@ -28,6 +28,10 @@
       </view>
     </movable-view>
   </movable-area>
+
+  <view v-if="isProcessing" class="custom-loading-mask">
+    <view class="orange-spinner"></view>
+  </view>
 </template>
 
 <script setup lang="ts">
@@ -37,6 +41,7 @@ import { toUrl } from '@/utils'
 import { useUserStore } from '@/store'
 
 const userStore = useUserStore()
+const isProcessing = ref(false)
 
 const ICON_SIZE_RPX = 120
 const PADDING_RPX = 10
@@ -107,7 +112,7 @@ const onDragEnd = () => {
 }
 
 const handleCatClick = () => {
-  if (hasMoved.value) return
+  if (hasMoved.value || isProcessing.value) return
 
   if (!userStore.isLogin) {
     toUrl('/pages/cats/login', true, false)
@@ -115,14 +120,24 @@ const handleCatClick = () => {
   }
 
   console.log('猫猫被点击了，准备进入 AI 界面')
+  isProcessing.value = true
 
-  getChatBotTempTokenApi().then((res) => {
-    const jumpUrl = res.data.jumpUrl + '&t=' + Date.now()
+  getChatBotTempTokenApi()
+    .then((res) => {
+      const jumpUrl = res.data.jumpUrl + '&t=' + Date.now()
 
-    uni.navigateTo({
-      url: `/pages/webview/index?url=${jumpUrl}`,
+      uni.navigateTo({
+        url: `/pages/webview/index?url=${jumpUrl}`,
+      })
     })
-  })
+    .catch((err) => {
+      console.error(err)
+    })
+    .finally(() => {
+      setTimeout(() => {
+        isProcessing.value = false
+      }, 800)
+    })
 }
 
 onMounted(() => {
@@ -189,5 +204,37 @@ onMounted(() => {
 }
 .cat-img.hidden {
   opacity: 0;
+}
+
+.custom-loading-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  pointer-events: auto;
+}
+
+.orange-spinner {
+  width: 64rpx;
+  height: 64rpx;
+  border: 6rpx solid #ffe0b2;
+  border-top: 6rpx solid #ff9800;
+  border-radius: 50%;
+  animation: spinner 0.8s linear infinite;
+}
+
+@keyframes spinner {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 </style>
