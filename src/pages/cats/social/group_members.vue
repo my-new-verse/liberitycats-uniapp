@@ -47,6 +47,9 @@
             <view class="member-item" v-for="item in adminList" :key="item.member_id">
               <view class="avatar-wrap" @click="handleAvatarClick(item?.member_id)">
                 <image :src="item.avatar" class="avatar" />
+                <view class="levelIcon">
+                  <image :src="`/static/images/level/${item.level.level}.png`" mode="widthFix" />
+                </view>
               </view>
               <view class="member-info">
                 <view class="member-name" @click="handleAvatarClick(item?.member_id)">
@@ -95,6 +98,9 @@
           <view class="member-item" v-for="item in filteredMemberList" :key="item.member_id">
             <view class="avatar-wrap" @click="handleAvatarClick(item?.member_id)">
               <image :src="item.avatar" class="avatar" />
+              <view class="levelIcon">
+                <image :src="`/static/images/level/${item.level.level}.png`" mode="widthFix" />
+              </view>
             </view>
             <view class="member-info">
               <view class="member-name" @click="handleAvatarClick(item?.member_id)">
@@ -546,6 +552,17 @@ const confirmMute = async () => {
   position: relative;
   margin-right: 24rpx;
   cursor: pointer;
+  .levelIcon {
+    position: absolute;
+    right: 0rpx;
+    bottom: 12rpx;
+    width: 28rpx;
+    height: 28rpx;
+    image {
+      width: 100%;
+      height: 100%;
+    }
+  }
 }
 
 .avatar {

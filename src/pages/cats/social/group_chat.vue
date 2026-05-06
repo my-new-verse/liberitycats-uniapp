@@ -112,12 +112,15 @@
             </template>
             <!-- 普通消息：左右布局 -->
             <template v-else>
-              <image
-                class="u-avatar"
-                :src="msg?.sender?.avatar"
-                mode="aspectFill"
-                @click="!msg.is_self && handleAvatarClick(msg?.member_id)"
-              />
+              <view class="avatarBox" @click="!msg.is_self && handleAvatarClick(msg?.member_id)">
+                <image class="u-avatar" :src="msg?.sender?.avatar" mode="aspectFill" />
+                <view class="levelIcon">
+                  <image
+                    :src="`/static/images/level/${msg.sender?.level.level}.png`"
+                    mode="widthFix"
+                  />
+                </view>
+              </view>
 
               <view class="u-content">
                 <text v-if="!msg.is_self" class="u-name">{{ msg.sender?.nickname }}</text>
@@ -2704,12 +2707,30 @@ const EmotionTool = (() => {
       }
     }
 
-    .u-avatar {
+    .avatarBox {
+      position: relative;
       width: 88rpx;
       height: 88rpx;
-      border-radius: 50%; // 圆形头像
-      background-color: #eee;
-      flex-shrink: 0;
+      margin-right: 16rpx;
+      .u-avatar {
+        width: 88rpx;
+        height: 88rpx;
+        overflow: hidden;
+        border-radius: 50%; // 圆形头像
+        background-color: #eee;
+        flex-shrink: 0;
+      }
+      .levelIcon {
+        position: absolute;
+        right: -4rpx;
+        bottom: 6rpx;
+        width: 28rpx;
+        height: 28rpx;
+        image {
+          width: 100%;
+          height: 100%;
+        }
+      }
     }
 
     .u-content {
