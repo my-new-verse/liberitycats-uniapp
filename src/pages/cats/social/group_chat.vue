@@ -1210,13 +1210,26 @@ const loadHistoryMessages = async () => {
       if (messageList.length > 0) {
         const lastMessage = messageList[messageList.length - 1]
         // ✅ 滚动到最后一条消息
-        lastMessage && scrollToMessage(lastMessage.id)
+        nextTick(() => {
+          scrollToBottomDirect()
+        })
         await markAsRead(roomId, lastMessage.id)
       }
     }
   } catch (error) {
     console.error('loadHistoryMessages error:', error)
   }
+}
+
+const scrollToBottomDirect = () => {
+  nextTick(() => {
+    const totalHeight = getTotalMessageHeight()
+
+    uni.pageScrollTo({
+      scrollTop: totalHeight + messageListTop.value,
+      duration: 0,
+    })
+  })
 }
 
 const loadMoreHistoryMessages = async () => {

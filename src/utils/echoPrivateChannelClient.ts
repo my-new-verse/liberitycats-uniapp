@@ -1,5 +1,7 @@
+// #ifdef H5
 import Echo from 'laravel-echo'
 import Pusher from 'pusher-js'
+// #endif
 
 type ConnectionState = {
   current?: string
@@ -34,7 +36,7 @@ type EchoPrivateChannelClientOptions = {
 }
 
 export class EchoPrivateChannelClient {
-  private echo: InstanceType<typeof Echo> | null = null
+  private echo: any = null
   private channel: any = null
   private subscribedChannelName = ''
   private currentChannelName = ''
@@ -51,13 +53,20 @@ export class EchoPrivateChannelClient {
 
     this.currentChannelName = channelName
     this.manuallyClosed = false
+
     this.ensureEcho()
-    if (!this.echo) return
+
+    // ❗ App端 echo 为 null，直接跳过
+    if (!this.echo) {
+      this.log('skip subscribe (echo not available)')
+      return
+    }
 
     const privateChannelName = `private-${channelName}`
     if (this.subscribedChannelName === privateChannelName) return
 
     this.leaveCurrentChannel()
+
     this.log('subscribing channel', {
       channelName,
       privateChannelName,
@@ -65,15 +74,19 @@ export class EchoPrivateChannelClient {
 
     const channel = this.echo.private(channelName)
     const eventHandlers = this.getEventHandlers()
+
     Object.entries(eventHandlers).forEach(([eventName, handler]) => {
       channel.listen(eventName, handler)
     })
+
     channel.listenToAll?.((eventName: string, data: any) => {
       this.options.onAllEvent?.(eventName, data)
     })
+
     channel.error?.((error: any) => {
       this.options.onPrivateChannelError?.(error)
     })
+
     channel.subscribed?.(() => {
       this.options.onSubscribed?.(privateChannelName)
     })
@@ -86,7 +99,8 @@ export class EchoPrivateChannelClient {
     this.manuallyClosed = manual
     this.clearReconnectTimer()
     this.leaveCurrentChannel()
-    this.echo?.disconnect()
+
+    this.echo?.disconnect?.()
     this.echo = null
   }
 
@@ -106,21 +120,27 @@ export class EchoPrivateChannelClient {
 
   async handlePageShow() {
     this.keepAliveOnHide = false
+
     if (!this.currentChannelName) return
     if (this.isConnected()) return
+
     await this.reconnect('foreground_resume')
   }
 
   handlePageHide() {
-    if (this.keepAliveOnHide) {
-      this.log('keep socket alive while page hides')
-      return
-    }
-
+    if (this.keepAliveOnHide) return
     this.disconnect(true)
   }
 
   private ensureEcho() {
+    const isApp = typeof plus !== 'undefined'
+
+    if (isApp) {
+      this.log('App端禁用 Echo 初始化')
+      return
+    }
+
+    // #ifdef H5
     if (this.echo) return
 
     const token = this.options.getToken()
@@ -172,10 +192,9 @@ export class EchoPrivateChannelClient {
 
                 if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
                   callback(null, res.data)
-                  return
+                } else {
+                  callback(new Error('auth failed'), res.data)
                 }
-
-                callback(new Error(`频道鉴权失败(${res.statusCode || 'unknown'})`), res.data)
               },
               fail: (error) => {
                 this.options.onConnectionError?.(error)
@@ -188,10 +207,11 @@ export class EchoPrivateChannelClient {
     })
 
     this.bindConnectionEvents(this.echo)
+    // #endif
   }
 
-  private bindConnectionEvents(echoInstance: InstanceType<typeof Echo>) {
-    const connection = (echoInstance.connector as any)?.pusher?.connection
+  private bindConnectionEvents(echoInstance: any) {
+    const connection = echoInstance?.connector?.pusher?.connection
     if (!connection?.bind) return
 
     connection.bind('connected', () => {
@@ -202,36 +222,17 @@ export class EchoPrivateChannelClient {
       })
     })
 
-    connection.bind('error', (error: any) => {
-      this.options.onConnectionError?.(error)
-      const errorCode = error?.data?.code || error?.error?.data?.code || error?.code
-      if (errorCode === 4201) {
-        this.scheduleReconnect('pusher_pong_timeout')
-      }
-    })
-
     connection.bind('disconnected', () => {
       this.options.onConnectionDisconnected?.()
       this.scheduleReconnect('disconnected')
-    })
-
-    connection.bind('state_change', (states: ConnectionState) => {
-      this.options.onConnectionStateChange?.(states)
-      if (states?.current === 'connected') {
-        this.resetReconnectState()
-        return
-      }
-
-      if (states?.current === 'unavailable' || states?.current === 'failed') {
-        this.scheduleReconnect(`state_${states.current}`)
-      }
     })
   }
 
   private async reconnect(reason: string) {
     if (!this.currentChannelName) return
 
-    this.log('reconnecting chat socket', reason)
+    this.log('reconnecting', reason)
+
     this.disconnect(false)
     await this.options.beforeReconnect?.(reason)
     await this.subscribe(this.currentChannelName)
@@ -239,28 +240,14 @@ export class EchoPrivateChannelClient {
 
   private scheduleReconnect(reason: string) {
     if (this.manuallyClosed) return
-    if (this.keepAliveOnHide) return
     if (this.reconnectTimer) return
-    if (this.reconnectAttempts >= (this.options.maxReconnectAttempts ?? 10)) {
-      this.log('reconnect stopped: max attempts reached', {
-        reason,
-        attempts: this.reconnectAttempts,
-      })
-      return
-    }
 
     this.reconnectAttempts += 1
-    const reconnectInterval = this.options.reconnectInterval ?? 3000
-    this.log('schedule reconnect', {
-      reason,
-      attempt: this.reconnectAttempts,
-      delay: reconnectInterval,
-    })
 
-    this.reconnectTimer = setTimeout(async () => {
+    this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null
-      await this.reconnect(reason)
-    }, reconnectInterval)
+      this.reconnect(reason)
+    }, this.options.reconnectInterval ?? 3000)
   }
 
   private leaveCurrentChannel() {
@@ -268,19 +255,12 @@ export class EchoPrivateChannelClient {
       this.echo.leave(this.subscribedChannelName.replace(/^private-/, ''))
     }
 
-    if (this.channel?.stopListening) {
-      Object.keys(this.getEventHandlers()).forEach((eventName) => {
-        this.channel.stopListening(eventName)
-      })
-      this.channel.stopListeningToAll?.()
-    }
-
     this.channel = null
     this.subscribedChannelName = ''
   }
 
   private getConnection() {
-    return (this.echo?.connector as any)?.pusher?.connection
+    return this.echo?.connector?.pusher?.connection
   }
 
   private clearReconnectTimer() {
@@ -303,25 +283,18 @@ export class EchoPrivateChannelClient {
 
   private log(message: string, payload?: any) {
     if (!this.options.debug) return
-    if (typeof payload === 'undefined') {
-      console.log('[EchoPrivateChannelClient]', message)
-      return
-    }
-
-    console.log('[EchoPrivateChannelClient]', message, payload)
+    console.log('[EchoPrivateChannelClient]', message, payload || '')
   }
 
   private getEventHandlers() {
-    if (this.options.eventHandlers && Object.keys(this.options.eventHandlers).length > 0) {
-      return this.options.eventHandlers
-    }
+    if (this.options.eventHandlers) return this.options.eventHandlers
 
     return this.defaultEventNames.reduce(
       (acc, eventName) => {
         acc[eventName] = this.options.onMessage
         return acc
       },
-      {} as Record<string, (payload: any) => Promise<void> | void>,
+      {} as Record<string, (payload: any) => void>,
     )
   }
 }
