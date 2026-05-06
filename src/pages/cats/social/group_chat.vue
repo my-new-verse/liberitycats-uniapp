@@ -116,7 +116,7 @@
                 <image class="u-avatar" :src="msg?.sender?.avatar" mode="aspectFill" />
                 <view class="levelIcon">
                   <image
-                    :src="`/static/images/level/${msg.sender?.level.level}.png`"
+                    :src="`/static/images/level/${msg.sender?.level?.level}.png`"
                     mode="widthFix"
                   />
                 </view>
@@ -852,6 +852,14 @@ const updateVirtualRange = (currentScrollTop = scrollTop.value, force = false) =
   }
 }
 
+const isNearBottom = () => {
+  const threshold = 100 // px，可调
+  const totalHeight = getTotalMessageHeight()
+  const current = scrollTop.value + viewportHeight.value
+
+  return totalHeight - current < threshold
+}
+
 const measureVisibleMessages = () => {
   if (isPageLeaving.value) return
   nextTick(() => {
@@ -1528,7 +1536,10 @@ const createLocalPendingMessage = (
 }
 
 const insertLocalPendingMessage = (message: ChatMessage) => {
+  const shouldStickToBottom = isNearBottom()
+
   messages.value.push(message)
+
   if (
     messages.value.length > 1 &&
     messages.value[messages.value.length - 1].room_seq <
@@ -1537,10 +1548,24 @@ const insertLocalPendingMessage = (message: ChatMessage) => {
     messages.value = sortMessagesByRoomSeq(messages.value)
   }
 
-  // 👉 只在必要时 rebuild
   rebuildMessagePrefixHeights()
-  updateVirtualRange(scrollTop.value, true)
-  scrollToMessage(message.id)
+
+  if (shouldStickToBottom) {
+    nextTick(() => {
+      const totalHeight = getTotalMessageHeight()
+
+      scrollTop.value = totalHeight
+      updateVirtualRange(totalHeight, true)
+
+      uni.pageScrollTo({
+        scrollTop: totalHeight + messageListTop.value,
+        duration: 0,
+      })
+    })
+  } else {
+    // 用户不在底部 → 不打扰
+    updateVirtualRange(scrollTop.value, true)
+  }
 }
 
 const markLocalMessageFailed = (clientMessageId: string | undefined) => {
@@ -1707,8 +1732,23 @@ const sendMsg = async () => {
  * ✅ 追加消息到本地列表并标记已读
  */
 const appendChatMessage = async (newMsg: ChatMessage) => {
-  console.log(newMsg)
-  await upsertChatMessage(newMsg, true)
+  const shouldStickToBottom = isNearBottom()
+
+  await upsertChatMessage(newMsg, false)
+
+  if (shouldStickToBottom) {
+    nextTick(() => {
+      const totalHeight = getTotalMessageHeight()
+
+      scrollTop.value = totalHeight
+      updateVirtualRange(totalHeight, true)
+
+      uni.pageScrollTo({
+        scrollTop: totalHeight + messageListTop.value,
+        duration: 0,
+      })
+    })
+  }
 }
 // 发布评论 end
 

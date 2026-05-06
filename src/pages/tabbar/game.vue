@@ -20,14 +20,14 @@
 <template>
   <view class="bg-white overflow-hidden page3" :class="[locale]">
     <view class="icon3"></view>
-    <view class="gameBox gameBox1" @click="openGameUrl('xxl')">
+    <view class="gameBox gameBox1" @click="openGameUrl('MATCH_THREE')">
       <view class="gameInfo">
         <view class="name">消消乐</view>
         <view class="memo">Matchin’ CAT</view>
       </view>
       <view class="icon icon1"></view>
     </view>
-    <view class="gameBox gameBox2" @click="openGameUrl('tyt')">
+    <view class="gameBox gameBox2" @click="openGameUrl('JUMP')">
       <view class="gameInfo">
         <view class="name">跳一跳</view>
         <view class="memo">JUMPIN’ CAT</view>
@@ -94,19 +94,19 @@ const openGameUrl = (gameType: string) => {
     return
   }
 
-  const gameEnableKey = 'game_' + gameType + '_enable'
-  const gameEnable = getServerOnOff(gameEnableKey, 'common')
-  const gameUrlKey = 'game_' + gameType + '_url'
-  const gameUrl = getServerOnOff(gameUrlKey, 'common', true)
-  console.log('gameEnable', gameEnable)
-  console.log('gameUrl', gameUrl)
-  if (!gameEnable || !gameUrl || gameUrl.length < 10) {
-    toast.show(t('game.toast.game_not_open'))
-    return
-  }
+  //   const gameEnableKey = 'game_' + gameType + '_enable'
+  //   const gameEnable = getServerOnOff(gameEnableKey, 'common')
+  //   const gameUrlKey = 'game_' + gameType + '_url'
+  //   const gameUrl = getServerOnOff(gameUrlKey, 'common', true)
+  //   console.log('gameEnable', gameEnable)
+  //   console.log('gameUrl', gameUrl)
+  //   if (!gameEnable || !gameUrl || gameUrl.length < 10) {
+  //     toast.show(t('game.toast.game_not_open'))
+  //     return
+  //   }
 
-  getGameParamsApi().then((res) => {
-    const token = res.data.token || ''
+  getGameParamsApi(gameType).then((res) => {
+    const token = res.data.tempToken || ''
     console.log('token', token)
     if (!token) {
       toast.show(t('game.toast.game_not_open'))
