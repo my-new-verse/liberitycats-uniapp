@@ -415,6 +415,13 @@ import {
 } from '@/service/api/groupChat'
 import { defaultEmojiList } from '@/utils/defaultEmojiList'
 
+const raf = (fn: () => void) => {
+  if (typeof requestAnimationFrame !== 'undefined') {
+    return requestAnimationFrame(fn)
+  }
+  return setTimeout(fn, 16) // 约等于一帧
+}
+
 declare const plus: any
 
 type UploadChooseFile = {
@@ -487,7 +494,22 @@ const virtualTopSpacer = ref(0)
 const virtualBottomSpacer = ref(0)
 let lastVirtualScrollTop = 0
 let virtualRangeMeasureTimer: ReturnType<typeof setTimeout> | null = null
+const isPageLeaving = ref(false)
+
 const navigateBack = () => {
+  if (isPageLeaving.value) return
+  isPageLeaving.value = true
+
+  // 停止 socket
+  chatSocketClient.value?.destroy()
+  chatSocketClient.value = null
+
+  // 停止测量定时器
+  if (virtualRangeMeasureTimer) {
+    clearTimeout(virtualRangeMeasureTimer)
+    virtualRangeMeasureTimer = null
+  }
+
   uni.navigateBack({ delta: 1 })
 }
 
@@ -783,15 +805,15 @@ const findVisibleRangeByScrollTop = (currentScrollTop: number) => {
   }
 }
 
+let measureScheduled = false
 const scheduleVisibleMessageMeasurement = () => {
-  if (virtualRangeMeasureTimer) {
-    clearTimeout(virtualRangeMeasureTimer)
-  }
-
+  if (measureScheduled || isPageLeaving.value) return
+  measureScheduled = true
   virtualRangeMeasureTimer = setTimeout(() => {
+    measureScheduled = false
     virtualRangeMeasureTimer = null
     measureVisibleMessages()
-  }, 48)
+  }, 100)
 }
 
 const updateVirtualRange = (currentScrollTop = scrollTop.value, force = false) => {
@@ -828,7 +850,9 @@ const updateVirtualRange = (currentScrollTop = scrollTop.value, force = false) =
 }
 
 const measureVisibleMessages = () => {
+  if (isPageLeaving.value) return
   nextTick(() => {
+    if (isPageLeaving.value) return
     const query = uni.createSelectorQuery()
     query.selectAll('.virtual-message-item').fields({ size: true, dataset: true }, (rects) => {
       let hasHeightChange = false
@@ -1211,7 +1235,16 @@ const loadHistoryMessages = async () => {
         const lastMessage = messageList[messageList.length - 1]
         // ✅ 滚动到最后一条消息
         nextTick(() => {
-          scrollToBottomDirect()
+          const totalHeight = getTotalMessageHeight()
+
+          scrollTop.value = totalHeight
+
+          updateVirtualRange(totalHeight, true)
+
+          uni.pageScrollTo({
+            scrollTop: totalHeight + messageListTop.value,
+            duration: 0,
+          })
         })
         await markAsRead(roomId, lastMessage.id)
       }
@@ -1276,12 +1309,25 @@ const handleScrollToUpper = async () => {
   await loadMoreHistoryMessages()
 }
 
+let scrollTicking = false
+
 onPageScroll((event) => {
-  scrollTop.value = event.scrollTop
-  updateVirtualRange(event.scrollTop, false)
-  if (event.scrollTop <= 20) {
-    handleScrollToUpper()
-  }
+  if (scrollTicking || isPageLeaving.value) return
+
+  scrollTicking = true
+
+  raf(() => {
+    if (isPageLeaving.value) {
+      scrollTicking = false
+      return
+    }
+
+    scrollTop.value = event.scrollTop
+
+    updateVirtualRange(event.scrollTop, false)
+
+    scrollTicking = false
+  })
 })
 
 // 标记消息为已读
@@ -1480,7 +1526,15 @@ const createLocalPendingMessage = (
 
 const insertLocalPendingMessage = (message: ChatMessage) => {
   messages.value.push(message)
-  messages.value = sortMessagesByRoomSeq(messages.value)
+  if (
+    messages.value.length > 1 &&
+    messages.value[messages.value.length - 1].room_seq <
+      messages.value[messages.value.length - 2].room_seq
+  ) {
+    messages.value = sortMessagesByRoomSeq(messages.value)
+  }
+
+  // 👉 只在必要时 rebuild
   rebuildMessagePrefixHeights()
   updateVirtualRange(scrollTop.value, true)
   scrollToMessage(message.id)
@@ -2274,18 +2328,18 @@ const shouldShowTimeDivider = (index: number): boolean => {
   return timeDiff >= fiveMinutes
 }
 
+let imageLoadTicking = false
+
 const loadedImg = () => {
   loadedImageCount.value++
-  scheduleVisibleMessageMeasurement()
-  // 所有图片都加载完了
-  if (loadedImageCount.value === totalImageCount.value) {
-    nextTick(() => {
-      const lastMessageId = getLastMessageId()
-      if (lastMessageId) {
-        // scrollToMessage(lastMessageId)
-      }
-    })
-  }
+
+  if (imageLoadTicking || isPageLeaving.value) return
+  imageLoadTicking = true
+
+  setTimeout(() => {
+    imageLoadTicking = false
+    scheduleVisibleMessageMeasurement()
+  }, 100)
 }
 
 const handleImageMessageLoaded = (messageId: number) => {
@@ -2303,25 +2357,6 @@ watch(
     visibleMessages.value.forEach((message, localIndex) => {
       if (message.message_type !== 'image') return
       shouldRenderImageMessage(message, getVisibleMessageIndex(localIndex))
-    })
-  },
-  { flush: 'post' },
-)
-
-watch(
-  () => visibleMessages.value.map((message) => `${message.id}:${message.message_type}:emotion`),
-  () => {
-    visibleMessages.value.forEach((message, localIndex) => {
-      const visibleIndex = getVisibleMessageIndex(localIndex)
-      if (message.message_type === 'emotion') {
-        shouldRenderEmotionMessage(message, visibleIndex)
-      }
-      if (message.message_type === 'rich') {
-        message.payload?.parts?.forEach((part, partIndex) => {
-          if (part.type !== 'emotion') return
-          shouldRenderRichEmotionMessage(message, visibleIndex, partIndex)
-        })
-      }
     })
   },
   { flush: 'post' },
