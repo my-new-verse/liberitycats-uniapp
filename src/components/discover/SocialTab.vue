@@ -191,6 +191,7 @@ import {
   createFollowApi,
   deleteFollowApi,
 } from '@/service/api/community'
+import { preloadChatRoomsApi } from '@/service/api/groupChat'
 import SharePopup from '@/components/SharePopup/SharePopup.vue'
 
 import { useMessage, useToast } from 'wot-design-uni'
@@ -254,6 +255,7 @@ const socialFilter = ref<SocialFilter>('latest')
 const groupChatRenderKey = ref(0)
 const groupChatReady = ref(false)
 let groupChatReadyTimer: ReturnType<typeof setTimeout> | null = null
+const GROUP_CHAT_ROOMS_REFRESH_EVENT = 'refreshGroupChatRooms'
 const activeSocialCache = computed(() => socialCacheMap.value[socialFilter.value])
 const ensureGroupChatReady = () => {
   if (groupChatReady.value || groupChatReadyTimer) return
@@ -263,13 +265,14 @@ const ensureGroupChatReady = () => {
   }, 80)
 }
 
-const refreshGroupChatIfActive = () => {
+const refreshGroupChatRooms = () => {
+  ensureGroupChatReady()
+  socialCacheMap.value.groupChat.state = 'finished'
   if (socialFilter.value === 'groupChat') {
-    ensureGroupChatReady()
-    socialCacheMap.value.groupChat.state = 'finished'
     emit('update:state', 'finished')
-    groupChatRenderKey.value += 1
   }
+  void preloadChatRoomsApi(1, true)
+  uni.$emit(GROUP_CHAT_ROOMS_REFRESH_EVENT)
 }
 
 // 更新加载状态
@@ -317,7 +320,7 @@ const handleFilterChange = async (filter: SocialFilter) => {
     return
   }
   if (filter === 'groupChat') {
-    refreshGroupChatIfActive()
+    refreshGroupChatRooms()
     if (socialFilter.value === filter) return
   } else if (socialFilter.value === filter) {
     return
@@ -515,6 +518,7 @@ const handleDelPost = (id: number) => {
 
 // 初始加载
 onMounted(() => {
+  void preloadChatRoomsApi(1)
   if (socialFilter.value !== 'groupChat') {
     syncActiveCache()
     if (!socialCacheMap.value[socialFilter.value].hasInitialized) {
@@ -527,7 +531,7 @@ onMounted(() => {
   // 监听刷新事件
   uni.$on('refreshSocialTab', () => {
     if (socialFilter.value === 'groupChat') {
-      refreshGroupChatIfActive()
+      refreshGroupChatRooms()
       emit('refresh-complete')
       return
     }
@@ -536,7 +540,7 @@ onMounted(() => {
   })
   uni.$on('discoverActiveTabChange', (tabName: string) => {
     if (tabName === t('discover.tabs.social') && socialFilter.value === 'groupChat') {
-      refreshGroupChatIfActive()
+      refreshGroupChatRooms()
     }
   })
 })

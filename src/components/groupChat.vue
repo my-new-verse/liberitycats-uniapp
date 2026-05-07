@@ -35,10 +35,16 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { getImageUrl, toUrl } from '@/utils'
-import { getChatRoomsApi, joinChatRoomApi, ChatRoom } from '@/service/api/groupChat'
+import {
+  getChatRoomsApi,
+  getCachedChatRoomsApi,
+  preloadChatRoomsApi,
+  joinChatRoomApi,
+  ChatRoom,
+} from '@/service/api/groupChat'
 import { useUserStore } from '@/store/user'
 
 const userStore = useUserStore()
@@ -48,17 +54,33 @@ type GroupChatItem = ChatRoom & {
 }
 
 const { t } = useI18n()
+const GROUP_CHAT_ROOMS_REFRESH_EVENT = 'refreshGroupChatRooms'
 
 const groupList = ref<ChatRoom[]>([])
 const groupLoading = ref(false)
 
-const loadGroupList = async () => {
+const loadGroupList = async (forceRefresh = false) => {
   if (groupLoading.value) return
   groupLoading.value = true
   try {
-    const res = await getChatRoomsApi(1)
+    if (!forceRefresh) {
+      const cachedRooms = getCachedChatRoomsApi()
+      if (cachedRooms?.rooms?.length) {
+        groupList.value = cachedRooms.rooms
+      }
+    }
+
+    const res = await preloadChatRoomsApi(1, forceRefresh)
     console.log('getChatRoomsApi', '====', res)
 
+    if (res.code === 1) {
+      groupList.value = res.data?.rooms || []
+    } else {
+      uni.showToast({ title: res.msg || '加载失败', icon: 'none' })
+    }
+  } catch (error) {
+    console.error('loadGroupList preload error:', error)
+    const res = await getChatRoomsApi(1)
     if (res.code === 1) {
       groupList.value = res.data?.rooms || []
     } else {
@@ -102,7 +124,14 @@ const handleJoinOrEnter = async (group: GroupChatItem) => {
 }
 
 onMounted(() => {
-  loadGroupList()
+  void loadGroupList()
+  uni.$on(GROUP_CHAT_ROOMS_REFRESH_EVENT, () => {
+    void loadGroupList(true)
+  })
+})
+
+onUnmounted(() => {
+  uni.$off(GROUP_CHAT_ROOMS_REFRESH_EVENT)
 })
 </script>
 

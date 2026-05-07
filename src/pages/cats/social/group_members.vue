@@ -65,16 +65,16 @@
                   </view>
                 </view>
               </view>
-              <view class="action-texts" v-if="!item.is_self">
-                <!-- 管理员 / 设为管理员 -->
-                <text class="action-text" @click="handleAdminAction(item)">
-                  {{
-                    item.role === 'moderator'
-                      ? t('group.chat.member.action.removeAdmin')
-                      : t('group.chat.member.action.setAdmin')
-                  }}
+              <view class="action-texts" v-if="canManageAdminRole(item) || canManageMute(item)">
+                <text
+                  v-if="canManageAdminRole(item)"
+                  class="action-text"
+                  @click="handleAdminAction(item)"
+                >
+                  {{ t('group.chat.member.action.removeAdmin') }}
                 </text>
                 <text
+                  v-if="canManageMute(item)"
                   class="action-text"
                   @click="handleMuteAction(item)"
                   :style="{ color: item.is_muted ? '#007aff' : '#ff4d4f' }"
@@ -116,20 +116,7 @@
                 </view>
               </view>
             </view>
-            <view
-              class="action-texts"
-              v-if="
-                !item.is_self && (currentUserRole === 'moderator' || currentUserRole === 'founder')
-              "
-            >
-              <!-- 管理员 / 设为管理员 -->
-              <text class="action-text" @click="handleAdminAction(item)">
-                {{
-                  item.role === 'moderator'
-                    ? t('group.chat.member.action.removeAdmin')
-                    : t('group.chat.member.action.setAdmin')
-                }}
-              </text>
+            <view class="action-texts" v-if="canManageMute(item)">
               <text
                 class="action-text"
                 @click="handleMuteAction(item)"
@@ -249,6 +236,14 @@ const filteredMemberList = computed(() => {
     return member.nickname?.toLowerCase().includes(keyword)
   })
 })
+
+const canManageAdminRole = (item: ApiChatMember) => {
+  return !item?.is_self && item?.role === 'moderator' && currentUserRole.value === 'founder'
+}
+
+const canManageMute = (item: ApiChatMember) => {
+  return !item?.is_self && item?.role === 'moderator' && currentUserRole.value === 'founder'
+}
 
 onLoad((options: any) => {
   roomCode.value = options?.code || ''

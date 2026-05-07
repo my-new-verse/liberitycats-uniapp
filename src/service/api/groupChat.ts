@@ -171,6 +171,9 @@ export interface ChatRoomsResponse {
   rooms: ChatRoom[]
 }
 
+let chatRoomsPreloadPromise: Promise<any> | null = null
+let cachedChatRoomsResponse: ChatRoomsResponse | null = null
+
 export interface UnreadSummaryRoom {
   room_id: number
   unread_count: number
@@ -196,6 +199,38 @@ export const getChatRoomsApi = (withMemberPreview?: number) => {
   return http.get<ChatRoomsResponse>('/v1/community/chat/rooms', {
     with_member_preview: withMemberPreview,
   })
+}
+
+export const getCachedChatRoomsApi = () => cachedChatRoomsResponse
+
+export const preloadChatRoomsApi = (withMemberPreview?: number, forceRefresh = false) => {
+  if (cachedChatRoomsResponse && !forceRefresh) {
+    return Promise.resolve({
+      code: 1,
+      msg: '',
+      data: cachedChatRoomsResponse,
+    })
+  }
+
+  if (chatRoomsPreloadPromise) return chatRoomsPreloadPromise
+
+  chatRoomsPreloadPromise = getChatRoomsApi(withMemberPreview)
+    .then((res) => {
+      if (res?.code === 1 && res.data) {
+        cachedChatRoomsResponse = res.data
+      }
+      return res
+    })
+    .finally(() => {
+      chatRoomsPreloadPromise = null
+    })
+
+  return chatRoomsPreloadPromise
+}
+
+export const clearPreloadedChatRoomsApi = () => {
+  cachedChatRoomsResponse = null
+  chatRoomsPreloadPromise = null
 }
 
 export const getChatRoomDetailApi = (code: string) => {
