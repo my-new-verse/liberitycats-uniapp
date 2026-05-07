@@ -461,6 +461,8 @@ const roomCode = ref('')
 const routeRoomId = ref<number>(0)
 const roomDetail = ref<ChatRoomDetail | null>(null)
 const roomDetailLoading = ref(false)
+let roomDetailPreloadPromise: Promise<boolean> | null = null
+let auxiliaryPreloadPromise: Promise<void> | null = null
 const chatSocketClient = ref<EchoPrivateChannelClient | null>(null)
 const scrollTop = ref(0)
 const viewportHeight = ref(0)
@@ -469,6 +471,7 @@ const commentPopupVisible = ref(false)
 const hasMoreHistory = ref(true)
 const nextBeforeMessageId = ref<number | null>(null)
 const loadingMoreHistory = ref(false)
+const canTriggerHistoryLoad = ref(true)
 // 获取屏幕边界到安全区域距离
 const { safeAreaInsets } = uni.getSystemInfoSync()
 const safeTopRpx = ref<number>(0)
@@ -489,6 +492,8 @@ const DEFAULT_RICH_MESSAGE_HEIGHT = 120
 const VIRTUAL_BUFFER_COUNT = 12
 const SCROLL_UPDATE_THRESHOLD = 120
 const IMAGE_RENDER_PRELOAD_PX = 180
+const TOP_HISTORY_TRIGGER_PX = 20
+const TOP_HISTORY_RESET_PX = 80
 const virtualRange = ref({
   start: 0,
   end: 0,
@@ -496,6 +501,7 @@ const virtualRange = ref({
 const virtualTopSpacer = ref(0)
 const virtualBottomSpacer = ref(0)
 let lastVirtualScrollTop = 0
+let lastPageScrollTop = 0
 let virtualRangeMeasureTimer: ReturnType<typeof setTimeout> | null = null
 const isPageLeaving = ref(false)
 
@@ -542,6 +548,8 @@ const CLIENT_DEVICE_ID_STORAGE_KEY = 'group_chat_client_device_id'
 onLoad((options: any) => {
   roomCode.value = options?.code || ''
   routeRoomId.value = Number(options?.room_id || 0)
+  void ensureAuxiliaryDataLoaded()
+  void ensureRoomDetailLoaded()
 })
 
 const formatUuidFromBytes = (bytes: number[]) =>
@@ -1057,18 +1065,21 @@ const handleRealtimeEvent = async (eventName: string, payload: any) => {
 
   const message = resolveIncomingMessage(payload)
   const normalizedEventName = eventName.startsWith('.') ? eventName.slice(1) : eventName
+  console.log(message, '=====')
 
   if (normalizedEventName === 'message.created' || normalizedEventName === 'GroupMessageEvent') {
     if (message?.id) {
       if (shouldBackfillByRoomSeq(message)) {
         await backfillMissingMessagesByRoomSeq(message)
       }
-      const isSelf = message.sender?.member_id === userStore.userInfo.member_id
-      if (!isSelf) {
-        await upsertChatMessage(message, true)
-      } else if (message.client_message_id) {
-        await upsertChatMessage(message, false)
-      }
+      const is_self = message.sender?.member_id === userStore.userInfo.member_id
+      await upsertChatMessage({ ...message, is_self }, false)
+
+      // if (!isSelf) {
+      // } else if (message.client_message_id) {
+      //   await upsertChatMessage(message, true)
+      //   await upsertChatMessage(message, false)
+      // }
       return
     }
 
@@ -1178,12 +1189,63 @@ const closeChatSocket = (manual = true) => {
   chatSocketClient.value?.disconnect(manual)
 }
 
+const ensureAuxiliaryDataLoaded = () => {
+  if (auxiliaryPreloadPromise) return auxiliaryPreloadPromise
+
+  auxiliaryPreloadPromise = Promise.allSettled([
+    ossConfig.value
+      ? Promise.resolve()
+      : getAliyunOssConfigApi().then((res) => {
+          ossConfig.value = res.data
+        }),
+    emotionList.value.length > 0
+      ? Promise.resolve()
+      : getCommunityEmotionListByCategoryApi().then((res) => {
+          emotionList.value = res.data
+          EmotionTool.init(emotionList.value)
+        }),
+  ]).then(() => undefined)
+
+  return auxiliaryPreloadPromise
+}
+
+const ensureRoomDetailLoaded = async () => {
+  if (roomDetail.value?.room.id) return true
+  if (roomDetailPreloadPromise) return roomDetailPreloadPromise
+
+  roomDetailLoading.value = true
+  roomDetailPreloadPromise = (async () => {
+    try {
+      const res = await getChatRoomDetailApi(roomCode.value)
+      if (res.code !== 1) {
+        toast.show(res.msg || '加载失败')
+        return false
+      }
+
+      roomDetail.value = res.data
+      routeRoomId.value = res.data.room.id
+      await loadHistoryMessages()
+      refreshViewportMetrics()
+      return true
+    } catch (error) {
+      console.error('loadRoomDetail error:', error)
+      toast.show('加载失败')
+      return false
+    } finally {
+      roomDetailLoading.value = false
+      roomDetailPreloadPromise = null
+    }
+  })()
+
+  return roomDetailPreloadPromise
+}
+
 const resumeChatAfterForeground = async () => {
   if (!userStore.isLogin) return
   if (roomDetailLoading.value) return
 
   if (!roomDetail.value?.room.id) {
-    await loadRoomDetail()
+    await ensureRoomDetailLoaded()
     return
   }
 
@@ -1193,26 +1255,9 @@ const resumeChatAfterForeground = async () => {
 }
 
 const loadRoomDetail = async () => {
-  if (roomDetailLoading.value) return
-  roomDetailLoading.value = true
-  try {
-    const res = await getChatRoomDetailApi(roomCode.value)
-    if (res.code === 1) {
-      roomDetail.value = res.data
-      routeRoomId.value = res.data.room.id
-
-      // 先加载历史消息，再连接 Echo 私有频道
-      await loadHistoryMessages()
-      refreshViewportMetrics()
-      subscribeChatRoomChannel()
-    } else {
-      toast.show(res.msg || '加载失败')
-    }
-  } catch (error) {
-    console.error('loadRoomDetail error:', error)
-    toast.show('加载失败')
-  } finally {
-    roomDetailLoading.value = false
+  const loaded = await ensureRoomDetailLoaded()
+  if (loaded) {
+    subscribeChatRoomChannel()
   }
 }
 
@@ -1230,6 +1275,16 @@ const loadHistoryMessages = async () => {
       const messageList = res.data.messages || []
       messages.value = sortMessagesByRoomSeq(messageList)
       rebuildMessagePrefixHeights()
+      nextTick(() => {
+        const totalHeight = getTotalMessageHeight()
+        // 更新虚拟列表的偏移量
+        updateVirtualRange(totalHeight, true)
+        // 执行系统级滚动，定位到页面底部
+        uni.pageScrollTo({
+          scrollTop: totalHeight + messageListTop.value,
+          duration: 0, // 设为 0 保证“秒开”即达
+        })
+      })
       updateVirtualRange(scrollTop.value, true)
       hasMoreHistory.value = res.data.has_more_history === 1
       nextBeforeMessageId.value = res.data.next_before_message_id || null
@@ -1322,6 +1377,26 @@ const handleScrollToUpper = async () => {
 
 let scrollTicking = false
 
+const tryLoadMoreHistoryOnTop = (currentScrollTop: number) => {
+  if (currentScrollTop > TOP_HISTORY_RESET_PX) {
+    canTriggerHistoryLoad.value = true
+  }
+
+  const isScrollingUp = currentScrollTop <= lastPageScrollTop
+  if (
+    canTriggerHistoryLoad.value &&
+    isScrollingUp &&
+    currentScrollTop <= TOP_HISTORY_TRIGGER_PX &&
+    !loadingMoreHistory.value &&
+    hasMoreHistory.value
+  ) {
+    canTriggerHistoryLoad.value = false
+    void handleScrollToUpper()
+  }
+
+  lastPageScrollTop = currentScrollTop
+}
+
 onPageScroll((event) => {
   if (scrollTicking || isPageLeaving.value) return
 
@@ -1336,6 +1411,7 @@ onPageScroll((event) => {
     scrollTop.value = event.scrollTop
 
     updateVirtualRange(event.scrollTop, false)
+    tryLoadMoreHistoryOnTop(event.scrollTop)
 
     scrollTicking = false
   })
@@ -1440,18 +1516,9 @@ onMounted(() => {
   navHeight.value = safeTopRpx.value + 104
   navHeaderPaddingTop.value = safeTopRpx.value
   cntPaddingTop.value = navHeight.value
-  getAliyunOssConfigApi().then((res) => {
-    ossConfig.value = res.data
-  })
-
-  // ✅ 加载表情列表
-  getCommunityEmotionListByCategoryApi().then((res) => {
-    emotionList.value = res.data
-    EmotionTool.init(emotionList.value)
-  })
-
   refreshViewportMetrics()
-  loadRoomDetail()
+  void ensureAuxiliaryDataLoaded()
+  void loadRoomDetail()
   // 确保只初始化一次
   if (!debouncedCreateCommentRef.value) {
     debouncedCreateCommentRef.value = debounce(
