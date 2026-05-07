@@ -83,7 +83,7 @@ const handleSchemaArgs = (args) => {
       }
 
       // 后端链接：libertycats://post/detail?postId=123&commentId=456
-      if (path === 'post/detail') {
+      if (path === 'post/detail' || path === '/post/detail' || path === '/detail') {
         const realPostId = params.postId || params.id
         if (realPostId) {
           let jumpUrl = `/pages/cats/social/detail?id=${realPostId}`
@@ -93,7 +93,12 @@ const handleSchemaArgs = (args) => {
           }
 
           console.log('正在跳转到帖子详情:', jumpUrl)
-          uni.navigateTo({ url: jumpUrl })
+          //   uni.navigateTo({ url: jumpUrl })
+          setTimeout(() => {
+            uni.reLaunch({
+              url: jumpUrl,
+            })
+          }, 300)
           return
         }
       }
