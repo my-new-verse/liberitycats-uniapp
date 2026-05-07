@@ -82,6 +82,22 @@ const handleSchemaArgs = (args) => {
         })
       }
 
+      // 后端链接：libertycats://post/detail?postId=123&commentId=456
+      if (path === 'post/detail') {
+        const realPostId = params.postId || params.id
+        if (realPostId) {
+          let jumpUrl = `/pages/cats/social/detail?id=${realPostId}`
+
+          if (params.commentId) {
+            jumpUrl += `&commentId=${params.commentId}&showComment=true`
+          }
+
+          console.log('正在跳转到帖子详情:', jumpUrl)
+          uni.navigateTo({ url: jumpUrl })
+          return
+        }
+      }
+
       if ('from' in params) {
         if (params.from === 'okx') {
           if (userStore.isLogin) {

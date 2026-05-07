@@ -73,6 +73,11 @@ const handleShareClick = async (type: 'discord' | 'X' | 'copy') => {
       import.meta.env.VITE_SERVER_BASEURL + '/v1/community/post/share-to-twitter?id=' + post.id
   }
 
+  const isTest = import.meta.env.VITE_SERVER_BASEURL.includes('test')
+  const host = isTest ? 'https://test-app.libertycats.app' : 'https://app.libertycats.app'
+  const finalShareUrl = `${host}/s/p/${post.id}`
+  console.log('finalShareUrl', finalShareUrl)
+
   switch (type) {
     case 'X': {
       let xUrl = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(post.content)
@@ -81,17 +86,27 @@ const handleShareClick = async (type: 'discord' | 'X' | 'copy') => {
       break
     }
     case 'discord': {
-      let discordUrl = 'https://discord.com/channels/@me?text=' + encodeURIComponent(post.content)
-      if (cardUrl) discordUrl += '&url=' + encodeURIComponent(cardUrl)
-      openUrl(discordUrl)
+      //   const discordText = post.content + '\n' + finalShareUrl
+      const discordText = finalShareUrl
+      const discordUrl = 'https://discord.com/channels/@me?text=' + encodeURIComponent(discordText)
+      console.log('discordUrl', discordUrl)
+
+      uni.setClipboardData({
+        data: discordText,
+        showToast: false,
+        success: () => {
+          // 唤起 Discord
+          setTimeout(() => {
+            openUrl('https://discord.com/channels/@me')
+          }, 300)
+        },
+      })
+
       break
     }
     case 'copy': {
-      //   const copyLink =
-      //     import.meta.env.VITE_SERVER_BASEURL + '/v1/community/post/share-to-twitter?id=' + post.id
-      const copyLink = 'https://download.libertycats.app'
       uni.setClipboardData({
-        data: copyLink,
+        data: finalShareUrl,
         success: () => {
           uni.showToast({
             title: '复制成功',
