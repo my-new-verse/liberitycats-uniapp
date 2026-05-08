@@ -1,44 +1,49 @@
 <template>
-  <movable-area class="movable-area">
-    <movable-view
-      class="movable-view"
-      direction="all"
-      :x="x"
-      :y="y"
-      :damping="30"
-      :friction="2"
-      @change="onChange"
-      @touchstart="onTouchStart"
-      @touchend="onDragEnd"
-      @click="handleCatClick"
-    >
-      <view class="cat-body" :class="{ 'is-dragging-body': false }">
-        <image
-          :src="`/static/images/${currentImgName}.gif`"
-          class="cat-img normal-img"
-          :class="{ hidden: false }"
-          mode="aspectFit"
-        />
-        <image
-          src="/static/images/01.png"
-          class="cat-img drag-img"
-          :class="{ show: false }"
-          mode="aspectFit"
-        />
-      </view>
-    </movable-view>
-  </movable-area>
+  <view v-if="isChatbotEnabled">
+    <movable-area class="movable-area">
+      <movable-view
+        class="movable-view"
+        direction="all"
+        :x="x"
+        :y="y"
+        :damping="30"
+        :friction="2"
+        @change="onChange"
+        @touchstart="onTouchStart"
+        @touchend="onDragEnd"
+        @click="handleCatClick"
+      >
+        <view class="cat-body" :class="{ 'is-dragging-body': false }">
+          <image
+            :src="`/static/images/${currentImgName}.gif`"
+            class="cat-img normal-img"
+            :class="{ hidden: false }"
+            mode="aspectFit"
+          />
+          <image
+            src="/static/images/01.png"
+            class="cat-img drag-img"
+            :class="{ show: false }"
+            mode="aspectFit"
+          />
+        </view>
+      </movable-view>
+    </movable-area>
 
-  <view v-if="isProcessing" class="custom-loading-mask">
-    <view class="orange-spinner"></view>
+    <view v-if="isProcessing" class="custom-loading-mask">
+      <view class="orange-spinner"></view>
+    </view>
   </view>
 </template>
 
 <script setup lang="ts">
 import { getChatBotTempTokenApi } from '@/service/api/chatbot'
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, nextTick, computed } from 'vue'
 import { toUrl } from '@/utils'
 import { useUserStore } from '@/store'
+import { useSystemStore } from '@/store/system'
+
+const systemStore = useSystemStore()
 
 const userStore = useUserStore()
 const isProcessing = ref(false)
@@ -61,6 +66,11 @@ const currentImgName = ref('01')
 const onTouchStart = () => {
   hasMoved.value = false
 }
+
+const isChatbotEnabled = computed(() => {
+  if (!systemStore.ready) return false
+  return systemStore.config?.config?.common?.chatbot_enable === '1'
+})
 
 const onChange = (e: any) => {
   if (e.detail.source === 'touch') {
