@@ -48,6 +48,7 @@
                 @refresh-complete="handleRefreshComplete"
                 @refresh-error="handleRefreshError"
                 :cntPaddingTop="cntPaddingTop"
+                @open-share="handleOpenShare"
               />
             </view>
           </wd-tab>
@@ -56,6 +57,7 @@
     </wd-tabs>
     <wd-loadmore :state="currentTabState" style="padding-bottom: 10rpx" />
     <wd-backtop :scrollTop="scrollTop"></wd-backtop>
+    <SharePopup ref="shareRef" />
   </view>
 </template>
 
@@ -68,7 +70,8 @@ import NewsTab from '@/components/discover/NewsTab.vue'
 import QuotesTab from '@/components/discover/QuotesTab.vue'
 import FiatTab from '@/components/discover/FiatTab.vue'
 import SocialTab from '@/components/discover/SocialTab.vue'
-
+import SharePopup from '@/components/SharePopup/SharePopup.vue'
+const shareRef = ref<any>(null)
 uni.hideTabBar()
 
 const userStore = useUserStore()
@@ -125,6 +128,10 @@ onShow(() => {
 onHide(() => {
   uni.$emit('discoverPageVisibilityChange', false)
 })
+
+const handleOpenShare = (item: any) => {
+  shareRef.value?.openSharePopup(item)
+}
 
 // 页面滚动
 const scrollTop = ref(0)

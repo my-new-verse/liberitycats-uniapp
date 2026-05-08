@@ -212,7 +212,12 @@ const emit = defineEmits<{
   'update:state': [state: string]
   'refresh-complete': []
   'refresh-error': []
+  'open-share': [item: any]
 }>()
+
+const handleOpenShare = (item: any) => {
+  emit('open-share', item)
+}
 
 const socialList = ref<getCommunityPostListApiResponse>({
   current_page: 0,
@@ -654,9 +659,6 @@ const toUserHome = (memberId: number) => {
 }
 
 const shareRef = ref<any>(null)
-const handleOpenShare = (item: any) => {
-  shareRef.value?.openSharePopup(item)
-}
 </script>
 
 <style lang="scss" scoped>

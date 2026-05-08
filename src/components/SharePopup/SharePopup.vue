@@ -1,29 +1,32 @@
 <template>
-  <wd-popup
-    v-model="showShare"
-    position="bottom"
-    custom-style="border-radius: 32rpx 32rpx 0 0; padding-bottom: env(safe-area-inset-bottom); overflow: visible; z-index: 99999 !important;"
-  >
-    <view class="share-container">
-      <view class="close-icon" @click="showShare = false">
-        <wd-icon name="close" size="20px" color="#999" />
-      </view>
+  <root-portal>
+    <wd-popup
+      v-model="showShare"
+      position="bottom"
+      :z-index="99999"
+      custom-style="border-radius: 32rpx 32rpx 0 0; padding-bottom: env(safe-area-inset-bottom); overflow: visible;"
+    >
+      <view class="share-container">
+        <view class="close-icon" @click="showShare = false">
+          <wd-icon name="close" size="20px" color="#999" />
+        </view>
 
-      <view class="share-title">{{ t('social.share.to') }}</view>
+        <view class="share-title">{{ t('social.share.to') }}</view>
 
-      <view class="share-grid">
-        <view
-          class="share-item"
-          v-for="(item, index) in shareOptions"
-          :key="index"
-          @click="handleShareClick(item.type)"
-        >
-          <image class="share-icon" :src="item.icon" />
-          <text class="share-text">{{ item.label }}</text>
+        <view class="share-grid">
+          <view
+            class="share-item"
+            v-for="(item, index) in shareOptions"
+            :key="index"
+            @click="handleShareClick(item.type)"
+          >
+            <image class="share-icon" :src="item.icon" />
+            <text class="share-text">{{ item.label }}</text>
+          </view>
         </view>
       </view>
-    </view>
-  </wd-popup>
+    </wd-popup>
+  </root-portal>
 </template>
 
 <script setup lang="ts">
