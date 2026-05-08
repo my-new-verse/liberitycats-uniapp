@@ -492,6 +492,17 @@ const replyTarget = ref<{
   type: 'post',
 })
 
+onBackPress((options) => {
+  const pages = getCurrentPages() // 获取当前页面栈
+  if (pages.length === 1) {
+    uni.reLaunch({
+      url: '/pages/tabbar/discover',
+    })
+    return true
+  }
+  return false
+})
+
 const placeholderText = computed(() => {
   if (replyTarget.value.type !== 'post' && replyTarget.value.nickname) {
     return `${t('social.detail.comment.reply_to')} @${replyTarget.value.nickname}`
