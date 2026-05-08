@@ -2,7 +2,7 @@
   <view class="custom-tabbar">
     <view
       v-for="(item, index) in tabbarList"
-      :key="index"
+      :key="item.pagePath"
       class="tabbar-item"
       :class="{ 'tabbar-item--active': current === index }"
       @tap="handleTabClick(index, item.pagePath)"
@@ -20,53 +20,84 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { getServerOnOff } from '@/utils'
+import { useSystemStore } from '@/store/system'
 
 const props = defineProps<{
   current?: number
 }>()
 
+const systemStore = useSystemStore()
+
 const current = ref(props.current || 0)
-const tabbarList = ref([
-  {
-    pagePath: '/pages/tabbar/home',
-    iconPath: '/static/LibertyCats/type=off.png',
-    selectedIconPath: '/static/LibertyCats/type=on.png',
-    text: '首页',
-  },
-  {
-    pagePath: '/pages/tabbar/mall',
-    iconPath: '/static/LibertyCats/type=off-1.png',
-    selectedIconPath: '/static/LibertyCats/type=on-1.png',
-    text: '商城',
-  },
-  // {
-  //   pagePath: '/pages/tabbar/game',
-  //   iconPath: '/static/images/game/game@2x.png',
-  //   selectedIconPath: '/static/images/game/game@2x.png',
-  //   text: '游戏',
-  // },
-  {
-    pagePath: '/pages/tabbar/discover',
-    iconPath: '/static/LibertyCats/type=off-2.png',
-    selectedIconPath: '/static/LibertyCats/type=on-2.png',
-    text: '发现',
-  },
-  {
-    pagePath: '/pages/tabbar/my',
-    iconPath: '/static/LibertyCats/type=off-3.png',
-    selectedIconPath: '/static/LibertyCats/type=on-3.png',
-    text: '我的',
-  },
-])
+
+const tabbarList = ref<any[]>([])
+
+const home = {
+  pagePath: '/pages/tabbar/home',
+  iconPath: '/static/LibertyCats/type=off.png',
+  selectedIconPath: '/static/LibertyCats/type=on.png',
+  text: '首页',
+}
+
+const mall = {
+  pagePath: '/pages/tabbar/mall',
+  iconPath: '/static/LibertyCats/type=off-1.png',
+  selectedIconPath: '/static/LibertyCats/type=on-1.png',
+  text: '商城',
+}
+
+const discover = {
+  pagePath: '/pages/tabbar/discover',
+  iconPath: '/static/LibertyCats/type=off-2.png',
+  selectedIconPath: '/static/LibertyCats/type=on-2.png',
+  text: '发现',
+}
+
+const mine = {
+  pagePath: '/pages/tabbar/my',
+  iconPath: '/static/LibertyCats/type=off-3.png',
+  selectedIconPath: '/static/LibertyCats/type=on-3.png',
+  text: '我的',
+}
+
+const game = {
+  pagePath: '/pages/tabbar/game',
+  iconPath: '/static/images/game/game@2x.png',
+  selectedIconPath: '/static/images/game/game@2x.png',
+  text: '游戏',
+}
+
+const buildTabbar = () => {
+  const config = systemStore.config
+
+  const gameEnable = config?.config?.common?.minigame_enable === '1'
+  console.log('Game enable:', gameEnable)
+
+  const baseList = [home, mall, discover, mine]
+
+  tabbarList.value = gameEnable
+    ? [baseList[0], baseList[1], game, baseList[2], baseList[3]]
+    : baseList
+}
 
 const handleTabClick = (index: number, url: string) => {
   if (current.value === index) return
   current.value = index
   uni.switchTab({ url: '/' + url.replace(/^\//, '') }) // 保证只有一个 /
 }
+
+watch(
+  () => systemStore.ready,
+  (ready) => {
+    if (ready) {
+      buildTabbar()
+      updateCurrentTab()
+    }
+  },
+  { immediate: true },
+)
 
 // 更新当前选中的tab
 const updateCurrentTab = () => {
@@ -80,21 +111,7 @@ const updateCurrentTab = () => {
   }
 }
 
-onShow(updateCurrentTab)
-const showGame = () => {
-  const gameOption = {
-    pagePath: '/pages/tabbar/game',
-    iconPath: '/static/images/game/game@2x.png',
-    selectedIconPath: '/static/images/game/game@2x.png',
-    text: '游戏',
-  }
-  if (!getServerOnOff('minigame_enable', 'common')) return
-  tabbarList.value.splice(2, 0, gameOption)
-}
-// 添加页面切换监听
-onMounted(() => {
-  // 初始化时更新一次
-  showGame()
+onShow(() => {
   updateCurrentTab()
 })
 </script>
@@ -139,14 +156,14 @@ $tabbar-active-color: #ff6b03;
     width: $tabbar-item-icon-size;
     height: $tabbar-item-icon-size;
     margin-bottom: 2px;
-    transition: transform 0.2s;
+    // transition: transform 0.2s;
   }
 
   &__text {
     font-size: $tabbar-text-size;
     line-height: 1.2;
     color: #999;
-    transition: color 0.2s;
+    // transition: color 0.2s;
   }
 
   &--active {

@@ -7,9 +7,12 @@ import { getImageUrl } from './utils'
 import { getAdListByKeysApi } from './service/api/ad'
 import { t } from './locale'
 import buildInfo from '@/../build-info.json'
+import { useSystemStore } from '@/store/system'
+
+const systemStore = useSystemStore()
 const version = `${buildInfo.version}`
 const userStore = useUserStore()
-
+const systemReady = ref(false)
 onLaunch(() => {
   console.log('App Launch', uni.getSystemInfoSync())
 
@@ -20,6 +23,8 @@ onLaunch(() => {
   uni.removeStorageSync('app_update_close')
   getSystemConfigApiV2(version, platform).then((res) => {
     uni.setStorageSync('systemConfigV2', res.data)
+    console.log(11111111)
+    systemStore.setConfig(res.data)
   })
 
   // todo 检查更新包
