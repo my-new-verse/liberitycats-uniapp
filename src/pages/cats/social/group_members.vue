@@ -35,7 +35,7 @@
         <view class="search-bar">
           <wd-search
             v-model="searchKeyword"
-            :maxlength="10"
+            :maxlength="30"
             hide-cancel
             :placeholder="$t('group.chat.member.searchPlaceholder')"
           />

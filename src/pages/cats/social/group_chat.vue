@@ -53,209 +53,231 @@
           </text>
         </template>
       </wd-notice-bar>
-      <view id="message-list-root" class="message-list">
-        <view class="virtual-spacer" :style="{ height: `${virtualTopSpacer}px` }"></view>
-        <view
-          v-for="(msg, localIndex) in visibleMessages"
-          :key="msg.id"
-          :id="'msg-row-' + msg.id"
-          class="virtual-message-item"
-          :data-message-id="msg.id"
-        >
+      <scroll-view
+        class="chat-scroll"
+        scroll-y
+        :scroll-into-view="scrollIntoViewId"
+        :scroll-with-animation="false"
+        :upper-threshold="20"
+        :enable-back-to-top="false"
+        @scroll="handleChatScroll"
+        @scrolltoupper="handleScrollToUpper"
+      >
+        <view id="message-list-root" class="message-list">
           <view
-            v-if="shouldShowTimeDivider(getVisibleMessageIndex(localIndex))"
-            class="time-divider"
+            v-if="loadingMoreHistory || (!hasMoreHistory && messages.length > 0)"
+            class="history-tip"
           >
-            <text class="divider-time">{{ formatRelativeTime(msg.create_time) }}</text>
+            <text class="history-tip-text">
+              {{ loadingMoreHistory ? '加载更多消息...' : '没有更多历史消息了' }}
+            </text>
           </view>
-
           <view
-            class="msg-row"
-            :class="{
-              'is-me': msg.is_self,
-              'is-system': msg.message_type === 'system' || msg.display_status === 'recalled',
-            }"
+            v-for="(msg, localIndex) in messages"
+            :key="msg.id"
+            :id="'msg-row-' + msg.id"
+            class="virtual-message-item"
+            :data-message-id="msg.id"
           >
-            <!-- 时间分组标记：第一条消息或距离上一条消息超过5分钟时显示 -->
+            <view v-if="shouldShowTimeDivider(localIndex)" class="time-divider">
+              <text class="divider-time">{{ formatRelativeTime(msg.create_time) }}</text>
+            </view>
 
-            <!-- 系统消息：居中显示 -->
-            <template v-if="msg.message_type === 'system'">
-              <view class="system-message">
-                <!-- <text class="msg-time">{{ formatRelativeTime(msg.create_time) }}</text> -->
-                <view class="system-text">
-                  <view v-for="(segItem, segIndex) in msg.payload?.segments" :key="segIndex">
-                    <text
-                      v-if="segItem.type === 'user'"
-                      style="color: #167fff; margin-right: 8rpx"
-                      @click="handleAvatarClick(msg?.payload.params?.member_id)"
-                    >
-                      "{{ segItem.text }}"
-                    </text>
-                    <text v-else>{{ segItem.text }}</text>
+            <view
+              class="msg-row"
+              :class="{
+                'is-me': msg.is_self,
+                'is-system': msg.message_type === 'system' || msg.display_status === 'recalled',
+              }"
+            >
+              <!-- 时间分组标记：第一条消息或距离上一条消息超过5分钟时显示 -->
+
+              <!-- 系统消息：居中显示 -->
+              <template v-if="msg.message_type === 'system'">
+                <view class="system-message">
+                  <!-- <text class="msg-time">{{ formatRelativeTime(msg.create_time) }}</text> -->
+                  <view class="system-text">
+                    <view v-for="(segItem, segIndex) in msg.payload?.segments" :key="segIndex">
+                      <text
+                        v-if="segItem.type === 'user'"
+                        style="color: #167fff; margin-right: 8rpx"
+                        @click="handleAvatarClick(msg?.payload.params?.member_id)"
+                      >
+                        "{{ segItem.text }}"
+                      </text>
+                      <text v-else>{{ segItem.text }}</text>
+                    </view>
                   </view>
                 </view>
-              </view>
-            </template>
-            <template v-else-if="msg.display_status === 'recalled'">
-              <view class="system-message recalled-message">
-                <view class="system-text">
-                  <text>{{ msg.placeholder?.text || t('group.chat.messageRecalled') }}</text>
-                  <text
-                    v-if="canReeditRecalledMessage(msg)"
-                    class="reedit-btn"
-                    @click.stop="handleReeditRecalledMessage(msg)"
-                  >
-                    {{ t('group.chat.reedit') }}
-                  </text>
-                </view>
-              </view>
-            </template>
-            <!-- 普通消息：左右布局 -->
-            <template v-else>
-              <view class="avatarBox" @click="!msg.is_self && handleAvatarClick(msg?.member_id)">
-                <image class="u-avatar" :src="msg?.sender?.avatar" mode="aspectFill" />
-                <view class="levelIcon">
-                  <image
-                    :src="`/static/images/level/${msg.sender?.level?.level}.png`"
-                    mode="widthFix"
-                  />
-                </view>
-              </view>
-
-              <view class="u-content">
-                <text v-if="!msg.is_self" class="u-name">{{ msg.sender?.nickname }}</text>
-
-                <wd-popover
-                  :ref="(el) => setMessagePopoverRef(msg.id, el)"
-                  mode="menu"
-                  placement="top"
-                  :content="getMessageMenuOptions(msg)"
-                  :disabled="true"
-                  @menuclick="handleMessageMenuClick($event, msg)"
-                >
-                  <view
-                    class="bubble-wrap"
-                    @contextmenu.stop.prevent="showMessageContextMenu(msg)"
-                    @longpress.stop="showMessageContextMenu(msg)"
-                  >
-                    <view
-                      v-if="msg.message_type === 'image'"
-                      class="img-content"
-                      :style="getImageMessageBoxStyle(msg)"
+              </template>
+              <template v-else-if="msg.display_status === 'recalled'">
+                <view class="system-message recalled-message">
+                  <view class="system-text">
+                    <text>{{ msg.placeholder?.text || t('group.chat.messageRecalled') }}</text>
+                    <text
+                      v-if="canReeditRecalledMessage(msg)"
+                      class="reedit-btn"
+                      @click.stop="handleReeditRecalledMessage(msg)"
                     >
-                      <wd-img
-                        v-if="shouldRenderImageMessage(msg, getVisibleMessageIndex(localIndex))"
-                        custom-class="chat-img-custom"
-                        mode="aspectFill"
-                        :width="`${getImageMessageBoxSize(msg).width}px`"
-                        :height="`${getImageMessageBoxSize(msg).height}px`"
-                        :src="getImageMessageSrc(msg)"
-                        :enable-preview="true"
-                        radius="24rpx"
-                        @load="handleImageMessageLoaded(msg.id)"
-                      />
-                      <view v-else class="img-placeholder">
-                        <view class="img-placeholder-shimmer"></view>
+                      {{ t('group.chat.reedit') }}
+                    </text>
+                  </view>
+                </view>
+              </template>
+              <!-- 普通消息：左右布局 -->
+              <template v-else>
+                <view class="avatarBox" @click="!msg.is_self && handleAvatarClick(msg?.member_id)">
+                  <image class="u-avatar" :src="msg?.sender?.avatar" mode="aspectFill" />
+                  <view class="levelIcon">
+                    <image
+                      :src="`/static/images/level/${msg.sender?.level?.level}.png`"
+                      mode="widthFix"
+                    />
+                  </view>
+                </view>
+
+                <view class="u-content">
+                  <text v-if="!msg.is_self" class="u-name">{{ msg.sender?.nickname }}</text>
+
+                  <wd-popover
+                    :ref="(el) => setMessagePopoverRef(msg.id, el)"
+                    mode="menu"
+                    placement="top"
+                    :content="getMessageMenuOptions(msg)"
+                    :disabled="true"
+                    @menuclick="handleMessageMenuClick($event, msg)"
+                  >
+                    <wd-icon
+                      name="error-circle-filled"
+                      size="22px"
+                      v-if="msg.local_status === 'failed'"
+                      @click.stop="retryFailedMessage(msg)"
+                      color="#FF0000"
+                    ></wd-icon>
+                    <view
+                      class="bubble-wrap"
+                      @contextmenu.stop.prevent="showMessageContextMenu(msg)"
+                      @longpress.stop="showMessageContextMenu(msg)"
+                    >
+                      <view
+                        v-if="msg.message_type === 'image'"
+                        class="img-content"
+                        :style="getImageMessageBoxStyle(msg)"
+                      >
+                        <wd-img
+                          v-if="shouldRenderImageMessage(msg, localIndex)"
+                          custom-class="chat-img-custom"
+                          mode="aspectFill"
+                          :width="`${getImageMessageBoxSize(msg).width}px`"
+                          :height="`${getImageMessageBoxSize(msg).height}px`"
+                          :src="getImageMessageSrc(msg)"
+                          :enable-preview="true"
+                          radius="24rpx"
+                          @load="handleImageMessageLoaded(msg.id)"
+                        />
+                        <view v-else class="img-placeholder">
+                          <view class="img-placeholder-shimmer"></view>
+                        </view>
                       </view>
-                    </view>
-                    <view v-else-if="msg.message_type === 'rich'" class="text-bubble">
-                      <view v-for="(richItem, index) in msg.payload?.parts" :key="index">
-                        <template v-if="richItem.type === 'text'">
-                          <view>{{ richItem?.text }}</view>
-                        </template>
-                        <view
-                          v-else-if="richItem.type === 'emotion'"
-                          class="emotion-content"
-                          :style="getEmotionMessageBoxStyle()"
-                        >
-                          <image
-                            v-if="
-                              shouldRenderRichEmotionMessage(
-                                msg,
-                                getVisibleMessageIndex(localIndex),
-                                index,
-                              )
-                            "
-                            :src="getRichEmotionMessageSrc(richItem.emotion_id)"
-                            mode="aspectFill"
-                            class="emotion-img"
-                            @load="handleEmotionMessageLoaded(msg.id, index)"
-                          />
-                          <view v-else class="img-placeholder">
-                            <view class="img-placeholder-shimmer"></view>
+                      <view v-else-if="msg.message_type === 'rich'" class="text-bubble">
+                        <view v-for="(richItem, index) in msg.payload?.parts" :key="index">
+                          <template v-if="richItem.type === 'text'">
+                            <view>{{ richItem?.text }}</view>
+                          </template>
+                          <view
+                            v-else-if="richItem.type === 'emotion'"
+                            class="emotion-content"
+                            :style="getEmotionMessageBoxStyle()"
+                          >
+                            <image
+                              v-if="shouldRenderRichEmotionMessage(msg, localIndex, index)"
+                              :src="getRichEmotionMessageSrc(richItem.emotion_id)"
+                              mode="aspectFill"
+                              class="emotion-img"
+                              @load="handleEmotionMessageLoaded(msg.id, index)"
+                            />
+                            <view v-else class="img-placeholder">
+                              <view class="img-placeholder-shimmer"></view>
+                            </view>
                           </view>
                         </view>
                       </view>
-                    </view>
-                    <view
-                      v-else-if="msg.message_type === 'emotion'"
-                      class="emotion-content"
-                      :style="getEmotionMessageBoxStyle()"
-                    >
-                      <image
-                        v-if="shouldRenderEmotionMessage(msg, getVisibleMessageIndex(localIndex))"
-                        :src="getEmotionMessageSrc(msg)"
-                        mode="aspectFill"
-                        class="emotion-img"
-                        @load="handleEmotionMessageLoaded(msg.id)"
-                      />
-                      <view v-else class="img-placeholder">
-                        <view class="img-placeholder-shimmer"></view>
+                      <view
+                        v-else-if="msg.message_type === 'emotion'"
+                        class="emotion-content"
+                        :style="getEmotionMessageBoxStyle()"
+                      >
+                        <image
+                          v-if="shouldRenderEmotionMessage(msg, localIndex)"
+                          :src="getEmotionMessageSrc(msg)"
+                          mode="aspectFill"
+                          class="emotion-img"
+                          @load="handleEmotionMessageLoaded(msg.id)"
+                        />
+                        <view v-else class="img-placeholder">
+                          <view class="img-placeholder-shimmer"></view>
+                        </view>
+                      </view>
+                      <view v-else class="text-bubble">
+                        <view>{{ msg.payload?.text }}</view>
                       </view>
                     </view>
-                    <view v-else class="text-bubble">
-                      <view>{{ msg.payload?.text }}</view>
-                    </view>
-                  </view>
-                  <!-- 互动先不展示 -->
-                  <view
-                    v-if="msg.message_type !== 'system' && msg.display_status !== 'recalled'"
-                    class="reaction-row"
-                  >
+                    <!-- 互动先不展示 -->
                     <view
-                      v-for="reaction in msg.reaction_summary || []"
-                      :key="`${reaction.reaction_type}:${reaction.reaction_value}`"
-                      class="reaction-chip"
-                      :class="{
-                        active: hasMyReaction(msg, reaction.reaction_type, reaction.reaction_value),
-                      }"
-                      @click.stop="
-                        toggleReaction(msg, reaction.reaction_type, reaction.reaction_value)
-                      "
+                      v-if="msg.message_type !== 'system' && msg.display_status !== 'recalled'"
+                      class="reaction-row"
                     >
-                      <text class="reaction-emoji">
-                        {{ getReactionDisplay(reaction.reaction_value) }}
-                      </text>
-                      <text class="reaction-count">{{ reaction.count }}</text>
+                      <view
+                        v-for="reaction in msg.reaction_summary || []"
+                        :key="`${reaction.reaction_type}:${reaction.reaction_value}`"
+                        class="reaction-chip"
+                        :class="{
+                          active: hasMyReaction(
+                            msg,
+                            reaction.reaction_type,
+                            reaction.reaction_value,
+                          ),
+                        }"
+                        @click.stop="
+                          toggleReaction(msg, reaction.reaction_type, reaction.reaction_value)
+                        "
+                      >
+                        <text class="reaction-emoji">
+                          {{ getReactionDisplay(reaction.reaction_value) }}
+                        </text>
+                        <text class="reaction-count">{{ reaction.count }}</text>
+                      </view>
+                      <view
+                        class="reaction-chip reaction-add"
+                        :class="{
+                          active: hasMyReaction(msg, REACTION_LIKE_TYPE, REACTION_LIKE_VALUE),
+                        }"
+                        @click.stop="toggleReaction(msg, REACTION_LIKE_TYPE, REACTION_LIKE_VALUE)"
+                      >
+                        <text class="reaction-emoji">👍</text>
+                      </view>
                     </view>
-                    <view
-                      class="reaction-chip reaction-add"
-                      :class="{
-                        active: hasMyReaction(msg, REACTION_LIKE_TYPE, REACTION_LIKE_VALUE),
-                      }"
-                      @click.stop="toggleReaction(msg, REACTION_LIKE_TYPE, REACTION_LIKE_VALUE)"
-                    >
-                      <text class="reaction-emoji">👍</text>
-                    </view>
-                  </view>
-                  <text v-if="msg.local_status === 'sending'" class="message-status">
-                    {{ t('group.chat.sending') }}
-                  </text>
-                  <text v-else-if="msg.local_status === 'failed'" class="message-status failed">
-                    {{ t('group.chat.sendFailed') }}
-                  </text>
-                </wd-popover>
-              </view>
-            </template>
+                  </wd-popover>
+                </view>
+              </template>
+            </view>
           </view>
+          <!-- 底部锚点，用于滚动定位 -->
+          <view id="scroll-bottom-anchor" class="scroll-bottom-anchor"></view>
         </view>
-        <view class="virtual-spacer" :style="{ height: `${virtualBottomSpacer}px` }"></view>
-        <!-- 底部锚点，用于滚动定位 -->
-        <view id="scroll-bottom-anchor" style="height: 120rpx"></view>
-      </view>
+      </scroll-view>
       <!-- 底部发消息按钮 -->
       <view class="footer">
         <view class="fixedCommentBox" style="padding-bottom: env(safe-area-inset-bottom)">
+          <!-- <wd-button
+            size="small"
+            custom-class="stressTestBtn"
+            :loading="stressSending"
+            :disabled="roomDetail?.speaking.can_speak !== 1"
+            @click.stop="sendStressTestMessages()"
+          >
+            压测
+          </wd-button> -->
           <!-- ✅ 使用原生 uni.chooseImage 替代 wd-upload -->
           <view
             class="upload-icon-btn"
@@ -281,7 +303,7 @@
           </view>
         </view>
 
-        <wd-backtop :scrollTop="scrollTop"></wd-backtop>
+        <!-- <wd-backtop :scrollTop="scrollTop"></wd-backtop> -->
         <!-- 发布消息 -->
         <wd-popup
           v-model="commentPopupVisible"
@@ -394,7 +416,7 @@
 import { ref, nextTick, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/store'
-import { getImageUrl, toUrl, formatRelativeTime } from '@/utils'
+import { getImageUrl, toUrl, formatRelativeTime, getChatImageUrl } from '@/utils'
 import { EchoPrivateChannelClient } from '@/utils/echoPrivateChannelClient'
 import { useToast } from 'wot-design-uni'
 import { debounce } from 'lodash-es'
@@ -465,13 +487,19 @@ let roomDetailPreloadPromise: Promise<boolean> | null = null
 let auxiliaryPreloadPromise: Promise<void> | null = null
 const chatSocketClient = ref<EchoPrivateChannelClient | null>(null)
 const scrollTop = ref(0)
+const scrollTopBinding = ref<number | undefined>(undefined)
 const viewportHeight = ref(0)
+const scrollIntoViewId = ref('')
+const historyAnchorViewId = ref('')
 const messageListTop = ref(0)
+const messageListHeight = ref(0)
 const commentPopupVisible = ref(false)
 const hasMoreHistory = ref(true)
 const nextBeforeMessageId = ref<number | null>(null)
+const pendingReadMessageId = ref<number | null>(null)
 const loadingMoreHistory = ref(false)
 const canTriggerHistoryLoad = ref(true)
+const lastHistoryTriggerCursorId = ref<number | string | null>(null)
 // 获取屏幕边界到安全区域距离
 const { safeAreaInsets } = uni.getSystemInfoSync()
 const safeTopRpx = ref<number>(0)
@@ -494,20 +522,31 @@ const SCROLL_UPDATE_THRESHOLD = 120
 const IMAGE_RENDER_PRELOAD_PX = 180
 const TOP_HISTORY_TRIGGER_PX = 20
 const TOP_HISTORY_RESET_PX = 80
+const INITIAL_HISTORY_LIMIT = 50
+const LOAD_MORE_HISTORY_LIMIT = 20
+const BOTTOM_AUTO_SCROLL_THRESHOLD_PX = 100
+const MESSAGE_BOTTOM_GAP_PX = 16
 const virtualRange = ref({
   start: 0,
   end: 0,
 })
 const virtualTopSpacer = ref(0)
 const virtualBottomSpacer = ref(0)
-let lastVirtualScrollTop = 0
+const lastVirtualScrollTop = 0
 let lastPageScrollTop = 0
 let virtualRangeMeasureTimer: ReturnType<typeof setTimeout> | null = null
+let scrollIntoViewTaskId = 0
+let scrollTopBindingTimer: ReturnType<typeof setTimeout> | null = null
+let hasFlushedReadOnLeave = false
+let realtimeFlushTimer: ReturnType<typeof setTimeout> | null = null
+let pendingRealtimeScrollToLatest = false
+const pendingRealtimeMessages = new Map<string, ChatMessage>()
 const isPageLeaving = ref(false)
 
 const navigateBack = () => {
   if (isPageLeaving.value) return
   isPageLeaving.value = true
+  void flushPendingReadOnLeave()
 
   // 停止 socket
   chatSocketClient.value?.destroy()
@@ -518,6 +557,16 @@ const navigateBack = () => {
     clearTimeout(virtualRangeMeasureTimer)
     virtualRangeMeasureTimer = null
   }
+  if (scrollTopBindingTimer) {
+    clearTimeout(scrollTopBindingTimer)
+    scrollTopBindingTimer = null
+  }
+  if (realtimeFlushTimer) {
+    clearTimeout(realtimeFlushTimer)
+    realtimeFlushTimer = null
+  }
+  pendingRealtimeMessages.clear()
+  pendingRealtimeScrollToLatest = false
 
   uni.navigateBack({ delta: 1 })
 }
@@ -746,17 +795,15 @@ const isMessageWithinRenderZone = (message: ChatMessage, index: number) => {
 }
 
 const shouldRenderImageMessage = (message: ChatMessage, index: number) => {
-  return renderedImageMessageMap.value[message.id] || isMessageWithinRenderZone(message, index)
+  return true
 }
 
 const shouldRenderEmotionMessage = (message: ChatMessage, index: number) => {
-  const cacheKey = getEmotionRenderCacheKey(message.id)
-  return renderedEmotionMessageMap.value[cacheKey] || isMessageWithinRenderZone(message, index)
+  return true
 }
 
 const shouldRenderRichEmotionMessage = (message: ChatMessage, index: number, partIndex: number) => {
-  const cacheKey = getEmotionRenderCacheKey(message.id, partIndex)
-  return renderedEmotionMessageMap.value[cacheKey] || isMessageWithinRenderZone(message, index)
+  return true
 }
 
 const rebuildMessagePrefixHeights = () => {
@@ -828,89 +875,70 @@ const scheduleVisibleMessageMeasurement = () => {
 }
 
 const updateVirtualRange = (currentScrollTop = scrollTop.value, force = false) => {
-  if (messages.value.length === 0) {
-    virtualRange.value = { start: 0, end: 0 }
-    virtualTopSpacer.value = 0
-    virtualBottomSpacer.value = 0
-    return
-  }
-
-  if (!force && Math.abs(currentScrollTop - lastVirtualScrollTop) < SCROLL_UPDATE_THRESHOLD) {
-    return
-  }
-
-  const nextRange = findVisibleRangeByScrollTop(currentScrollTop)
-  const rangeChanged =
-    nextRange.start !== virtualRange.value.start || nextRange.end !== virtualRange.value.end
-
-  lastVirtualScrollTop = currentScrollTop
-  if (!force && !rangeChanged) {
-    return
-  }
-
-  virtualRange.value = nextRange
-  virtualTopSpacer.value = getMessageOffsetTop(nextRange.start)
-  const renderedHeight =
-    getMessageOffsetTop(nextRange.end + 1) - getMessageOffsetTop(nextRange.start)
-  const totalHeight = getTotalMessageHeight()
-  virtualBottomSpacer.value = Math.max(0, totalHeight - virtualTopSpacer.value - renderedHeight)
-
-  if (rangeChanged || force) {
-    scheduleVisibleMessageMeasurement()
-  }
+  refreshViewportMetrics()
 }
 
 const isNearBottom = () => {
-  const threshold = 100 // px，可调
-  const totalHeight = getTotalMessageHeight()
+  const totalHeight = messageListHeight.value
   const current = scrollTop.value + viewportHeight.value
 
-  return totalHeight - current < threshold
+  return totalHeight - current < BOTTOM_AUTO_SCROLL_THRESHOLD_PX
 }
 
 const measureVisibleMessages = () => {
   if (isPageLeaving.value) return
   nextTick(() => {
     if (isPageLeaving.value) return
-    const query = uni.createSelectorQuery()
-    query.selectAll('.virtual-message-item').fields({ size: true, dataset: true }, (rects) => {
-      let hasHeightChange = false
-
-      ;(rects || []).forEach((rect: any) => {
-        const messageId = Number(rect?.dataset?.messageId)
-        const nextHeight = Math.ceil(rect?.height || 0)
-        if (!messageId || !nextHeight) return
-        if (messageHeightCache.value[messageId] === nextHeight) return
-
-        messageHeightCache.value[messageId] = nextHeight
-        hasHeightChange = true
-      })
-
-      if (hasHeightChange) {
-        rebuildMessagePrefixHeights()
-        updateVirtualRange(scrollTop.value, true)
-      }
-    })
-    query.exec()
+    refreshViewportMetrics()
   })
 }
 
 const refreshViewportMetrics = () => {
-  const systemInfo = uni.getSystemInfoSync()
-  viewportHeight.value = systemInfo.windowHeight || 0
-
   nextTick(() => {
     const query = uni.createSelectorQuery()
+    query.select('.chat-scroll').boundingClientRect()
     query.select('#message-list-root').boundingClientRect()
-    query.selectViewport().scrollOffset()
     query.exec((result) => {
-      const rect = result?.[0]
-      const viewport = result?.[1]
-      if (!rect || !viewport) return
-      messageListTop.value = (rect.top || 0) + (viewport.scrollTop || 0)
-      updateVirtualRange(viewport.scrollTop || 0, true)
+      const scrollRect = result?.[0]
+      const listRect = result?.[1]
+      if (!scrollRect) return
+      viewportHeight.value = Math.ceil(scrollRect.height || 0)
+      messageListTop.value = Math.ceil(scrollRect.top || 0)
+      messageListHeight.value = Math.ceil(listRect?.height || 0)
     })
   })
+}
+
+const scheduleScrollToBottomAnchor = (attempts = 3, delay = 80) => {
+  if (attempts <= 0 || isPageLeaving.value) return
+
+  nextTick(() => {
+    if (isPageLeaving.value) return
+    refreshViewportMetrics()
+    scrollToLatestMessage()
+
+    if (attempts <= 1) return
+
+    setTimeout(() => {
+      scheduleScrollToBottomAnchor(attempts - 1, delay)
+    }, delay)
+  })
+}
+
+const setProgrammaticScrollTop = (nextScrollTop: number) => {
+  const normalizedScrollTop = Math.max(0, Number(nextScrollTop || 0))
+  scrollTop.value = normalizedScrollTop
+  scrollTopBinding.value = normalizedScrollTop
+
+  if (scrollTopBindingTimer) {
+    clearTimeout(scrollTopBindingTimer)
+  }
+
+  // 避免 scroll-top 长时间受控，和用户手势滚动互相抢控制权。
+  scrollTopBindingTimer = setTimeout(() => {
+    scrollTopBinding.value = undefined
+    scrollTopBindingTimer = null
+  }, 80)
 }
 
 const updateChatMessageById = (messageId: number, message: Partial<ChatMessage>) => {
@@ -994,64 +1022,154 @@ const shouldBackfillByRoomSeq = (incomingMessage: ChatMessage) => {
   return incomingMessage.room_seq > lastRoomSeq + 1
 }
 
-const syncLatestMessages = async () => {
-  const lastMessageId = getLastMessageId()
-  if (lastMessageId) {
-    await fetchLatestMessages({
-      afterMessageId: Number(lastMessageId),
-      scrollToLatest: true,
-    })
-    return
-  }
+const dedupeMessages = (messageList: ChatMessage[]) => {
+  const dedupedMessages: ChatMessage[] = []
+  const idIndexMap = new Map<number, number>()
+  const clientMessageIdIndexMap = new Map<string, number>()
 
-  await loadHistoryMessages()
-}
+  messageList.forEach((message) => {
+    const matchedIndexById = typeof message.id === 'number' ? idIndexMap.get(message.id) : undefined
+    const matchedIndexByClientMessageId = message.client_message_id
+      ? clientMessageIdIndexMap.get(message.client_message_id)
+      : undefined
+    const matchedIndex = matchedIndexById ?? matchedIndexByClientMessageId
 
-const backfillMissingMessagesByRoomSeq = async (incomingMessage: ChatMessage) => {
-  const lastMessageId = getLastMessageId()
-  if (!lastMessageId) return
+    if (typeof matchedIndex === 'number') {
+      const mergedMessage = {
+        ...dedupedMessages[matchedIndex],
+        ...message,
+      }
+      dedupedMessages.splice(matchedIndex, 1, mergedMessage)
+      idIndexMap.set(mergedMessage.id, matchedIndex)
+      if (mergedMessage.client_message_id) {
+        clientMessageIdIndexMap.set(mergedMessage.client_message_id, matchedIndex)
+      }
+      return
+    }
 
-  await fetchLatestMessages({
-    afterMessageId: Number(lastMessageId),
-    stopAtMessageId: incomingMessage.id,
-    scrollToLatest: false,
+    dedupedMessages.push(message)
+    const nextIndex = dedupedMessages.length - 1
+    idIndexMap.set(message.id, nextIndex)
+    if (message.client_message_id) {
+      clientMessageIdIndexMap.set(message.client_message_id, nextIndex)
+    }
   })
+
+  return dedupedMessages
 }
 
-const upsertChatMessage = async (incomingMessage: ChatMessage, scrollToLatest = false) => {
-  if (!incomingMessage?.id) return
+const applyMessagesBatch = (incomingMessages: ChatMessage[], scrollToLatest = false) => {
+  const normalizedMessages = incomingMessages
+    .filter((message) => !!message?.id)
+    .map((message) => ({
+      ...message,
+      local_status: message.local_status || 'sent',
+    }))
 
-  const mergedMessage: ChatMessage = {
-    ...incomingMessage,
-    local_status: 'sent',
-  }
+  if (normalizedMessages.length === 0) return
 
-  const existingIndex = messages.value.findIndex((msg) => msg.id === mergedMessage.id)
-  if (existingIndex > -1) {
-    messages.value.splice(existingIndex, 1, {
-      ...messages.value[existingIndex],
-      ...mergedMessage,
-    })
-  } else if (
-    mergedMessage.client_message_id &&
-    updateChatMessageByClientMessageId(mergedMessage.client_message_id, mergedMessage)
-  ) {
-    // noop: temporary local message replaced in place
-  } else {
-    messages.value.push(mergedMessage)
-  }
-
-  messages.value = sortMessagesByRoomSeq(messages.value)
+  messages.value = dedupeMessages(sortMessagesByRoomSeq([...messages.value, ...normalizedMessages]))
   rebuildMessagePrefixHeights()
   updateVirtualRange(scrollTop.value, true)
 
   if (scrollToLatest) {
-    scrollToMessage(incomingMessage.id)
+    scrollToLatestMessage()
   }
 
-  if (roomDetail.value?.room.id) {
-    await markAsRead(roomDetail.value.room.id, incomingMessage.id)
+  normalizedMessages.forEach((message) => stageReadMessage(message.id))
+}
+
+const flushRealtimeMessages = () => {
+  realtimeFlushTimer = null
+  if (pendingRealtimeMessages.size === 0) {
+    pendingRealtimeScrollToLatest = false
+    return
   }
+
+  const queuedMessages = Array.from(pendingRealtimeMessages.values())
+  pendingRealtimeMessages.clear()
+  const shouldScrollToLatest = pendingRealtimeScrollToLatest
+  pendingRealtimeScrollToLatest = false
+  applyMessagesBatch(queuedMessages, shouldScrollToLatest)
+}
+
+const enqueueRealtimeMessage = (incomingMessage: ChatMessage, scrollToLatest = false) => {
+  if (!incomingMessage?.id) return
+
+  const queueKey = incomingMessage.client_message_id || String(incomingMessage.id)
+  const previousMessage = pendingRealtimeMessages.get(queueKey)
+  pendingRealtimeMessages.set(queueKey, {
+    ...previousMessage,
+    ...incomingMessage,
+    local_status: 'sent',
+  })
+
+  if (scrollToLatest) {
+    pendingRealtimeScrollToLatest = true
+  }
+
+  if (realtimeFlushTimer || isPageLeaving.value) return
+  realtimeFlushTimer = setTimeout(flushRealtimeMessages, 16)
+}
+
+const mergeMessagesWithoutMovingAnchor = (incomingMessages: ChatMessage[]) => {
+  const normalizedMessages = incomingMessages
+    .filter((message) => !!message?.id)
+    .map((message) => ({
+      ...message,
+      local_status: message.local_status || 'sent',
+    }))
+
+  if (normalizedMessages.length === 0) return
+
+  messages.value = dedupeMessages(sortMessagesByRoomSeq([...messages.value, ...normalizedMessages]))
+  rebuildMessagePrefixHeights()
+  updateVirtualRange(scrollTop.value, true)
+  normalizedMessages.forEach((message) => stageReadMessage(message.id))
+}
+
+const backfillMissingMessagesByRoomSeq = async (incomingMessage: ChatMessage) => {
+  const roomId = roomDetail.value?.room.id || routeRoomId.value
+  const lastMessageId = getLastMessageId()
+  if (!roomId || !lastMessageId || !incomingMessage?.id) return
+
+  let nextAfterMessageId = Number(lastMessageId)
+  let shouldContinue = true
+
+  while (shouldContinue && nextAfterMessageId) {
+    const res = await getChatMessageListApi({
+      room_id: roomId,
+      after_message_id: nextAfterMessageId,
+      limit: 50,
+    })
+
+    if (res.code !== 1 || !res.data) break
+
+    const messageList = res.data.messages || []
+    if (messageList.length === 0) break
+
+    const normalizedMessages = messageList.map((message) => ({
+      ...message,
+      is_self: message.sender?.member_id === userStore.userInfo.member_id ? 1 : 0,
+    }))
+    mergeMessagesWithoutMovingAnchor(normalizedMessages)
+
+    if (messageList.some((message) => Number(message.id) === Number(incomingMessage.id))) {
+      break
+    }
+
+    if (res.data.has_more_latest !== 1 || !res.data.next_after_message_id) {
+      shouldContinue = false
+      break
+    }
+
+    nextAfterMessageId = res.data.next_after_message_id
+  }
+}
+
+const upsertChatMessage = async (incomingMessage: ChatMessage, scrollToLatest = false) => {
+  if (!incomingMessage?.id) return
+  applyMessagesBatch([incomingMessage], scrollToLatest)
 }
 
 const handleIncomingMessage = async (payload: any) => {
@@ -1059,13 +1177,10 @@ const handleIncomingMessage = async (payload: any) => {
 }
 
 const handleRealtimeEvent = async (eventName: string, payload: any) => {
-  console.log('[GroupChat] realtime event payload', eventName, payload)
-
   if (payload?.room_id && payload.room_id !== roomDetail.value?.room.id) return
 
   const message = resolveIncomingMessage(payload)
   const normalizedEventName = eventName.startsWith('.') ? eventName.slice(1) : eventName
-  console.log(message, '=====')
 
   if (normalizedEventName === 'message.created' || normalizedEventName === 'GroupMessageEvent') {
     if (message?.id) {
@@ -1073,7 +1188,7 @@ const handleRealtimeEvent = async (eventName: string, payload: any) => {
         await backfillMissingMessagesByRoomSeq(message)
       }
       const is_self = message.sender?.member_id === userStore.userInfo.member_id
-      await upsertChatMessage({ ...message, is_self }, false)
+      enqueueRealtimeMessage({ ...message, is_self }, false)
 
       // if (!isSelf) {
       // } else if (message.client_message_id) {
@@ -1082,8 +1197,6 @@ const handleRealtimeEvent = async (eventName: string, payload: any) => {
       // }
       return
     }
-
-    await syncLatestMessages()
     return
   }
 
@@ -1092,7 +1205,7 @@ const handleRealtimeEvent = async (eventName: string, payload: any) => {
     normalizedEventName === 'message.reaction_changed'
   ) {
     if (message?.id) {
-      await upsertChatMessage(message, false)
+      enqueueRealtimeMessage(message, false)
       return
     }
 
@@ -1102,17 +1215,12 @@ const handleRealtimeEvent = async (eventName: string, payload: any) => {
         return
       }
     }
-
-    await syncLatestMessages()
     return
   }
 
   if (message?.id) {
-    await upsertChatMessage(message, false)
-    return
+    enqueueRealtimeMessage(message, false)
   }
-
-  await syncLatestMessages()
 }
 
 const initChatSocketClient = () => {
@@ -1123,7 +1231,7 @@ const initChatSocketClient = () => {
     wsHost: import.meta.env.VITE_WS_HOST || 'test-app.libertycats.app',
     authEndpoint: import.meta.env.VITE_SERVER_BASEURL.replace('/api', '') + '/broadcasting/auth',
     getToken: () => userStore.userInfo.token || uni.getStorageSync('token'),
-    debug: true,
+    debug: false,
     eventHandlers: {
       GroupMessageEvent: handleIncomingMessage,
       '.GroupMessageEvent': handleIncomingMessage,
@@ -1136,31 +1244,15 @@ const initChatSocketClient = () => {
       '.message.reaction_changed': (payload) =>
         handleRealtimeEvent('.message.reaction_changed', payload),
     },
-    beforeReconnect: async () => {
-      await syncLatestMessages()
-    },
+    beforeReconnect: async () => {},
     onMessage: handleIncomingMessage,
-    onAllEvent: (eventName, data) => {
-      console.log('[GroupChat] listenToAll event:', eventName, data)
-    },
-    onSubscribed: (privateChannelName) => {
-      console.log('[GroupChat] subscribed channel:', privateChannelName)
-    },
-    onAuthStart: (payload) => {
-      console.log('[GroupChat] start auth request', payload)
-    },
-    onAuthResponse: (payload) => {
-      console.log('[GroupChat] auth response', payload)
-    },
-    onConnectionConnected: (payload) => {
-      console.log('[GroupChat] Echo connected', payload)
-    },
-    onConnectionDisconnected: () => {
-      console.log('[GroupChat] Echo disconnected')
-    },
-    onConnectionStateChange: (states) => {
-      console.log('[GroupChat] Echo state change:', states)
-    },
+    onAllEvent: () => {},
+    onSubscribed: () => {},
+    onAuthStart: () => {},
+    onAuthResponse: () => {},
+    onConnectionConnected: () => {},
+    onConnectionDisconnected: () => {},
+    onConnectionStateChange: () => {},
     onConnectionError: (error) => {
       console.error('[GroupChat] Echo connection error:', error)
     },
@@ -1187,6 +1279,24 @@ const subscribeChatRoomChannel = () => {
 
 const closeChatSocket = (manual = true) => {
   chatSocketClient.value?.disconnect(manual)
+}
+
+const stageReadMessage = (messageId?: number | null) => {
+  const normalizedMessageId = Number(messageId || 0)
+  if (!normalizedMessageId) return
+
+  pendingReadMessageId.value = Math.max(pendingReadMessageId.value || 0, normalizedMessageId)
+}
+
+const flushPendingReadOnLeave = async () => {
+  if (hasFlushedReadOnLeave) return
+
+  const roomId = roomDetail.value?.room.id || routeRoomId.value
+  const lastReadMessageId = pendingReadMessageId.value
+  if (!roomId || !lastReadMessageId) return
+
+  hasFlushedReadOnLeave = true
+  await markAsRead(roomId, lastReadMessageId)
 }
 
 const ensureAuxiliaryDataLoaded = () => {
@@ -1249,7 +1359,6 @@ const resumeChatAfterForeground = async () => {
     return
   }
 
-  await syncLatestMessages()
   await initChatSocketClient().handlePageShow()
   subscribeChatRoomChannel()
 }
@@ -1269,23 +1378,15 @@ const loadHistoryMessages = async () => {
   try {
     const res = await getChatMessageListApi({
       room_id: roomId,
-      limit: 50,
+      limit: INITIAL_HISTORY_LIMIT,
     })
     if (res.code === 1 && res.data) {
       const messageList = res.data.messages || []
-      messages.value = sortMessagesByRoomSeq(messageList)
+      messages.value = dedupeMessages(sortMessagesByRoomSeq(messageList))
       rebuildMessagePrefixHeights()
-      nextTick(() => {
-        const totalHeight = getTotalMessageHeight()
-        // 更新虚拟列表的偏移量
-        updateVirtualRange(totalHeight, true)
-        // 执行系统级滚动，定位到页面底部
-        uni.pageScrollTo({
-          scrollTop: totalHeight + messageListTop.value,
-          duration: 0, // 设为 0 保证“秒开”即达
-        })
-      })
       updateVirtualRange(scrollTop.value, true)
+      canTriggerHistoryLoad.value = true
+      lastHistoryTriggerCursorId.value = null
       hasMoreHistory.value = res.data.has_more_history === 1
       nextBeforeMessageId.value = res.data.next_before_message_id || null
       console.log(messages.value)
@@ -1299,20 +1400,8 @@ const loadHistoryMessages = async () => {
       // 加载完历史消息后，标记为已读并滚动到最后一条消息
       if (messageList.length > 0) {
         const lastMessage = messageList[messageList.length - 1]
-        // ✅ 滚动到最后一条消息
-        nextTick(() => {
-          const totalHeight = getTotalMessageHeight()
-
-          scrollTop.value = totalHeight
-
-          updateVirtualRange(totalHeight, true)
-
-          uni.pageScrollTo({
-            scrollTop: totalHeight + messageListTop.value,
-            duration: 0,
-          })
-        })
-        await markAsRead(roomId, lastMessage.id)
+        scheduleScrollToBottomAnchor()
+        stageReadMessage(lastMessage.id)
       }
     }
   } catch (error) {
@@ -1321,48 +1410,69 @@ const loadHistoryMessages = async () => {
 }
 
 const scrollToBottomDirect = () => {
-  nextTick(() => {
-    const totalHeight = getTotalMessageHeight()
+  scrollToLatestMessage()
+}
 
-    uni.pageScrollTo({
-      scrollTop: totalHeight + messageListTop.value,
-      duration: 0,
-    })
+const getHistoryCursorMessageId = () => {
+  return getFirstMessageId() || nextBeforeMessageId.value
+}
+
+const prependHistoryMessages = async (
+  olderMessages: ChatMessage[],
+  anchorMessageId: number | string,
+) => {
+  if (olderMessages.length === 0) {
+    hasMoreHistory.value = false
+    return
+  }
+
+  const existingMessageIds = new Set(messages.value.map((msg) => msg.id))
+  const oldestLoadedMessage = messages.value[0]
+  const prependMessages = olderMessages.filter((msg) => {
+    if (existingMessageIds.has(msg.id)) return false
+    if (!oldestLoadedMessage) return true
+
+    if (typeof msg.room_seq === 'number' && typeof oldestLoadedMessage.room_seq === 'number') {
+      return msg.room_seq < oldestLoadedMessage.room_seq
+    }
+
+    return Number(msg.id) < Number(oldestLoadedMessage.id)
   })
+  if (prependMessages.length === 0) {
+    if (olderMessages.length === 0 || !nextBeforeMessageId.value) {
+      hasMoreHistory.value = false
+    }
+    return
+  }
+
+  messages.value = dedupeMessages(sortMessagesByRoomSeq([...prependMessages, ...messages.value]))
+  rebuildMessagePrefixHeights()
+  updateVirtualRange(scrollTop.value, true)
+  historyAnchorViewId.value = `msg-row-${anchorMessageId}`
+  scrollIntoViewId.value = historyAnchorViewId.value
 }
 
 const loadMoreHistoryMessages = async () => {
   const roomId = roomDetail.value?.room.id || routeRoomId.value
   if (!roomId || loadingMoreHistory.value || !hasMoreHistory.value) return
 
-  const beforeMessageId = nextBeforeMessageId.value || getFirstMessageId()
+  const beforeMessageId = getHistoryCursorMessageId()
   if (!beforeMessageId) return
 
   loadingMoreHistory.value = true
 
   try {
-    const anchorSnapshot = await getMessageViewportSnapshot(beforeMessageId)
     const res = await getChatMessageListApi({
       room_id: roomId,
       before_message_id: beforeMessageId,
-      limit: 20,
+      limit: LOAD_MORE_HISTORY_LIMIT,
     })
 
     if (res.code === 1 && res.data) {
       const olderMessages = res.data.messages || []
       hasMoreHistory.value = res.data.has_more_history === 1
       nextBeforeMessageId.value = res.data.next_before_message_id || null
-
-      if (olderMessages.length === 0) return
-
-      const existingMessageIds = new Set(messages.value.map((msg) => msg.id))
-      const prependMessages = olderMessages.filter((msg) => !existingMessageIds.has(msg.id))
-      if (prependMessages.length === 0) return
-
-      messages.value = sortMessagesByRoomSeq([...prependMessages, ...messages.value])
-      rebuildMessagePrefixHeights()
-      updateVirtualRange(scrollTop.value, true)
-      await keepMessageViewportPosition(beforeMessageId, anchorSnapshot)
+      await prependHistoryMessages(olderMessages, beforeMessageId)
     }
   } catch (error) {
     console.error('loadMoreHistoryMessages error:', error)
@@ -1375,47 +1485,49 @@ const handleScrollToUpper = async () => {
   await loadMoreHistoryMessages()
 }
 
-let scrollTicking = false
+const handleChatScroll = (event: any) => {
+  if (isPageLeaving.value) return
+
+  if (
+    !loadingMoreHistory.value &&
+    scrollIntoViewId.value &&
+    scrollIntoViewId.value !== historyAnchorViewId.value
+  ) {
+    scrollIntoViewTaskId += 1
+    scrollIntoViewId.value = ''
+  }
+
+  scrollTop.value = Number(event?.detail?.scrollTop || 0)
+  const nextScrollHeight = Number(event?.detail?.scrollHeight || 0)
+  if (nextScrollHeight > 0) {
+    messageListHeight.value = nextScrollHeight
+  }
+  tryLoadMoreHistoryOnTop(scrollTop.value)
+}
+
+const scrollTicking = false
 
 const tryLoadMoreHistoryOnTop = (currentScrollTop: number) => {
   if (currentScrollTop > TOP_HISTORY_RESET_PX) {
     canTriggerHistoryLoad.value = true
   }
 
-  const isScrollingUp = currentScrollTop <= lastPageScrollTop
+  const beforeMessageId = getHistoryCursorMessageId()
   if (
-    canTriggerHistoryLoad.value &&
-    isScrollingUp &&
     currentScrollTop <= TOP_HISTORY_TRIGGER_PX &&
+    !!beforeMessageId &&
     !loadingMoreHistory.value &&
-    hasMoreHistory.value
+    hasMoreHistory.value &&
+    (canTriggerHistoryLoad.value ||
+      String(lastHistoryTriggerCursorId.value || '') !== String(beforeMessageId))
   ) {
     canTriggerHistoryLoad.value = false
+    lastHistoryTriggerCursorId.value = beforeMessageId
     void handleScrollToUpper()
   }
 
   lastPageScrollTop = currentScrollTop
 }
-
-onPageScroll((event) => {
-  if (scrollTicking || isPageLeaving.value) return
-
-  scrollTicking = true
-
-  raf(() => {
-    if (isPageLeaving.value) {
-      scrollTicking = false
-      return
-    }
-
-    scrollTop.value = event.scrollTop
-
-    updateVirtualRange(event.scrollTop, false)
-    tryLoadMoreHistoryOnTop(event.scrollTop)
-
-    scrollTicking = false
-  })
-})
 
 // 标记消息为已读
 const markAsRead = async (roomId: number, lastReadMessageId: number) => {
@@ -1433,69 +1545,6 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
   }
 }
 
-// 增量拉取最新消息（WebSocket 收到新消息后调用）
-const fetchLatestMessages = async (params?: {
-  afterMessageId?: number
-  stopAtMessageId?: number
-  scrollToLatest?: boolean
-}) => {
-  const roomId = roomDetail.value?.room.id || routeRoomId.value
-  if (!roomId) return
-
-  try {
-    let nextAfterMessageId = params?.afterMessageId
-    let shouldContinue = true
-    let appendedCount = 0
-    let latestPulledMessageId = 0
-
-    while (shouldContinue && nextAfterMessageId) {
-      const res = await getChatMessageListApi({
-        room_id: roomId,
-        after_message_id: nextAfterMessageId,
-        limit: 50,
-      })
-
-      if (res.code !== 1 || !res.data) break
-
-      const messageList = res.data.messages || []
-      if (messageList.length === 0) break
-
-      for (const newMsg of messageList) {
-        await upsertChatMessage(newMsg, false)
-        latestPulledMessageId = Math.max(latestPulledMessageId, Number(newMsg.id || 0))
-      }
-
-      appendedCount += messageList.length
-
-      if (
-        params?.stopAtMessageId &&
-        messageList.some((message) => Number(message.id) === Number(params.stopAtMessageId))
-      ) {
-        break
-      }
-
-      if (res.data.has_more_latest !== 1 || !res.data.next_after_message_id) {
-        shouldContinue = false
-        break
-      }
-
-      nextAfterMessageId = res.data.next_after_message_id
-    }
-
-    if (appendedCount === 0) return
-
-    const lastMessage = messages.value[messages.value.length - 1]
-    if (!lastMessage) return
-
-    if (params?.scrollToLatest !== false) {
-      scrollToMessage(lastMessage.id)
-    }
-
-    await markAsRead(roomId, latestPulledMessageId || lastMessage.id)
-  } catch (error) {
-    console.error('fetchLatestMessages error:', error)
-  }
-}
 // 防抖
 const debouncedCreateCommentRef = ref<(() => Promise<void>) | null>(null)
 // 使用 ref 来存储防抖函数的引用
@@ -1537,16 +1586,19 @@ onMounted(() => {
 
 onHide(() => {
   console.log('onHide')
+  void flushPendingReadOnLeave()
   chatSocketClient.value?.handlePageHide()
 })
 
 onShow(() => {
+  hasFlushedReadOnLeave = false
   resumeChatAfterForeground()
   refreshViewportMetrics()
 })
 
 // 在组件卸载时清理防抖函数
 onUnmounted(() => {
+  void flushPendingReadOnLeave()
   chatSocketClient.value?.destroy()
   chatSocketClient.value = null
   if (virtualRangeMeasureTimer) {
@@ -1559,12 +1611,23 @@ onUnmounted(() => {
   if (debouncedCreateComment.value) {
     ;(debouncedCreateComment.value as any).cancel()
   }
+  if (scrollTopBindingTimer) {
+    clearTimeout(scrollTopBindingTimer)
+    scrollTopBindingTimer = null
+  }
+  if (realtimeFlushTimer) {
+    clearTimeout(realtimeFlushTimer)
+    realtimeFlushTimer = null
+  }
+  pendingRealtimeMessages.clear()
+  pendingRealtimeScrollToLatest = false
 })
 
 // 评论内容
 const commentContent = ref('')
 // 评论发送状态
 const sendLoading = ref(false)
+const stressSending = ref(false)
 const reactionLoadingMap = ref<Record<string, boolean>>({})
 
 const createLocalPendingMessage = (
@@ -1603,8 +1666,6 @@ const createLocalPendingMessage = (
 }
 
 const insertLocalPendingMessage = (message: ChatMessage) => {
-  const shouldStickToBottom = isNearBottom()
-
   messages.value.push(message)
 
   if (
@@ -1614,25 +1675,11 @@ const insertLocalPendingMessage = (message: ChatMessage) => {
   ) {
     messages.value = sortMessagesByRoomSeq(messages.value)
   }
+  messages.value = dedupeMessages(messages.value)
 
   rebuildMessagePrefixHeights()
-
-  if (shouldStickToBottom) {
-    nextTick(() => {
-      const totalHeight = getTotalMessageHeight()
-
-      scrollTop.value = totalHeight
-      updateVirtualRange(totalHeight, true)
-
-      uni.pageScrollTo({
-        scrollTop: totalHeight + messageListTop.value,
-        duration: 0,
-      })
-    })
-  } else {
-    // 用户不在底部 → 不打扰
-    updateVirtualRange(scrollTop.value, true)
-  }
+  updateVirtualRange(scrollTop.value, true)
+  scrollToMessageByClientMessageId(message.client_message_id)
 }
 
 const markLocalMessageFailed = (clientMessageId: string | undefined) => {
@@ -1642,6 +1689,36 @@ const markLocalMessageFailed = (clientMessageId: string | undefined) => {
   })
   rebuildMessagePrefixHeights()
   updateVirtualRange(scrollTop.value, true)
+}
+
+const markLocalMessageSending = (clientMessageId: string | undefined) => {
+  if (!clientMessageId) return
+  updateChatMessageByClientMessageId(clientMessageId, {
+    local_status: 'sending',
+  })
+  rebuildMessagePrefixHeights()
+  updateVirtualRange(scrollTop.value, true)
+}
+
+const sendChatMessageWithClientMessageId = async (
+  roomId: number,
+  messageType: ChatMessageType,
+  clientMessageId: string,
+  payload: ChatMessagePayload,
+) => {
+  const res = await sendChatMessageApi(roomId, messageType, clientMessageId, payload)
+  if (res.code === 1) {
+    await appendChatMessage({
+      ...res.data.message,
+      client_message_id: res.data.message.client_message_id || clientMessageId,
+    })
+    scrollToMessageByClientMessageId(clientMessageId)
+    return true
+  }
+
+  markLocalMessageFailed(clientMessageId)
+  toast.show(res.msg || '发送失败')
+  return false
 }
 
 /**
@@ -1764,34 +1841,68 @@ const sendMsg = async () => {
     const clientMessageId = createClientMessageId()
     pendingClientMessageId = clientMessageId
     insertLocalPendingMessage(createLocalPendingMessage(clientMessageId, messageType, payload))
-    // 使用 HTTP API 发送消息
-    console.log(roomDetail.value.room.id, messageType, clientMessageId, payload)
-    const res = await sendChatMessageApi(
+    const sent = await sendChatMessageWithClientMessageId(
       roomDetail.value.room.id,
       messageType,
       clientMessageId,
       payload,
     )
-    console.log(res)
-    commentPopupVisible.value = false
-    if (res.code === 1) {
+    if (sent) {
+      commentPopupVisible.value = false
       handleCloseCommentPopup()
       commentContent.value = ''
       customEmojiList.value = []
-      await appendChatMessage({
-        ...res.data.message,
-        client_message_id: res.data.message.client_message_id || clientMessageId,
-      })
     } else {
-      removeLocalMessageByClientMessageId(clientMessageId)
-      toast.show(res.msg || '发送失败')
+      commentPopupVisible.value = false
+      shouldFocus.value = false
     }
   } catch (error: any) {
+    commentPopupVisible.value = false
+    shouldFocus.value = false
     markLocalMessageFailed(pendingClientMessageId)
     console.error('sendMsg error:', error)
     toast.show(error?.errMsg || error?.message || '发送失败')
   } finally {
     sendLoading.value = false
+  }
+}
+
+const sendPlainTextMessage = async (text: string) => {
+  if (!validateBeforeSend()) return false
+  if (!roomDetail.value?.room.id) return false
+
+  const normalizedText = text.trim()
+  if (!normalizedText) return false
+
+  const clientMessageId = createClientMessageId()
+  const payload: ChatMessagePayload = { text: normalizedText }
+  insertLocalPendingMessage(createLocalPendingMessage(clientMessageId, 'text', payload))
+  return sendChatMessageWithClientMessageId(
+    roomDetail.value.room.id,
+    'text',
+    clientMessageId,
+    payload,
+  )
+}
+
+const sendStressTestMessages = async (count = 20, intervalMs = 3000) => {
+  if (stressSending.value) return
+  if (!validateBeforeSend()) return
+
+  stressSending.value = true
+  try {
+    for (let index = 0; index < count; index += 1) {
+      const sent = await sendPlainTextMessage(`stress-${Date.now()}-${index}`)
+      if (!sent) break
+      if (index < count - 1) {
+        await new Promise((resolve) => setTimeout(resolve, intervalMs))
+      }
+    }
+  } catch (error: any) {
+    console.error('sendStressTestMessages error:', error)
+    toast.show(error?.message || '压测发送失败')
+  } finally {
+    stressSending.value = false
   }
 }
 
@@ -1804,17 +1915,29 @@ const appendChatMessage = async (newMsg: ChatMessage) => {
   await upsertChatMessage(newMsg, false)
 
   if (shouldStickToBottom) {
-    nextTick(() => {
-      const totalHeight = getTotalMessageHeight()
+    scrollToLatestMessage()
+  }
+}
 
-      scrollTop.value = totalHeight
-      updateVirtualRange(totalHeight, true)
+const retryFailedMessage = async (msg: ChatMessage) => {
+  if (msg.local_status !== 'failed') return
+  if (!validateBeforeSend()) return
+  if (!msg.client_message_id || !roomDetail.value?.room.id) return
 
-      uni.pageScrollTo({
-        scrollTop: totalHeight + messageListTop.value,
-        duration: 0,
-      })
-    })
+  markLocalMessageSending(msg.client_message_id)
+
+  try {
+    const sent = await sendChatMessageWithClientMessageId(
+      roomDetail.value.room.id,
+      msg.message_type,
+      msg.client_message_id,
+      msg.payload,
+    )
+    if (!sent) return
+  } catch (error: any) {
+    markLocalMessageFailed(msg.client_message_id)
+    console.error('retryFailedMessage error:', error)
+    toast.show(error?.message || '发送失败')
   }
 }
 // 发布评论 end
@@ -1953,7 +2076,7 @@ const getImageExtension = (filePath: string) => {
 }
 
 const createCompressedImagePath = (filePath: string, quality: number) => {
-  const extension = getMimeFromUrl(filePath)
+  const extension = getImageExtension(filePath)
   return `_doc/chat_upload_${Date.now()}_${Math.random().toString(36).slice(2)}_${quality}.${extension}`
 }
 
@@ -2006,9 +2129,41 @@ const compressImageForApp = (src: string, width: number, height: number, quality
 }
 
 const getMimeFromUrl = (url: string) => {
-  if (!url) return 'image/jpeg' // 默认值
-  const ext = url.split('?')[0].split('.').pop().toLowerCase()
-  return ext || 'jpeg'
+  const extension = getImageExtension(url)
+  const normalizedExtension = extension === 'jpg' ? 'jpeg' : extension
+  return `image/${normalizedExtension}`
+}
+
+const normalizeImageMimeType = (filePath: string, mimeType?: string) => {
+  if (typeof mimeType === 'string' && mimeType.startsWith('image/')) {
+    return mimeType
+  }
+
+  return getMimeFromUrl(filePath)
+}
+
+const stripImageExtensionFromUrl = (url: string) => {
+  return url.replace(/\.(png|jpe?g|webp|gif|bmp|heic|heif)$/i, '')
+}
+
+const getFileNameFromPath = (filePath: string) => {
+  const normalizedPath = filePath.split('?')[0] || filePath
+  const pathSegments = normalizedPath.split('/')
+  const rawFileName = stripImageExtensionFromUrl(pathSegments[pathSegments.length - 1] || '')
+
+  if (rawFileName) {
+    return rawFileName
+  }
+
+  const extension = getImageExtension(filePath)
+  return `chat-image-${Date.now()}.${extension}`
+}
+
+const resolveUploadFileName = (filePath: string, fileName?: string) => {
+  const normalizedFileName = (fileName || '').trim()
+  if (normalizedFileName) return normalizedFileName
+
+  return getFileNameFromPath(filePath)
 }
 /**
  * ✅ 处理图片选择（替代 wd-upload）
@@ -2033,8 +2188,8 @@ const handleChooseImage = async () => {
     }
     const tempFilePath = chooseRes.tempFilePaths[0]
     const tempFileSize = chooseRes.tempFiles?.[0]?.size || 0
-    const tempFileType = chooseRes.tempFiles?.[0]?.type || ''
-    const tempFileName = chooseRes.tempFiles?.[0]?.name || ''
+    const tempFileType = normalizeImageMimeType(tempFilePath, chooseRes.tempFiles?.[0]?.type || '')
+    const tempFileName = resolveUploadFileName(tempFilePath, chooseRes.tempFiles?.[0]?.name)
     // 2. 校验文件大小
     if (tempFileSize > MAX_UPLOAD_IMAGE_SIZE) {
       toast.show(IMAGE_LIMIT_HINT)
@@ -2079,11 +2234,11 @@ const handleChooseImage = async () => {
     }
 
     // 6. 上传图片到 OSS
-    await uploadImageToOss(finalPath, tempFileType, tempFileName)
+    await uploadImageToOss(finalPath, normalizeImageMimeType(finalPath, tempFileType), tempFileName)
   } catch (error) {
     console.error('handleChooseImage error:', error)
     if (error?.errMsg !== 'chooseImage:fail cancel') {
-      toast.show('图片选择失败')
+      // toast.show('图片选择失败')
     }
   }
 }
@@ -2110,7 +2265,8 @@ const uploadImageToOss = async (filePath: string, mimeType: string, fileName: st
   let pendingClientMessageId = ''
   try {
     uni.showLoading({ title: '上传中...', mask: true })
-    const key = `${ossConfig.value.dir}/${fileName}`
+    const resolvedFileName = resolveUploadFileName(filePath, fileName)
+    const key = `${ossConfig.value.dir}/${resolvedFileName}`
 
     // 2. 获取图片信息
     const imageInfo = await getImageInfo(filePath)
@@ -2144,15 +2300,17 @@ const uploadImageToOss = async (filePath: string, mimeType: string, fileName: st
     // 4. 构建图片 URL
     const originalUrl = `${ossConfig.value.host}/${key}`
     // 5. 生成缩略图 URL
-    const thumbUrl = getImageUrl(originalUrl, imageInfo.width, imageInfo.height)
+    const thumbUrl = getChatImageUrl(originalUrl, imageInfo.width, imageInfo.height)
+    const normalizedMimeType = normalizeImageMimeType(filePath, mimeType)
     const payload: ChatMessagePayload = {
       url: originalUrl,
       thumb_url: thumbUrl,
       width: imageInfo.width,
       height: imageInfo.height,
-      mime: mimeType,
+      mime: normalizedMimeType,
       size: fileSize,
     }
+    console.log('payload', payload)
     // 6. 创建客户端消息 ID
     const clientMessageId = createClientMessageId()
     pendingClientMessageId = clientMessageId
@@ -2160,22 +2318,12 @@ const uploadImageToOss = async (filePath: string, mimeType: string, fileName: st
     // 7. 构建消息 payload
     const imagePayload: ChatMessagePayload = payload
     // 8. 发送消息
-    const res = await sendChatMessageApi(
+    await sendChatMessageWithClientMessageId(
       roomDetail.value.room.id,
       'image',
       clientMessageId,
       imagePayload,
     )
-
-    if (res.code === 1) {
-      await appendChatMessage({
-        ...res.data.message,
-        client_message_id: res.data.message.client_message_id || clientMessageId,
-      })
-    } else {
-      removeLocalMessageByClientMessageId(clientMessageId)
-      toast.show(res.msg || '发送失败')
-    }
   } catch (error: any) {
     uni.hideLoading()
     markLocalMessageFailed(pendingClientMessageId)
@@ -2230,11 +2378,8 @@ const toggleReaction = async (msg: ChatMessage, reactionType: string, reactionVa
 }
 
 const messages = ref<ChatMessage[]>([])
-const visibleMessages = computed(() => {
-  if (messages.value.length === 0) return []
-  return messages.value.slice(virtualRange.value.start, virtualRange.value.end + 1)
-})
-const getVisibleMessageIndex = (localIndex: number) => virtualRange.value.start + localIndex
+const visibleMessages = computed(() => messages.value)
+const getVisibleMessageIndex = (localIndex: number) => localIndex
 watch(
   () =>
     visibleMessages.value.map(
@@ -2472,92 +2617,49 @@ watch(
   { flush: 'post' },
 )
 
-const getMessageViewportSnapshot = (messageId: number | string) => {
-  return new Promise<{ top: number; scrollTop: number } | null>((resolve) => {
-    nextTick(() => {
-      const query = uni.createSelectorQuery()
-      query.select(`#msg-row-${messageId}`).boundingClientRect()
-      query.selectViewport().scrollOffset()
-      query.exec((result) => {
-        const rect = result?.[0]
-        const viewport = result?.[1]
-        if (!rect || !viewport) {
-          resolve(null)
-          return
-        }
-
-        resolve({
-          top: rect.top || 0,
-          scrollTop: viewport.scrollTop || 0,
-        })
-      })
-    })
-  })
-}
-
-const keepMessageViewportPosition = async (
-  messageId: number | string,
-  previousSnapshot: { top: number; scrollTop: number } | null,
-) => {
-  if (!previousSnapshot) return
-
-  const targetIndex = messages.value.findIndex(
-    (message) => String(message.id) === String(messageId),
-  )
-  if (targetIndex < 0) return
-
-  const nextRangeStart = Math.max(0, targetIndex - VIRTUAL_BUFFER_COUNT)
-  const nextRangeEnd = Math.min(messages.value.length - 1, targetIndex + VIRTUAL_BUFFER_COUNT)
-  virtualRange.value = {
-    start: nextRangeStart,
-    end: nextRangeEnd,
-  }
-  virtualTopSpacer.value = getMessageOffsetTop(nextRangeStart)
-  const renderedHeight = getMessageOffsetTop(nextRangeEnd + 1) - getMessageOffsetTop(nextRangeStart)
-  const totalHeight = getTotalMessageHeight()
-  virtualBottomSpacer.value = Math.max(0, totalHeight - virtualTopSpacer.value - renderedHeight)
-
-  const nextSnapshot = await getMessageViewportSnapshot(messageId)
-  if (!nextSnapshot) return
-
-  const delta = nextSnapshot.top - previousSnapshot.top
-  if (Math.abs(delta) < 1) return
-
-  const targetScrollTop = Math.max(0, nextSnapshot.scrollTop + delta)
-  scrollTop.value = targetScrollTop
-  uni.pageScrollTo({
-    scrollTop: targetScrollTop,
-    duration: 0,
-  })
-}
-
-const scrollToMessage = (messageId: number | string) => {
-  const targetIndex = messages.value.findIndex(
-    (message) => String(message.id) === String(messageId),
-  )
-  if (targetIndex < 0) return
-
-  const nextRangeStart = Math.max(0, targetIndex - VIRTUAL_BUFFER_COUNT)
-  const nextRangeEnd = Math.min(messages.value.length - 1, targetIndex + VIRTUAL_BUFFER_COUNT)
-  virtualRange.value = {
-    start: nextRangeStart,
-    end: nextRangeEnd,
-  }
-  virtualTopSpacer.value = getMessageOffsetTop(nextRangeStart)
-  const renderedHeight = getMessageOffsetTop(nextRangeEnd + 1) - getMessageOffsetTop(nextRangeStart)
-  const totalHeight = getTotalMessageHeight()
-  virtualBottomSpacer.value = Math.max(0, totalHeight - virtualTopSpacer.value - renderedHeight)
+const updateScrollIntoViewTarget = (targetId: string) => {
+  historyAnchorViewId.value = ''
+  scrollIntoViewTaskId += 1
+  const currentTaskId = scrollIntoViewTaskId
 
   nextTick(() => {
-    const targetScrollTop =
-      messageListTop.value +
-      getMessageOffsetTop(targetIndex) -
-      Math.max(0, viewportHeight.value * 0.35)
-    uni.pageScrollTo({
-      scrollTop: Math.max(0, targetScrollTop),
-      duration: 0,
+    if (currentTaskId !== scrollIntoViewTaskId || isPageLeaving.value) return
+
+    scrollIntoViewId.value = ''
+
+    nextTick(() => {
+      if (currentTaskId !== scrollIntoViewTaskId || isPageLeaving.value) return
+      scrollIntoViewId.value = targetId
     })
   })
+}
+
+const scrollToMessage = (messageId: number | string, placement: 'focus' | 'bottom' = 'focus') => {
+  const targetId =
+    placement === 'bottom' &&
+    String(messages.value[messages.value.length - 1]?.id) === String(messageId)
+      ? 'scroll-bottom-anchor'
+      : `msg-row-${messageId}`
+
+  updateScrollIntoViewTarget(targetId)
+}
+
+const scrollToMessageByClientMessageId = (clientMessageId: string | undefined) => {
+  if (!clientMessageId) return
+
+  const targetMessage = messages.value.find(
+    (message) => message.client_message_id === clientMessageId,
+  )
+  if (!targetMessage) return
+
+  scrollToMessage(targetMessage.id, 'bottom')
+}
+
+const scrollToLatestMessage = () => {
+  const lastMessage = messages.value[messages.value.length - 1]
+  if (!lastMessage) return
+
+  scrollToMessage(lastMessage.id, 'bottom')
 }
 const EmotionTool = (() => {
   const idMap = new Map()
@@ -2622,23 +2724,28 @@ const EmotionTool = (() => {
 <style lang="scss" scoped>
 @import '/src/style/base';
 @import '/src/style/social';
+
 :deep(.zh-Hans, .zh-Hant) {
   .socialBox .socialItem .socialCntBox .socialCnt {
     font-family: Alibaba PuHuiTi2 !important;
   }
+
   .commentBox .commentItem .commentCntBox .commentCnt {
     font-family: Alibaba PuHuiTi2 !important;
   }
+
   .wd-textarea * {
     font-family: Alibaba PuHuiTi2 !important;
   }
 }
+
 .page {
   background-color: var(--liberty-cats-page-background-color);
 
   .cnt {
     padding: 40rpx 0;
-    flex: 1; /* 撑满剩余高度 */
+    flex: 1;
+    /* 撑满剩余高度 */
     display: flex;
     flex-direction: column;
     /* 确保 paddingTop 已经通过 TS 计算并传入，例如 180rpx */
@@ -2743,10 +2850,24 @@ const EmotionTool = (() => {
     }
   }
 }
+
 .message-list {
   padding: 20rpx 30rpx;
+  padding-bottom: calc(148rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
   width: 100%;
+
+  .history-tip {
+    display: flex;
+    justify-content: center;
+    padding: 12rpx 0 8rpx;
+  }
+
+  .history-tip-text {
+    font-size: 22rpx;
+    line-height: 1.4;
+    color: #999;
+  }
 
   .virtual-spacer {
     width: 100%;
@@ -2819,6 +2940,7 @@ const EmotionTool = (() => {
       width: 88rpx;
       height: 88rpx;
       margin-right: 16rpx;
+
       .u-avatar {
         width: 88rpx;
         height: 88rpx;
@@ -2827,12 +2949,14 @@ const EmotionTool = (() => {
         background-color: #eee;
         flex-shrink: 0;
       }
+
       .levelIcon {
         position: absolute;
         right: -4rpx;
         bottom: 6rpx;
         width: 28rpx;
         height: 28rpx;
+
         image {
           width: 100%;
           height: 100%;
@@ -3005,6 +3129,26 @@ const EmotionTool = (() => {
           color: #e25b5b;
         }
       }
+
+      .message-resend-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 34rpx;
+        height: 34rpx;
+        margin-top: 10rpx;
+        margin-right: 8rpx;
+        border: 1rpx solid #ff6b03;
+        border-radius: 50%;
+        color: #ff6b03;
+        flex-shrink: 0;
+      }
+
+      .message-resend-icon {
+        font-size: 24rpx;
+        line-height: 1;
+        font-weight: 600;
+      }
     }
 
     /* 自己发送的消息样式 */
@@ -3034,13 +3178,25 @@ const EmotionTool = (() => {
         }
 
         .reaction-row,
-        .message-status {
+        .message-status,
+        .message-resend-btn {
           justify-content: flex-end;
           text-align: right;
         }
       }
     }
   }
+}
+
+.chat-scroll {
+  flex: 1;
+  height: 100vh;
+  min-height: 0;
+}
+
+.scroll-bottom-anchor {
+  height: calc(96rpx + env(safe-area-inset-bottom));
+  pointer-events: none;
 }
 
 @keyframes image-placeholder-shimmer {
@@ -3109,10 +3265,21 @@ const EmotionTool = (() => {
 :deep(.sendCommentBtn) {
   background: #ff6b03 !important;
 }
+
+:deep(.stressTestBtn) {
+  height: 64rpx !important;
+  padding: 0 20rpx !important;
+  background: #fff3e8 !important;
+  color: #ff6b03 !important;
+  border-color: #ffd2b2 !important;
+  flex-shrink: 0;
+}
+
 :deep(.commentPopup) {
   padding: 32rpx;
   padding-bottom: 32rpx !important;
   border-radius: 32rpx 32rpx 0 0 !important;
+
   .uni-textarea-wrapper {
     max-height: 200rpx;
     overflow-y: scroll;
@@ -3121,10 +3288,12 @@ const EmotionTool = (() => {
   .wd-textarea::after {
     height: 0;
   }
+
   .wd-textarea__count,
   .wd-textarea__value {
     background: transparent;
   }
+
   .opBarBox {
     display: flex;
     align-items: center;
@@ -3132,6 +3301,7 @@ const EmotionTool = (() => {
     width: 100%;
     height: 64rpx;
     margin-top: 24rpx;
+
     .opIcon {
       width: 48rpx;
       height: 48rpx;
@@ -3139,9 +3309,11 @@ const EmotionTool = (() => {
       background-position: center;
       background-size: 100% 100%;
     }
+
     .opIcon.keyboard {
       background-image: url('/static/images/keyboard@2x.png');
     }
+
     .opIcon.expression {
       background-image: url('/static/images/expiression@2x.png');
     }
@@ -3154,6 +3326,7 @@ const EmotionTool = (() => {
 
       .emojiBox2 {
         padding: 20rpx;
+
         .emojiItem2 {
           position: relative;
           display: inline-block;
@@ -3161,6 +3334,7 @@ const EmotionTool = (() => {
           height: 112rpx;
           margin-right: 16rpx;
           margin-bottom: 16rpx;
+
           .emojiIcon2 {
             width: 100%;
             height: 100%;
@@ -3189,6 +3363,7 @@ const EmotionTool = (() => {
     background-color: #f3f3f4 !important;
     border-radius: 32rpx;
   }
+
   .commentHidden {
     width: 100%;
     background-color: #fff;
@@ -3208,6 +3383,7 @@ const EmotionTool = (() => {
       justify-content: start;
       width: 100%;
       height: 64rpx;
+
       //background-color: #ccc;
       .categoryItem {
         display: flex;
@@ -3216,11 +3392,13 @@ const EmotionTool = (() => {
         width: 96rpx;
         height: 64rpx;
         margin-right: 24rpx;
+
         image {
           width: 44rpx;
           height: 44rpx;
         }
       }
+
       .categoryItem.active {
         background: #f3f3f4;
         border-radius: 84rpx;
@@ -3239,11 +3417,13 @@ const EmotionTool = (() => {
         height: 112rpx;
         margin-right: 74rpx;
         margin-bottom: 48rpx;
+
         image {
           width: 100%;
           height: 100%;
         }
       }
+
       .expressionItem:nth-child(4n) {
         margin-right: 0;
       }
@@ -3254,17 +3434,21 @@ const EmotionTool = (() => {
         height: 64rpx;
         margin-right: 38rpx;
         margin-bottom: 12rpx;
+
         .emoji {
           font-size: 48rpx;
         }
       }
+
       .emojiItem:nth-child(7n) {
         margin-right: 0;
       }
     }
   }
+
   // 表情包end
 }
+
 .member-view {
   display: flex;
   flex-direction: column;
@@ -3299,13 +3483,16 @@ const EmotionTool = (() => {
     .item-left {
       display: flex;
       align-items: center;
+
       .avatar-box {
         position: relative;
+
         .m-avatar {
           width: 80rpx;
           height: 80rpx;
           border-radius: 12rpx;
         }
+
         .status-dot {
           position: absolute;
           right: -4rpx;
@@ -3315,25 +3502,31 @@ const EmotionTool = (() => {
           border-radius: 50%;
           border: 4rpx solid #fff;
           background: #ccc;
+
           &.online {
           }
         }
       }
+
       .m-info {
         margin-left: 20rpx;
+
         .m-name-row {
           display: flex;
           align-items: center;
           gap: 8rpx;
+
           .m-name {
             font-size: 28rpx;
             color: #333;
             font-weight: 500;
           }
+
           .owner-icon {
             font-size: 24rpx;
           }
         }
+
         .m-status {
           font-size: 22rpx;
           color: #999;
@@ -3352,12 +3545,14 @@ const EmotionTool = (() => {
   background: transparent;
   pointer-events: none;
 }
+
 :deep(.pubUpload) {
   .wd-upload__evoke,
   .wd-upload__preview {
     display: none;
   }
 }
+
 :deep(.custom-notice) {
   position: fixed;
   width: 100vw;
@@ -3378,11 +3573,17 @@ const EmotionTool = (() => {
     border-radius: 8rpx;
   }
 }
-::v-deep .uni-scroll-view {
-  height: 100vh;
-}
+
 ::v-deep .wd-popover__menu {
   display: flex;
   gap: 24rpx;
+}
+
+::v-deep .wd-popover__target {
+  display: flex;
+  align-items: center;
+}
+::v-deep .uni-scroll-view {
+  height: 100vh;
 }
 </style>
