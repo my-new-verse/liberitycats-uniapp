@@ -216,3 +216,20 @@ export const getCommunityPostThreadApi = (id: number, limit: number = 20, last_i
     last_id,
   })
 }
+
+export interface PostShareCopyData {
+  summary: string
+  url: string
+  guide: string
+  text: string
+}
+
+export interface PostShareCopyResponse {
+  code: 1 | 0
+  msg: string
+  data: PostShareCopyData
+}
+
+export const getPostShareCopy = (params: { id: number | string; locale?: string }) => {
+  return http.get<PostShareCopyResponse>('/v1/community/post/share-copy', params)
+}

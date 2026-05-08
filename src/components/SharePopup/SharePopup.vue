@@ -31,6 +31,7 @@ import { ref } from 'vue'
 import { useUserStore } from '@/store'
 import { toUrl, openUrl } from '@/utils'
 import i18n, { t } from '@/locale/index'
+import { getPostShareCopy } from '@/service/api/community'
 
 const userStore = useUserStore()
 
@@ -50,6 +51,18 @@ const shareOptions = ref<ShareOption[]>([
 
 const currentSharePost: { value: any } = { value: null }
 
+const getShareLocale = () => {
+  const locale = i18n.global.locale.value
+  switch (locale) {
+    case 'zh-Hans':
+      return 'zh-CN'
+    case 'zh-Hant':
+      return 'zh-TW'
+    default:
+      return 'en-US'
+  }
+}
+
 const openSharePopup = (post: any) => {
   if (!userStore.isLogin) {
     toUrl('/pages/cats/login', true)
@@ -65,57 +78,70 @@ const handleShareClick = async (type: 'discord' | 'X' | 'copy') => {
   showShare.value = false
 
   const post = currentSharePost.value
-  if (!post) return
-
-  let cardUrl = ''
-  if (post.images.length > 0) {
-    cardUrl =
-      import.meta.env.VITE_SERVER_BASEURL + '/v1/community/post/share-to-twitter?id=' + post.id
-  }
-
-  const isTest = import.meta.env.VITE_SERVER_BASEURL.includes('test')
-  const host = isTest ? 'https://test-app.libertycats.app' : 'https://app.libertycats.app'
-  const finalShareUrl = `${host}/s/p/${post.id}`
-  console.log('finalShareUrl', finalShareUrl)
-
-  switch (type) {
-    case 'X': {
+  if (!post.id) return
+  try {
+    if (type === 'X') {
+      let cardUrl = ''
+      if (post.images.length > 0) {
+        cardUrl =
+          import.meta.env.VITE_SERVER_BASEURL + '/v1/community/post/share-to-twitter?id=' + post.id
+      }
       let xUrl = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(post.content)
       if (cardUrl) xUrl += '&url=' + encodeURIComponent(cardUrl)
       openUrl(xUrl)
-      break
+      return
     }
-    case 'discord': {
-      //   const discordText = post.content + '\n' + finalShareUrl
-      const discordText = finalShareUrl
-      const discordUrl = 'https://discord.com/channels/@me?text=' + encodeURIComponent(discordText)
-      console.log('discordUrl', discordUrl)
+    const res = await getPostShareCopy({
+      id: post.id,
+      locale: getShareLocale(),
+    })
+    const shareText = res?.data?.text
+    const shareUrl = res?.data?.url
 
-      uni.setClipboardData({
-        data: discordText,
-        showToast: false,
-        success: () => {
-          // 唤起 Discord
-          setTimeout(() => {
-            openUrl('https://discord.com/channels/@me')
-          }, 300)
-        },
+    if (!shareText) {
+      uni.showToast({
+        title: t('common.requestFailed'),
+        icon: 'none',
       })
+      return
+    }
 
-      break
+    switch (type) {
+      case 'discord': {
+        uni.setClipboardData({
+          data: shareText,
+          showToast: false,
+          success: () => {
+            uni.showToast({
+              title: t('common.copySuccess'),
+              icon: 'success',
+            })
+
+            setTimeout(() => {
+              openUrl('https://discord.com/channels/@me')
+            }, 300)
+          },
+        })
+
+        break
+      }
+
+      case 'copy': {
+        uni.setClipboardData({
+          data: shareUrl,
+          success: () => {
+            uni.showToast({
+              title: t('common.copySuccess'),
+              icon: 'success',
+            })
+          },
+        })
+
+        break
+      }
     }
-    case 'copy': {
-      uni.setClipboardData({
-        data: finalShareUrl,
-        success: () => {
-          uni.showToast({
-            title: '复制成功',
-            icon: 'success',
-          })
-        },
-      })
-      break
-    }
+  } catch (error) {
+    console.error('获取分享文案失败:', error)
   }
 }
 
@@ -125,7 +151,6 @@ defineExpose({
 </script>
 
 <style scoped>
-/* 你的原有样式不变 */
 .share-container {
   padding: 30rpx;
   background: #fff;
