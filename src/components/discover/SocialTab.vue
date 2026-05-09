@@ -270,14 +270,14 @@ const ensureGroupChatReady = () => {
   }, 80)
 }
 
-const refreshGroupChatRooms = () => {
+const refreshGroupChatRooms = (forceRefresh = false) => {
   ensureGroupChatReady()
   socialCacheMap.value.groupChat.state = 'finished'
   if (socialFilter.value === 'groupChat') {
     emit('update:state', 'finished')
   }
-  void preloadChatRoomsApi(1, true)
-  uni.$emit(GROUP_CHAT_ROOMS_REFRESH_EVENT)
+  void preloadChatRoomsApi(1, forceRefresh)
+  uni.$emit(GROUP_CHAT_ROOMS_REFRESH_EVENT, forceRefresh)
 }
 
 // 更新加载状态
@@ -325,7 +325,7 @@ const handleFilterChange = async (filter: SocialFilter) => {
     return
   }
   if (filter === 'groupChat') {
-    refreshGroupChatRooms()
+    refreshGroupChatRooms(true)
     if (socialFilter.value === filter) return
   } else if (socialFilter.value === filter) {
     return
@@ -536,7 +536,7 @@ onMounted(() => {
   // 监听刷新事件
   uni.$on('refreshSocialTab', () => {
     if (socialFilter.value === 'groupChat') {
-      refreshGroupChatRooms()
+      refreshGroupChatRooms(true)
       emit('refresh-complete')
       return
     }
@@ -545,7 +545,7 @@ onMounted(() => {
   })
   uni.$on('discoverActiveTabChange', (tabName: string) => {
     if (tabName === t('discover.tabs.social') && socialFilter.value === 'groupChat') {
-      refreshGroupChatRooms()
+      refreshGroupChatRooms(true)
     }
   })
 })

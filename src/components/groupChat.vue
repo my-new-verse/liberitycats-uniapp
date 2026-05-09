@@ -35,7 +35,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { getImageUrl, toUrl } from '@/utils'
 import {
@@ -43,6 +43,7 @@ import {
   getCachedChatRoomsApi,
   preloadChatRoomsApi,
   joinChatRoomApi,
+  patchCachedChatRoom,
   ChatRoom,
 } from '@/service/api/groupChat'
 import { useUserStore } from '@/store/user'
@@ -58,16 +59,16 @@ const GROUP_CHAT_ROOMS_REFRESH_EVENT = 'refreshGroupChatRooms'
 
 const groupList = ref<ChatRoom[]>([])
 const groupLoading = ref(false)
+const hasLoginToken = () =>
+  Boolean(userStore.userInfo.token || uni.getStorageSync('token') || uni.getStorageSync('hasToken'))
 
 const loadGroupList = async (forceRefresh = false) => {
   if (groupLoading.value) return
   groupLoading.value = true
   try {
-    if (!forceRefresh) {
-      const cachedRooms = getCachedChatRoomsApi()
-      if (cachedRooms?.rooms?.length) {
-        groupList.value = cachedRooms.rooms
-      }
+    const cachedRooms = getCachedChatRoomsApi()
+    if (cachedRooms?.rooms?.length) {
+      groupList.value = cachedRooms.rooms
     }
 
     const res = await preloadChatRoomsApi(1, forceRefresh)
@@ -92,8 +93,8 @@ const loadGroupList = async (forceRefresh = false) => {
 }
 
 const handleJoinOrEnter = async (group: GroupChatItem) => {
-  if (!userStore.isLogin) {
-    toUrl('/pages/cats/login', true, false)
+  if (!hasLoginToken()) {
+    toUrl('/pages/cats/login/login')
     return
   }
   if (group.is_accessible !== 1) {
@@ -112,6 +113,7 @@ const handleJoinOrEnter = async (group: GroupChatItem) => {
     uni.hideLoading()
     if (res.code === 1) {
       group.is_joined = 1
+      patchCachedChatRoom(group.id, { is_joined: 1 })
       toUrl(`/pages/cats/social/group_chat?code=${group.code}&room_id=${group.id}`)
     } else {
       uni.showToast({ title: res.msg || '加入失败', icon: 'none' })
@@ -125,10 +127,19 @@ const handleJoinOrEnter = async (group: GroupChatItem) => {
 
 onMounted(() => {
   void loadGroupList()
-  uni.$on(GROUP_CHAT_ROOMS_REFRESH_EVENT, () => {
-    void loadGroupList(true)
+  uni.$on(GROUP_CHAT_ROOMS_REFRESH_EVENT, (forceRefresh?: boolean) => {
+    void loadGroupList(!!forceRefresh)
   })
 })
+
+watch(
+  () => userStore.userInfo.token,
+  (nextToken, previousToken) => {
+    if (nextToken && nextToken !== previousToken) {
+      void loadGroupList(true)
+    }
+  },
+)
 
 onUnmounted(() => {
   uni.$off(GROUP_CHAT_ROOMS_REFRESH_EVENT)

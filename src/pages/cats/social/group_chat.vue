@@ -182,7 +182,9 @@
                       <view v-else-if="msg.message_type === 'rich'" class="text-bubble">
                         <view v-for="(richItem, index) in msg.payload?.parts" :key="index">
                           <template v-if="richItem.type === 'text'">
-                            <view>{{ richItem?.text }}</view>
+                            <view class="message-text-content">
+                              {{ normalizeMessageDisplayText(richItem?.text) }}
+                            </view>
                           </template>
                           <view
                             v-else-if="richItem.type === 'emotion'"
@@ -219,7 +221,9 @@
                         </view>
                       </view>
                       <view v-else class="text-bubble">
-                        <view>{{ msg.payload?.text }}</view>
+                        <view class="message-text-content">
+                          {{ normalizeMessageDisplayText(msg.payload?.text) }}
+                        </view>
                       </view>
                     </view>
                     <!-- 互动先不展示 -->
@@ -317,7 +321,7 @@
               <wd-textarea
                 v-model="commentContent"
                 :placeholder="t('social.detail.comment.placeholder')"
-                :maxlength="500"
+                :maxlength="300"
                 show-word-limit
                 auto-height
                 hold-keyboard
@@ -670,6 +674,18 @@ const getPrivateChannelName = (roomId: number) => `chat.room.${roomId}`
 const getFirstMessageId = () => messages.value[0]?.id
 const getLastMessageId = () => messages.value[messages.value.length - 1]?.id
 const getLastRoomSeq = () => messages.value[messages.value.length - 1]?.room_seq || 0
+const getLastPersistedMessage = () => {
+  for (let index = messages.value.length - 1; index >= 0; index -= 1) {
+    const message = messages.value[index]
+    const messageId = Number(message?.id || 0)
+    if (Number.isFinite(messageId) && messageId > 0) {
+      return message
+    }
+  }
+  return null
+}
+const getLastPersistedMessageId = () => getLastPersistedMessage()?.id || null
+const getLastPersistedRoomSeq = () => getLastPersistedMessage()?.room_seq || 0
 const REACTION_LIKE_TYPE = 'like'
 const REACTION_LIKE_VALUE = 'thumbs_up'
 const EMOTION_MESSAGE_SIZE_RPX = 140
@@ -1016,8 +1032,13 @@ const resolveMessageStatePayload = (payload: any) => {
   return null
 }
 
+const normalizeMessageDisplayText = (text?: string | number | null) => {
+  if (text === null || text === undefined) return ''
+  return String(text).replace(/\/n/g, '\n').replace(/\\n/g, '\n')
+}
+
 const shouldBackfillByRoomSeq = (incomingMessage: ChatMessage) => {
-  const lastRoomSeq = getLastRoomSeq()
+  const lastRoomSeq = getLastPersistedRoomSeq()
   if (!lastRoomSeq || !incomingMessage?.room_seq) return false
   return incomingMessage.room_seq > lastRoomSeq + 1
 }
@@ -1130,10 +1151,11 @@ const mergeMessagesWithoutMovingAnchor = (incomingMessages: ChatMessage[]) => {
 
 const backfillMissingMessagesByRoomSeq = async (incomingMessage: ChatMessage) => {
   const roomId = roomDetail.value?.room.id || routeRoomId.value
-  const lastMessageId = getLastMessageId()
+  const lastMessageId = getLastPersistedMessageId()
   if (!roomId || !lastMessageId || !incomingMessage?.id) return
 
   let nextAfterMessageId = Number(lastMessageId)
+  if (!Number.isFinite(nextAfterMessageId) || nextAfterMessageId <= 0) return
   let shouldContinue = true
 
   while (shouldContinue && nextAfterMessageId) {
@@ -2993,6 +3015,11 @@ const EmotionTool = (() => {
           word-break: break-all;
           display: inline-block;
           max-width: 100%;
+        }
+
+        .message-text-content {
+          white-space: pre-wrap;
+          word-break: break-all;
         }
 
         .text-bubble.is-recalled {

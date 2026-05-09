@@ -173,6 +173,8 @@ export interface ChatRoomsResponse {
 
 let chatRoomsPreloadPromise: Promise<any> | null = null
 let cachedChatRoomsResponse: ChatRoomsResponse | null = null
+let cachedChatRoomsAt = 0
+const CHAT_ROOMS_CACHE_TTL_MS = 5 * 60 * 1000
 
 export interface UnreadSummaryRoom {
   room_id: number
@@ -201,14 +203,20 @@ export const getChatRoomsApi = (withMemberPreview?: number) => {
   })
 }
 
-export const getCachedChatRoomsApi = () => cachedChatRoomsResponse
+export const getCachedChatRoomsApi = (maxAgeMs = CHAT_ROOMS_CACHE_TTL_MS) => {
+  if (!cachedChatRoomsResponse) return null
+  if (!cachedChatRoomsAt) return cachedChatRoomsResponse
+  if (Date.now() - cachedChatRoomsAt > maxAgeMs) return null
+  return cachedChatRoomsResponse
+}
 
 export const preloadChatRoomsApi = (withMemberPreview?: number, forceRefresh = false) => {
-  if (cachedChatRoomsResponse && !forceRefresh) {
+  const cachedRooms = getCachedChatRoomsApi()
+  if (cachedRooms && !forceRefresh) {
     return Promise.resolve({
       code: 1,
       msg: '',
-      data: cachedChatRoomsResponse,
+      data: cachedRooms,
     })
   }
 
@@ -218,6 +226,7 @@ export const preloadChatRoomsApi = (withMemberPreview?: number, forceRefresh = f
     .then((res) => {
       if (res?.code === 1 && res.data) {
         cachedChatRoomsResponse = res.data
+        cachedChatRoomsAt = Date.now()
       }
       return res
     })
@@ -230,7 +239,19 @@ export const preloadChatRoomsApi = (withMemberPreview?: number, forceRefresh = f
 
 export const clearPreloadedChatRoomsApi = () => {
   cachedChatRoomsResponse = null
+  cachedChatRoomsAt = 0
   chatRoomsPreloadPromise = null
+}
+
+export const patchCachedChatRoom = (roomId: number, patch: Partial<ChatRoom>) => {
+  if (!cachedChatRoomsResponse?.rooms?.length) return
+  cachedChatRoomsResponse = {
+    ...cachedChatRoomsResponse,
+    rooms: cachedChatRoomsResponse.rooms.map((room) =>
+      room.id === roomId ? { ...room, ...patch } : room,
+    ),
+  }
+  cachedChatRoomsAt = Date.now()
 }
 
 export const getChatRoomDetailApi = (code: string) => {
