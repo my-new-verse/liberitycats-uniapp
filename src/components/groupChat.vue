@@ -97,31 +97,26 @@ const handleJoinOrEnter = async (group: GroupChatItem) => {
     toUrl('/pages/cats/login/login')
     return
   }
-  if (group.is_accessible !== 1) {
-    uni.showToast({ title: group.inaccessible_reason || '权限不足', icon: 'none' })
-    return
-  }
-
   if (group.is_joined === 1) {
     toUrl(`/pages/cats/social/group_chat?code=${group.code}&room_id=${group.id}`)
     return
   }
 
   try {
-    uni.showLoading({ title: '加入中...', mask: true })
+    // uni.showLoading({ title: '进入中...', mask: true })
     const res = await joinChatRoomApi(group.id)
-    uni.hideLoading()
+    // uni.hideLoading()
     if (res.code === 1) {
       group.is_joined = 1
-      patchCachedChatRoom(group.id, { is_joined: 1 })
+      patchCachedChatRoom(group.id, { is_joined: 1, is_accessible: 1 })
       toUrl(`/pages/cats/social/group_chat?code=${group.code}&room_id=${group.id}`)
     } else {
-      uni.showToast({ title: res.msg || '加入失败', icon: 'none' })
+      uni.showToast({ title: res.msg || '进入失败', icon: 'none' })
     }
   } catch (error) {
     uni.hideLoading()
     console.error('joinChatRoom error:', error)
-    uni.showToast({ title: '加入失败，请重试', icon: 'none' })
+    uni.showToast({ title: '进入失败，请重试', icon: 'none' })
   }
 }
 
