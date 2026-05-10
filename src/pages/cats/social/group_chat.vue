@@ -270,6 +270,16 @@
           <view id="scroll-bottom-anchor" class="scroll-bottom-anchor"></view>
         </view>
       </scroll-view>
+      <view
+        v-if="showNewMessageIndicator"
+        class="new-message-indicator"
+        @click="handleJumpToLatestMessage"
+      >
+        <wd-icon name="arrow-down" size="16px" color="#1f1f1f"></wd-icon>
+        <text class="new-message-indicator-text">
+          {{ pendingRealtimeMessageCount > 99 ? '99+' : pendingRealtimeMessageCount }}条新消息
+        </text>
+      </view>
       <!-- 底部发消息按钮 -->
       <view class="footer">
         <view class="fixedCommentBox" style="padding-bottom: env(safe-area-inset-bottom)">
@@ -501,6 +511,7 @@ const commentPopupVisible = ref(false)
 const hasMoreHistory = ref(true)
 const nextBeforeMessageId = ref<number | null>(null)
 const pendingReadMessageId = ref<number | null>(null)
+const pendingRealtimeMessageCount = ref(0)
 const loadingMoreHistory = ref(false)
 const canTriggerHistoryLoad = ref(true)
 const lastHistoryTriggerCursorId = ref<number | string | null>(null)
@@ -901,6 +912,23 @@ const isNearBottom = () => {
   return totalHeight - current < BOTTOM_AUTO_SCROLL_THRESHOLD_PX
 }
 
+const showNewMessageIndicator = computed(
+  () => pendingRealtimeMessageCount.value > 0 && !isNearBottom(),
+)
+
+const clearPendingRealtimeMessageIndicator = () => {
+  pendingRealtimeMessageCount.value = 0
+}
+
+const bumpPendingRealtimeMessageIndicator = () => {
+  pendingRealtimeMessageCount.value += 1
+}
+
+const handleJumpToLatestMessage = () => {
+  clearPendingRealtimeMessageIndicator()
+  scrollToLatestMessage()
+}
+
 const measureVisibleMessages = () => {
   if (isPageLeaving.value) return
   nextTick(() => {
@@ -1210,6 +1238,9 @@ const handleRealtimeEvent = async (eventName: string, payload: any) => {
         await backfillMissingMessagesByRoomSeq(message)
       }
       const is_self = message.sender?.member_id === userStore.userInfo.member_id
+      if (!is_self) {
+        bumpPendingRealtimeMessageIndicator()
+      }
       enqueueRealtimeMessage({ ...message, is_self }, false)
 
       // if (!isSelf) {
@@ -1524,6 +1555,9 @@ const handleChatScroll = (event: any) => {
   if (nextScrollHeight > 0) {
     messageListHeight.value = nextScrollHeight
   }
+  if (isNearBottom()) {
+    clearPendingRealtimeMessageIndicator()
+  }
   tryLoadMoreHistoryOnTop(scrollTop.value)
 }
 
@@ -1608,18 +1642,21 @@ onMounted(() => {
 
 onHide(() => {
   console.log('onHide')
+  clearPendingRealtimeMessageIndicator()
   void flushPendingReadOnLeave()
   chatSocketClient.value?.handlePageHide()
 })
 
 onShow(() => {
   hasFlushedReadOnLeave = false
+  clearPendingRealtimeMessageIndicator()
   resumeChatAfterForeground()
   refreshViewportMetrics()
 })
 
 // 在组件卸载时清理防抖函数
 onUnmounted(() => {
+  clearPendingRealtimeMessageIndicator()
   void flushPendingReadOnLeave()
   chatSocketClient.value?.destroy()
   chatSocketClient.value = null
@@ -3224,6 +3261,29 @@ const EmotionTool = (() => {
 .scroll-bottom-anchor {
   height: calc(96rpx + env(safe-area-inset-bottom));
   pointer-events: none;
+}
+
+.new-message-indicator {
+  position: fixed;
+  left: 50%;
+  bottom: calc(144rpx + env(safe-area-inset-bottom));
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  gap: 10rpx;
+  min-height: 72rpx;
+  padding: 0 28rpx;
+  background: #ffffff;
+  border-radius: 999rpx;
+  box-shadow: 0 12rpx 32rpx rgba(0, 0, 0, 0.12);
+  transform: translateX(-50%);
+}
+
+.new-message-indicator-text {
+  font-size: 28rpx;
+  line-height: 1;
+  color: #1f1f1f;
+  white-space: nowrap;
 }
 
 @keyframes image-placeholder-shimmer {
