@@ -69,7 +69,11 @@
             class="history-tip"
           >
             <text class="history-tip-text">
-              {{ loadingMoreHistory ? '加载更多消息...' : '没有更多历史消息了' }}
+              {{
+                loadingMoreHistory
+                  ? t('group.chat.loadingMoreHistory')
+                  : t('group.chat.noMoreHistory')
+              }}
             </text>
           </view>
           <view
@@ -277,7 +281,11 @@
       >
         <wd-icon name="arrow-down" size="16px" color="#1f1f1f"></wd-icon>
         <text class="new-message-indicator-text">
-          {{ pendingRealtimeMessageCount > 99 ? '99+' : pendingRealtimeMessageCount }}条新消息
+          {{
+            t('group.chat.newMessages', {
+              count: pendingRealtimeMessageCount > 99 ? '99+' : pendingRealtimeMessageCount,
+            })
+          }}
         </text>
       </view>
       <!-- 底部发消息按钮 -->
@@ -423,6 +431,71 @@
         </wd-popup>
       </view>
     </view>
+    <wd-action-sheet
+      custom-class="messageActionSheet"
+      v-model="messageActionSheetVisible"
+      :actions="messageActionSheetActions"
+      :title="t('group.chat.messageActionSheetTitle')"
+      @select="handleMessageActionSheetSelect"
+    />
+    <wd-popup v-model="showUnmuteReasonPopup" position="bottom" :close-on-click-modal="false">
+      <view class="mute-popup">
+        <view class="popup-header">
+          <text class="popup-title">{{ t('group.chat.unmuteDialogTitle') }}</text>
+          <view class="close-btn" @click="showUnmuteReasonPopup = false">
+            <wd-icon name="close" size="20px"></wd-icon>
+          </view>
+        </view>
+        <view class="popup-content">
+          <view class="form-item">
+            <text class="label">{{ t('group.chat.unmuteReasonOptionalLabel') }}</text>
+            <wd-input
+              v-model="unmuteReason"
+              :placeholder="t('group.chat.unmuteReasonOptionalPlaceholder')"
+              clearable
+              maxlength="100"
+            />
+          </view>
+        </view>
+        <view class="popup-footer">
+          <wd-button custom-class="cancel-btn" @click="showUnmuteReasonPopup = false">
+            {{ t('common.cancel') }}
+          </wd-button>
+          <wd-button type="primary" custom-class="confirm-btn" @click="confirmMessageUnmute">
+            {{ t('common.confirm') }}
+          </wd-button>
+        </view>
+      </view>
+    </wd-popup>
+    <wd-popup v-model="showDeleteReasonPopup" position="bottom" :close-on-click-modal="false">
+      <view class="mute-popup">
+        <view class="popup-header">
+          <text class="popup-title">{{ t('group.chat.deleteDialogTitle') }}</text>
+          <view class="close-btn" @click="showDeleteReasonPopup = false">
+            <wd-icon name="close" size="20px"></wd-icon>
+          </view>
+        </view>
+        <view class="popup-content">
+          <view class="form-item">
+            <text class="label">{{ t('group.chat.deleteReasonOptionalLabel') }}</text>
+            <wd-input
+              v-model="deleteReason"
+              :placeholder="t('group.chat.deleteReasonOptionalPlaceholder')"
+              clearable
+              maxlength="100"
+            />
+          </view>
+        </view>
+        <view class="popup-footer">
+          <wd-button custom-class="cancel-btn" @click="showDeleteReasonPopup = false">
+            {{ t('common.cancel') }}
+          </wd-button>
+          <wd-button type="primary" custom-class="confirm-btn" @click="confirmDeleteMessage">
+            {{ t('common.confirm') }}
+          </wd-button>
+        </view>
+      </view>
+    </wd-popup>
   </view>
 </template>
 
@@ -442,15 +515,21 @@ import {
 import { getAliyunOssConfigApi, getAliyunOssConfigApiResponse } from '@/service/api/upload'
 import {
   getChatRoomDetailApi,
+  getChatRoomMembersApi,
   sendChatMessageApi,
   getChatMessageListApi,
   markMessageReadApi,
   ChatMessage,
+  ChatMember,
   ChatMessagePayload,
   ChatRoomDetail,
   ChatMessageType,
+  muteMemberApi,
+  unmuteMemberApi,
+  removeMemberApi,
   recallChatMessageApi,
   reactChatMessageApi,
+  deleteChatMessageApi,
 } from '@/service/api/groupChat'
 import { defaultEmojiList } from '@/utils/defaultEmojiList'
 
@@ -472,10 +551,24 @@ type UploadChooseFile = {
   thumb?: string
 }
 
-type MessageMenuAction = 'copy' | 'recall'
+type MessageMenuAction =
+  | 'copy'
+  | 'recall'
+  | 'delete'
+  | 'mute'
+  | 'unmute'
+  | 'setAdmin'
+  | 'removeAdmin'
+  | 'kick'
+  | 'removed'
 type MessageMenuItem = {
   content: string
   action: MessageMenuAction
+}
+type ActionSheetAction = {
+  name: string
+  color?: string
+  action?: MessageMenuAction
 }
 
 type MessageStatePayload = {
@@ -513,6 +606,13 @@ const nextBeforeMessageId = ref<number | null>(null)
 const pendingReadMessageId = ref<number | null>(null)
 const pendingRealtimeMessageCount = ref(0)
 const loadingMoreHistory = ref(false)
+const roomMemberMap = ref<Record<number, ChatMember>>({})
+const selectedMessageActionTarget = ref<ChatMessage | null>(null)
+const messageActionSheetVisible = ref(false)
+const showUnmuteReasonPopup = ref(false)
+const unmuteReason = ref('')
+const showDeleteReasonPopup = ref(false)
+const deleteReason = ref('')
 const canTriggerHistoryLoad = ref(true)
 const lastHistoryTriggerCursorId = ref<number | string | null>(null)
 // 获取屏幕边界到安全区域距离
@@ -557,6 +657,7 @@ let realtimeFlushTimer: ReturnType<typeof setTimeout> | null = null
 let pendingRealtimeScrollToLatest = false
 const pendingRealtimeMessages = new Map<string, ChatMessage>()
 const isPageLeaving = ref(false)
+let roomMemberMapPromise: Promise<void> | null = null
 
 const navigateBack = () => {
   if (isPageLeaving.value) return
@@ -700,6 +801,61 @@ const getLastPersistedRoomSeq = () => getLastPersistedMessage()?.room_seq || 0
 const REACTION_LIKE_TYPE = 'like'
 const REACTION_LIKE_VALUE = 'thumbs_up'
 const EMOTION_MESSAGE_SIZE_RPX = 140
+
+const normalizeGovernanceRole = (role?: string) => {
+  switch (role) {
+    case 'founder':
+    case 'owner':
+      return 'owner'
+    case 'host':
+      return 'host'
+    case 'moderator':
+    case 'admin':
+      return 'admin'
+    default:
+      return 'member'
+  }
+}
+
+const getGovernanceRoleRank = (role?: string) => {
+  const normalizedRole = normalizeGovernanceRole(role)
+  if (normalizedRole === 'owner') return 3
+  if (normalizedRole === 'host') return 2
+  if (normalizedRole === 'admin') return 1
+  return 0
+}
+
+const getCurrentGovernanceRole = () => roomDetail.value?.speaking.role || 'member'
+
+const canOperateTargetRole = (targetRole?: string, isSelf = false) => {
+  if (isSelf) return false
+
+  const currentRank = getGovernanceRoleRank(getCurrentGovernanceRole())
+  const targetRank = getGovernanceRoleRank(targetRole)
+
+  if (currentRank <= 0) return false
+  if (currentRank === 3) return true
+  return currentRank > targetRank
+}
+
+const canManageTargetRoleChange = (targetRole?: string, isSelf = false) => {
+  if (!canOperateTargetRole(targetRole, isSelf)) return false
+  if (getGovernanceRoleRank(getCurrentGovernanceRole()) < 2) return false
+  const normalizedRole = normalizeGovernanceRole(targetRole)
+  return normalizedRole === 'member' || normalizedRole === 'admin'
+}
+
+const canManageTargetMute = (targetRole?: string, isSelf = false) => {
+  if (!canOperateTargetRole(targetRole, isSelf)) return false
+  const currentRank = getGovernanceRoleRank(getCurrentGovernanceRole())
+  const normalizedRole = normalizeGovernanceRole(targetRole)
+
+  if (currentRank === 1) {
+    return normalizedRole === 'member'
+  }
+
+  return currentRank >= 2
+}
 
 const rpxToPx = (rpx: number) => {
   const systemInfo = uni.getSystemInfoSync()
@@ -1381,7 +1537,7 @@ const ensureRoomDetailLoaded = async () => {
     try {
       const res = await getChatRoomDetailApi(roomCode.value)
       if (res.code !== 1) {
-        toast.show(res.msg || '加载失败')
+        toast.show(res.msg || t('common.loadFailed'))
         return false
       }
 
@@ -1392,7 +1548,7 @@ const ensureRoomDetailLoaded = async () => {
       return true
     } catch (error) {
       console.error('loadRoomDetail error:', error)
-      toast.show('加载失败')
+      toast.show(t('common.loadFailed'))
       return false
     } finally {
       roomDetailLoading.value = false
@@ -1421,6 +1577,45 @@ const loadRoomDetail = async () => {
   if (loaded) {
     subscribeChatRoomChannel()
   }
+}
+
+const setRoomMemberMap = (memberList: ChatMember[]) => {
+  const nextMemberMap: Record<number, ChatMember> = {}
+  memberList.forEach((member) => {
+    nextMemberMap[member.member_id] = member
+  })
+  roomMemberMap.value = nextMemberMap
+}
+
+const loadRoomMemberMap = async () => {
+  const roomId = roomDetail.value?.room.id || routeRoomId.value
+  if (!roomId) return
+
+  const [adminRes, memberRes] = await Promise.all([
+    getChatRoomMembersApi(roomId, 'moderator'),
+    getChatRoomMembersApi(roomId),
+  ])
+
+  const mergedMembers: ChatMember[] = []
+  if (adminRes.code === 1) {
+    mergedMembers.push(...(adminRes.data?.data || []))
+  }
+  if (memberRes.code === 1) {
+    mergedMembers.push(...(memberRes.data?.data || []))
+  }
+
+  setRoomMemberMap(mergedMembers)
+}
+
+const ensureRoomMemberMapLoaded = async (forceRefresh = false) => {
+  if (!forceRefresh && Object.keys(roomMemberMap.value).length > 0) return
+  if (roomMemberMapPromise) return roomMemberMapPromise
+
+  roomMemberMapPromise = loadRoomMemberMap().finally(() => {
+    roomMemberMapPromise = null
+  })
+
+  return roomMemberMapPromise
 }
 
 // 加载历史消息列表
@@ -1642,6 +1837,8 @@ onMounted(() => {
 
 onHide(() => {
   console.log('onHide')
+  messageActionSheetVisible.value = false
+  selectedMessageActionTarget.value = null
   clearPendingRealtimeMessageIndicator()
   void flushPendingReadOnLeave()
   chatSocketClient.value?.handlePageHide()
@@ -1656,6 +1853,8 @@ onShow(() => {
 
 // 在组件卸载时清理防抖函数
 onUnmounted(() => {
+  messageActionSheetVisible.value = false
+  selectedMessageActionTarget.value = null
   clearPendingRealtimeMessageIndicator()
   void flushPendingReadOnLeave()
   chatSocketClient.value?.destroy()
@@ -1713,7 +1912,7 @@ const createLocalPendingMessage = (
     create_time: now,
     sender: {
       member_id: memberId,
-      nickname: userStore.userInfo.nickname || 'Me',
+      nickname: userStore.userInfo.nickname || t('common.me'),
       avatar: userStore.userInfo.avatar || '',
       role: roomDetail.value?.speaking.role || 'member',
     },
@@ -1776,7 +1975,7 @@ const sendChatMessageWithClientMessageId = async (
   }
 
   markLocalMessageFailed(clientMessageId)
-  toast.show(res.msg || '发送失败')
+  toast.show(res.msg || t('group.chat.sendFailed'))
   return false
 }
 
@@ -1793,32 +1992,32 @@ const validateBeforeSend = (): boolean => {
 
   // 2. 房间必须存在且状态正常
   if (!roomDetail.value?.room) {
-    toast.show('群聊信息加载失败')
+    toast.show(t('group.chat.groupInfoLoadFailed'))
     return false
   }
 
   // 检查房间状态（假设 status 为 1 表示正常）
   if (roomDetail.value.room.status !== 1) {
-    toast.show('当前群聊已关闭或异常')
+    toast.show(t('group.chat.groupClosedOrAbnormal'))
     return false
   }
 
   // 3. 用户必须满足当前群准入条件（由服务端在发送时校验，客户端可做基础提示）
   if (roomDetail.value.access.is_joined !== 1) {
-    toast.show('还未加入群聊')
+    toast.show(t('group.chat.notJoined'))
     return false
   }
 
   // 4. 用户必须已加入群（未加入时服务端可自动补加入，此处仅做提示）
   // 如果 roomDetail 中有成员信息，可以检查是否已加入
   if (roomDetail.value.access.is_accessible !== 1) {
-    toast.show('不可进群')
+    toast.show(t('group.chat.notAccessible'))
     return false
   }
 
   // 5. 房间发言模式必须允许该用户发言
   if (roomDetail.value.speaking.can_speak !== 1) {
-    toast.show(roomDetail.value.speaking.reason || '当前不可发言')
+    toast.show(roomDetail.value.speaking.reason || t('group.chat.cannotSpeak'))
     return false
   }
 
@@ -1920,7 +2119,7 @@ const sendMsg = async () => {
     shouldFocus.value = false
     markLocalMessageFailed(pendingClientMessageId)
     console.error('sendMsg error:', error)
-    toast.show(error?.errMsg || error?.message || '发送失败')
+    toast.show(error?.errMsg || error?.message || t('group.chat.sendFailed'))
   } finally {
     sendLoading.value = false
   }
@@ -1959,7 +2158,7 @@ const sendStressTestMessages = async (count = 20, intervalMs = 3000) => {
     }
   } catch (error: any) {
     console.error('sendStressTestMessages error:', error)
-    toast.show(error?.message || '压测发送失败')
+    toast.show(error?.message || t('group.chat.stressSendFailed'))
   } finally {
     stressSending.value = false
   }
@@ -1996,7 +2195,7 @@ const retryFailedMessage = async (msg: ChatMessage) => {
   } catch (error: any) {
     markLocalMessageFailed(msg.client_message_id)
     console.error('retryFailedMessage error:', error)
-    toast.show(error?.message || '发送失败')
+    toast.show(error?.message || t('group.chat.sendFailed'))
   }
 }
 // 发布评论 end
@@ -2080,7 +2279,7 @@ const MAX_UPLOAD_IMAGE_SIZE = 10 * 1024 * 1024
 const MAX_UPLOAD_IMAGE_WIDTH = 4096
 const MAX_UPLOAD_IMAGE_HEIGHT = 4096
 const IMAGE_COMPRESS_QUALITY_STEPS = [85, 70, 55, 40]
-const IMAGE_LIMIT_HINT = 'Image must be <= 10MB and <= 4096 x 4096.'
+const IMAGE_LIMIT_HINT = t('group.chat.imageLimitHint')
 
 const addCustomEmoji = (src: string, emotionId?: number) => {
   if (!src) return
@@ -2307,12 +2506,12 @@ const handleChooseImage = async () => {
  */
 const uploadImageToOss = async (filePath: string, mimeType: string, fileName: string) => {
   if (!ossConfig.value) {
-    toast.show('OSS 配置未加载')
+    toast.show(t('group.chat.ossConfigNotLoaded'))
     return
   }
 
   if (!roomDetail.value?.room.id) {
-    toast.show('房间信息未加载')
+    toast.show(t('group.chat.roomInfoNotLoaded'))
     return
   }
 
@@ -2323,7 +2522,7 @@ const uploadImageToOss = async (filePath: string, mimeType: string, fileName: st
 
   let pendingClientMessageId = ''
   try {
-    uni.showLoading({ title: '上传中...', mask: true })
+    uni.showLoading({ title: t('group.chat.uploading'), mask: true })
     const resolvedFileName = resolveUploadFileName(filePath, fileName)
     const key = `${ossConfig.value.dir}/${resolvedFileName}`
 
@@ -2354,7 +2553,11 @@ const uploadImageToOss = async (filePath: string, mimeType: string, fileName: st
 
     uni.hideLoading()
     if (uploadRes.statusCode !== 200) {
-      throw new Error(`上传失败，状态码: ${uploadRes.statusCode}`)
+      throw new Error(
+        t('group.chat.uploadFailedStatusCode', {
+          statusCode: uploadRes.statusCode,
+        }),
+      )
     }
     // 4. 构建图片 URL
     const originalUrl = `${ossConfig.value.host}/${key}`
@@ -2387,7 +2590,7 @@ const uploadImageToOss = async (filePath: string, mimeType: string, fileName: st
     uni.hideLoading()
     markLocalMessageFailed(pendingClientMessageId)
     console.error('uploadImageToOss error:', error)
-    toast.show(error?.message || '图片上传失败')
+    toast.show(error?.message || t('group.chat.uploadImageFailed'))
   }
 }
 
@@ -2463,6 +2666,64 @@ const setMessagePopoverRef = (messageId: number, el: any) => {
   delete messagePopoverRefs.value[messageId]
 }
 
+const getMemberByMessage = (msg: ChatMessage) => {
+  const memberId = Number(msg.sender?.member_id || msg.member_id || 0)
+  if (!memberId) return null
+  return roomMemberMap.value[memberId] || null
+}
+
+const getGovernanceMenuOptions = (msg: ChatMessage): MessageMenuItem[] => {
+  const member = getMemberByMessage(msg)
+  if (!member) {
+    return [
+      {
+        content: t('common.copy'),
+        action: 'copy',
+      },
+      {
+        content: t('group.chat.delete'),
+        action: 'delete',
+      },
+      {
+        content: t('group.chat.memberKicked'),
+        action: 'removed',
+      },
+    ]
+  }
+
+  const isSelf = member.member_id === userStore.userInfo.member_id || msg.is_self === 1
+  const menuOptions: MessageMenuItem[] = []
+  const targetRole = member.role
+
+  menuOptions.push({
+    content: t('common.copy'),
+    action: 'copy',
+  })
+
+  menuOptions.push({
+    content: t('group.chat.delete'),
+    action: 'delete',
+  })
+
+  if (canManageTargetMute(targetRole, isSelf)) {
+    menuOptions.push({
+      content: member.is_muted
+        ? t('group.chat.member.action.unmute')
+        : t('group.chat.member.action.mute'),
+      action: member.is_muted ? 'unmute' : 'mute',
+    })
+  }
+
+  if (canOperateTargetRole(targetRole, isSelf)) {
+    menuOptions.push({
+      content: t('group.chat.kickMember'),
+      action: 'kick',
+    })
+  }
+
+  return menuOptions
+}
+
 const getMessageMenuOptions = (msg: ChatMessage): MessageMenuItem[] => {
   const menuOptions: MessageMenuItem[] = [
     {
@@ -2470,6 +2731,13 @@ const getMessageMenuOptions = (msg: ChatMessage): MessageMenuItem[] => {
       action: 'copy',
     },
   ]
+
+  if (msg.is_self === 1) {
+    menuOptions.push({
+      content: t('group.chat.delete'),
+      action: 'delete',
+    })
+  }
 
   if (canRecallMessage(msg)) {
     menuOptions.push({
@@ -2481,10 +2749,49 @@ const getMessageMenuOptions = (msg: ChatMessage): MessageMenuItem[] => {
   return menuOptions
 }
 
-const showMessageContextMenu = (msg: ChatMessage) => {
-  return // 先return掉，不上这个功能
+const canShowGovernanceMessageActions = (msg: ChatMessage) => {
+  return msg.is_self !== 1 && getGovernanceRoleRank(getCurrentGovernanceRole()) > 0
+}
+
+const messageActionSheetActions = computed<ActionSheetAction[]>(() => {
+  const targetMessage = selectedMessageActionTarget.value
+  if (!targetMessage) return []
+
+  const menuOptions = canShowGovernanceMessageActions(targetMessage)
+    ? getGovernanceMenuOptions(targetMessage)
+    : getMessageMenuOptions(targetMessage)
+
+  return menuOptions.map((item) => ({
+    name: item.content,
+    // color: item.action === 'kick' || item.action === 'delete' ? '#ff4d4f' : undefined,
+    action: item.action,
+  }))
+})
+
+const showMessageContextMenu = async (msg: ChatMessage) => {
   if (msg.display_status === 'recalled') return
-  messagePopoverRefs.value[msg.id]?.open?.()
+
+  if (canShowGovernanceMessageActions(msg)) {
+    await ensureRoomMemberMapLoaded()
+  }
+  selectedMessageActionTarget.value = msg
+  if (messageActionSheetActions.value.length === 0) return
+  messageActionSheetVisible.value = true
+}
+
+const handleMessageActionSheetSelect = ({ item }: { item: ActionSheetAction }) => {
+  const targetMessage = selectedMessageActionTarget.value
+  if (!targetMessage || !item?.action) return
+  messageActionSheetVisible.value = false
+  handleMessageMenuClick(
+    {
+      item: {
+        content: item.name,
+        action: item.action,
+      },
+    },
+    targetMessage,
+  )
 }
 
 const handleMessageMenuClick = ({ item }: { item: MessageMenuItem }, msg: ChatMessage) => {
@@ -2494,6 +2801,19 @@ const handleMessageMenuClick = ({ item }: { item: MessageMenuItem }, msg: ChatMe
       break
     case 'recall':
       handleRecallMessage(msg)
+      break
+    case 'delete':
+      void handleDeleteMessage(msg)
+      break
+    case 'mute':
+    case 'unmute':
+      void handleMessageMemberMuteAction(msg)
+      break
+    case 'kick':
+      void handleMessageKickMember(msg)
+      break
+    case 'removed':
+      toast.show(t('group.chat.memberKicked'))
       break
   }
 }
@@ -2583,6 +2903,139 @@ const handleReeditRecalledMessage = (msg: ChatMessage) => {
   showCommentPopup()
 }
 
+const handleMessageMemberMuteAction = async (msg: ChatMessage) => {
+  const roomId = msg.room_id || roomDetail.value?.room.id || routeRoomId.value
+  const member = getMemberByMessage(msg)
+  if (!roomId || !member) return
+
+  if (member.is_muted) {
+    selectedMessageActionTarget.value = msg
+    unmuteReason.value = ''
+    showUnmuteReasonPopup.value = true
+    return
+  }
+
+  uni.showLoading({ title: t('common.processing'), mask: true })
+  try {
+    const res = await muteMemberApi(roomId, member.member_id, 0)
+    uni.hideLoading()
+    if (res.code === 1) {
+      await ensureRoomMemberMapLoaded(true)
+      toast.show(
+        member.is_muted
+          ? t('group.member.action.unmuteSuccess')
+          : t('group.member.action.muteSuccess'),
+      )
+      return
+    }
+
+    toast.show(res.msg || t('common.operationFailed'))
+  } catch (error: any) {
+    uni.hideLoading()
+    console.error('handleMessageMemberMuteAction error:', error)
+    toast.show(error?.message || t('common.operationFailed'))
+  }
+}
+
+const requestDeleteMessage = (msg: ChatMessage) => {
+  selectedMessageActionTarget.value = msg
+  deleteReason.value = ''
+  showDeleteReasonPopup.value = true
+}
+
+const confirmMessageUnmute = async () => {
+  const targetMessage = selectedMessageActionTarget.value
+  const roomId = targetMessage?.room_id || roomDetail.value?.room.id || routeRoomId.value
+  const member = targetMessage ? getMemberByMessage(targetMessage) : null
+  const reason = unmuteReason.value.trim()
+
+  if (!roomId || !member) return
+
+  try {
+    uni.showLoading({ title: t('common.processing'), mask: true })
+    const res = await unmuteMemberApi(roomId, member.member_id, reason)
+    uni.hideLoading()
+    if (res.code === 1) {
+      showUnmuteReasonPopup.value = false
+      await ensureRoomMemberMapLoaded(true)
+      toast.show(t('group.member.action.unmuteSuccess'))
+      return
+    }
+
+    toast.show(res.msg || t('common.operationFailed'))
+  } catch (error: any) {
+    uni.hideLoading()
+    console.error('confirmMessageUnmute error:', error)
+    toast.show(error?.message || t('common.operationFailed'))
+  }
+}
+
+const confirmDeleteMessage = async () => {
+  const targetMessage = selectedMessageActionTarget.value
+  const roomId = targetMessage?.room_id || roomDetail.value?.room.id || routeRoomId.value
+  const reason = deleteReason.value.trim()
+
+  if (!roomId || !targetMessage?.id) return
+
+  uni.showLoading({ title: t('common.processing'), mask: true })
+  try {
+    const res = await deleteChatMessageApi(targetMessage.id, reason)
+    uni.hideLoading()
+    if (res.code === 1) {
+      showDeleteReasonPopup.value = false
+      if (
+        applyMessageDisplayStatus({
+          message_id: targetMessage.id,
+          room_id: targetMessage.room_id,
+          room_seq: targetMessage.room_seq,
+          display_status: 'recalled',
+          placeholder: {
+            text: t('group.chat.messageRecalled'),
+          },
+        })
+      ) {
+        toast.show(t('group.chat.deleteSuccess'))
+      }
+      return
+    }
+
+    toast.show(res.msg || t('group.chat.deleteFailed'))
+  } catch (error: any) {
+    uni.hideLoading()
+    console.error('confirmDeleteMessage error:', error)
+    toast.show(error?.message || t('group.chat.deleteFailed'))
+  }
+}
+
+const handleMessageKickMember = async (msg: ChatMessage) => {
+  const roomId = msg.room_id || roomDetail.value?.room.id || routeRoomId.value
+  const member = getMemberByMessage(msg)
+  if (!roomId || !member) return
+
+  uni.showLoading({ title: t('common.processing'), mask: true })
+  try {
+    const res = await removeMemberApi(roomId, member.member_id)
+    uni.hideLoading()
+    if (res.code === 1) {
+      const nextMemberMap = { ...roomMemberMap.value }
+      delete nextMemberMap[member.member_id]
+      roomMemberMap.value = nextMemberMap
+      toast.show(t('group.chat.kickMember'))
+      return
+    }
+
+    toast.show(res.msg || t('common.operationFailed'))
+  } catch (error: any) {
+    uni.hideLoading()
+    console.error('handleMessageKickMember error:', error)
+    toast.show(error?.message || t('common.operationFailed'))
+  }
+}
+
+const handleDeleteMessage = async (msg: ChatMessage) => {
+  requestDeleteMessage(msg)
+}
+
 // 撤回消息
 const handleRecallMessage = async (msg: ChatMessage) => {
   if (msg.is_self !== 1) {
@@ -2594,7 +3047,7 @@ const handleRecallMessage = async (msg: ChatMessage) => {
     toast.show(t('group.chat.recallTimeExpired'))
     return
   }
-  uni.showLoading({ title: '正在撤回' })
+  uni.showLoading({ title: t('group.chat.recalling') })
   const res = await recallChatMessageApi(msg.room_id, msg.id)
   uni.hideLoading()
   if (res.code === 1) {
@@ -3646,6 +4099,59 @@ const EmotionTool = (() => {
   z-index: 999;
 }
 
+.mute-popup {
+  background: #fff;
+  border-radius: 24rpx 24rpx 0 0;
+  padding: 32rpx;
+  max-height: 80vh;
+  overflow-y: auto;
+
+  .popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32rpx;
+
+    .popup-title {
+      font-size: 32rpx;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .close-btn {
+      padding: 8rpx;
+      cursor: pointer;
+    }
+  }
+
+  .popup-content {
+    .form-item {
+      margin-bottom: 32rpx;
+
+      .label {
+        display: block;
+        font-size: 28rpx;
+        color: #666;
+        margin-bottom: 16rpx;
+      }
+    }
+  }
+
+  .popup-footer {
+    display: flex;
+    gap: 24rpx;
+    margin-top: 40rpx;
+
+    :deep(.cancel-btn) {
+      flex: 1;
+    }
+
+    :deep(.confirm-btn) {
+      flex: 1;
+    }
+  }
+}
+
 .time-divider {
   display: flex;
   justify-content: center;
@@ -3672,5 +4178,10 @@ const EmotionTool = (() => {
 }
 ::v-deep .uni-scroll-view {
   height: 100vh;
+}
+::v-deep .messageActionSheet {
+  .wd-action-sheet__action {
+    text-align: left;
+  }
 }
 </style>

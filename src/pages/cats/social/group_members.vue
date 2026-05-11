@@ -42,9 +42,16 @@
         </view>
         <view v-show="!searchKeyword.length">
           <!-- 管理员分组 -->
-          <view v-if="adminList.length > 0" class="group-title">群主及群管理员</view>
+          <view v-if="adminList.length > 0" class="group-title">
+            {{ t('group.chat.member.adminGroupTitle') }}
+          </view>
           <view v-if="adminList.length" class="member-group">
-            <view class="member-item" v-for="item in adminList" :key="item.member_id">
+            <view
+              class="member-item"
+              v-for="item in adminList"
+              :key="item.member_id"
+              @longpress="handleMemberItemLongpress(item)"
+            >
               <view class="avatar-wrap" @click="handleAvatarClick(item?.member_id)">
                 <image :src="item.avatar" class="avatar" />
                 <view class="levelIcon">
@@ -65,26 +72,12 @@
                   </view>
                 </view>
               </view>
-              <view class="action-texts" v-if="canManageAdminRole(item) || canManageMute(item)">
-                <text
-                  v-if="canManageAdminRole(item)"
-                  class="action-text"
-                  @click="handleAdminAction(item)"
-                >
-                  {{ t('group.chat.member.action.removeAdmin') }}
-                </text>
-                <text
-                  v-if="canManageMute(item)"
-                  class="action-text"
-                  @click="handleMuteAction(item)"
-                  :style="{ color: item.is_muted ? '#007aff' : '#ff4d4f' }"
-                >
-                  {{
-                    item.is_muted
-                      ? t('group.chat.member.action.unmute')
-                      : t('group.chat.member.action.mute')
-                  }}
-                </text>
+              <view
+                v-if="getMemberActionList(item).length > 0"
+                class="member-more-btn"
+                @click.stop="openMemberActionSheet(item)"
+              >
+                ···
               </view>
             </view>
           </view>
@@ -92,10 +85,15 @@
 
         <!-- 普通成员分组 -->
         <view v-show="filteredMemberList.length && !searchKeyword.length" class="group-title">
-          群成员
+          {{ t('group.chat.member.memberGroupTitle') }}
         </view>
         <view class="member-group" v-if="filteredMemberList.length > 0">
-          <view class="member-item" v-for="item in filteredMemberList" :key="item.member_id">
+          <view
+            class="member-item"
+            v-for="item in filteredMemberList"
+            :key="item.member_id"
+            @longpress="handleMemberItemLongpress(item)"
+          >
             <view class="avatar-wrap" @click="handleAvatarClick(item?.member_id)">
               <image :src="item.avatar" class="avatar" />
               <view class="levelIcon">
@@ -116,18 +114,12 @@
                 </view>
               </view>
             </view>
-            <view class="action-texts" v-if="canManageMute(item)">
-              <text
-                class="action-text"
-                @click="handleMuteAction(item)"
-                :style="{ color: item.is_muted ? '#007aff' : '#ff4d4f' }"
-              >
-                {{
-                  item.is_muted
-                    ? t('group.chat.member.action.unmute')
-                    : t('group.chat.member.action.mute')
-                }}
-              </text>
+            <view
+              v-if="getMemberActionList(item).length > 0"
+              class="member-more-btn"
+              @click.stop="openMemberActionSheet(item)"
+            >
+              ···
             </view>
           </view>
         </view>
@@ -145,37 +137,67 @@
     <wd-popup v-model="showMutePopup" position="bottom" :close-on-click-modal="false">
       <view class="mute-popup">
         <view class="popup-header">
-          <text class="popup-title">禁言设置</text>
+          <text class="popup-title">
+            {{
+              muteDialogMode === 'unmute'
+                ? t('group.chat.member.unmuteDialogTitle')
+                : t('group.chat.member.muteDialogTitle')
+            }}
+          </text>
           <view class="close-btn" @click="showMutePopup = false">
             <wd-icon name="close" size="20px"></wd-icon>
           </view>
         </view>
 
         <view class="popup-content">
-          <!-- 禁言原因输入 -->
           <view class="form-item">
-            <text class="label">禁言原因（可选）</text>
-            <wd-input v-model="muteReason" placeholder="请输入禁言原因" clearable maxlength="100" />
+            <text class="label">
+              {{
+                muteDialogMode === 'unmute'
+                  ? t('group.chat.member.unmuteReasonLabel')
+                  : t('group.chat.member.muteReasonLabel')
+              }}
+            </text>
+            <wd-input
+              v-model="muteReason"
+              :placeholder="
+                muteDialogMode === 'unmute'
+                  ? t('group.chat.member.unmuteReasonPlaceholder')
+                  : t('group.chat.member.muteReasonPlaceholder')
+              "
+              clearable
+              maxlength="100"
+            />
           </view>
 
-          <!-- 禁言时间选择 -->
-          <view class="form-item">
-            <text class="label">禁言截止时间</text>
+          <view v-if="muteDialogMode !== 'unmute'" class="form-item">
+            <text class="label">{{ t('group.chat.member.muteUntilLabel') }}</text>
             <wd-calendar
               v-model="muteUntilTimestamp"
               type="datetime"
               :min-date="Date.now()"
-              placeholder="选择禁言截止时间"
+              :placeholder="t('group.chat.member.muteUntilPlaceholder')"
             />
           </view>
         </view>
 
         <view class="popup-footer">
-          <wd-button custom-class="cancel-btn" @click="showMutePopup = false">取消</wd-button>
-          <wd-button type="primary" custom-class="confirm-btn" @click="confirmMute">确定</wd-button>
+          <wd-button custom-class="cancel-btn" @click="showMutePopup = false">
+            {{ t('common.cancel') }}
+          </wd-button>
+          <wd-button type="primary" custom-class="confirm-btn" @click="confirmMute">
+            {{ t('common.confirm') }}
+          </wd-button>
         </view>
       </view>
     </wd-popup>
+    <wd-action-sheet
+      custom-class="messageActionSheet"
+      v-model="memberActionSheetVisible"
+      :actions="memberActionSheetActions"
+      :title="t('group.chat.member.actionSheetTitle')"
+      @select="handleMemberActionSheetSelect"
+    />
   </view>
 </template>
 
@@ -190,6 +212,7 @@ import {
   muteMemberApi,
   unmuteMemberApi,
   updateMemberRoleApi,
+  removeMemberApi,
   ChatMember as ApiChatMember,
 } from '@/service/api/groupChat'
 
@@ -218,6 +241,20 @@ const showMutePopup = ref(false)
 const muteReason = ref('')
 const muteUntilTimestamp = ref<number | null>(null) // 使用时间戳（毫秒）
 const currentMuteMember = ref<ApiChatMember | null>(null)
+const muteDialogMode = ref<'mute' | 'unmute'>('mute')
+const selectedMemberActionTarget = ref<ApiChatMember | null>(null)
+const memberActionSheetVisible = ref(false)
+type MemberActionType = 'setAdmin' | 'removeAdmin' | 'mute' | 'unmute' | 'kick'
+type MemberActionItem = {
+  key: MemberActionType
+  label: string
+  destructive?: boolean
+}
+type ActionSheetAction = {
+  name: string
+  color?: string
+  key?: MemberActionType
+}
 
 // 管理员列表（role: founder, moderator）
 const adminList = ref<ApiChatMember[]>([])
@@ -237,13 +274,117 @@ const filteredMemberList = computed(() => {
   })
 })
 
-const canManageAdminRole = (item: ApiChatMember) => {
-  return !item?.is_self && item?.role === 'moderator' && currentUserRole.value === 'founder'
+const normalizeMemberRole = (role?: string) => {
+  switch (role) {
+    case 'founder':
+    case 'owner':
+      return 'owner'
+    case 'host':
+      return 'host'
+    case 'moderator':
+    case 'admin':
+      return 'admin'
+    default:
+      return 'member'
+  }
+}
+
+const getRoleRank = (role?: string) => {
+  const normalizedRole = normalizeMemberRole(role)
+  if (normalizedRole === 'owner') return 3
+  if (normalizedRole === 'host') return 2
+  if (normalizedRole === 'admin') return 1
+  return 0
+}
+
+const canOperateTargetMember = (item: ApiChatMember) => {
+  if (!item || item.is_self) return false
+
+  const currentRank = getRoleRank(currentUserRole.value)
+  const targetRank = getRoleRank(item.role)
+
+  if (currentRank <= 0) return false
+  if (currentRank === 3) return true
+  return currentRank > targetRank
+}
+
+const canManageRole = (item: ApiChatMember) => {
+  if (!canOperateTargetMember(item)) return false
+
+  const currentRank = getRoleRank(currentUserRole.value)
+  const targetRole = normalizeMemberRole(item.role)
+  if (currentRank < 2) return false
+
+  return targetRole === 'member' || targetRole === 'admin'
 }
 
 const canManageMute = (item: ApiChatMember) => {
-  return !item?.is_self && item?.role === 'moderator' && currentUserRole.value === 'founder'
+  if (!canOperateTargetMember(item)) return false
+
+  const currentRank = getRoleRank(currentUserRole.value)
+  const targetRole = normalizeMemberRole(item.role)
+
+  if (currentRank === 1) {
+    return targetRole === 'member'
+  }
+
+  return currentRank >= 2
 }
+
+const canKickMember = (item: ApiChatMember) => {
+  return canOperateTargetMember(item)
+}
+
+const getMemberActionList = (item: ApiChatMember): MemberActionItem[] => {
+  const actionList: MemberActionItem[] = []
+  const targetRole = normalizeMemberRole(item.role)
+
+  if (canManageRole(item) && targetRole === 'member') {
+    actionList.push({
+      key: 'setAdmin',
+      label: t('group.chat.member.action.setAdmin'),
+    })
+  }
+
+  if (canManageRole(item) && targetRole === 'admin') {
+    actionList.push({
+      key: 'removeAdmin',
+      label: t('group.chat.member.action.removeAdmin'),
+    })
+  }
+
+  if (canManageMute(item)) {
+    actionList.push({
+      key: item.is_muted ? 'unmute' : 'mute',
+      label: item.is_muted
+        ? t('group.chat.member.action.unmute')
+        : t('group.chat.member.action.mute'),
+    })
+  }
+
+  if (canKickMember(item)) {
+    actionList.push({
+      key: 'kick',
+      label: t('group.chat.member.action.kick'),
+      destructive: true,
+    })
+  }
+
+  return actionList
+}
+
+const canUseMemberLongpress = computed(() => getRoleRank(currentUserRole.value) > 0)
+
+const memberActionSheetActions = computed<ActionSheetAction[]>(() => {
+  const targetMember = selectedMemberActionTarget.value
+  if (!targetMember) return []
+
+  return getMemberActionList(targetMember).map((action) => ({
+    name: action.label,
+    // color: action.destructive ? '#ff4d4f' : undefined,
+    key: action.key,
+  }))
+})
 
 onLoad((options: any) => {
   roomCode.value = options?.code || ''
@@ -305,7 +446,7 @@ const loadMembers = async () => {
     }
   } catch (error) {
     console.error('loadMembers error:', error)
-    toast.show('加载成员列表失败')
+    toast.show(t('group.chat.member.loadMembersFailed'))
     adminList.value = []
     memberList.value = []
   }
@@ -319,63 +460,102 @@ const handleAvatarClick = (userId: string | number) => {
 }
 
 // 管理员操作
-const handleAdminAction = async (item: ApiChatMember) => {
+const handleAdminAction = async (item: ApiChatMember, nextRole: 'moderator' | 'member') => {
   const roomId = routeRoomId.value
   if (!roomId) {
-    toast.show('房间信息加载中')
+    toast.show(t('group.chat.member.roomInfoLoading'))
     return
   }
 
   try {
     uni.showLoading()
-    const role = item.role === 'moderator' ? 'member' : 'moderator'
-    const res = await updateMemberRoleApi(roomId, item.member_id, role)
+    const res = await updateMemberRoleApi(roomId, item.member_id, nextRole)
     uni.hideLoading()
     if (res.code === 1) {
       await loadMembers()
     } else {
-      uni.showToast({ title: res.msg || '操作失败', icon: 'none' })
+      uni.showToast({ title: res.msg || t('common.operationFailed'), icon: 'none' })
     }
   } catch (error) {
     uni.hideLoading()
     console.error('handleAdminAction error:', error)
-    uni.showToast({ title: '操作失败，请重试', icon: 'none' })
+    uni.showToast({ title: t('common.operationFailedRetry'), icon: 'none' })
   }
 }
 
 // 禁言操作
 const handleMuteAction = async (item: ApiChatMember) => {
-  const roomId = routeRoomId.value
-
-  // 如果是解除禁言，直接执行
   if (item.is_muted) {
-    try {
-      uni.showLoading()
-      const res = await unmuteMemberApi(roomId, item.member_id)
-      uni.hideLoading()
-
-      if (res.code === 1) {
-        await loadMembers()
-
-        if (item.member_id === userStore.userInfo?.member_id) {
-          canSpeak.value = !item.is_muted
-        }
-      } else {
-        uni.showToast({ title: res.msg || '操作失败', icon: 'none' })
-      }
-    } catch (error) {
-      uni.hideLoading()
-      console.error('handleMuteAction error:', error)
-      uni.showToast({ title: '操作失败，请重试', icon: 'none' })
-    }
+    currentMuteMember.value = item
+    muteDialogMode.value = 'unmute'
+    muteReason.value = ''
+    muteUntilTimestamp.value = null
+    showMutePopup.value = true
     return
   }
 
-  // 禁言操作：显示弹窗
   currentMuteMember.value = item
+  muteDialogMode.value = 'mute'
   muteReason.value = ''
   muteUntilTimestamp.value = null
   showMutePopup.value = true
+}
+
+const handleKickMember = async (item: ApiChatMember) => {
+  const roomId = routeRoomId.value
+  if (!roomId) return
+
+  try {
+    uni.showLoading()
+    const res = await removeMemberApi(roomId, item.member_id)
+    uni.hideLoading()
+    if (res.code === 1) {
+      await loadMembers()
+      return
+    }
+    uni.showToast({ title: res.msg || t('common.operationFailed'), icon: 'none' })
+  } catch (error) {
+    uni.hideLoading()
+    console.error('handleKickMember error:', error)
+    uni.showToast({ title: t('common.operationFailedRetry'), icon: 'none' })
+  }
+}
+
+const openMemberActionSheet = (item: ApiChatMember) => {
+  if (getMemberActionList(item).length === 0) return
+  selectedMemberActionTarget.value = item
+  memberActionSheetVisible.value = true
+}
+
+const handleMemberItemLongpress = (item: ApiChatMember) => {
+  if (!canUseMemberLongpress.value) return
+  openMemberActionSheet(item)
+}
+
+const handleMemberActionSheetSelect = async ({ item }: { item: ActionSheetAction }) => {
+  const targetMember = selectedMemberActionTarget.value
+  if (!targetMember || !item?.key) return
+
+  memberActionSheetVisible.value = false
+
+  if (item.key === 'setAdmin') {
+    await handleAdminAction(targetMember, 'moderator')
+    return
+  }
+
+  if (item.key === 'removeAdmin') {
+    await handleAdminAction(targetMember, 'member')
+    return
+  }
+
+  if (item.key === 'mute' || item.key === 'unmute') {
+    await handleMuteAction(targetMember)
+    return
+  }
+
+  if (item.key === 'kick') {
+    await handleKickMember(targetMember)
+  }
 }
 
 // 确认禁言
@@ -384,6 +564,35 @@ const confirmMute = async () => {
 
   const roomId = routeRoomId.value
   const reason = muteReason.value.trim()
+
+  if (muteDialogMode.value === 'unmute') {
+    if (!reason) {
+      toast.show(t('group.chat.member.unmuteReasonRequired'))
+      return
+    }
+
+    try {
+      uni.showLoading()
+      const result = await unmuteMemberApi(roomId, currentMuteMember.value.member_id, reason)
+      uni.hideLoading()
+
+      if (result.code === 1) {
+        showMutePopup.value = false
+        await loadMembers()
+
+        if (currentMuteMember.value.member_id === userStore.userInfo?.member_id) {
+          canSpeak.value = true
+        }
+      } else {
+        uni.showToast({ title: result.msg || t('common.operationFailed'), icon: 'none' })
+      }
+    } catch (error) {
+      uni.hideLoading()
+      console.error('confirmUnmute error:', error)
+      uni.showToast({ title: t('common.operationFailedRetry'), icon: 'none' })
+    }
+    return
+  }
 
   // 计算禁言截止时间戳（秒）
   let muteUntil: number
@@ -405,12 +614,12 @@ const confirmMute = async () => {
       await loadMembers()
       // uni.showToast({ title: '禁言成功', icon: 'success' })
     } else {
-      uni.showToast({ title: result.msg || '操作失败', icon: 'none' })
+      uni.showToast({ title: result.msg || t('common.operationFailed'), icon: 'none' })
     }
   } catch (error) {
     uni.hideLoading()
     console.error('confirmMute error:', error)
-    uni.showToast({ title: '操作失败，请重试', icon: 'none' })
+    uni.showToast({ title: t('common.operationFailedRetry'), icon: 'none' })
   }
 }
 </script>
@@ -518,6 +727,17 @@ const confirmMute = async () => {
     padding: 12rpx;
     border-radius: 12rpx;
   }
+}
+
+.member-more-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 72rpx;
+  height: 72rpx;
+  font-size: 44rpx;
+  line-height: 1;
+  color: #1f1f1f;
 }
 .group-title {
   padding: 24rpx;
@@ -661,6 +881,11 @@ const confirmMute = async () => {
     :deep(.confirm-btn) {
       flex: 1;
     }
+  }
+}
+::v-deep .messageActionSheet {
+  .wd-action-sheet__action {
+    text-align: left;
   }
 }
 </style>
