@@ -73,7 +73,7 @@
                   <view class="socialBtnIcon quote"></view>
                   <view class="socialBtn">{{ postDetail.commit_count }}</view>
                 </view>
-                <view class="socialBtnBox" @click="likePost(postDetail.id)">
+                <view class="socialBtnBox" @click="likePost(postId)">
                   <view class="zanWrapper">
                     <image
                       class="Icon"
@@ -961,12 +961,18 @@ onReachBottom(() => {
 
 // 点赞
 const likePost = (id: number) => {
+  const realId = id || postId.value
+
   if (userStore.isLogin === false) {
     toUrl('/pages/cats/login', true)
     return
   }
+  if (!realId) {
+    console.log('帖子ID为空，取消点赞')
+    return
+  }
   // uni.showLoading()
-  likePostApi(id)
+  likePostApi(realId)
     .then((res) => {
       if (res.code !== 1) {
         toast.show(res.msg || t('common.error'))

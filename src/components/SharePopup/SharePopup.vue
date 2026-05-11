@@ -83,23 +83,15 @@ const handleShareClick = async (type: 'discord' | 'X' | 'copy') => {
   const post = currentSharePost.value
   if (!post.id) return
   try {
-    if (type === 'X') {
-      let cardUrl = ''
-      if (post.images.length > 0) {
-        cardUrl =
-          import.meta.env.VITE_SERVER_BASEURL + '/v1/community/post/share-to-twitter?id=' + post.id
-      }
-      let xUrl = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(post.content)
-      if (cardUrl) xUrl += '&url=' + encodeURIComponent(cardUrl)
-      openUrl(xUrl)
-      return
-    }
     const res = await getPostShareCopy({
       id: post.id,
       locale: getShareLocale(),
     })
     const shareText = res?.data?.text
     const shareUrl = res?.data?.url
+    const discordText = res?.data?.discordText
+    const twitterText = res?.data?.twitterText
+    const text = res?.data?.text
 
     if (!shareText) {
       uni.showToast({
@@ -110,36 +102,44 @@ const handleShareClick = async (type: 'discord' | 'X' | 'copy') => {
     }
 
     switch (type) {
+      case 'X': {
+        let cardUrl = ''
+        if (post.images.length > 0) {
+          cardUrl =
+            import.meta.env.VITE_SERVER_BASEURL +
+            '/v1/community/post/share-to-twitter?id=' +
+            post.id
+        }
+        const xText = twitterText || shareText
+        let xUrl = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(xText)
+        if (cardUrl) {
+          xUrl += '&url=' + encodeURIComponent(cardUrl)
+        }
+        openUrl(xUrl)
+        break
+      }
       case 'discord': {
         uni.setClipboardData({
-          data: shareText,
+          data: discordText || shareText,
           showToast: false,
           success: () => {
-            uni.showToast({
-              title: t('common.copySuccess'),
-              icon: 'success',
-            })
-
             setTimeout(() => {
               openUrl('https://discord.com/channels/@me')
             }, 300)
           },
         })
-
         break
       }
-
       case 'copy': {
         uni.setClipboardData({
-          data: shareUrl,
+          data: text || shareText,
           success: () => {
             uni.showToast({
-              title: t('common.copySuccess'),
+              title: t('common.copied'),
               icon: 'success',
             })
           },
         })
-
         break
       }
     }
