@@ -222,6 +222,8 @@ export interface PostShareCopyData {
   url: string
   guide: string
   text: string
+  discordText: string
+  twitterText: string
 }
 
 export interface PostShareCopyResponse {
