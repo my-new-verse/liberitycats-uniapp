@@ -1620,9 +1620,6 @@ const handleRealtimeEvent = async (eventName: string, payload: any) => {
 
   if (normalizedEventName === 'message.created' || normalizedEventName === 'GroupMessageEvent') {
     if (message?.id) {
-      if (shouldBackfillByRoomSeq(message)) {
-        await backfillMissingMessagesByRoomSeq(message)
-      }
       const is_self = message.sender?.member_id === userStore.userInfo.member_id
       if (!is_self) {
         bumpPendingRealtimeMessageIndicator()

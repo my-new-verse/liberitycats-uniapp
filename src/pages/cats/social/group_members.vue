@@ -842,10 +842,14 @@ const confirmMute = async () => {
 
 .page {
   background-color: var(--liberty-cats-page-background-color);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 
   .cnt {
     padding: 40rpx 0;
     flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
@@ -928,13 +932,18 @@ const confirmMute = async () => {
 .member-list-page {
   flex: 1;
   height: 0;
+  min-height: 0;
   // padding: 20rpx 30rpx;
   box-sizing: border-box;
   width: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .member-scroll {
-  height: 100%;
+  flex: 1;
+  height: 0;
+  min-height: 0;
 }
 
 .search-bar {
