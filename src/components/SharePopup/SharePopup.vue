@@ -103,18 +103,8 @@ const handleShareClick = async (type: 'discord' | 'X' | 'copy') => {
 
     switch (type) {
       case 'X': {
-        let cardUrl = ''
-        if (post.images.length > 0) {
-          cardUrl =
-            import.meta.env.VITE_SERVER_BASEURL +
-            '/v1/community/post/share-to-twitter?id=' +
-            post.id
-        }
         const xText = twitterText || shareText
-        let xUrl = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(xText)
-        if (cardUrl) {
-          xUrl += '&url=' + encodeURIComponent(cardUrl)
-        }
+        const xUrl = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(xText)
         openUrl(xUrl)
         break
       }
