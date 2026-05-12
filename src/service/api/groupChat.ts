@@ -53,10 +53,16 @@ export interface ChatMember {
   member_id: number
   nickname: string
   avatar: string
-  role: 'owner' | 'admin' | 'member'
+  role: 'founder' | 'owner' | 'host' | 'moderator' | 'admin' | 'member'
   join_time: number
   is_muted: 0 | 1
   mute_until?: number
+  is_self?: boolean
+  level?: {
+    level: number
+    name?: string
+    icon?: string
+  }
 }
 
 export interface ChatMembersResponse {
@@ -121,6 +127,7 @@ export interface ChatMessageSender {
   nickname: string
   avatar: string
   role: string
+  member_status?: number
 }
 
 export interface ChatMessagePlaceholder {
@@ -264,14 +271,24 @@ export const getChatRoomMembersApi = (
   roomId: number,
   roleFilter?: string,
   page?: number,
-  pageSize?: number,
+  limit?: number,
+  keyword?: string,
 ) => {
-  return http.get<ChatMembersResponse>('/v1/community/chat/room/members', {
+  const params: Record<string, any> = {
     room_id: roomId,
-    role_filter: roleFilter || 'member',
     page: page || 1,
-    page_size: pageSize || 50,
-  })
+    limit: limit || 30,
+  }
+
+  if (typeof roleFilter === 'string' && roleFilter.trim()) {
+    params.role_filter = roleFilter.trim()
+  }
+
+  if (keyword && keyword.trim()) {
+    params.keyword = keyword.trim()
+  }
+
+  return http.get<ChatMembersResponse>('/v1/community/chat/room/members', params)
 }
 
 export const joinChatRoomApi = (roomId: number) => {
@@ -280,18 +297,34 @@ export const joinChatRoomApi = (roomId: number) => {
   })
 }
 
-export const muteMemberApi = (roomId: number, memberId: number, muteUntil: number = 0) => {
-  return http.post<{ success: boolean }>('/v1/community/chat/governance/mute-member', {
+export const muteMemberApi = (
+  roomId: number,
+  memberId: number,
+  muteUntil: number = 0,
+  reason?: string,
+) => {
+  return http.post<{
+    room_id: number
+    member_id: number
+    muted_until: number
+    status: number
+  }>('/v1/community/chat/member/mute', {
     room_id: roomId,
     member_id: memberId,
     mute_until: muteUntil,
+    reason,
   })
 }
 
-export const unmuteMemberApi = (roomId: number, memberId: number) => {
-  return http.post<{ success: boolean }>('/v1/community/chat/governance/unmute-member', {
+export const unmuteMemberApi = (roomId: number, memberId: number, reason?: string) => {
+  return http.post<{
+    room_id: number
+    member_id: number
+    status: number
+  }>('/v1/community/chat/member/unmute', {
     room_id: roomId,
     member_id: memberId,
+    reason,
   })
 }
 
@@ -300,12 +333,28 @@ export const updateMemberRoleApi = (
   memberId: number,
   role: 'moderator' | 'member',
 ) => {
-  console.log('memberId', memberId)
-
-  return http.post<{ success: boolean }>('/v1/community/chat/governance/update-member-role', {
+  return http.post<{
+    room_id: number
+    member_id: number
+    old_role: string
+    new_role: string
+    status: number
+  }>('/v1/community/chat/member/set-role', {
     room_id: roomId,
     member_id: memberId,
     role,
+  })
+}
+
+export const removeMemberApi = (roomId: number, memberId: number, reason?: string) => {
+  return http.post<{
+    room_id: number
+    member_id: number
+    status: number
+  }>('/v1/community/chat/member/kick', {
+    room_id: roomId,
+    member_id: memberId,
+    reason,
   })
 }
 
@@ -389,5 +438,18 @@ export const reactChatMessageApi = (
     reaction_type: reactionType,
     reaction_value: reactionValue,
     action,
+  })
+}
+
+export interface DeleteChatMessageResponse {
+  message_id: number
+  room_id: number
+  status: number
+}
+
+export const deleteChatMessageApi = (messageId: number, reason?: string) => {
+  return http.post<DeleteChatMessageResponse>('/v1/community/chat/message/delete', {
+    message_id: messageId,
+    reason,
   })
 }

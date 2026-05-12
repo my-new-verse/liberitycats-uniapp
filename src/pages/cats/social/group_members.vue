@@ -4,6 +4,7 @@
   style: {
     navigationStyle: 'custom',
     backgroundColor: '#f7f6f4',
+    onReachBottomDistance: 80,
   },
 }
 </route>
@@ -40,22 +41,65 @@
             :placeholder="$t('group.chat.member.searchPlaceholder')"
           />
         </view>
-        <view v-show="!searchKeyword.length">
-          <!-- 管理员分组 -->
-          <view v-if="adminList.length > 0" class="group-title">
-            {{ t('group.chat.member.adminGroupTitle') }}
+        <scroll-view
+          class="member-scroll"
+          scroll-y
+          lower-threshold="80"
+          @scrolltolower="handleMemberScrollToLower"
+        >
+          <template v-if="!isSearching">
+            <!-- 管理员分组 -->
+            <view v-if="adminList.length > 0" class="group-title">
+              {{ t('group.chat.member.adminGroupTitle') }}
+            </view>
+            <view v-if="adminList.length" class="member-group">
+              <view
+                class="member-item"
+                v-for="item in adminList"
+                :key="item.member_id"
+                @longpress="handleMemberItemLongpress(item)"
+              >
+                <view class="avatar-wrap" @click="handleAvatarClick(item?.member_id)">
+                  <image :src="item.avatar" class="avatar" lazy-load />
+                  <view class="levelIcon">
+                    <image :src="item.levelIconSrc" mode="widthFix" lazy-load />
+                  </view>
+                </view>
+                <view class="member-info">
+                  <view class="member-name" @click="handleAvatarClick(item?.member_id)">
+                    {{ item.nickname }}
+                    <!-- 静音标识 -->
+                    <view class="mute-badge" v-if="item.is_muted">
+                      <image src="/static/images/silenced.png" mode="widthFix" lazy-load />
+                    </view>
+                  </view>
+                </view>
+                <view
+                  v-if="item.hasActions"
+                  class="member-more-btn"
+                  @click.stop="openMemberActionSheet(item)"
+                >
+                  ···
+                </view>
+              </view>
+            </view>
+          </template>
+
+          <!-- 普通成员分组 -->
+          <view v-if="filteredMemberList.length && !isSearching" class="group-title">
+            {{ t('group.chat.member.memberGroupTitle') }}
           </view>
-          <view v-if="adminList.length" class="member-group">
+          <view class="member-group" v-if="filteredMemberList.length > 0">
             <view
               class="member-item"
-              v-for="item in adminList"
+              v-for="item in filteredMemberList"
               :key="item.member_id"
               @longpress="handleMemberItemLongpress(item)"
             >
               <view class="avatar-wrap" @click="handleAvatarClick(item?.member_id)">
-                <image :src="item.avatar" class="avatar" />
+                <image :src="item.avatar" class="avatar" lazy-load />
                 <view class="levelIcon">
-                  <image :src="`/static/images/level/${item.level.level}.png`" mode="widthFix" />
+                  <image :src="item.levelIconSrc" mode="widthFix" lazy-load />
                 </view>
               </view>
               <view class="member-info">
@@ -63,17 +107,12 @@
                   {{ item.nickname }}
                   <!-- 静音标识 -->
                   <view class="mute-badge" v-if="item.is_muted">
-                    <wd-img
-                      src="/src/static/images/silenced.png"
-                      mode="widthFix"
-                      :width="22"
-                      :height="22"
-                    ></wd-img>
+                    <image src="/static/images/silenced.png" mode="widthFix" lazy-load />
                   </view>
                 </view>
               </view>
               <view
-                v-if="getMemberActionList(item).length > 0"
+                v-if="item.hasActions"
                 class="member-more-btn"
                 @click.stop="openMemberActionSheet(item)"
               >
@@ -81,55 +120,21 @@
               </view>
             </view>
           </view>
-        </view>
 
-        <!-- 普通成员分组 -->
-        <view v-show="filteredMemberList.length && !searchKeyword.length" class="group-title">
-          {{ t('group.chat.member.memberGroupTitle') }}
-        </view>
-        <view class="member-group" v-if="filteredMemberList.length > 0">
-          <view
-            class="member-item"
-            v-for="item in filteredMemberList"
-            :key="item.member_id"
-            @longpress="handleMemberItemLongpress(item)"
-          >
-            <view class="avatar-wrap" @click="handleAvatarClick(item?.member_id)">
-              <image :src="item.avatar" class="avatar" />
-              <view class="levelIcon">
-                <image :src="`/static/images/level/${item.level.level}.png`" mode="widthFix" />
-              </view>
-            </view>
-            <view class="member-info">
-              <view class="member-name" @click="handleAvatarClick(item?.member_id)">
-                {{ item.nickname }}
-                <!-- 静音标识 -->
-                <view class="mute-badge" v-if="item.is_muted">
-                  <wd-img
-                    src="/src/static/images/silenced.png"
-                    mode="widthFix"
-                    :width="22"
-                    :height="22"
-                  ></wd-img>
-                </view>
-              </view>
-            </view>
-            <view
-              v-if="getMemberActionList(item).length > 0"
-              class="member-more-btn"
-              @click.stop="openMemberActionSheet(item)"
-            >
-              ···
-            </view>
-          </view>
-        </view>
+          <wd-loadmore v-if="memberLoadingMore" custom-class="loadmore" state="loading" />
+          <wd-loadmore
+            v-else-if="!memberHasMore && filteredMemberList.length > 0"
+            custom-class="loadmore"
+            state="finished"
+          />
 
-        <!-- 搜索无结果提示 -->
-        <template v-if="filteredMemberList.length === 0">
-          <view class="emptyBox">
-            <view class="emptyImg"></view>
-          </view>
-        </template>
+          <!-- 搜索无结果提示 -->
+          <template v-if="!memberLoading && filteredMemberList.length === 0">
+            <view class="emptyBox">
+              <view class="emptyImg"></view>
+            </view>
+          </template>
+        </scroll-view>
       </view>
     </view>
 
@@ -166,7 +171,7 @@
                   : t('group.chat.member.muteReasonPlaceholder')
               "
               clearable
-              maxlength="100"
+              :maxlength="100"
             />
           </view>
 
@@ -193,22 +198,50 @@
     </wd-popup>
     <wd-action-sheet
       custom-class="messageActionSheet"
+      custom-style="margin: 0 10px calc(var(--window-bottom) + 10px) 10px; border-radius: 16px; background: #fff;"
       v-model="memberActionSheetVisible"
-      :actions="memberActionSheetActions"
       :title="t('group.chat.member.actionSheetTitle')"
-      @select="handleMemberActionSheetSelect"
-    />
+    >
+      <view class="action-sheet-slot">
+        <view
+          v-for="(item, index) in memberActionSheetActions"
+          :key="`${item.key || 'action'}-${index}`"
+          class="action-sheet-item"
+          :class="{ destructive: item.destructive }"
+          @click="handleMemberActionSheetItemClick(item)"
+        >
+          <view class="action-sheet-item-content">
+            <wd-icon
+              v-if="item.iconName"
+              :name="item.iconName"
+              :size="item.iconSize || '38rpx'"
+              class="action-sheet-item-icon"
+            />
+            <image
+              v-else-if="item.iconSrc"
+              :src="item.iconSrc"
+              mode="aspectFit"
+              class="action-sheet-item-image"
+            />
+            <view v-else class="action-sheet-item-icon-placeholder"></view>
+            <text class="action-sheet-item-text">{{ item.name }}</text>
+          </view>
+        </view>
+      </view>
+    </wd-action-sheet>
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/store'
 import { getImageUrl } from '@/utils'
 import { useToast } from 'wot-design-uni'
+import { debounce } from 'lodash-es'
 import {
   getChatRoomMembersApi,
+  ChatMembersResponse,
   muteMemberApi,
   unmuteMemberApi,
   updateMemberRoleApi,
@@ -235,6 +268,10 @@ const cntPaddingTop = ref<number>(0)
 
 // 搜索关键词
 const searchKeyword = ref('')
+const MEMBER_PAGE_LIMIT = 30
+const MEMBER_SEARCH_LIMIT = 20
+const GROUP_MEMBERS_REFRESH_EVENT = 'group_members:refresh'
+const GROUP_CHAT_REFRESH_SENDERS_EVENT = 'group_chat:refresh_message_senders'
 
 // 禁言弹窗相关状态
 const showMutePopup = ref(false)
@@ -242,7 +279,7 @@ const muteReason = ref('')
 const muteUntilTimestamp = ref<number | null>(null) // 使用时间戳（毫秒）
 const currentMuteMember = ref<ApiChatMember | null>(null)
 const muteDialogMode = ref<'mute' | 'unmute'>('mute')
-const selectedMemberActionTarget = ref<ApiChatMember | null>(null)
+const selectedMemberActionTarget = ref<MemberDisplayItem | null>(null)
 const memberActionSheetVisible = ref(false)
 type MemberActionType = 'setAdmin' | 'removeAdmin' | 'mute' | 'unmute' | 'kick'
 type MemberActionItem = {
@@ -250,29 +287,41 @@ type MemberActionItem = {
   label: string
   destructive?: boolean
 }
+type MemberDisplayItem = ApiChatMember & {
+  actionList: MemberActionItem[]
+  hasActions: boolean
+  levelIconSrc: string
+}
 type ActionSheetAction = {
   name: string
   color?: string
   key?: MemberActionType
+  iconName?: string
+  iconSrc?: string
+  iconSize?: string
+  destructive?: boolean
 }
 
 // 管理员列表（role: founder, moderator）
-const adminList = ref<ApiChatMember[]>([])
+const adminList = ref<MemberDisplayItem[]>([])
 
 // 普通成员列表（role: member）
-const memberList = ref<ApiChatMember[]>([])
+const memberList = ref<MemberDisplayItem[]>([])
+const memberCurrentPage = ref(1)
+const memberLastPage = ref(1)
+const memberHasMore = ref(true)
+const memberLoading = ref(false)
+const memberLoadingMore = ref(false)
+const memberLoadRequestId = ref(0)
+const cachedAdminList = ref<MemberDisplayItem[]>([])
+const cachedMemberList = ref<MemberDisplayItem[]>([])
+const cachedMemberCurrentPage = ref(1)
+const cachedMemberLastPage = ref(1)
+const cachedMemberHasMore = ref(true)
+const hasDefaultMemberCache = ref(false)
 
-// 搜索过滤后的普通成员列表
-const filteredMemberList = computed(() => {
-  if (!searchKeyword.value.trim()) {
-    return memberList.value
-  }
-
-  const keyword = searchKeyword.value.trim().toLowerCase()
-  return memberList.value.filter((member) => {
-    return member.nickname?.toLowerCase().includes(keyword)
-  })
-})
+const filteredMemberList = computed(() => memberList.value)
+const isSearching = computed(() => !!searchKeyword.value.trim())
 
 const normalizeMemberRole = (role?: string) => {
   switch (role) {
@@ -335,7 +384,7 @@ const canKickMember = (item: ApiChatMember) => {
   return canOperateTargetMember(item)
 }
 
-const getMemberActionList = (item: ApiChatMember): MemberActionItem[] => {
+const buildMemberActionList = (item: ApiChatMember): MemberActionItem[] => {
   const actionList: MemberActionItem[] = []
   const targetRole = normalizeMemberRole(item.role)
 
@@ -374,17 +423,156 @@ const getMemberActionList = (item: ApiChatMember): MemberActionItem[] => {
 }
 
 const canUseMemberLongpress = computed(() => getRoleRank(currentUserRole.value) > 0)
+const MEMBER_ACTION_ADMIN_ICON = '/static/images/add_administrator.png'
+const MEMBER_ACTION_MUTE_ICON = '/static/images/mute_1.png'
 
 const memberActionSheetActions = computed<ActionSheetAction[]>(() => {
   const targetMember = selectedMemberActionTarget.value
   if (!targetMember) return []
 
-  return getMemberActionList(targetMember).map((action) => ({
+  return targetMember.actionList.map((action) => ({
     name: action.label,
-    // color: action.destructive ? '#ff4d4f' : undefined,
     key: action.key,
+    destructive: action.destructive,
+    iconName: action.key === 'kick' ? 'user-clear' : undefined,
+    iconSrc:
+      action.key === 'setAdmin' || action.key === 'removeAdmin'
+        ? MEMBER_ACTION_ADMIN_ICON
+        : action.key === 'mute' || action.key === 'unmute'
+          ? MEMBER_ACTION_MUTE_ICON
+          : undefined,
   }))
 })
+
+const normalizeMemberList = (memberData: ApiChatMember[] = []): MemberDisplayItem[] => {
+  return memberData.map((item: ApiChatMember) => {
+    const normalizedItem = {
+      ...item,
+      is_self: item.member_id === userStore.userInfo?.member_id,
+    } as ApiChatMember
+    const actionList = buildMemberActionList(normalizedItem)
+
+    return {
+      ...normalizedItem,
+      actionList,
+      hasActions: actionList.length > 0,
+      levelIconSrc: `/static/images/level/${normalizedItem.level?.level || 0}.png`,
+    }
+  })
+}
+
+const getMemberSearchKeyword = () => {
+  const keyword = searchKeyword.value.trim()
+  return keyword || undefined
+}
+
+const loadAdminMembers = async () => {
+  const roomId = routeRoomId.value
+  if (!roomId) return
+
+  const adminRes = await getChatRoomMembersApi(roomId, 'moderator', 1, MEMBER_PAGE_LIMIT)
+  if (adminRes.code === 1 && adminRes.data.data) {
+    adminList.value = normalizeMemberList(adminRes.data.data)
+    if (!isSearching.value) {
+      cachedAdminList.value = [...adminList.value]
+      hasDefaultMemberCache.value = true
+    }
+    return
+  }
+
+  adminList.value = []
+  if (!isSearching.value) {
+    cachedAdminList.value = []
+  }
+}
+
+const applyMemberPageResult = (responseData: ChatMembersResponse, reset = false) => {
+  const nextMembers = normalizeMemberList(responseData?.data || [])
+  memberCurrentPage.value = Number(responseData?.current_page || 1)
+  memberLastPage.value = Number(responseData?.last_page || 1)
+  memberHasMore.value = memberCurrentPage.value < memberLastPage.value
+  memberList.value = reset ? nextMembers : [...memberList.value, ...nextMembers]
+
+  if (!isSearching.value) {
+    cachedMemberList.value = [...memberList.value]
+    cachedMemberCurrentPage.value = memberCurrentPage.value
+    cachedMemberLastPage.value = memberLastPage.value
+    cachedMemberHasMore.value = memberHasMore.value
+    hasDefaultMemberCache.value = true
+  }
+}
+
+const loadMemberPage = async (reset = false) => {
+  console.time()
+  const roomId = routeRoomId.value
+  if (!roomId) return
+  if (!reset && (memberLoading.value || memberLoadingMore.value)) return
+
+  const nextPage = reset ? 1 : memberCurrentPage.value + 1
+  const keyword = getMemberSearchKeyword()
+  const roleFilter = keyword ? undefined : 'member'
+  const requestLimit = keyword ? MEMBER_SEARCH_LIMIT : MEMBER_PAGE_LIMIT
+  if (!reset && !memberHasMore.value) return
+  const currentRequestId = ++memberLoadRequestId.value
+
+  if (reset) {
+    memberLoading.value = true
+  } else {
+    memberLoadingMore.value = true
+  }
+
+  try {
+    console.timeEnd()
+
+    const memberRes = await getChatRoomMembersApi(
+      roomId,
+      roleFilter,
+      nextPage,
+      requestLimit,
+      keyword,
+    )
+    if (currentRequestId !== memberLoadRequestId.value) return
+
+    if (memberRes.code === 1 && memberRes.data) {
+      applyMemberPageResult(memberRes.data, reset)
+      return
+    }
+
+    if (reset) {
+      memberList.value = []
+      memberCurrentPage.value = 1
+      memberLastPage.value = 1
+      memberHasMore.value = false
+    }
+    console.error('load members page failed:', memberRes.msg)
+  } finally {
+    if (currentRequestId === memberLoadRequestId.value) {
+      memberLoading.value = false
+      memberLoadingMore.value = false
+    }
+  }
+}
+
+const reloadCurrentMemberLists = async () => {
+  if (!searchKeyword.value.trim()) {
+    await loadAdminMembers()
+  }
+  await loadMemberPage(true)
+}
+
+const restoreDefaultMemberCache = () => {
+  if (!hasDefaultMemberCache.value) return false
+
+  adminList.value = [...cachedAdminList.value]
+  memberList.value = [...cachedMemberList.value]
+  memberCurrentPage.value = cachedMemberCurrentPage.value
+  memberLastPage.value = cachedMemberLastPage.value
+  memberHasMore.value = cachedMemberHasMore.value
+  memberLoading.value = false
+  memberLoadingMore.value = false
+  memberLoadRequestId.value += 1
+  return true
+}
 
 onLoad((options: any) => {
   roomCode.value = options?.code || ''
@@ -405,7 +593,8 @@ onMounted(() => {
   cntPaddingTop.value = navHeight.value
 
   // 加载成员列表
-  loadMembers()
+  uni.$on(GROUP_MEMBERS_REFRESH_EVENT, handleGroupMembersRefreshEvent)
+  void reloadCurrentMemberLists()
 })
 
 // 返回上一页
@@ -413,37 +602,16 @@ const navigateBack = () => {
   uni.navigateBack({ delta: 1 })
 }
 
+const notifyGroupChatRefreshSenders = () => {
+  const roomId = Number(routeRoomId.value || 0)
+  if (!roomId) return
+  uni.$emit(GROUP_CHAT_REFRESH_SENDERS_EVENT, { roomId })
+}
+
 // 加载群成员列表
 const loadMembers = async () => {
-  const roomId = routeRoomId.value
-  if (!roomId) return
-
   try {
-    // 并发请求：获取管理员（founder, moderator）和普通成员（member）
-    const [adminRes, memberRes] = await Promise.all([
-      getChatRoomMembersApi(roomId, 'moderator'), // 获取管理员和群主
-      getChatRoomMembersApi(roomId), // 获取普通成员
-    ])
-    // 处理管理员列表
-    if (adminRes.code === 1 && adminRes.data.data) {
-      adminList.value = adminRes.data.data.map((item: ApiChatMember) => {
-        item.is_self = item.member_id === userStore.userInfo?.member_id
-        return item
-      })
-    } else {
-      adminList.value = []
-    }
-
-    // 处理普通成员列表
-    if (memberRes.code === 1 && memberRes.data.data) {
-      memberList.value = memberRes.data.data.map((item: ApiChatMember) => {
-        item.is_self = item.member_id === userStore.userInfo?.member_id
-        return item
-      })
-    } else {
-      memberList.value = []
-      console.error('加载普通成员列表失败:', memberRes.msg)
-    }
+    await reloadCurrentMemberLists()
   } catch (error) {
     console.error('loadMembers error:', error)
     toast.show(t('group.chat.member.loadMembersFailed'))
@@ -473,6 +641,7 @@ const handleAdminAction = async (item: ApiChatMember, nextRole: 'moderator' | 'm
     uni.hideLoading()
     if (res.code === 1) {
       await loadMembers()
+      notifyGroupChatRefreshSenders()
     } else {
       uni.showToast({ title: res.msg || t('common.operationFailed'), icon: 'none' })
     }
@@ -511,6 +680,7 @@ const handleKickMember = async (item: ApiChatMember) => {
     uni.hideLoading()
     if (res.code === 1) {
       await loadMembers()
+      notifyGroupChatRefreshSenders()
       return
     }
     uni.showToast({ title: res.msg || t('common.operationFailed'), icon: 'none' })
@@ -521,15 +691,19 @@ const handleKickMember = async (item: ApiChatMember) => {
   }
 }
 
-const openMemberActionSheet = (item: ApiChatMember) => {
-  if (getMemberActionList(item).length === 0) return
+const openMemberActionSheet = (item: MemberDisplayItem) => {
+  if (!item.hasActions) return
   selectedMemberActionTarget.value = item
   memberActionSheetVisible.value = true
 }
 
-const handleMemberItemLongpress = (item: ApiChatMember) => {
+const handleMemberItemLongpress = (item: MemberDisplayItem) => {
   if (!canUseMemberLongpress.value) return
   openMemberActionSheet(item)
+}
+
+const handleMemberScrollToLower = async () => {
+  await loadMemberPage(false)
 }
 
 const handleMemberActionSheetSelect = async ({ item }: { item: ActionSheetAction }) => {
@@ -558,6 +732,48 @@ const handleMemberActionSheetSelect = async ({ item }: { item: ActionSheetAction
   }
 }
 
+const handleMemberActionSheetItemClick = async (item: ActionSheetAction) => {
+  await handleMemberActionSheetSelect({ item })
+}
+
+const debouncedSearchMembers = debounce(() => {
+  void reloadCurrentMemberLists()
+}, 180)
+
+const debouncedRefreshMembersBySocket = debounce((eventRoomId?: number) => {
+  if (Number(eventRoomId || 0) !== Number(routeRoomId.value || 0)) return
+  void reloadCurrentMemberLists()
+}, 200)
+
+watch(searchKeyword, (value, oldValue) => {
+  const nextKeyword = value.trim()
+  const prevKeyword = oldValue.trim()
+  if (nextKeyword === prevKeyword) return
+
+  if (!nextKeyword) {
+    debouncedSearchMembers.cancel()
+    if (restoreDefaultMemberCache()) {
+      return
+    }
+  }
+
+  debouncedSearchMembers()
+})
+
+onReachBottom(() => {
+  void loadMemberPage(false)
+})
+
+onUnmounted(() => {
+  debouncedSearchMembers.cancel()
+  debouncedRefreshMembersBySocket.cancel()
+  uni.$off(GROUP_MEMBERS_REFRESH_EVENT, handleGroupMembersRefreshEvent)
+})
+
+const handleGroupMembersRefreshEvent = (payload?: { roomId?: number }) => {
+  debouncedRefreshMembersBySocket(payload?.roomId)
+}
+
 // 确认禁言
 const confirmMute = async () => {
   if (!currentMuteMember.value) return
@@ -566,11 +782,6 @@ const confirmMute = async () => {
   const reason = muteReason.value.trim()
 
   if (muteDialogMode.value === 'unmute') {
-    if (!reason) {
-      toast.show(t('group.chat.member.unmuteReasonRequired'))
-      return
-    }
-
     try {
       uni.showLoading()
       const result = await unmuteMemberApi(roomId, currentMuteMember.value.member_id, reason)
@@ -579,6 +790,7 @@ const confirmMute = async () => {
       if (result.code === 1) {
         showMutePopup.value = false
         await loadMembers()
+        notifyGroupChatRefreshSenders()
 
         if (currentMuteMember.value.member_id === userStore.userInfo?.member_id) {
           canSpeak.value = true
@@ -612,6 +824,7 @@ const confirmMute = async () => {
     if (result.code === 1) {
       showMutePopup.value = false
       await loadMembers()
+      notifyGroupChatRefreshSenders()
       // uni.showToast({ title: '禁言成功', icon: 'success' })
     } else {
       uni.showToast({ title: result.msg || t('common.operationFailed'), icon: 'none' })
@@ -720,6 +933,10 @@ const confirmMute = async () => {
   width: 100%;
 }
 
+.member-scroll {
+  height: 100%;
+}
+
 .search-bar {
   padding: 0;
   background: transparent;
@@ -802,6 +1019,11 @@ const confirmMute = async () => {
     margin-left: 8rpx;
     font-size: 28rpx;
     color: #ff4d4f;
+
+    image {
+      width: 28rpx;
+      height: 28rpx;
+    }
   }
 }
 
@@ -828,6 +1050,13 @@ const confirmMute = async () => {
     font-size: 28rpx;
     color: #999;
   }
+}
+
+.list-status-text {
+  padding: 24rpx 0 32rpx;
+  text-align: center;
+  font-size: 24rpx;
+  color: #999;
 }
 
 // 禁言弹窗样式
@@ -884,8 +1113,67 @@ const confirmMute = async () => {
   }
 }
 ::v-deep .messageActionSheet {
-  .wd-action-sheet__action {
+  .wd-action-sheet__header {
     text-align: left;
   }
+}
+
+.action-sheet-slot {
+  padding-bottom: 8rpx;
+}
+
+.action-sheet-item {
+  position: relative;
+  padding: 28rpx 32rpx;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 32rpx;
+    right: 32rpx;
+    top: 0;
+    height: 1rpx;
+    background: rgba(0, 0, 0, 0.06);
+  }
+
+  &:first-child::before {
+    display: none;
+  }
+
+  &.destructive .action-sheet-item-icon,
+  &.destructive .action-sheet-item-text {
+    color: #ff4d4f;
+  }
+}
+
+.action-sheet-item-content {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.action-sheet-item-icon {
+  width: 38rpx;
+  text-align: center;
+  color: #333;
+  flex-shrink: 0;
+}
+
+.action-sheet-item-image {
+  width: 38rpx;
+  height: 38rpx;
+  flex-shrink: 0;
+}
+
+.action-sheet-item-icon-placeholder {
+  width: 36rpx;
+  height: 36rpx;
+  flex-shrink: 0;
+}
+
+.action-sheet-item-text {
+  font-size: 30rpx;
+  line-height: 1.4;
+  color: #333;
 }
 </style>

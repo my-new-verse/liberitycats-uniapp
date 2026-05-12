@@ -59,6 +59,7 @@ const GROUP_CHAT_ROOMS_REFRESH_EVENT = 'refreshGroupChatRooms'
 
 const groupList = ref<ChatRoom[]>([])
 const groupLoading = ref(false)
+const enteringGroupMap = ref<Record<number, boolean>>({})
 const hasLoginToken = () =>
   Boolean(userStore.userInfo.token || uni.getStorageSync('token') || uni.getStorageSync('hasToken'))
 
@@ -93,12 +94,25 @@ const loadGroupList = async (forceRefresh = false) => {
 }
 
 const handleJoinOrEnter = async (group: GroupChatItem) => {
+  if (!group?.id || enteringGroupMap.value[group.id]) return
+
   if (!hasLoginToken()) {
     toUrl('/pages/cats/login/login')
     return
   }
+
+  enteringGroupMap.value = {
+    ...enteringGroupMap.value,
+    [group.id]: true,
+  }
+
   if (group.is_joined === 1) {
     toUrl(`/pages/cats/social/group_chat?code=${group.code}&room_id=${group.id}`)
+    setTimeout(() => {
+      const nextEnteringGroupMap = { ...enteringGroupMap.value }
+      delete nextEnteringGroupMap[group.id]
+      enteringGroupMap.value = nextEnteringGroupMap
+    }, 800)
     return
   }
 
@@ -117,6 +131,10 @@ const handleJoinOrEnter = async (group: GroupChatItem) => {
     uni.hideLoading()
     console.error('joinChatRoom error:', error)
     uni.showToast({ title: '进入失败，请重试', icon: 'none' })
+  } finally {
+    const nextEnteringGroupMap = { ...enteringGroupMap.value }
+    delete nextEnteringGroupMap[group.id]
+    enteringGroupMap.value = nextEnteringGroupMap
   }
 }
 

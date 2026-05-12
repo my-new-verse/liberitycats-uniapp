@@ -141,7 +141,9 @@
                 </view>
 
                 <view class="u-content">
-                  <text v-if="!msg.is_self" class="u-name">{{ msg.sender?.nickname }}</text>
+                  <text v-if="!msg.is_self" class="u-name">
+                    {{ getMessageSenderDisplayName(msg) }}
+                  </text>
 
                   <wd-popover
                     :ref="(el) => setMessagePopoverRef(msg.id, el)"
@@ -280,17 +282,14 @@
         @click="handleJumpToLatestMessage"
       >
         <wd-icon name="arrow-down" size="16px" color="#1f1f1f"></wd-icon>
-        <text class="new-message-indicator-text">
-          {{
-            t('group.chat.newMessages', {
-              count: pendingRealtimeMessageCount > 99 ? '99+' : pendingRealtimeMessageCount,
-            })
-          }}
-        </text>
+        <text class="new-message-indicator-text">{{ getNewMessageIndicatorText() }}</text>
       </view>
       <!-- 底部发消息按钮 -->
       <view class="footer">
-        <view class="fixedCommentBox" style="padding-bottom: env(safe-area-inset-bottom)">
+        <view
+          class="fixedCommentBox"
+          style="padding-bottom: calc(env(safe-area-inset-bottom) + 24rpx)"
+        >
           <!-- <wd-button
             size="small"
             custom-class="stressTestBtn"
@@ -373,8 +372,7 @@
                   type="primary"
                   custom-class="sendCommentBtn"
                   :disabled="roomDetail?.speaking.can_speak !== 1"
-                  :loading="sendLoading"
-                  @click.stop="debouncedCreateCommentRef?.()"
+                  @click.stop="handleSendButtonClick"
                 >
                   {{ t('social.detail.comment.btn.send') }}
                 </wd-button>
@@ -433,11 +431,37 @@
     </view>
     <wd-action-sheet
       custom-class="messageActionSheet"
+      custom-style="margin: 0 10px calc(var(--window-bottom) + 10px) 10px; border-radius: 16px; background: #fff;"
       v-model="messageActionSheetVisible"
-      :actions="messageActionSheetActions"
       :title="t('group.chat.messageActionSheetTitle')"
-      @select="handleMessageActionSheetSelect"
-    />
+    >
+      <view class="action-sheet-slot">
+        <view
+          v-for="(item, index) in messageActionSheetActions"
+          :key="`${item.action || 'action'}-${index}`"
+          class="action-sheet-item"
+          :class="{ destructive: item.destructive }"
+          @click="handleMessageActionSheetItemClick(item)"
+        >
+          <view class="action-sheet-item-content">
+            <wd-icon
+              v-if="item.iconName"
+              :name="item.iconName"
+              :size="item.iconSize || '38rpx'"
+              class="action-sheet-item-icon"
+            />
+            <image
+              v-else-if="item.iconSrc"
+              :src="item.iconSrc"
+              mode="aspectFit"
+              class="action-sheet-item-image"
+            />
+            <view v-else class="action-sheet-item-icon-placeholder"></view>
+            <text class="action-sheet-item-text">{{ item.name }}</text>
+          </view>
+        </view>
+      </view>
+    </wd-action-sheet>
     <wd-popup v-model="showUnmuteReasonPopup" position="bottom" :close-on-click-modal="false">
       <view class="mute-popup">
         <view class="popup-header">
@@ -496,6 +520,35 @@
         </view>
       </view>
     </wd-popup>
+    <wd-popup v-model="showKickReasonPopup" position="bottom" :close-on-click-modal="false">
+      <view class="mute-popup">
+        <view class="popup-header">
+          <text class="popup-title">{{ t('group.chat.kickDialogTitle') }}</text>
+          <view class="close-btn" @click="showKickReasonPopup = false">
+            <wd-icon name="close" size="20px"></wd-icon>
+          </view>
+        </view>
+        <view class="popup-content">
+          <view class="form-item">
+            <text class="label">{{ t('group.chat.kickReasonOptionalLabel') }}</text>
+            <wd-input
+              v-model="kickReason"
+              :placeholder="t('group.chat.kickReasonOptionalPlaceholder')"
+              clearable
+              maxlength="100"
+            />
+          </view>
+        </view>
+        <view class="popup-footer">
+          <wd-button custom-class="cancel-btn" @click="showKickReasonPopup = false">
+            {{ t('common.cancel') }}
+          </wd-button>
+          <wd-button type="primary" custom-class="confirm-btn" @click="confirmKickMember">
+            {{ t('common.confirm') }}
+          </wd-button>
+        </view>
+      </view>
+    </wd-popup>
   </view>
 </template>
 
@@ -506,7 +559,6 @@ import { useUserStore } from '@/store'
 import { getImageUrl, toUrl, formatRelativeTime, getChatImageUrl } from '@/utils'
 import { EchoPrivateChannelClient } from '@/utils/echoPrivateChannelClient'
 import { useToast } from 'wot-design-uni'
-import { debounce } from 'lodash-es'
 import CryptoJS from 'crypto-js'
 import {
   getCommunityEmotionListItem,
@@ -553,7 +605,6 @@ type UploadChooseFile = {
 
 type MessageMenuAction =
   | 'copy'
-  | 'recall'
   | 'delete'
   | 'mute'
   | 'unmute'
@@ -561,6 +612,8 @@ type MessageMenuAction =
   | 'removeAdmin'
   | 'kick'
   | 'removed'
+const GROUP_MEMBERS_REFRESH_EVENT = 'group_members:refresh'
+const GROUP_CHAT_REFRESH_SENDERS_EVENT = 'group_chat:refresh_message_senders'
 type MessageMenuItem = {
   content: string
   action: MessageMenuAction
@@ -569,6 +622,10 @@ type ActionSheetAction = {
   name: string
   color?: string
   action?: MessageMenuAction
+  iconName?: string
+  iconSrc?: string
+  iconSize?: string
+  destructive?: boolean
 }
 
 type MessageStatePayload = {
@@ -613,6 +670,8 @@ const showUnmuteReasonPopup = ref(false)
 const unmuteReason = ref('')
 const showDeleteReasonPopup = ref(false)
 const deleteReason = ref('')
+const showKickReasonPopup = ref(false)
+const kickReason = ref('')
 const canTriggerHistoryLoad = ref(true)
 const lastHistoryTriggerCursorId = ref<number | string | null>(null)
 // 获取屏幕边界到安全区域距离
@@ -688,9 +747,10 @@ const navigateBack = () => {
 }
 
 // 跳转到成员列表页面
-const goToMembers = () => {
+const goToMembers = async () => {
   const roomId = roomDetail.value?.room.id || routeRoomId.value
   if (!roomId) return
+  await ensureRoomMemberMapLoaded(true)
   chatSocketClient.value?.setKeepAliveOnHide(true)
   toUrl(
     `/pages/cats/social/group_members?room_id=${roomId}&currentUserRole=${roomDetail.value?.speaking.role}`,
@@ -1080,6 +1140,11 @@ const bumpPendingRealtimeMessageIndicator = () => {
   pendingRealtimeMessageCount.value += 1
 }
 
+const getNewMessageIndicatorText = () => {
+  const count = pendingRealtimeMessageCount.value > 99 ? '99+' : pendingRealtimeMessageCount.value
+  return t('group.chat.newMessages').replace('{count}', String(count))
+}
+
 const handleJumpToLatestMessage = () => {
   clearPendingRealtimeMessageIndicator()
   scrollToLatestMessage()
@@ -1178,13 +1243,45 @@ const removeLocalMessageByClientMessageId = (clientMessageId: string | undefined
   }
 }
 
+const resolveDeletedMessageText = (
+  displayStatus?: string,
+  payloadText?: string,
+  placeholderText?: string,
+) => {
+  if (displayStatus !== 'deleted') return ''
+  return payloadText || placeholderText || ''
+}
+
 const applyMessageDisplayStatus = (payload: MessageStatePayload) => {
   if (!payload.message_id || !payload.display_status) return false
 
-  return updateChatMessageById(payload.message_id, {
+  const targetIndex = messages.value.findIndex((msg) => msg.id === payload.message_id)
+  if (targetIndex < 0) return false
+
+  const currentMessage = messages.value[targetIndex]
+  const deletedText = resolveDeletedMessageText(
+    payload.display_status,
+    payload.payload?.text,
+    payload.placeholder?.text,
+  )
+  const nextMessage: ChatMessage = {
+    ...currentMessage,
     display_status: payload.display_status,
-    placeholder: payload.placeholder,
-  })
+    placeholder: deletedText ? { text: deletedText } : payload.placeholder,
+    ...(deletedText
+      ? {
+          message_type: 'text' as const,
+          payload: {
+            text: deletedText,
+          },
+        }
+      : {}),
+  }
+
+  messages.value.splice(targetIndex, 1, nextMessage)
+  rebuildMessagePrefixHeights()
+  updateVirtualRange(scrollTop.value, true)
+  return true
 }
 
 const resolveIncomingMessage = (payload: any): ChatMessage | null => {
@@ -1214,6 +1311,90 @@ const resolveMessageStatePayload = (payload: any) => {
   }
 
   return null
+}
+
+const resolveMemberKickPayload = (payload: any) => {
+  const candidateList = [
+    payload?.member,
+    payload?.data?.member,
+    payload?.member_state,
+    payload?.data?.member_state,
+    payload?.data,
+    payload,
+  ]
+
+  for (const candidate of candidateList) {
+    const memberId = Number(candidate?.member_id || 0)
+    const memberStatus = Number(candidate?.member_status ?? candidate?.status ?? 0)
+    if (memberId > 0 && memberStatus === 3) {
+      return {
+        member_id: memberId,
+        member_status: 3,
+        room_id: Number(candidate?.room_id || payload?.room_id || payload?.data?.room_id || 0),
+      }
+    }
+  }
+
+  return null
+}
+
+const normalizeStateChangedMessage = (
+  message: ChatMessage,
+  statePayload?: MessageStatePayload | null,
+): ChatMessage => {
+  const displayStatus = statePayload?.display_status || message.display_status || ''
+  const deletedText = resolveDeletedMessageText(
+    displayStatus,
+    statePayload?.payload?.text || message.payload?.text,
+    statePayload?.placeholder?.text || message.placeholder?.text,
+  )
+
+  if (!deletedText) {
+    return {
+      ...message,
+      display_status: displayStatus || message.display_status,
+      placeholder: statePayload?.placeholder || message.placeholder,
+    }
+  }
+
+  return {
+    ...message,
+    display_status: displayStatus,
+    message_type: 'text',
+    payload: {
+      text: deletedText,
+    },
+    placeholder: {
+      text: deletedText,
+    },
+  }
+}
+
+const applyMemberKickedState = (memberId: number) => {
+  if (!memberId) return false
+
+  let hasUpdated = false
+  messages.value = messages.value.map((message) => {
+    const senderMemberId = Number(message.sender?.member_id || message.member_id || 0)
+    if (senderMemberId !== memberId) return message
+    hasUpdated = true
+    return {
+      ...message,
+      sender: {
+        ...message.sender,
+        member_status: 3,
+      },
+    }
+  })
+
+  if (!hasUpdated) return false
+
+  const nextMemberMap = { ...roomMemberMap.value }
+  delete nextMemberMap[memberId]
+  roomMemberMap.value = nextMemberMap
+  rebuildMessagePrefixHeights()
+  updateVirtualRange(scrollTop.value, true)
+  return true
 }
 
 const normalizeMessageDisplayText = (text?: string | number | null) => {
@@ -1382,11 +1563,60 @@ const handleIncomingMessage = async (payload: any) => {
   await handleRealtimeEvent('GroupMessageEvent', payload)
 }
 
+const notifyGroupMembersRefresh = (roomId?: number) => {
+  const normalizedRoomId = Number(roomId || roomDetail.value?.room.id || routeRoomId.value || 0)
+  if (!normalizedRoomId) return
+  uni.$emit(GROUP_MEMBERS_REFRESH_EVENT, { roomId: normalizedRoomId })
+}
+
+const handleRefreshMessageSendersEvent = (payload?: { roomId?: number }) => {
+  if (
+    Number(payload?.roomId || 0) !== Number(roomDetail.value?.room.id || routeRoomId.value || 0)
+  ) {
+    return
+  }
+  void refreshMessageSendersBeforeCurrentLast()
+}
+
+const shouldNotifyGroupMembersRefresh = (
+  normalizedEventName: string,
+  message?: ChatMessage | null,
+  payload?: any,
+) => {
+  if (
+    normalizedEventName === 'member.kicked' ||
+    normalizedEventName === 'member.removed' ||
+    normalizedEventName === 'member.status_changed'
+  ) {
+    return true
+  }
+
+  if (normalizedEventName !== 'message.created' && normalizedEventName !== 'GroupMessageEvent') {
+    return false
+  }
+
+  if (message?.message_type !== 'system') return false
+
+  return Boolean(
+    payload?.message?.payload?.params?.member_id ||
+    payload?.data?.message?.payload?.params?.member_id ||
+    payload?.payload?.params?.member_id ||
+    message?.payload?.params?.member_id,
+  )
+}
+
 const handleRealtimeEvent = async (eventName: string, payload: any) => {
+  console.log(eventName, payload)
+
   if (payload?.room_id && payload.room_id !== roomDetail.value?.room.id) return
 
   const message = resolveIncomingMessage(payload)
   const normalizedEventName = eventName.startsWith('.') ? eventName.slice(1) : eventName
+  const kickedMemberPayload = resolveMemberKickPayload(payload)
+
+  if (shouldNotifyGroupMembersRefresh(normalizedEventName, message, payload)) {
+    notifyGroupMembersRefresh(payload?.room_id || message?.room_id)
+  }
 
   if (normalizedEventName === 'message.created' || normalizedEventName === 'GroupMessageEvent') {
     if (message?.id) {
@@ -1413,16 +1643,34 @@ const handleRealtimeEvent = async (eventName: string, payload: any) => {
     normalizedEventName === 'message.state_changed' ||
     normalizedEventName === 'message.reaction_changed'
   ) {
+    const statePayload =
+      normalizedEventName === 'message.state_changed' ? resolveMessageStatePayload(payload) : null
+
     if (message?.id) {
-      enqueueRealtimeMessage(message, false)
+      enqueueRealtimeMessage(
+        normalizedEventName === 'message.state_changed'
+          ? normalizeStateChangedMessage(message, statePayload)
+          : message,
+        false,
+      )
       return
     }
 
     if (normalizedEventName === 'message.state_changed') {
-      const statePayload = resolveMessageStatePayload(payload)
       if (statePayload && applyMessageDisplayStatus(statePayload)) {
         return
       }
+    }
+    return
+  }
+
+  if (
+    normalizedEventName === 'member.kicked' ||
+    normalizedEventName === 'member.removed' ||
+    normalizedEventName === 'member.status_changed'
+  ) {
+    if (kickedMemberPayload && applyMemberKickedState(kickedMemberPayload.member_id)) {
+      return
     }
     return
   }
@@ -1452,10 +1700,31 @@ const initChatSocketClient = () => {
         handleRealtimeEvent('message.reaction_changed', payload),
       '.message.reaction_changed': (payload) =>
         handleRealtimeEvent('.message.reaction_changed', payload),
+      'member.kicked': (payload) => handleRealtimeEvent('member.kicked', payload),
+      '.member.kicked': (payload) => handleRealtimeEvent('.member.kicked', payload),
+      'member.removed': (payload) => handleRealtimeEvent('member.removed', payload),
+      '.member.removed': (payload) => handleRealtimeEvent('.member.removed', payload),
+      'member.status_changed': (payload) => handleRealtimeEvent('member.status_changed', payload),
+      '.member.status_changed': (payload) => handleRealtimeEvent('.member.status_changed', payload),
     },
     beforeReconnect: async () => {},
     onMessage: handleIncomingMessage,
-    onAllEvent: () => {},
+    onAllEvent: (eventName, data) => {
+      const normalizedEventName = eventName.startsWith('.') ? eventName.slice(1) : eventName
+      const shouldHandleMemberEvent =
+        normalizedEventName.endsWith('member.kicked') ||
+        normalizedEventName.endsWith('member.removed') ||
+        normalizedEventName.endsWith('member.status_changed')
+
+      const isDirectRegisteredMemberEvent =
+        normalizedEventName === 'member.kicked' ||
+        normalizedEventName === 'member.removed' ||
+        normalizedEventName === 'member.status_changed'
+
+      if (shouldHandleMemberEvent && !isDirectRegisteredMemberEvent) {
+        void handleRealtimeEvent(eventName, data)
+      }
+    },
     onSubscribed: () => {},
     onAuthStart: () => {},
     onAuthResponse: () => {},
@@ -1618,6 +1887,17 @@ const ensureRoomMemberMapLoaded = async (forceRefresh = false) => {
   return roomMemberMapPromise
 }
 
+const patchRoomMemberMapById = (memberId: number, patch: Partial<ChatMember>) => {
+  if (!memberId || !roomMemberMap.value[memberId]) return
+  roomMemberMap.value = {
+    ...roomMemberMap.value,
+    [memberId]: {
+      ...roomMemberMap.value[memberId],
+      ...patch,
+    },
+  }
+}
+
 // 加载历史消息列表
 const loadHistoryMessages = async () => {
   const roomId = roomDetail.value?.room.id || routeRoomId.value
@@ -1654,6 +1934,165 @@ const loadHistoryMessages = async () => {
     }
   } catch (error) {
     console.error('loadHistoryMessages error:', error)
+  }
+}
+
+const reloadMessagesBeforeCurrentFirst = async () => {
+  const roomId = roomDetail.value?.room.id || routeRoomId.value
+  const firstMessageId = Number(messages.value[0]?.id || 0)
+  const lastMessageId = Number(messages.value[messages.value.length - 1]?.id || 0)
+  const currentMessageCount = messages.value.length
+  const batchLimit = 100
+  if (!roomId) return
+
+  if (!lastMessageId || currentMessageCount <= 0) {
+    await loadHistoryMessages()
+    return
+  }
+
+  try {
+    const collectedMessages: ChatMessage[] = []
+    let beforeMessageId = lastMessageId
+    let hasMoreHistoryResult = false
+    let nextBeforeMessageIdResult: number | null = null
+
+    while (collectedMessages.length < currentMessageCount && beforeMessageId) {
+      const remainingCount = currentMessageCount - collectedMessages.length
+      const res = await getChatMessageListApi({
+        room_id: roomId,
+        before_message_id: beforeMessageId,
+        limit: Math.min(batchLimit, remainingCount),
+      })
+
+      if (res.code !== 1 || !res.data) {
+        break
+      }
+
+      const messageList = res.data.messages || []
+      if (messageList.length === 0) {
+        hasMoreHistoryResult = false
+        nextBeforeMessageIdResult = res.data.next_before_message_id || null
+        break
+      }
+
+      collectedMessages.push(...messageList)
+      hasMoreHistoryResult = res.data.has_more_history === 1
+      nextBeforeMessageIdResult = res.data.next_before_message_id || null
+
+      if (!hasMoreHistoryResult || !nextBeforeMessageIdResult) {
+        break
+      }
+
+      beforeMessageId = nextBeforeMessageIdResult
+    }
+
+    if (collectedMessages.length > 0) {
+      messages.value = dedupeMessages(sortMessagesByRoomSeq(collectedMessages))
+      rebuildMessagePrefixHeights()
+      updateVirtualRange(scrollTop.value, true)
+      canTriggerHistoryLoad.value = true
+      lastHistoryTriggerCursorId.value = null
+      hasMoreHistory.value = hasMoreHistoryResult
+      nextBeforeMessageId.value = nextBeforeMessageIdResult
+
+      if (collectedMessages.length > 0) {
+        const lastMessage = collectedMessages[collectedMessages.length - 1]
+        stageReadMessage(lastMessage.id)
+      }
+    }
+  } catch (error) {
+    console.error('reloadMessagesBeforeCurrentFirst error:', error)
+  }
+}
+
+const refreshMessageSendersBeforeCurrentLast = async () => {
+  const roomId = roomDetail.value?.room.id || routeRoomId.value
+  const lastMessageId = Number(messages.value[messages.value.length - 1]?.id || 0)
+  const currentMessageCount = messages.value.length
+  const batchLimit = 100
+  if (!roomId || !lastMessageId || currentMessageCount <= 0) return
+
+  try {
+    const collectedMessages: ChatMessage[] = []
+    let beforeMessageId = lastMessageId
+
+    while (collectedMessages.length < currentMessageCount && beforeMessageId) {
+      const remainingCount = currentMessageCount - collectedMessages.length
+      const res = await getChatMessageListApi({
+        room_id: roomId,
+        before_message_id: beforeMessageId,
+        limit: Math.min(batchLimit, remainingCount),
+      })
+
+      if (res.code !== 1 || !res.data) break
+
+      const messageList = res.data.messages || []
+      if (messageList.length === 0) break
+
+      collectedMessages.push(...messageList)
+
+      if (res.data.has_more_history !== 1 || !res.data.next_before_message_id) {
+        break
+      }
+
+      beforeMessageId = res.data.next_before_message_id
+    }
+
+    if (collectedMessages.length === 0) return
+
+    const senderByMessageId = new Map<number, ChatMessage['sender']>()
+    const senderByMemberId = new Map<number, ChatMessage['sender']>()
+    collectedMessages.forEach((message) => {
+      if (message?.id && message.sender) {
+        senderByMessageId.set(Number(message.id), message.sender)
+      }
+      const senderMemberId = Number(message?.sender?.member_id || message?.member_id || 0)
+      if (senderMemberId && message.sender) {
+        senderByMemberId.set(senderMemberId, message.sender)
+      }
+    })
+
+    let hasUpdated = false
+    messages.value = messages.value.map((message) => {
+      const nextSender =
+        senderByMessageId.get(Number(message.id)) ||
+        senderByMemberId.get(Number(message.sender?.member_id || message.member_id || 0))
+
+      if (!nextSender) return message
+      hasUpdated = true
+      return {
+        ...message,
+        sender: {
+          ...message.sender,
+          ...nextSender,
+        },
+      }
+    })
+
+    if (!hasUpdated) return
+
+    const selectedTarget = selectedMessageActionTarget.value
+    if (selectedTarget) {
+      const selectedSender =
+        senderByMessageId.get(Number(selectedTarget.id)) ||
+        senderByMemberId.get(
+          Number(selectedTarget.sender?.member_id || selectedTarget.member_id || 0),
+        )
+      if (selectedSender) {
+        selectedMessageActionTarget.value = {
+          ...selectedTarget,
+          sender: {
+            ...selectedTarget.sender,
+            ...selectedSender,
+          },
+        }
+      }
+    }
+
+    rebuildMessagePrefixHeights()
+    updateVirtualRange(scrollTop.value, true)
+  } catch (error) {
+    console.error('refreshMessageSendersBeforeCurrentLast error:', error)
   }
 }
 
@@ -1796,10 +2235,6 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
   }
 }
 
-// 防抖
-const debouncedCreateCommentRef = ref<(() => Promise<void>) | null>(null)
-// 使用 ref 来存储防抖函数的引用
-const debouncedCreateComment = ref<(() => Promise<void>) | null>(null)
 onMounted(() => {
   // 获取状态栏高度
   const systemInfo = uni.getSystemInfoSync()
@@ -1817,22 +2252,9 @@ onMounted(() => {
   navHeaderPaddingTop.value = safeTopRpx.value
   cntPaddingTop.value = navHeight.value
   refreshViewportMetrics()
+  uni.$on(GROUP_CHAT_REFRESH_SENDERS_EVENT, handleRefreshMessageSendersEvent)
   void ensureAuxiliaryDataLoaded()
   void loadRoomDetail()
-  // 确保只初始化一次
-  if (!debouncedCreateCommentRef.value) {
-    debouncedCreateCommentRef.value = debounce(
-      async () => {
-        if (sendLoading.value) return
-        await sendMsg()
-      },
-      1000,
-      {
-        leading: false,
-        trailing: true,
-      },
-    )
-  }
 })
 
 onHide(() => {
@@ -1851,7 +2273,6 @@ onShow(() => {
   refreshViewportMetrics()
 })
 
-// 在组件卸载时清理防抖函数
 onUnmounted(() => {
   messageActionSheetVisible.value = false
   selectedMessageActionTarget.value = null
@@ -1863,12 +2284,6 @@ onUnmounted(() => {
     clearTimeout(virtualRangeMeasureTimer)
     virtualRangeMeasureTimer = null
   }
-  if (debouncedCreateCommentRef.value) {
-    ;(debouncedCreateCommentRef.value as any).cancel()
-  }
-  if (debouncedCreateComment.value) {
-    ;(debouncedCreateComment.value as any).cancel()
-  }
   if (scrollTopBindingTimer) {
     clearTimeout(scrollTopBindingTimer)
     scrollTopBindingTimer = null
@@ -1879,14 +2294,21 @@ onUnmounted(() => {
   }
   pendingRealtimeMessages.clear()
   pendingRealtimeScrollToLatest = false
+  uni.$off(GROUP_CHAT_REFRESH_SENDERS_EVENT, handleRefreshMessageSendersEvent)
 })
 
 // 评论内容
 const commentContent = ref('')
-// 评论发送状态
-const sendLoading = ref(false)
 const stressSending = ref(false)
 const reactionLoadingMap = ref<Record<string, boolean>>({})
+let lastSendTriggerAt = 0
+
+const handleSendButtonClick = () => {
+  const now = Date.now()
+  if (now - lastSendTriggerAt < 200) return
+  lastSendTriggerAt = now
+  void sendMsg()
+}
 
 const createLocalPendingMessage = (
   clientMessageId: string,
@@ -1966,10 +2388,18 @@ const sendChatMessageWithClientMessageId = async (
 ) => {
   const res = await sendChatMessageApi(roomId, messageType, clientMessageId, payload)
   if (res.code === 1) {
-    await appendChatMessage({
+    const nextMessage = {
       ...res.data.message,
       client_message_id: res.data.message.client_message_id || clientMessageId,
-    })
+      local_status: 'sent' as const,
+    }
+
+    const updated = updateChatMessageByClientMessageId(clientMessageId, nextMessage)
+    if (updated) {
+      messages.value = dedupeMessages(sortMessagesByRoomSeq(messages.value))
+      rebuildMessagePrefixHeights()
+      updateVirtualRange(scrollTop.value, true)
+    }
     scrollToMessageByClientMessageId(clientMessageId)
     return true
   }
@@ -2049,8 +2479,6 @@ const sendMsg = async () => {
     return
   }
 
-  if (sendLoading.value) return
-  sendLoading.value = true
   let pendingClientMessageId = ''
 
   try {
@@ -2099,29 +2527,26 @@ const sendMsg = async () => {
     const clientMessageId = createClientMessageId()
     pendingClientMessageId = clientMessageId
     insertLocalPendingMessage(createLocalPendingMessage(clientMessageId, messageType, payload))
-    const sent = await sendChatMessageWithClientMessageId(
+    commentPopupVisible.value = false
+    shouldFocus.value = false
+    commentContent.value = ''
+    customEmojiList.value = []
+    void sendChatMessageWithClientMessageId(
       roomDetail.value.room.id,
       messageType,
       clientMessageId,
       payload,
-    )
-    if (sent) {
-      commentPopupVisible.value = false
-      handleCloseCommentPopup()
-      commentContent.value = ''
-      customEmojiList.value = []
-    } else {
-      commentPopupVisible.value = false
-      shouldFocus.value = false
-    }
+    ).catch((error: any) => {
+      markLocalMessageFailed(pendingClientMessageId)
+      console.error('sendChatMessageWithClientMessageId error:', error)
+      toast.show(error?.errMsg || error?.message || t('group.chat.sendFailed'))
+    })
   } catch (error: any) {
     commentPopupVisible.value = false
     shouldFocus.value = false
     markLocalMessageFailed(pendingClientMessageId)
     console.error('sendMsg error:', error)
     toast.show(error?.errMsg || error?.message || t('group.chat.sendFailed'))
-  } finally {
-    sendLoading.value = false
   }
 }
 
@@ -2666,55 +3091,83 @@ const setMessagePopoverRef = (messageId: number, el: any) => {
   delete messagePopoverRefs.value[messageId]
 }
 
+const isMessageSenderRemoved = (msg: ChatMessage) => {
+  return Number(msg.sender?.member_status || 0) === 3
+}
+
+const isMessageSenderMuted = (msg?: ChatMessage | null) => {
+  return Number(msg?.sender?.member_status || 0) === 4
+}
+
+const getMessageSenderDisplayName = (msg: ChatMessage) => {
+  const nickname = msg.sender?.nickname || ''
+  if (!isMessageSenderRemoved(msg)) return nickname
+  return `${nickname}${t('group.chat.memberRemovedLabel')}`
+}
+
 const getMemberByMessage = (msg: ChatMessage) => {
+  if (isMessageSenderRemoved(msg)) return null
   const memberId = Number(msg.sender?.member_id || msg.member_id || 0)
   if (!memberId) return null
   return roomMemberMap.value[memberId] || null
 }
 
+const getMessageTargetMemberId = (msg?: ChatMessage | null) => {
+  if (!msg) return 0
+  return Number(getMemberByMessage(msg)?.member_id || msg.sender?.member_id || msg.member_id || 0)
+}
+
 const getGovernanceMenuOptions = (msg: ChatMessage): MessageMenuItem[] => {
   const member = getMemberByMessage(msg)
-  if (!member) {
-    return [
-      {
+  const isDeletedMessage = msg.display_status === 'deleted'
+  if (isMessageSenderRemoved(msg)) {
+    const menuOptions: MessageMenuItem[] = []
+
+    if (!isDeletedMessage) {
+      menuOptions.push({
         content: t('common.copy'),
         action: 'copy',
-      },
-      {
+      })
+      menuOptions.push({
         content: t('group.chat.delete'),
         action: 'delete',
-      },
-      {
-        content: t('group.chat.memberKicked'),
-        action: 'removed',
-      },
-    ]
+      })
+    }
+
+    menuOptions.push({
+      content: t('group.chat.memberKicked'),
+      action: 'removed',
+    })
+
+    return menuOptions
   }
 
-  const isSelf = member.member_id === userStore.userInfo.member_id || msg.is_self === 1
+  const memberId = Number(member?.member_id || msg.sender?.member_id || msg.member_id || 0)
+  const isSelf = memberId === userStore.userInfo.member_id || msg.is_self === 1
   const menuOptions: MessageMenuItem[] = []
-  const targetRole = member.role
+  const targetRole = member?.role || msg.sender?.role || 'member'
+  const isMuted = isMessageSenderMuted(msg)
 
-  menuOptions.push({
-    content: t('common.copy'),
-    action: 'copy',
-  })
-
-  menuOptions.push({
-    content: t('group.chat.delete'),
-    action: 'delete',
-  })
-
-  if (canManageTargetMute(targetRole, isSelf)) {
+  if (!isDeletedMessage) {
     menuOptions.push({
-      content: member.is_muted
-        ? t('group.chat.member.action.unmute')
-        : t('group.chat.member.action.mute'),
-      action: member.is_muted ? 'unmute' : 'mute',
+      content: t('common.copy'),
+      action: 'copy',
+    })
+
+    menuOptions.push({
+      content: t('group.chat.delete'),
+      action: 'delete',
     })
   }
 
-  if (canOperateTargetRole(targetRole, isSelf)) {
+  if (canManageTargetMute(targetRole, isSelf)) {
+    menuOptions.push({
+      content: isMuted ? t('group.chat.member.action.unmute') : t('group.chat.member.action.mute'),
+      action: isMuted ? 'unmute' : 'mute',
+    })
+  }
+
+  if (!isSelf && !isMessageSenderRemoved(msg)) {
     menuOptions.push({
       content: t('group.chat.kickMember'),
       action: 'kick',
@@ -2725,6 +3178,10 @@ const getGovernanceMenuOptions = (msg: ChatMessage): MessageMenuItem[] => {
 }
 
 const getMessageMenuOptions = (msg: ChatMessage): MessageMenuItem[] => {
+  if (msg.display_status === 'deleted') {
+    return []
+  }
+
   const menuOptions: MessageMenuItem[] = [
     {
       content: t('common.copy'),
@@ -2739,19 +3196,13 @@ const getMessageMenuOptions = (msg: ChatMessage): MessageMenuItem[] => {
     })
   }
 
-  if (canRecallMessage(msg)) {
-    menuOptions.push({
-      content: t('group.chat.recall'),
-      action: 'recall',
-    })
-  }
-
   return menuOptions
 }
 
 const canShowGovernanceMessageActions = (msg: ChatMessage) => {
   return msg.is_self !== 1 && getGovernanceRoleRank(getCurrentGovernanceRole()) > 0
 }
+const MESSAGE_ACTION_MUTE_ICON = '/static/images/mute_1.png'
 
 const messageActionSheetActions = computed<ActionSheetAction[]>(() => {
   const targetMessage = selectedMessageActionTarget.value
@@ -2763,17 +3214,26 @@ const messageActionSheetActions = computed<ActionSheetAction[]>(() => {
 
   return menuOptions.map((item) => ({
     name: item.content,
-    // color: item.action === 'kick' || item.action === 'delete' ? '#ff4d4f' : undefined,
     action: item.action,
+    destructive: item.action === 'kick',
+    iconName:
+      item.action === 'kick'
+        ? 'user-clear'
+        : item.action === 'removed'
+          ? 'user-clear'
+          : item.action === 'delete'
+            ? 'delete-thin'
+            : item.action === 'copy'
+              ? 'file-copy'
+              : undefined,
+    iconSrc:
+      item.action === 'mute' || item.action === 'unmute' ? MESSAGE_ACTION_MUTE_ICON : undefined,
   }))
 })
 
 const showMessageContextMenu = async (msg: ChatMessage) => {
   if (msg.display_status === 'recalled') return
 
-  if (canShowGovernanceMessageActions(msg)) {
-    await ensureRoomMemberMapLoaded()
-  }
   selectedMessageActionTarget.value = msg
   if (messageActionSheetActions.value.length === 0) return
   messageActionSheetVisible.value = true
@@ -2794,13 +3254,14 @@ const handleMessageActionSheetSelect = ({ item }: { item: ActionSheetAction }) =
   )
 }
 
+const handleMessageActionSheetItemClick = (item: ActionSheetAction) => {
+  handleMessageActionSheetSelect({ item })
+}
+
 const handleMessageMenuClick = ({ item }: { item: MessageMenuItem }, msg: ChatMessage) => {
   switch (item.action) {
     case 'copy':
       handleCopyMessage(msg)
-      break
-    case 'recall':
-      handleRecallMessage(msg)
       break
     case 'delete':
       void handleDeleteMessage(msg)
@@ -2829,27 +3290,13 @@ const handleCopyMessage = (msg: ChatMessage) => {
 
   if (msg.message_type === 'text') {
     content = msg.payload?.text || ''
-  } else if (msg.message_type === 'image') {
-    content = t('group.chat.imageMessage')
-  } else if (msg.message_type === 'emotion') {
-    content = t('group.chat.emojiMessage')
   } else if (msg.message_type === 'rich') {
     if (msg.payload?.parts) {
       content = msg.payload.parts
-        .map((part) => {
-          if (part.type === 'text') {
-            return part.text
-          } else if (part.type === 'emotion') {
-            return t('group.chat.emojiMessage')
-          } else if (part.type === 'image') {
-            return t('group.chat.imageMessage')
-          }
-          return ''
-        })
+        .filter((part) => part.type === 'text' && !!part.text)
+        .map((part) => part.text || '')
         .join('')
     }
-  } else {
-    content = msg.payload?.text || ''
   }
 
   if (content) {
@@ -2905,10 +3352,10 @@ const handleReeditRecalledMessage = (msg: ChatMessage) => {
 
 const handleMessageMemberMuteAction = async (msg: ChatMessage) => {
   const roomId = msg.room_id || roomDetail.value?.room.id || routeRoomId.value
-  const member = getMemberByMessage(msg)
-  if (!roomId || !member) return
+  const memberId = getMessageTargetMemberId(msg)
+  if (!roomId || !memberId) return
 
-  if (member.is_muted) {
+  if (isMessageSenderMuted(msg)) {
     selectedMessageActionTarget.value = msg
     unmuteReason.value = ''
     showUnmuteReasonPopup.value = true
@@ -2917,18 +3364,15 @@ const handleMessageMemberMuteAction = async (msg: ChatMessage) => {
 
   uni.showLoading({ title: t('common.processing'), mask: true })
   try {
-    const res = await muteMemberApi(roomId, member.member_id, 0)
-    uni.hideLoading()
+    const res = await muteMemberApi(roomId, memberId, 0)
     if (res.code === 1) {
-      await ensureRoomMemberMapLoaded(true)
-      toast.show(
-        member.is_muted
-          ? t('group.member.action.unmuteSuccess')
-          : t('group.member.action.muteSuccess'),
-      )
+      await refreshMessageSendersBeforeCurrentLast()
+      uni.hideLoading()
+      toast.show(t('group.member.action.muteSuccess'))
       return
     }
 
+    uni.hideLoading()
     toast.show(res.msg || t('common.operationFailed'))
   } catch (error: any) {
     uni.hideLoading()
@@ -2943,25 +3387,32 @@ const requestDeleteMessage = (msg: ChatMessage) => {
   showDeleteReasonPopup.value = true
 }
 
+const requestKickMember = (msg: ChatMessage) => {
+  selectedMessageActionTarget.value = msg
+  kickReason.value = ''
+  showKickReasonPopup.value = true
+}
+
 const confirmMessageUnmute = async () => {
   const targetMessage = selectedMessageActionTarget.value
   const roomId = targetMessage?.room_id || roomDetail.value?.room.id || routeRoomId.value
-  const member = targetMessage ? getMemberByMessage(targetMessage) : null
+  const memberId = getMessageTargetMemberId(targetMessage)
   const reason = unmuteReason.value.trim()
 
-  if (!roomId || !member) return
+  if (!roomId || !memberId) return
 
   try {
     uni.showLoading({ title: t('common.processing'), mask: true })
-    const res = await unmuteMemberApi(roomId, member.member_id, reason)
-    uni.hideLoading()
+    const res = await unmuteMemberApi(roomId, memberId, reason)
     if (res.code === 1) {
       showUnmuteReasonPopup.value = false
-      await ensureRoomMemberMapLoaded(true)
+      await refreshMessageSendersBeforeCurrentLast()
+      uni.hideLoading()
       toast.show(t('group.member.action.unmuteSuccess'))
       return
     }
 
+    uni.hideLoading()
     toast.show(res.msg || t('common.operationFailed'))
   } catch (error: any) {
     uni.hideLoading()
@@ -2983,19 +3434,7 @@ const confirmDeleteMessage = async () => {
     uni.hideLoading()
     if (res.code === 1) {
       showDeleteReasonPopup.value = false
-      if (
-        applyMessageDisplayStatus({
-          message_id: targetMessage.id,
-          room_id: targetMessage.room_id,
-          room_seq: targetMessage.room_seq,
-          display_status: 'recalled',
-          placeholder: {
-            text: t('group.chat.messageRecalled'),
-          },
-        })
-      ) {
-        toast.show(t('group.chat.deleteSuccess'))
-      }
+      // toast.show(t('group.chat.deleteSuccess'))
       return
     }
 
@@ -3007,29 +3446,37 @@ const confirmDeleteMessage = async () => {
   }
 }
 
-const handleMessageKickMember = async (msg: ChatMessage) => {
-  const roomId = msg.room_id || roomDetail.value?.room.id || routeRoomId.value
-  const member = getMemberByMessage(msg)
-  if (!roomId || !member) return
+const confirmKickMember = async () => {
+  const targetMessage = selectedMessageActionTarget.value
+  const roomId = targetMessage?.room_id || roomDetail.value?.room.id || routeRoomId.value
+  const memberId = getMessageTargetMemberId(targetMessage)
+  const reason = kickReason.value.trim()
+  if (!roomId || !memberId) {
+    toast.show(t('common.operationFailed'))
+    return
+  }
 
   uni.showLoading({ title: t('common.processing'), mask: true })
   try {
-    const res = await removeMemberApi(roomId, member.member_id)
-    uni.hideLoading()
+    const res = await removeMemberApi(roomId, memberId, reason)
     if (res.code === 1) {
-      const nextMemberMap = { ...roomMemberMap.value }
-      delete nextMemberMap[member.member_id]
-      roomMemberMap.value = nextMemberMap
-      toast.show(t('group.chat.kickMember'))
+      showKickReasonPopup.value = false
+      applyMemberKickedState(memberId)
+      uni.hideLoading()
       return
     }
 
+    uni.hideLoading()
     toast.show(res.msg || t('common.operationFailed'))
   } catch (error: any) {
     uni.hideLoading()
-    console.error('handleMessageKickMember error:', error)
+    console.error('confirmKickMember error:', error)
     toast.show(error?.message || t('common.operationFailed'))
   }
+}
+
+const handleMessageKickMember = async (msg: ChatMessage) => {
+  requestKickMember(msg)
 }
 
 const handleDeleteMessage = async (msg: ChatMessage) => {
@@ -3085,6 +3532,10 @@ const shouldShowTimeDivider = (index: number): boolean => {
 
   const currentMsg = messages.value[index]
   const prevMsg = messages.value[index - 1]
+
+  if (currentMsg?.is_self === 1 && currentMsg?.local_status) {
+    return false
+  }
 
   if (!currentMsg?.create_time || !prevMsg?.create_time) return false
 
@@ -3761,7 +4212,7 @@ const EmotionTool = (() => {
   width: calc(100% - 48rpx);
   height: calc(120rpx - 48rpx);
   padding: 24rpx;
-  padding-bottom: env(safe-area-inset-bottom);
+  padding-bottom: calc(env(safe-area-inset-bottom) + 24rpx);
   background-color: #ffffff;
   border-top: 1rpx solid #f3f3f4;
 
@@ -4180,8 +4631,73 @@ const EmotionTool = (() => {
   height: 100vh;
 }
 ::v-deep .messageActionSheet {
-  .wd-action-sheet__action {
+  .wd-action-sheet__header {
     text-align: left;
   }
+}
+
+.action-sheet-slot {
+  padding-bottom: 8rpx;
+}
+
+.action-sheet-item {
+  position: relative;
+  padding: 28rpx 32rpx;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 32rpx;
+    right: 32rpx;
+    top: 0;
+    height: 1rpx;
+    background: rgba(0, 0, 0, 0.06);
+  }
+
+  &:first-child::before {
+    display: none;
+  }
+
+  &.destructive .action-sheet-item-icon,
+  &.destructive .action-sheet-item-text {
+    color: #ff4d4f;
+  }
+}
+
+.action-sheet-item-content {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.action-sheet-item-icon {
+  width: 36rpx;
+  text-align: center;
+  color: #333;
+  flex-shrink: 0;
+}
+
+.action-sheet-item-image {
+  width: 38rpx;
+  height: 38rpx;
+  flex-shrink: 0;
+}
+
+.action-sheet-item-icon-placeholder {
+  width: 36rpx;
+  height: 36rpx;
+  flex-shrink: 0;
+}
+
+.action-sheet-item-text {
+  font-size: 30rpx;
+  line-height: 1.4;
+  color: #333;
+}
+.action-sheet-item-content {
+  text-align: baseline;
+}
+.action-sheet-item::before {
+  height: 1px;
 }
 </style>
