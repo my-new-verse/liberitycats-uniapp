@@ -271,7 +271,7 @@ const searchKeyword = ref('')
 const MEMBER_PAGE_LIMIT = 30
 const MEMBER_SEARCH_LIMIT = 20
 const GROUP_MEMBERS_REFRESH_EVENT = 'group_members:refresh'
-const GROUP_CHAT_REFRESH_SENDERS_EVENT = 'group_chat:refresh_message_senders'
+const GROUP_CHAT_MEMBER_STATUS_EVENT = 'group_chat:update_member_status'
 
 // 禁言弹窗相关状态
 const showMutePopup = ref(false)
@@ -602,10 +602,10 @@ const navigateBack = () => {
   uni.navigateBack({ delta: 1 })
 }
 
-const notifyGroupChatRefreshSenders = () => {
+const notifyGroupChatMemberStatus = (memberId: number, memberStatus: number) => {
   const roomId = Number(routeRoomId.value || 0)
-  if (!roomId) return
-  uni.$emit(GROUP_CHAT_REFRESH_SENDERS_EVENT, { roomId })
+  if (!roomId || !memberId) return
+  uni.$emit(GROUP_CHAT_MEMBER_STATUS_EVENT, { roomId, memberId, memberStatus })
 }
 
 // 加载群成员列表
@@ -641,7 +641,6 @@ const handleAdminAction = async (item: ApiChatMember, nextRole: 'moderator' | 'm
     uni.hideLoading()
     if (res.code === 1) {
       await loadMembers()
-      notifyGroupChatRefreshSenders()
     } else {
       uni.showToast({ title: res.msg || t('common.operationFailed'), icon: 'none' })
     }
@@ -680,7 +679,7 @@ const handleKickMember = async (item: ApiChatMember) => {
     uni.hideLoading()
     if (res.code === 1) {
       await loadMembers()
-      notifyGroupChatRefreshSenders()
+      notifyGroupChatMemberStatus(item.member_id, 3)
       return
     }
     uni.showToast({ title: res.msg || t('common.operationFailed'), icon: 'none' })
@@ -790,7 +789,7 @@ const confirmMute = async () => {
       if (result.code === 1) {
         showMutePopup.value = false
         await loadMembers()
-        notifyGroupChatRefreshSenders()
+        notifyGroupChatMemberStatus(currentMuteMember.value.member_id, 0)
 
         if (currentMuteMember.value.member_id === userStore.userInfo?.member_id) {
           canSpeak.value = true
@@ -824,7 +823,7 @@ const confirmMute = async () => {
     if (result.code === 1) {
       showMutePopup.value = false
       await loadMembers()
-      notifyGroupChatRefreshSenders()
+      notifyGroupChatMemberStatus(currentMuteMember.value.member_id, 4)
       // uni.showToast({ title: '禁言成功', icon: 'success' })
     } else {
       uni.showToast({ title: result.msg || t('common.operationFailed'), icon: 'none' })
