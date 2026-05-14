@@ -64,7 +64,7 @@
           <image src="@/static/images/apple@2x.png" mode="widthFix" />
         </view>
         <!-- #endif -->
-        <view class="item" @click="loginWithDiscord()">
+        <view class="item" @click="loginWithDiscord()" v-if="getServerOnOff('enable_discord')">
           <image src="@/static/images/discoard@2x.png" mode="widthFix" />
         </view>
         <view class="item" @click="toUrl('/pages/cats/login/virtual/login')">
@@ -82,7 +82,7 @@
 
 <script lang="ts" setup>
 import i18n, { t } from '@/locale/index'
-import { toUrl, todoMsg, navigateBack } from '@/utils'
+import { toUrl, todoMsg, navigateBack, getServerOnOff } from '@/utils'
 import { useToast } from 'wot-design-uni'
 import { getAgreementsByKeys, QuoteKeyAgreementList } from '@/service/api/agreement'
 import { getDiscordOauthUriApi } from '@/service/api/discord'
@@ -163,6 +163,8 @@ const agreementsMap = ref<QuoteKeyAgreementList>()
 
 // discord 登录
 const loginWithDiscord = () => {
+  if (!getServerOnOff('enable_discord')) return
+
   if (!inputAgreement.value) {
     toast.show(t('login.agreement_required'))
     return false
