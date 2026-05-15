@@ -9,6 +9,7 @@
 </route>
 
 <template>
+  <page-meta :page-style="'overflow: hidden;'"></page-meta>
   <view class="page" :class="[locale]">
     <view class="customNav" :style="{ height: navHeight + 'rpx' }">
       <!-- 顶部导航栏 -->
@@ -19,13 +20,10 @@
           </view>
           <view class="searchBox">
             <view class="chat-title-info">
-              <image
+              <view
                 class="group-avatar"
-                :src="
-                  getImageUrl(roomDetail?.room.avatar || '') || '/static/images/default_avatar.png'
-                "
-                mode="aspectFill"
-              />
+                :style="getAvatarStyle(roomDetail?.room.avatar || '', 'room')"
+              ></view>
               <view class="title-text-wrap">
                 <text class="main-title">{{ roomDetail?.room.name || t('group.chat.title') }}</text>
                 <text class="sub-title">({{ roomDetail?.room.member_count || 0 }})</text>
@@ -56,6 +54,7 @@
       <scroll-view
         class="chat-scroll"
         scroll-y
+        :scroll-top="scrollTopBinding"
         :scroll-into-view="scrollIntoViewId"
         :scroll-with-animation="false"
         :upper-threshold="20"
@@ -65,25 +64,27 @@
       >
         <view id="message-list-root" class="message-list">
           <view
-            v-if="loadingMoreHistory || (!hasMoreHistory && messages.length > 0)"
+            v-if="!loadingMoreHistory && !hasMoreHistory && messages.length > 0"
             class="history-tip"
           >
-            <text class="history-tip-text">
-              {{
-                loadingMoreHistory
-                  ? t('group.chat.loadingMoreHistory')
-                  : t('group.chat.noMoreHistory')
-              }}
-            </text>
+            <text class="history-tip-text">{{ t('group.chat.noMoreHistory') }}</text>
           </view>
           <view
-            v-for="(msg, localIndex) in messages"
+            v-if="shouldUseVirtualList && virtualTopSpacer > 0"
+            class="virtual-spacer"
+            :style="{ height: `${virtualTopSpacer}px` }"
+          ></view>
+          <view
+            v-for="(msg, localIndex) in visibleMessages"
             :key="msg.id"
             :id="'msg-row-' + msg.id"
             class="virtual-message-item"
             :data-message-id="msg.id"
           >
-            <view v-if="shouldShowTimeDivider(localIndex)" class="time-divider">
+            <view
+              v-if="shouldShowTimeDivider(getVisibleMessageIndex(localIndex))"
+              class="time-divider"
+            >
               <text class="divider-time">{{ formatRelativeTime(msg.create_time) }}</text>
             </view>
 
@@ -131,12 +132,16 @@
               <!-- 普通消息：左右布局 -->
               <template v-else>
                 <view class="avatarBox" @click="!msg.is_self && handleAvatarClick(msg?.member_id)">
-                  <image class="u-avatar" :src="msg?.sender?.avatar" mode="aspectFill" />
+                  <view
+                    class="u-avatar"
+                    :style="getAvatarStyle(msg?.sender?.avatar || '', 'chat')"
+                  ></view>
                   <view class="levelIcon">
-                    <image
-                      :src="`/static/images/level/${msg.sender?.level?.level}.png`"
-                      mode="widthFix"
-                    />
+                    <view
+                      v-if="getMessageLevelBadgeStyle(msg)"
+                      class="levelBadge"
+                      :style="getMessageLevelBadgeStyle(msg)"
+                    ></view>
                   </view>
                 </view>
 
@@ -145,14 +150,7 @@
                     {{ getMessageSenderDisplayName(msg) }}
                   </text>
 
-                  <wd-popover
-                    :ref="(el) => setMessagePopoverRef(msg.id, el)"
-                    mode="menu"
-                    placement="top"
-                    :content="getMessageMenuOptions(msg)"
-                    :disabled="true"
-                    @menuclick="handleMessageMenuClick($event, msg)"
-                  >
+                  <view class="message-item-content">
                     <wd-icon
                       name="error-circle-filled"
                       size="22px"
@@ -162,8 +160,11 @@
                     ></wd-icon>
                     <view
                       class="bubble-wrap"
-                      @contextmenu.stop.prevent="showMessageContextMenu(msg)"
-                      @longpress.stop="showMessageContextMenu(msg)"
+                      @contextmenu.stop.prevent="handleMessageContextMenu($event, msg)"
+                      @touchstart="handleMessageTouchStart($event, msg)"
+                      @touchmove="handleMessageTouchMove($event)"
+                      @touchend="handleMessageTouchEnd"
+                      @touchcancel="handleMessageTouchEnd"
                     >
                       <view
                         v-if="msg.message_type === 'image'"
@@ -171,7 +172,7 @@
                         :style="getImageMessageBoxStyle(msg)"
                       >
                         <wd-img
-                          v-if="shouldRenderImageMessage(msg, localIndex)"
+                          v-if="shouldRenderImageMessage(msg, getVisibleMessageIndex(localIndex))"
                           custom-class="chat-img-custom"
                           mode="aspectFill"
                           :width="`${getImageMessageBoxSize(msg).width}px`"
@@ -198,7 +199,13 @@
                             :style="getEmotionMessageBoxStyle()"
                           >
                             <image
-                              v-if="shouldRenderRichEmotionMessage(msg, localIndex, index)"
+                              v-if="
+                                shouldRenderRichEmotionMessage(
+                                  msg,
+                                  getVisibleMessageIndex(localIndex),
+                                  index,
+                                )
+                              "
                               :src="getRichEmotionMessageSrc(richItem.emotion_id)"
                               mode="aspectFill"
                               class="emotion-img"
@@ -216,7 +223,7 @@
                         :style="getEmotionMessageBoxStyle()"
                       >
                         <image
-                          v-if="shouldRenderEmotionMessage(msg, localIndex)"
+                          v-if="shouldRenderEmotionMessage(msg, getVisibleMessageIndex(localIndex))"
                           :src="getEmotionMessageSrc(msg)"
                           mode="aspectFill"
                           class="emotion-img"
@@ -267,11 +274,16 @@
                         <text class="reaction-emoji">👍</text>
                       </view>
                     </view>
-                  </wd-popover>
+                  </view>
                 </view>
               </template>
             </view>
           </view>
+          <view
+            v-if="shouldUseVirtualList && virtualBottomSpacer > 0"
+            class="virtual-spacer"
+            :style="{ height: `${virtualBottomSpacer}px` }"
+          ></view>
           <!-- 底部锚点，用于滚动定位 -->
           <view id="scroll-bottom-anchor" class="scroll-bottom-anchor"></view>
         </view>
@@ -290,15 +302,21 @@
           class="fixedCommentBox"
           style="padding-bottom: calc(env(safe-area-inset-bottom) + 24rpx)"
         >
-          <!-- <wd-button
-            size="small"
-            custom-class="stressTestBtn"
-            :loading="stressSending"
-            :disabled="roomDetail?.speaking.can_speak !== 1"
-            @click.stop="sendStressTestMessages()"
+          <wd-popover
+            v-model="stressMenuVisible"
+            mode="menu"
+            placement="top-start"
+            :content="stressMenuActions"
+            @menuclick="handleStressMenuClick"
           >
-            压测
-          </wd-button> -->
+            <wd-button
+              size="small"
+              custom-class="stressTestBtn"
+              :loading="stressSending || fakeStressGenerating"
+            >
+              压测工具
+            </wd-button>
+          </wd-popover>
           <!-- ✅ 使用原生 uni.chooseImage 替代 wd-upload -->
           <view
             class="upload-icon-btn"
@@ -321,6 +339,53 @@
                 ? roomDetail?.speaking.reason
                 : t('social.detail.comment.placeholder')
             }}
+          </view>
+        </view>
+
+        <view v-if="perfPanelVisible" class="perf-panel">
+          <view class="perf-panel-header">
+            <text class="perf-panel-title">性能观测</text>
+            <view class="perf-panel-close" @click="togglePerfPanel(false)">
+              <wd-icon name="close" size="16px" color="#8a4c19"></wd-icon>
+            </view>
+          </view>
+          <view class="perf-grid">
+            <view class="perf-item">
+              <text class="perf-label">消息数</text>
+              <text class="perf-value">{{ perfStats.messageCount }}</text>
+            </view>
+            <view class="perf-item">
+              <text class="perf-label">DOM 节点</text>
+              <text class="perf-value">{{ perfStats.renderedNodeCount }}</text>
+            </view>
+            <view class="perf-item">
+              <text class="perf-label">FPS</text>
+              <text class="perf-value">{{ perfStats.fpsText }}</text>
+            </view>
+            <view class="perf-item">
+              <text class="perf-label">主线程卡顿</text>
+              <text class="perf-value">{{ perfStats.eventLoopLagMs }}ms</text>
+            </view>
+            <view class="perf-item">
+              <text class="perf-label">内存</text>
+              <text class="perf-value">{{ perfStats.memoryText }}</text>
+            </view>
+            <view class="perf-item">
+              <text class="perf-label">发热风险</text>
+              <text class="perf-value">{{ perfStats.heatRisk }}</text>
+            </view>
+            <view class="perf-item">
+              <text class="perf-label">长链接消息</text>
+              <text class="perf-value">{{ perfStats.longLinkMessageCount }}</text>
+            </view>
+            <view class="perf-item">
+              <text class="perf-label">图片加载</text>
+              <text class="perf-value">{{ perfStats.imageLoadText }}</text>
+            </view>
+            <view class="perf-item perf-item-wide">
+              <text class="perf-label">头像 / Level 缓存</text>
+              <text class="perf-value">{{ perfStats.cacheText }}</text>
+            </view>
           </view>
         </view>
 
@@ -557,6 +622,13 @@ import { ref, nextTick, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/store'
 import { getImageUrl, toUrl, formatRelativeTime, getChatImageUrl } from '@/utils'
+import {
+  getAvatarStyle,
+  getAvatarCacheStats,
+  getLevelBadgeStyle,
+  preloadAvatarUrls,
+  preloadLevelBadgeUrls,
+} from '@/utils/avatarCache'
 import { EchoPrivateChannelClient } from '@/utils/echoPrivateChannelClient'
 import { useToast } from 'wot-design-uni'
 import CryptoJS from 'crypto-js'
@@ -663,6 +735,9 @@ const nextBeforeMessageId = ref<number | null>(null)
 const pendingReadMessageId = ref<number | null>(null)
 const pendingRealtimeMessageCount = ref(0)
 const loadingMoreHistory = ref(false)
+const topHistoryLoadArmed = ref(true)
+const lastTopHistoryCursorId = ref<number | string | null>(null)
+const historyRestoreLocked = ref(false)
 const roomMemberMap = ref<Record<number, ChatMember>>({})
 const selectedMessageActionTarget = ref<ChatMessage | null>(null)
 const messageActionSheetVisible = ref(false)
@@ -672,8 +747,6 @@ const showDeleteReasonPopup = ref(false)
 const deleteReason = ref('')
 const showKickReasonPopup = ref(false)
 const kickReason = ref('')
-const canTriggerHistoryLoad = ref(true)
-const lastHistoryTriggerCursorId = ref<number | string | null>(null)
 // 获取屏幕边界到安全区域距离
 const { safeAreaInsets } = uni.getSystemInfoSync()
 const safeTopRpx = ref<number>(0)
@@ -691,37 +764,55 @@ const DEFAULT_MESSAGE_HEIGHT = 96
 const DEFAULT_SYSTEM_MESSAGE_HEIGHT = 60
 const DEFAULT_IMAGE_MESSAGE_HEIGHT = 280
 const DEFAULT_RICH_MESSAGE_HEIGHT = 120
-const VIRTUAL_BUFFER_COUNT = 12
-const SCROLL_UPDATE_THRESHOLD = 120
+const VIRTUAL_BUFFER_COUNT = 24
+const SCROLL_UPDATE_THRESHOLD = 24
 const IMAGE_RENDER_PRELOAD_PX = 180
+const ESTIMATED_TIME_DIVIDER_HEIGHT_RPX = 104
+const MESSAGE_ROW_MARGIN_BOTTOM_RPX = 28
 const TOP_HISTORY_TRIGGER_PX = 20
 const TOP_HISTORY_RESET_PX = 80
 const INITIAL_HISTORY_LIMIT = 50
 const LOAD_MORE_HISTORY_LIMIT = 20
 const BOTTOM_AUTO_SCROLL_THRESHOLD_PX = 100
 const MESSAGE_BOTTOM_GAP_PX = 16
+const MESSAGE_LONG_PRESS_DURATION_MS = 450
+const MESSAGE_LONG_PRESS_MOVE_THRESHOLD_PX = 12
+const TOUCH_MESSAGE_SOFT_LIMIT = 400
+const TOUCH_MESSAGE_TRIM_TO = 280
+const VIRTUAL_LIST_ACTIVATION_COUNT = 120
 const virtualRange = ref({
   start: 0,
   end: 0,
 })
 const virtualTopSpacer = ref(0)
 const virtualBottomSpacer = ref(0)
-const lastVirtualScrollTop = 0
+let lastVirtualScrollTop = 0
 let lastPageScrollTop = 0
 let virtualRangeMeasureTimer: ReturnType<typeof setTimeout> | null = null
 let scrollIntoViewTaskId = 0
 let scrollTopBindingTimer: ReturnType<typeof setTimeout> | null = null
+let historyRestoreLockTimer: ReturnType<typeof setTimeout> | null = null
+let iosHistoryRepaintRafId: number | null = null
 let hasFlushedReadOnLeave = false
 let realtimeFlushTimer: ReturnType<typeof setTimeout> | null = null
 let pendingRealtimeScrollToLatest = false
+let viewportRefreshScheduled = false
+let messageLongPressTimer: ReturnType<typeof setTimeout> | null = null
+let messageLongPressStartX = 0
+let messageLongPressStartY = 0
+let messageLongPressMoved = false
+let lastTriggeredContextMenuAt = 0
 const pendingRealtimeMessages = new Map<string, ChatMessage>()
 const isPageLeaving = ref(false)
 let roomMemberMapPromise: Promise<void> | null = null
-
+const runtimeSystemInfo = uni.getSystemInfoSync()
+const isTouchRuntime = ['ios', 'android'].includes(runtimeSystemInfo.platform)
+const isIosRuntime = runtimeSystemInfo.platform === 'ios'
 const navigateBack = () => {
   if (isPageLeaving.value) return
   isPageLeaving.value = true
   void flushPendingReadOnLeave()
+  clearPendingMessageLongPress()
 
   // 停止 socket
   chatSocketClient.value?.destroy()
@@ -735,6 +826,14 @@ const navigateBack = () => {
   if (scrollTopBindingTimer) {
     clearTimeout(scrollTopBindingTimer)
     scrollTopBindingTimer = null
+  }
+  if (historyRestoreLockTimer) {
+    clearTimeout(historyRestoreLockTimer)
+    historyRestoreLockTimer = null
+  }
+  if (iosHistoryRepaintRafId !== null && typeof cancelAnimationFrame === 'function') {
+    cancelAnimationFrame(iosHistoryRepaintRafId)
+    iosHistoryRepaintRafId = null
   }
   if (realtimeFlushTimer) {
     clearTimeout(realtimeFlushTimer)
@@ -828,7 +927,7 @@ const getClientDeviceId = () => {
 
 const createClientLocalMessageId = () => {
   const clientMessageSequence = messages.value[messages.value.length - 1]?.id || 0
-  console.log('clientMessageSequence', clientMessageSequence)
+  // console.log('clientMessageSequence', clientMessageSequence)
 
   return `${Date.now().toString(36)}-${clientMessageSequence.toString(36)}`
 }
@@ -923,10 +1022,6 @@ const rpxToPx = (rpx: number) => {
 }
 
 const getEstimatedMessageHeight = (message: ChatMessage) => {
-  if (messageHeightCache.value[message.id]) {
-    return messageHeightCache.value[message.id]
-  }
-
   if (message.message_type === 'system' || message.display_status === 'recalled') {
     return DEFAULT_SYSTEM_MESSAGE_HEIGHT
   }
@@ -946,6 +1041,22 @@ const getEstimatedMessageHeight = (message: ChatMessage) => {
 
   const textLength = message.payload?.text?.length || 0
   return Math.max(DEFAULT_MESSAGE_HEIGHT, 72 + Math.ceil(textLength / 18) * 24)
+}
+
+const getEstimatedVirtualItemHeight = (index: number) => {
+  const message = messages.value[index]
+  if (!message) return 0
+
+  const measuredHeight = messageHeightCache.value[message.id]
+  if (measuredHeight) {
+    return measuredHeight
+  }
+
+  const dividerHeight = shouldShowTimeDivider(index)
+    ? rpxToPx(ESTIMATED_TIME_DIVIDER_HEIGHT_RPX)
+    : 0
+  const rowGap = rpxToPx(MESSAGE_ROW_MARGIN_BOTTOM_RPX)
+  return dividerHeight + getEstimatedMessageHeight(message) + rowGap
 }
 
 const getImageMessageBoxSize = (message: ChatMessage) => {
@@ -1030,7 +1141,7 @@ const markEmotionMessageRendered = (messageId: number, partIndex?: number) => {
 
 const isMessageWithinRenderZone = (message: ChatMessage, index: number) => {
   const itemTop = messageListTop.value + getMessageOffsetTop(index)
-  const itemBottom = itemTop + getEstimatedMessageHeight(message)
+  const itemBottom = itemTop + getEstimatedVirtualItemHeight(index)
   const viewportTop = scrollTop.value - IMAGE_RENDER_PRELOAD_PX
   const viewportBottom = scrollTop.value + viewportHeight.value + IMAGE_RENDER_PRELOAD_PX
 
@@ -1052,8 +1163,7 @@ const shouldRenderRichEmotionMessage = (message: ChatMessage, index: number, par
 const rebuildMessagePrefixHeights = () => {
   const prefixHeights = new Array(messages.value.length + 1).fill(0)
   for (let index = 0; index < messages.value.length; index += 1) {
-    prefixHeights[index + 1] =
-      prefixHeights[index] + getEstimatedMessageHeight(messages.value[index])
+    prefixHeights[index + 1] = prefixHeights[index] + getEstimatedVirtualItemHeight(index)
   }
   messagePrefixHeights.value = prefixHeights
 }
@@ -1092,10 +1202,10 @@ const findMessageIndexByOffset = (offset: number) => {
 }
 
 const findVisibleRangeByScrollTop = (currentScrollTop: number) => {
-  const localScrollTop = Math.max(0, currentScrollTop - messageListTop.value)
+  const localScrollTop = Math.max(0, currentScrollTop)
   const visibleHeight = viewportHeight.value || uni.getSystemInfoSync().windowHeight
-  const startOffset = Math.max(0, localScrollTop - visibleHeight)
-  const endOffset = localScrollTop + visibleHeight * 2
+  const startOffset = Math.max(0, localScrollTop - visibleHeight * 1.5)
+  const endOffset = localScrollTop + visibleHeight * 3
 
   const start = findMessageIndexByOffset(startOffset)
   const end = findMessageIndexByOffset(endOffset)
@@ -1108,6 +1218,11 @@ const findVisibleRangeByScrollTop = (currentScrollTop: number) => {
 
 let measureScheduled = false
 const scheduleVisibleMessageMeasurement = () => {
+  if (!shouldUseVirtualList.value) {
+    refreshViewportMetrics()
+    return
+  }
+
   if (measureScheduled || isPageLeaving.value) return
   measureScheduled = true
   virtualRangeMeasureTimer = setTimeout(() => {
@@ -1118,7 +1233,31 @@ const scheduleVisibleMessageMeasurement = () => {
 }
 
 const updateVirtualRange = (currentScrollTop = scrollTop.value, force = false) => {
-  refreshViewportMetrics()
+  if (!shouldUseVirtualList.value) {
+    virtualRange.value = {
+      start: 0,
+      end: Math.max(0, messages.value.length - 1),
+    }
+    virtualTopSpacer.value = 0
+    virtualBottomSpacer.value = 0
+    lastVirtualScrollTop = currentScrollTop
+    return
+  }
+
+  scheduleVisibleMessageMeasurement()
+
+  if (!force && Math.abs(currentScrollTop - lastVirtualScrollTop) < SCROLL_UPDATE_THRESHOLD) {
+    return
+  }
+
+  const nextRange = findVisibleRangeByScrollTop(currentScrollTop)
+  virtualRange.value = nextRange
+  virtualTopSpacer.value = getMessageOffsetTop(nextRange.start)
+  virtualBottomSpacer.value = Math.max(
+    0,
+    getTotalMessageHeight() - getMessageOffsetTop(nextRange.end + 1),
+  )
+  lastVirtualScrollTop = currentScrollTop
 }
 
 const isNearBottom = () => {
@@ -1154,16 +1293,46 @@ const measureVisibleMessages = () => {
   if (isPageLeaving.value) return
   nextTick(() => {
     if (isPageLeaving.value) return
-    refreshViewportMetrics()
+    const query = uni.createSelectorQuery()
+    query
+      .selectAll('.virtual-message-item')
+      .fields({ rect: true, size: true, dataset: true } as any)
+    query.exec((result) => {
+      const measuredNodes =
+        (result?.[0] as Array<{ height?: number; dataset?: { messageId?: number | string } }>) || []
+      let cacheChanged = false
+
+      measuredNodes.forEach((node) => {
+        const rawMessageId = node?.dataset?.messageId
+        const messageId = Number(rawMessageId)
+        const measuredHeight = Math.ceil(Number(node?.height || 0))
+        if (!messageId || measuredHeight <= 0) return
+
+        if (messageHeightCache.value[messageId] !== measuredHeight) {
+          messageHeightCache.value[messageId] = measuredHeight
+          cacheChanged = true
+        }
+      })
+
+      if (cacheChanged) {
+        rebuildMessagePrefixHeights()
+        updateVirtualRange(scrollTop.value, true)
+      }
+
+      refreshViewportMetrics()
+    })
   })
 }
 
 const refreshViewportMetrics = () => {
+  if (viewportRefreshScheduled || isPageLeaving.value) return
+  viewportRefreshScheduled = true
   nextTick(() => {
     const query = uni.createSelectorQuery()
     query.select('.chat-scroll').boundingClientRect()
     query.select('#message-list-root').boundingClientRect()
     query.exec((result) => {
+      viewportRefreshScheduled = false
       const scrollRect = result?.[0]
       const listRect = result?.[1]
       if (!scrollRect) return
@@ -1181,6 +1350,11 @@ const scheduleScrollToBottomAnchor = (attempts = 3, delay = 80) => {
     if (isPageLeaving.value) return
     refreshViewportMetrics()
     scrollToLatestMessage()
+
+    if (isIosRuntime && attempts <= 1) {
+      forceIosHistoryListRepaint()
+      scheduleIosMessageListRepaintChain([120, 320])
+    }
 
     if (attempts <= 1) return
 
@@ -1204,6 +1378,79 @@ const setProgrammaticScrollTop = (nextScrollTop: number) => {
     scrollTopBinding.value = undefined
     scrollTopBindingTimer = null
   }, 80)
+}
+
+const lockHistoryRestore = (duration = 180) => {
+  historyRestoreLocked.value = true
+  if (historyRestoreLockTimer) {
+    clearTimeout(historyRestoreLockTimer)
+  }
+  historyRestoreLockTimer = setTimeout(() => {
+    historyRestoreLocked.value = false
+    historyRestoreLockTimer = null
+  }, duration)
+}
+
+/**
+ * iOS scroll-view 内对可滚动子树加 transform 容易触发合成层/重绘异常导致「中间区域发白」，
+ * 这里仅用查询几何信息强制 layout，避免在 #message-list-root 上挂 GPU 层。
+ */
+const flushIosMessageListLayout = () => {
+  if (isPageLeaving.value) return
+  const query = uni.createSelectorQuery()
+  query.select('#message-list-root').boundingClientRect()
+  query.select('.chat-scroll').boundingClientRect()
+  query.exec(() => {
+    refreshViewportMetrics()
+  })
+}
+
+const forceIosHistoryListRepaint = () => {
+  if (!isIosRuntime || isPageLeaving.value) return
+
+  flushIosMessageListLayout()
+
+  nextTick(() => {
+    if (isPageLeaving.value) return
+    flushIosMessageListLayout()
+    if (typeof requestAnimationFrame === 'function') {
+      if (iosHistoryRepaintRafId !== null && typeof cancelAnimationFrame === 'function') {
+        cancelAnimationFrame(iosHistoryRepaintRafId)
+        iosHistoryRepaintRafId = null
+      }
+      iosHistoryRepaintRafId = requestAnimationFrame(() => {
+        iosHistoryRepaintRafId = null
+        if (isPageLeaving.value) return
+        flushIosMessageListLayout()
+      })
+    }
+  })
+}
+
+const scheduleIosMessageListRepaintChain = (delaysMs: number[]) => {
+  if (!isIosRuntime || isPageLeaving.value) return
+  delaysMs.forEach((delay) => {
+    if (delay <= 0) {
+      forceIosHistoryListRepaint()
+      return
+    }
+    setTimeout(() => {
+      if (isPageLeaving.value) return
+      forceIosHistoryListRepaint()
+    }, delay)
+  })
+}
+
+const trimTouchMessagesIfNeeded = (preferLatest = false) => {
+  if (!isTouchRuntime) return
+  if (!preferLatest) return
+  if (messages.value.length <= TOUCH_MESSAGE_SOFT_LIMIT) return
+
+  const trimmedMessages = messages.value.slice(-TOUCH_MESSAGE_TRIM_TO)
+  if (trimmedMessages.length === messages.value.length) return
+
+  messages.value = trimmedMessages
+  rebuildMessagePrefixHeights()
 }
 
 const updateChatMessageById = (messageId: number, message: Partial<ChatMessage>) => {
@@ -1455,6 +1702,7 @@ const applyMessagesBatch = (incomingMessages: ChatMessage[], scrollToLatest = fa
   if (normalizedMessages.length === 0) return
 
   messages.value = dedupeMessages(sortMessagesByRoomSeq([...messages.value, ...normalizedMessages]))
+  trimTouchMessagesIfNeeded(scrollToLatest || isNearBottom())
   rebuildMessagePrefixHeights()
   updateVirtualRange(scrollTop.value, true)
 
@@ -1495,7 +1743,7 @@ const enqueueRealtimeMessage = (incomingMessage: ChatMessage, scrollToLatest = f
   }
 
   if (realtimeFlushTimer || isPageLeaving.value) return
-  realtimeFlushTimer = setTimeout(flushRealtimeMessages, 16)
+  realtimeFlushTimer = setTimeout(flushRealtimeMessages, 120)
 }
 
 const mergeMessagesWithoutMovingAnchor = (incomingMessages: ChatMessage[]) => {
@@ -1509,6 +1757,7 @@ const mergeMessagesWithoutMovingAnchor = (incomingMessages: ChatMessage[]) => {
   if (normalizedMessages.length === 0) return
 
   messages.value = dedupeMessages(sortMessagesByRoomSeq([...messages.value, ...normalizedMessages]))
+  trimTouchMessagesIfNeeded(isNearBottom())
   rebuildMessagePrefixHeights()
   updateVirtualRange(scrollTop.value, true)
   normalizedMessages.forEach((message) => stageReadMessage(message.id))
@@ -1606,7 +1855,7 @@ const shouldNotifyGroupMembersRefresh = (
 }
 
 const handleRealtimeEvent = async (eventName: string, payload: any) => {
-  console.log(eventName, payload)
+  // console.log(eventName, payload)
 
   if (payload?.room_id && payload.room_id !== roomDetail.value?.room.id) return
 
@@ -1729,10 +1978,10 @@ const initChatSocketClient = () => {
     onConnectionDisconnected: () => {},
     onConnectionStateChange: () => {},
     onConnectionError: (error) => {
-      console.error('[GroupChat] Echo connection error:', error)
+      // console.error('[GroupChat] Echo connection error:', error)
     },
     onPrivateChannelError: (error) => {
-      console.error('[GroupChat] private channel error:', error)
+      // console.error('[GroupChat] private channel error:', error)
     },
   })
 
@@ -1744,11 +1993,11 @@ const subscribeChatRoomChannel = () => {
   if (!roomId) return
 
   const channelName = getPrivateChannelName(roomId)
-  console.log('[GroupChat] subscribing channel', {
-    roomId,
-    channelName,
-    privateChannelName: `private-${channelName}`,
-  })
+  // console.log('[GroupChat] subscribing channel', {
+  //   roomId,
+  //   channelName,
+  //   privateChannelName: `private-${channelName}`,
+  // })
   initChatSocketClient().subscribe(channelName)
 }
 
@@ -1813,7 +2062,7 @@ const ensureRoomDetailLoaded = async () => {
       refreshViewportMetrics()
       return true
     } catch (error) {
-      console.error('loadRoomDetail error:', error)
+      // console.error('loadRoomDetail error:', error)
       toast.show(t('common.loadFailed'))
       return false
     } finally {
@@ -1910,11 +2159,9 @@ const loadHistoryMessages = async () => {
       messages.value = dedupeMessages(sortMessagesByRoomSeq(messageList))
       rebuildMessagePrefixHeights()
       updateVirtualRange(scrollTop.value, true)
-      canTriggerHistoryLoad.value = true
-      lastHistoryTriggerCursorId.value = null
       hasMoreHistory.value = res.data.has_more_history === 1
       nextBeforeMessageId.value = res.data.next_before_message_id || null
-      console.log(messages.value)
+      // console.log(messages.value)
 
       for (let index = 0; index < messageList.length; index++) {
         const item = messageList[index]
@@ -1930,7 +2177,7 @@ const loadHistoryMessages = async () => {
       }
     }
   } catch (error) {
-    console.error('loadHistoryMessages error:', error)
+    // console.error('loadHistoryMessages error:', error)
   }
 }
 
@@ -1987,8 +2234,6 @@ const reloadMessagesBeforeCurrentFirst = async () => {
       messages.value = dedupeMessages(sortMessagesByRoomSeq(collectedMessages))
       rebuildMessagePrefixHeights()
       updateVirtualRange(scrollTop.value, true)
-      canTriggerHistoryLoad.value = true
-      lastHistoryTriggerCursorId.value = null
       hasMoreHistory.value = hasMoreHistoryResult
       nextBeforeMessageId.value = nextBeforeMessageIdResult
 
@@ -1998,7 +2243,7 @@ const reloadMessagesBeforeCurrentFirst = async () => {
       }
     }
   } catch (error) {
-    console.error('reloadMessagesBeforeCurrentFirst error:', error)
+    // console.error('reloadMessagesBeforeCurrentFirst error:', error)
   }
 }
 
@@ -2089,7 +2334,7 @@ const refreshMessageSendersBeforeCurrentLast = async () => {
     rebuildMessagePrefixHeights()
     updateVirtualRange(scrollTop.value, true)
   } catch (error) {
-    console.error('refreshMessageSendersBeforeCurrentLast error:', error)
+    // console.error('refreshMessageSendersBeforeCurrentLast error:', error)
   }
 }
 
@@ -2099,6 +2344,12 @@ const scrollToBottomDirect = () => {
 
 const getHistoryCursorMessageId = () => {
   return getFirstMessageId() || nextBeforeMessageId.value
+}
+
+const getCurrentViewportAnchorMessageId = () => {
+  if (messages.value.length === 0) return null
+  const anchorIndex = findMessageIndexByOffset(Math.max(0, scrollTop.value))
+  return messages.value[anchorIndex]?.id || messages.value[0]?.id || null
 }
 
 const prependHistoryMessages = async (
@@ -2129,11 +2380,26 @@ const prependHistoryMessages = async (
     return
   }
 
+  const viewportAnchorMessageId = getCurrentViewportAnchorMessageId() || anchorMessageId
+  const targetHistoryAnchorViewId = `msg-row-${viewportAnchorMessageId}`
+
   messages.value = dedupeMessages(sortMessagesByRoomSeq([...prependMessages, ...messages.value]))
   rebuildMessagePrefixHeights()
   updateVirtualRange(scrollTop.value, true)
-  historyAnchorViewId.value = `msg-row-${anchorMessageId}`
-  scrollIntoViewId.value = historyAnchorViewId.value
+
+  lockHistoryRestore()
+  if (scrollTopBindingTimer) {
+    clearTimeout(scrollTopBindingTimer)
+    scrollTopBindingTimer = null
+  }
+  scrollTopBinding.value = undefined
+  historyAnchorViewId.value = targetHistoryAnchorViewId
+  scrollIntoViewId.value = ''
+  await nextTick()
+  scrollIntoViewId.value = targetHistoryAnchorViewId
+  await nextTick()
+  refreshViewportMetrics()
+  forceIosHistoryListRepaint()
 }
 
 const loadMoreHistoryMessages = async () => {
@@ -2144,6 +2410,7 @@ const loadMoreHistoryMessages = async () => {
   if (!beforeMessageId) return
 
   loadingMoreHistory.value = true
+  let loadingStateHandled = false
 
   try {
     const res = await getChatMessageListApi({
@@ -2156,16 +2423,31 @@ const loadMoreHistoryMessages = async () => {
       const olderMessages = res.data.messages || []
       hasMoreHistory.value = res.data.has_more_history === 1
       nextBeforeMessageId.value = res.data.next_before_message_id || null
+
+      loadingMoreHistory.value = false
+      loadingStateHandled = true
+      await nextTick()
+
       await prependHistoryMessages(olderMessages, beforeMessageId)
     }
   } catch (error) {
-    console.error('loadMoreHistoryMessages error:', error)
+    // console.error('loadMoreHistoryMessages error:', error)
   } finally {
-    loadingMoreHistory.value = false
+    if (!loadingStateHandled) {
+      loadingMoreHistory.value = false
+    }
   }
 }
 
 const handleScrollToUpper = async () => {
+  if (!topHistoryLoadArmed.value) return
+  if (historyRestoreLocked.value) return
+  const beforeMessageId = getHistoryCursorMessageId()
+  if (!beforeMessageId) return
+  if (String(lastTopHistoryCursorId.value || '') === String(beforeMessageId)) return
+
+  topHistoryLoadArmed.value = false
+  lastTopHistoryCursorId.value = beforeMessageId
   await loadMoreHistoryMessages()
 }
 
@@ -2186,34 +2468,15 @@ const handleChatScroll = (event: any) => {
   if (nextScrollHeight > 0) {
     messageListHeight.value = nextScrollHeight
   }
+  updateVirtualRange(scrollTop.value)
+  if (!historyRestoreLocked.value && scrollTop.value > TOP_HISTORY_RESET_PX) {
+    topHistoryLoadArmed.value = true
+    lastTopHistoryCursorId.value = null
+  }
   if (isNearBottom()) {
     clearPendingRealtimeMessageIndicator()
   }
-  tryLoadMoreHistoryOnTop(scrollTop.value)
-}
-
-const scrollTicking = false
-
-const tryLoadMoreHistoryOnTop = (currentScrollTop: number) => {
-  if (currentScrollTop > TOP_HISTORY_RESET_PX) {
-    canTriggerHistoryLoad.value = true
-  }
-
-  const beforeMessageId = getHistoryCursorMessageId()
-  if (
-    currentScrollTop <= TOP_HISTORY_TRIGGER_PX &&
-    !!beforeMessageId &&
-    !loadingMoreHistory.value &&
-    hasMoreHistory.value &&
-    (canTriggerHistoryLoad.value ||
-      String(lastHistoryTriggerCursorId.value || '') !== String(beforeMessageId))
-  ) {
-    canTriggerHistoryLoad.value = false
-    lastHistoryTriggerCursorId.value = beforeMessageId
-    void handleScrollToUpper()
-  }
-
-  lastPageScrollTop = currentScrollTop
+  lastPageScrollTop = scrollTop.value
 }
 
 // 标记消息为已读
@@ -2221,14 +2484,14 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
   try {
     const res = await markMessageReadApi(roomId, lastReadMessageId)
     if (res.code === 1) {
-      console.log('标记已读成功，未读数:', res.data.unread_count)
+      // console.log('标记已读成功，未读数:', res.data.unread_count)
       // 可以在这里更新房间详情的未读数
       if (roomDetail.value) {
         roomDetail.value.room.unread_count = res.data.unread_count
       }
     }
   } catch (error) {
-    console.error('markAsRead error:', error)
+    // console.error('markAsRead error:', error)
   }
 }
 
@@ -2255,7 +2518,9 @@ onMounted(() => {
 })
 
 onHide(() => {
-  console.log('onHide')
+  // console.log('onHide')
+  stopPerfMonitoring()
+  clearPendingMessageLongPress()
   messageActionSheetVisible.value = false
   selectedMessageActionTarget.value = null
   clearPendingRealtimeMessageIndicator()
@@ -2268,9 +2533,14 @@ onShow(() => {
   clearPendingRealtimeMessageIndicator()
   resumeChatAfterForeground()
   refreshViewportMetrics()
+  if (perfPanelVisible.value) {
+    void startPerfMonitoring()
+  }
 })
 
 onUnmounted(() => {
+  stopPerfMonitoring()
+  clearPendingMessageLongPress()
   messageActionSheetVisible.value = false
   selectedMessageActionTarget.value = null
   clearPendingRealtimeMessageIndicator()
@@ -2285,6 +2555,14 @@ onUnmounted(() => {
     clearTimeout(scrollTopBindingTimer)
     scrollTopBindingTimer = null
   }
+  if (historyRestoreLockTimer) {
+    clearTimeout(historyRestoreLockTimer)
+    historyRestoreLockTimer = null
+  }
+  if (iosHistoryRepaintRafId !== null && typeof cancelAnimationFrame === 'function') {
+    cancelAnimationFrame(iosHistoryRepaintRafId)
+    iosHistoryRepaintRafId = null
+  }
   if (realtimeFlushTimer) {
     clearTimeout(realtimeFlushTimer)
     realtimeFlushTimer = null
@@ -2297,8 +2575,51 @@ onUnmounted(() => {
 // 评论内容
 const commentContent = ref('')
 const stressSending = ref(false)
+const fakeStressGenerating = ref(false)
+const stressMenuVisible = ref(false)
+const perfPanelVisible = ref(false)
 const reactionLoadingMap = ref<Record<string, boolean>>({})
 let lastSendTriggerAt = 0
+let perfStatsTimer: ReturnType<typeof setInterval> | null = null
+let perfEventLoopTimer: ReturnType<typeof setTimeout> | null = null
+let perfRafId: number | null = null
+let perfFrameTimeout: ReturnType<typeof setTimeout> | null = null
+let perfFrameCount = 0
+let perfLastFpsSampleAt = 0
+let perfLastEventLoopTickAt = 0
+
+const perfStats = ref({
+  messageCount: 0,
+  renderedNodeCount: 0,
+  fps: 0,
+  fpsText: '--',
+  eventLoopLagMs: 0,
+  memoryUsedMb: 0,
+  memoryText: 'N/A',
+  heatRisk: '低',
+  longLinkMessageCount: 0,
+  imageLoadText: '0/0',
+  cacheText: '0 / 0 / 0 / 0',
+})
+
+const stressMenuActions = [
+  {
+    content: '真实压测（100条）',
+    value: 'real',
+  },
+  {
+    content: '造数压测（1000条）',
+    value: 'mock',
+  },
+  {
+    content: '长链接压测（1000条）',
+    value: 'long-link',
+  },
+  {
+    content: '性能面板',
+    value: 'perf',
+  },
+]
 
 const handleSendButtonClick = () => {
   const now = Date.now()
@@ -2353,6 +2674,7 @@ const insertLocalPendingMessage = (message: ChatMessage) => {
     messages.value = sortMessagesByRoomSeq(messages.value)
   }
   messages.value = dedupeMessages(messages.value)
+  trimTouchMessagesIfNeeded(true)
 
   rebuildMessagePrefixHeights()
   updateVirtualRange(scrollTop.value, true)
@@ -2535,14 +2857,14 @@ const sendMsg = async () => {
       payload,
     ).catch((error: any) => {
       markLocalMessageFailed(pendingClientMessageId)
-      console.error('sendChatMessageWithClientMessageId error:', error)
+      // console.error('sendChatMessageWithClientMessageId error:', error)
       toast.show(error?.errMsg || error?.message || t('group.chat.sendFailed'))
     })
   } catch (error: any) {
     commentPopupVisible.value = false
     shouldFocus.value = false
     markLocalMessageFailed(pendingClientMessageId)
-    console.error('sendMsg error:', error)
+    // console.error('sendMsg error:', error)
     toast.show(error?.errMsg || error?.message || t('group.chat.sendFailed'))
   }
 }
@@ -2565,7 +2887,7 @@ const sendPlainTextMessage = async (text: string) => {
   )
 }
 
-const sendStressTestMessages = async (count = 20, intervalMs = 3000) => {
+const sendStressTestMessages = async (count = 100, intervalMs = 3000) => {
   if (stressSending.value) return
   if (!validateBeforeSend()) return
 
@@ -2579,11 +2901,370 @@ const sendStressTestMessages = async (count = 20, intervalMs = 3000) => {
       }
     }
   } catch (error: any) {
-    console.error('sendStressTestMessages error:', error)
+    // console.error('sendStressTestMessages error:', error)
     toast.show(error?.message || t('group.chat.stressSendFailed'))
   } finally {
     stressSending.value = false
   }
+}
+
+const sampleRenderedNodeCount = () =>
+  new Promise<number>((resolve) => {
+    nextTick(() => {
+      const query = uni.createSelectorQuery()
+      query.selectAll('.virtual-message-item').boundingClientRect()
+      query.exec((result) => {
+        const nodes = (result?.[0] as Array<unknown>) || []
+        resolve(nodes.length)
+      })
+    })
+  })
+
+const estimateMessageMemoryBytes = (message: ChatMessage) => {
+  let bytes = 640
+
+  bytes += (message.sender?.nickname?.length || 0) * 2
+  bytes += (message.sender?.avatar?.length || 0) * 2
+
+  if (message.message_type === 'text') {
+    bytes += (message.payload?.text?.length || 0) * 2
+  } else if (message.message_type === 'rich') {
+    bytes += (message.payload?.parts || []).reduce((total, part) => {
+      if (part.type === 'text') return total + (part.text?.length || 0) * 2 + 64
+      if (part.type === 'emotion') return total + 96
+      return total + 48
+    }, 0)
+  } else if (message.message_type === 'image') {
+    bytes += 320
+    bytes += (message.payload?.url?.length || 0) * 2
+    bytes += (message.payload?.thumb_url?.length || 0) * 2
+  } else if (message.message_type === 'emotion') {
+    bytes += 180
+  } else {
+    bytes += 120
+  }
+
+  return bytes
+}
+
+const estimateMemoryUsageMb = (renderedNodeCount: number) => {
+  const cacheStats = getAvatarCacheStats()
+  const messageBytes = messages.value.reduce(
+    (total, message) => total + estimateMessageMemoryBytes(message),
+    0,
+  )
+  const renderedNodeBytes = renderedNodeCount * 1400
+  const cacheBytes =
+    cacheStats.avatarUrlEntries * 180 +
+    cacheStats.avatarStyleEntries * 260 +
+    cacheStats.levelBadgeUrlEntries * 120 +
+    cacheStats.levelBadgeStyleEntries * 180
+  const imageStateBytes =
+    Object.keys(renderedImageMessageMap.value).length * 80 +
+    Object.keys(renderedEmotionMessageMap.value).length * 80
+
+  const totalBytes = messageBytes + renderedNodeBytes + cacheBytes + imageStateBytes
+  return Math.round((totalBytes / 1024 / 1024) * 10) / 10
+}
+
+const resolveMemoryUsage = (renderedNodeCount: number) => {
+  const performanceMemory = (
+    globalThis as { performance?: { memory?: { usedJSHeapSize?: number } } }
+  ).performance?.memory
+  const usedJSHeapSize = Number(performanceMemory?.usedJSHeapSize || 0)
+  if (usedJSHeapSize) {
+    return {
+      value: Math.round((usedJSHeapSize / 1024 / 1024) * 10) / 10,
+      estimated: false,
+    }
+  }
+
+  return {
+    value: estimateMemoryUsageMb(renderedNodeCount),
+    estimated: true,
+  }
+}
+
+const countLongLinkMessages = () =>
+  messages.value.reduce((count, message) => {
+    const text =
+      message.message_type === 'text'
+        ? message.payload?.text || ''
+        : message.message_type === 'rich'
+          ? (message.payload?.parts || [])
+              .filter((part) => part.type === 'text')
+              .map((part) => part.text || '')
+              .join('')
+          : ''
+    return text.includes('http://') || text.includes('https://') ? count + 1 : count
+  }, 0)
+
+const computeHeatRisk = (fps: number, eventLoopLagMs: number, renderedNodeCount: number) => {
+  if (fps > 50 && eventLoopLagMs < 60 && renderedNodeCount < 250) return '低'
+  if (fps > 35 && eventLoopLagMs < 140 && renderedNodeCount < 500) return '中'
+  return '高'
+}
+
+const updatePerfStats = async () => {
+  const renderedNodeCount = await sampleRenderedNodeCount()
+  const memoryUsage = resolveMemoryUsage(renderedNodeCount)
+  const cacheStats = getAvatarCacheStats()
+  const fps = Math.max(0, Math.round(perfStats.value.fps || 0))
+
+  perfStats.value = {
+    messageCount: messages.value.length,
+    renderedNodeCount,
+    fps,
+    fpsText: fps > 0 ? String(fps) : 'N/A',
+    eventLoopLagMs: Math.max(0, Math.round(perfStats.value.eventLoopLagMs || 0)),
+    memoryUsedMb: memoryUsage.value || 0,
+    memoryText: memoryUsage.estimated ? `~${memoryUsage.value} MB` : `${memoryUsage.value} MB`,
+    heatRisk: computeHeatRisk(fps, perfStats.value.eventLoopLagMs || 0, renderedNodeCount),
+    longLinkMessageCount: countLongLinkMessages(),
+    imageLoadText: `${loadedImageCount.value}/${totalImageCount.value}`,
+    cacheText: `${cacheStats.avatarUrlEntries}/${cacheStats.avatarStyleEntries}/${cacheStats.levelBadgeUrlEntries}/${cacheStats.levelBadgeStyleEntries}`,
+  }
+}
+
+const stopPerfMonitoring = () => {
+  if (perfStatsTimer) {
+    clearInterval(perfStatsTimer)
+    perfStatsTimer = null
+  }
+  if (perfEventLoopTimer) {
+    clearTimeout(perfEventLoopTimer)
+    perfEventLoopTimer = null
+  }
+  if (perfRafId !== null && typeof cancelAnimationFrame === 'function') {
+    cancelAnimationFrame(perfRafId)
+    perfRafId = null
+  }
+  if (perfFrameTimeout) {
+    clearTimeout(perfFrameTimeout)
+    perfFrameTimeout = null
+  }
+}
+
+const schedulePerfFrame = (callback: () => void) => {
+  if (typeof requestAnimationFrame === 'function') {
+    perfRafId = requestAnimationFrame(() => {
+      perfRafId = null
+      callback()
+    })
+    return
+  }
+
+  perfFrameTimeout = setTimeout(() => {
+    perfFrameTimeout = null
+    callback()
+  }, 16)
+}
+
+const schedulePerfEventLoopMonitor = () => {
+  if (!perfPanelVisible.value || isPageLeaving.value) return
+
+  perfLastEventLoopTickAt = Date.now()
+  perfEventLoopTimer = setTimeout(() => {
+    perfEventLoopTimer = null
+    const actualDelay = Date.now() - perfLastEventLoopTickAt - 1000
+    perfStats.value.eventLoopLagMs = Math.max(0, Math.round(actualDelay))
+    schedulePerfEventLoopMonitor()
+  }, 1000)
+}
+
+const schedulePerfFpsMonitor = () => {
+  if (!perfPanelVisible.value || isPageLeaving.value) {
+    return
+  }
+
+  perfFrameCount = 0
+  perfLastFpsSampleAt = Date.now()
+  const tick = () => {
+    if (!perfPanelVisible.value || isPageLeaving.value) {
+      perfRafId = null
+      perfFrameTimeout = null
+      return
+    }
+
+    perfFrameCount += 1
+    const now = Date.now()
+    const duration = now - perfLastFpsSampleAt
+    if (duration >= 1000) {
+      perfStats.value.fps = Math.round((perfFrameCount * 1000) / duration)
+      perfFrameCount = 0
+      perfLastFpsSampleAt = now
+    }
+
+    schedulePerfFrame(tick)
+  }
+
+  schedulePerfFrame(tick)
+}
+
+const startPerfMonitoring = async () => {
+  stopPerfMonitoring()
+  await updatePerfStats()
+  schedulePerfEventLoopMonitor()
+  schedulePerfFpsMonitor()
+  perfStatsTimer = setInterval(() => {
+    void updatePerfStats()
+  }, 1200)
+}
+
+const togglePerfPanel = (visible = !perfPanelVisible.value) => {
+  perfPanelVisible.value = visible
+  if (visible) {
+    void startPerfMonitoring()
+    return
+  }
+  stopPerfMonitoring()
+}
+
+const handleStressMenuClick = (event: { item?: { value?: string } }) => {
+  const actionValue = event?.item?.value
+  if (actionValue === 'mock') {
+    void generateFakeStressMessages()
+    return
+  }
+
+  if (actionValue === 'long-link') {
+    void generateLongLinkStressMessages()
+    return
+  }
+
+  if (actionValue === 'perf') {
+    togglePerfPanel()
+    return
+  }
+
+  if (actionValue === 'real') {
+    void sendStressTestMessages()
+  }
+}
+
+const buildFakeStressMessages = (
+  count = 1000,
+  mode: 'mixed' | 'long-link' = 'mixed',
+): ChatMessage[] => {
+  const roomId = roomDetail.value?.room.id || routeRoomId.value
+  const currentMemberId = Number(userStore.userInfo.member_id || 0)
+  const currentNickname = userStore.userInfo.nickname || 'Me'
+  const currentAvatar = userStore.userInfo.avatar || ''
+  const baseMessageId = Math.max(
+    Number(messages.value[messages.value.length - 1]?.id || 0),
+    Math.floor(Date.now() / 1000) * 1000,
+  )
+  const baseRoomSeq = getLastRoomSeq()
+  const baseCreateTime = Math.max(
+    Number(messages.value[messages.value.length - 1]?.create_time || 0),
+    Math.floor(Date.now() / 1000),
+  )
+  const longTextSeed =
+    'https://stress.example.com/path/to/resource/with/a/very/long/link/for/group/chat/perf/test'
+  const mockSenders = [
+    {
+      memberId: currentMemberId || 1,
+      nickname: currentNickname,
+      avatar: currentAvatar,
+      isSelf: 1 as const,
+      level: 1,
+    },
+    {
+      memberId: 900001,
+      nickname: 'Stress Cat A',
+      avatar: roomDetail.value?.room.avatar || currentAvatar,
+      isSelf: 0 as const,
+      level: 2,
+    },
+    {
+      memberId: 900002,
+      nickname: 'Stress Cat B',
+      avatar: currentAvatar,
+      isSelf: 0 as const,
+      level: 3,
+    },
+    {
+      memberId: 900003,
+      nickname: 'Stress Cat C',
+      avatar: roomDetail.value?.room.avatar || currentAvatar,
+      isSelf: 0 as const,
+      level: 4,
+    },
+  ]
+
+  return Array.from({ length: count }, (_, index) => {
+    const sender = mockSenders[index % mockSenders.length]
+    const createTime = baseCreateTime + index + 1
+    const textPayload =
+      mode === 'long-link'
+        ? `${longTextSeed}?batch=${Math.floor(index / 20)}&seq=${index + 1}&from=${sender.nickname}&time=${createTime}&room=${roomId}&repeat=${longTextSeed}`
+        : `mock-stress-${index + 1} ${longTextSeed}?seq=${index + 1}&time=${createTime}`
+    return {
+      id: baseMessageId + index + 1,
+      room_seq: baseRoomSeq + index + 1,
+      room_id: roomId,
+      member_id: sender.memberId,
+      message_type: 'text' as const,
+      payload: {
+        text: textPayload,
+      },
+      status: 1,
+      display_status: 'normal',
+      placeholder: undefined,
+      reaction_summary: [],
+      my_reactions: [],
+      create_time: createTime,
+      sender: {
+        member_id: sender.memberId,
+        nickname: sender.nickname,
+        avatar: sender.avatar,
+        role: sender.isSelf ? 'member' : 'admin',
+        level: {
+          level: sender.level,
+          name: `Lv.${sender.level}`,
+        },
+      } as ChatMessage['sender'] & {
+        level?: {
+          level: number
+          name?: string
+        }
+      },
+      is_self: sender.isSelf,
+      local_status: 'sent' as const,
+      client_message_id: `mock-stress-${createTime}-${index + 1}`,
+    }
+  })
+}
+
+const generateFakeStressMessages = async (count = 1000, mode: 'mixed' | 'long-link' = 'mixed') => {
+  if (fakeStressGenerating.value) return
+  if (!roomDetail.value?.room.id && !routeRoomId.value) {
+    toast.show(t('group.chat.groupInfoLoadFailed'))
+    return
+  }
+
+  fakeStressGenerating.value = true
+  try {
+    const fakeMessages = buildFakeStressMessages(count, mode)
+    applyMessagesBatch(fakeMessages, true)
+    await nextTick()
+    refreshViewportMetrics()
+    if (perfPanelVisible.value) {
+      await updatePerfStats()
+    }
+    toast.show(
+      mode === 'long-link' ? `已生成 ${count} 条长链接压测消息` : `已生成 ${count} 条压测消息`,
+    )
+  } catch (error: any) {
+    // console.error('generateFakeStressMessages error:', error)
+    toast.show(error?.message || '造数压测失败')
+  } finally {
+    fakeStressGenerating.value = false
+  }
+}
+
+const generateLongLinkStressMessages = async (count = 1000) => {
+  await generateFakeStressMessages(count, 'long-link')
 }
 
 /**
@@ -2616,7 +3297,7 @@ const retryFailedMessage = async (msg: ChatMessage) => {
     if (!sent) return
   } catch (error: any) {
     markLocalMessageFailed(msg.client_message_id)
-    console.error('retryFailedMessage error:', error)
+    // console.error('retryFailedMessage error:', error)
     toast.show(error?.message || t('group.chat.sendFailed'))
   }
 }
@@ -2681,7 +3362,7 @@ const textAreaFocus = (e: any) => {
     textareaFocus.value = true
   }
 
-  console.log('textAreaFocus =======================', e, keyboardHeight.value)
+  // console.log('textAreaFocus =======================', e, keyboardHeight.value)
 }
 // 处理键盘和表情切换 end
 
@@ -2862,7 +3543,7 @@ const handleChooseImage = async () => {
         })
       },
     )
-    console.log(chooseRes)
+    // console.log(chooseRes)
     if (!chooseRes.tempFilePaths || chooseRes.tempFilePaths.length === 0) {
       return
     }
@@ -2907,7 +3588,7 @@ const handleChooseImage = async () => {
             break
           }
         } catch (error) {
-          console.error('compress image failed', error)
+          // console.error('compress image failed', error)
           continue
         }
       }
@@ -2916,7 +3597,7 @@ const handleChooseImage = async () => {
     // 6. 上传图片到 OSS
     await uploadImageToOss(finalPath, normalizeImageMimeType(finalPath, tempFileType), tempFileName)
   } catch (error) {
-    console.error('handleChooseImage error:', error)
+    // console.error('handleChooseImage error:', error)
     if (error?.errMsg !== 'chooseImage:fail cancel') {
       // toast.show('图片选择失败')
     }
@@ -2994,7 +3675,7 @@ const uploadImageToOss = async (filePath: string, mimeType: string, fileName: st
       mime: normalizedMimeType,
       size: fileSize,
     }
-    console.log('payload', payload)
+    // console.log('payload', payload)
     // 6. 创建客户端消息 ID
     const clientMessageId = createClientMessageId()
     pendingClientMessageId = clientMessageId
@@ -3011,7 +3692,7 @@ const uploadImageToOss = async (filePath: string, mimeType: string, fileName: st
   } catch (error: any) {
     uni.hideLoading()
     markLocalMessageFailed(pendingClientMessageId)
-    console.error('uploadImageToOss error:', error)
+    // console.error('uploadImageToOss error:', error)
     toast.show(error?.message || t('group.chat.uploadImageFailed'))
   }
 }
@@ -3054,7 +3735,7 @@ const toggleReaction = async (msg: ChatMessage, reactionType: string, reactionVa
 
     toast.show(res.msg || t('group.chat.reactionFailed'))
   } catch (error: any) {
-    console.error('toggleReaction error:', error)
+    // console.error('toggleReaction error:', error)
     toast.show(error?.message || t('group.chat.reactionFailed'))
   } finally {
     reactionLoadingMap.value[loadingKey] = false
@@ -3062,31 +3743,67 @@ const toggleReaction = async (msg: ChatMessage, reactionType: string, reactionVa
 }
 
 const messages = ref<ChatMessage[]>([])
-const visibleMessages = computed(() => messages.value)
-const getVisibleMessageIndex = (localIndex: number) => localIndex
+const shouldUseVirtualList = computed(
+  () =>
+    isTouchRuntime &&
+    !isIosRuntime &&
+    !historyRestoreLocked.value &&
+    messages.value.length > VIRTUAL_LIST_ACTIVATION_COUNT,
+)
+const visibleMessages = computed(() => {
+  if (!shouldUseVirtualList.value) return messages.value
+
+  const { start, end } = virtualRange.value
+  if (messages.value.length === 0) return []
+  return messages.value.slice(start, end + 1)
+})
+const perfAssetPreloadMessages = computed(() =>
+  isTouchRuntime ? visibleMessages.value.slice(-80) : visibleMessages.value,
+)
+const getVisibleMessageIndex = (localIndex: number) =>
+  shouldUseVirtualList.value ? virtualRange.value.start + localIndex : localIndex
+const getMessageLevel = (message?: ChatMessage | null) =>
+  (message?.sender as { level?: { level?: number | string | null } } | undefined)?.level?.level
+const getMessageLevelBadgeStyle = (message?: ChatMessage | null) =>
+  getLevelBadgeStyle(getMessageLevel(message))
+const preloadVisibleMessageAssets = (messageList: ChatMessage[]) => {
+  preloadAvatarUrls([roomDetail.value?.room.avatar], 'room')
+  preloadAvatarUrls(
+    Array.from(new Set(messageList.map((message) => message?.sender?.avatar || ''))),
+    'chat',
+  )
+  preloadLevelBadgeUrls(Array.from(new Set(messageList.map((message) => getMessageLevel(message)))))
+}
 watch(
   () =>
-    visibleMessages.value.map(
+    perfAssetPreloadMessages.value.map(
       (message) =>
         `${message.id}:${message.display_status || 'normal'}:${message.local_status || 'sent'}:${message.reaction_summary?.length || 0}`,
     ),
   () => {
+    preloadVisibleMessageAssets(perfAssetPreloadMessages.value)
     scheduleVisibleMessageMeasurement()
+    if (perfPanelVisible.value) {
+      void updatePerfStats()
+    }
   },
   { flush: 'post' },
 )
-const messagePopoverRefs = ref<Record<number, any>>({})
+watch(
+  () => roomDetail.value?.room.avatar || '',
+  () => {
+    preloadAvatarUrls([roomDetail.value?.room.avatar], 'room')
+  },
+  { flush: 'post' },
+)
+watch(
+  () => [shouldUseVirtualList.value, messages.value.length],
+  () => {
+    updateVirtualRange(scrollTop.value, true)
+  },
+  { flush: 'post' },
+)
 const MESSAGE_RECALL_TIME_LIMIT_SECONDS = 2 * 60
-
-const setMessagePopoverRef = (messageId: number, el: any) => {
-  if (!messageId) return
-  if (el) {
-    messagePopoverRefs.value[messageId] = el
-    return
-  }
-
-  delete messagePopoverRefs.value[messageId]
-}
 
 const isMessageSenderRemoved = (msg: ChatMessage) => {
   return Number(msg.sender?.member_status || 0) === 3
@@ -3227,6 +3944,66 @@ const messageActionSheetActions = computed<ActionSheetAction[]>(() => {
       item.action === 'mute' || item.action === 'unmute' ? MESSAGE_ACTION_MUTE_ICON : undefined,
   }))
 })
+
+const clearPendingMessageLongPress = () => {
+  if (!messageLongPressTimer) return
+  clearTimeout(messageLongPressTimer)
+  messageLongPressTimer = null
+}
+
+const handleMessageTouchStart = (event: any, msg: ChatMessage) => {
+  if (!isTouchRuntime || msg.display_status === 'recalled') return
+
+  clearPendingMessageLongPress()
+  const touch = event?.touches?.[0] || event?.changedTouches?.[0]
+  if (!touch) return
+
+  messageLongPressStartX = Number(touch.clientX || touch.pageX || 0)
+  messageLongPressStartY = Number(touch.clientY || touch.pageY || 0)
+  messageLongPressMoved = false
+  messageLongPressTimer = setTimeout(() => {
+    messageLongPressTimer = null
+    if (messageLongPressMoved) return
+    lastTriggeredContextMenuAt = Date.now()
+    void showMessageContextMenu(msg)
+  }, MESSAGE_LONG_PRESS_DURATION_MS)
+}
+
+const handleMessageTouchMove = (event: any) => {
+  if (!messageLongPressTimer) return
+
+  const touch = event?.touches?.[0] || event?.changedTouches?.[0]
+  if (!touch) return
+
+  const currentX = Number(touch.clientX || touch.pageX || 0)
+  const currentY = Number(touch.clientY || touch.pageY || 0)
+  const deltaX = Math.abs(currentX - messageLongPressStartX)
+  const deltaY = Math.abs(currentY - messageLongPressStartY)
+
+  if (
+    deltaX >= MESSAGE_LONG_PRESS_MOVE_THRESHOLD_PX ||
+    deltaY >= MESSAGE_LONG_PRESS_MOVE_THRESHOLD_PX
+  ) {
+    messageLongPressMoved = true
+    clearPendingMessageLongPress()
+  }
+}
+
+const handleMessageTouchEnd = () => {
+  clearPendingMessageLongPress()
+}
+
+const handleMessageContextMenu = (event: Event, msg: ChatMessage) => {
+  event.preventDefault()
+  event.stopPropagation()
+
+  if (isTouchRuntime) {
+    if (Date.now() - lastTriggeredContextMenuAt < 300) return
+    return
+  }
+
+  void showMessageContextMenu(msg)
+}
 
 const showMessageContextMenu = async (msg: ChatMessage) => {
   if (msg.display_status === 'recalled') return
@@ -3373,7 +4150,7 @@ const handleMessageMemberMuteAction = async (msg: ChatMessage) => {
     toast.show(res.msg || t('common.operationFailed'))
   } catch (error: any) {
     uni.hideLoading()
-    console.error('handleMessageMemberMuteAction error:', error)
+    // console.error('handleMessageMemberMuteAction error:', error)
     toast.show(error?.message || t('common.operationFailed'))
   }
 }
@@ -3413,7 +4190,7 @@ const confirmMessageUnmute = async () => {
     toast.show(res.msg || t('common.operationFailed'))
   } catch (error: any) {
     uni.hideLoading()
-    console.error('confirmMessageUnmute error:', error)
+    // console.error('confirmMessageUnmute error:', error)
     toast.show(error?.message || t('common.operationFailed'))
   }
 }
@@ -3438,7 +4215,7 @@ const confirmDeleteMessage = async () => {
     toast.show(res.msg || t('group.chat.deleteFailed'))
   } catch (error: any) {
     uni.hideLoading()
-    console.error('confirmDeleteMessage error:', error)
+    // console.error('confirmDeleteMessage error:', error)
     toast.show(error?.message || t('group.chat.deleteFailed'))
   }
 }
@@ -3467,7 +4244,7 @@ const confirmKickMember = async () => {
     toast.show(res.msg || t('common.operationFailed'))
   } catch (error: any) {
     uni.hideLoading()
-    console.error('confirmKickMember error:', error)
+    // console.error('confirmKickMember error:', error)
     toast.show(error?.message || t('common.operationFailed'))
   }
 }
@@ -3595,6 +4372,22 @@ const updateScrollIntoViewTarget = (targetId: string) => {
 }
 
 const scrollToMessage = (messageId: number | string, placement: 'focus' | 'bottom' = 'focus') => {
+  if (shouldUseVirtualList.value && placement !== 'bottom') {
+    const targetIndex = messages.value.findIndex(
+      (message) => String(message.id) === String(messageId),
+    )
+    if (targetIndex >= 0) {
+      const start = Math.max(0, targetIndex - VIRTUAL_BUFFER_COUNT)
+      const end = Math.min(messages.value.length - 1, targetIndex + VIRTUAL_BUFFER_COUNT)
+      virtualRange.value = { start, end }
+      virtualTopSpacer.value = getMessageOffsetTop(start)
+      virtualBottomSpacer.value = Math.max(
+        0,
+        getTotalMessageHeight() - getMessageOffsetTop(end + 1),
+      )
+    }
+  }
+
   const targetId =
     placement === 'bottom' &&
     String(messages.value[messages.value.length - 1]?.id) === String(messageId)
@@ -3700,15 +4493,19 @@ const EmotionTool = (() => {
 }
 
 .page {
+  height: 100vh;
+  overflow: hidden;
   background-color: var(--liberty-cats-page-background-color);
+  display: flex;
+  flex-direction: column;
 
   .cnt {
     padding: 40rpx 0;
     flex: 1;
-    /* 撑满剩余高度 */
+    min-height: 0;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    /* 确保 paddingTop 已经通过 TS 计算并传入，例如 180rpx */
     box-sizing: border-box;
   }
 }
@@ -3765,6 +4562,9 @@ const EmotionTool = (() => {
             height: 56rpx;
             border-radius: 50%; // 剪裁成圆形
             background-color: #eee;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
             flex-shrink: 0;
           }
 
@@ -3907,6 +4707,9 @@ const EmotionTool = (() => {
         overflow: hidden;
         border-radius: 50%; // 圆形头像
         background-color: #eee;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: cover;
         flex-shrink: 0;
       }
 
@@ -3917,9 +4720,12 @@ const EmotionTool = (() => {
         width: 28rpx;
         height: 28rpx;
 
-        image {
+        .levelBadge {
           width: 100%;
           height: 100%;
+          background-position: center;
+          background-repeat: no-repeat;
+          background-size: contain;
         }
       }
     }
@@ -3929,6 +4735,12 @@ const EmotionTool = (() => {
       max-width: 70%;
       display: flex;
       flex-direction: column;
+
+      .message-item-content {
+        display: flex;
+        align-items: center;
+        gap: 12rpx;
+      }
 
       .u-name {
         font-size: 24rpx;
@@ -4155,7 +4967,7 @@ const EmotionTool = (() => {
 
 .chat-scroll {
   flex: 1;
-  height: 100vh;
+  height: 100%;
   min-height: 0;
 }
 
@@ -4261,6 +5073,73 @@ const EmotionTool = (() => {
   color: #ff6b03 !important;
   border-color: #ffd2b2 !important;
   flex-shrink: 0;
+}
+
+.perf-panel {
+  position: fixed;
+  right: 24rpx;
+  bottom: calc(160rpx + env(safe-area-inset-bottom));
+  z-index: 20;
+  width: 520rpx;
+  padding: 20rpx 22rpx;
+  background: rgba(255, 248, 241, 0.96);
+  border: 2rpx solid rgba(255, 176, 107, 0.5);
+  border-radius: 24rpx;
+  box-shadow: 0 12rpx 36rpx rgba(83, 39, 0, 0.12);
+  backdrop-filter: blur(12rpx);
+}
+
+.perf-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14rpx;
+}
+
+.perf-panel-title {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #8a4c19;
+}
+
+.perf-panel-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36rpx;
+  height: 36rpx;
+}
+
+.perf-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12rpx;
+}
+
+.perf-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+  min-height: 88rpx;
+  padding: 14rpx 16rpx;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 18rpx;
+}
+
+.perf-item-wide {
+  grid-column: span 2;
+}
+
+.perf-label {
+  font-size: 20rpx;
+  color: rgba(88, 51, 20, 0.66);
+}
+
+.perf-value {
+  font-size: 24rpx;
+  line-height: 1.35;
+  color: #3d2209;
+  word-break: break-all;
 }
 
 :deep(.commentPopup) {
@@ -4618,6 +5497,7 @@ const EmotionTool = (() => {
 ::v-deep .wd-popover__menu {
   display: flex;
   gap: 24rpx;
+  flex-wrap: wrap;
 }
 
 ::v-deep .wd-popover__target {
@@ -4625,7 +5505,7 @@ const EmotionTool = (() => {
   align-items: center;
 }
 ::v-deep .uni-scroll-view {
-  height: 100vh;
+  height: 100%;
 }
 ::v-deep .messageActionSheet {
   .wd-action-sheet__header {

@@ -60,9 +60,17 @@
                 @longpress="handleMemberItemLongpress(item)"
               >
                 <view class="avatar-wrap" @click="handleAvatarClick(item?.member_id)">
-                  <image :src="item.avatar" class="avatar" lazy-load />
+                  <view
+                    class="avatar"
+                    :class="{ 'is-default-avatar': item.isDefaultAvatar }"
+                    :style="item.isDefaultAvatar ? undefined : item.avatarStyle"
+                  ></view>
                   <view class="levelIcon">
-                    <image :src="item.levelIconSrc" mode="widthFix" lazy-load />
+                    <view
+                      v-if="item.levelBadgeClass"
+                      class="levelBadge"
+                      :class="item.levelBadgeClass"
+                    ></view>
                   </view>
                 </view>
                 <view class="member-info">
@@ -70,7 +78,7 @@
                     {{ item.nickname }}
                     <!-- 静音标识 -->
                     <view class="mute-badge" v-if="item.is_muted">
-                      <image src="/static/images/silenced.png" mode="widthFix" lazy-load />
+                      <view class="mute-badge-icon"></view>
                     </view>
                   </view>
                 </view>
@@ -97,9 +105,17 @@
               @longpress="handleMemberItemLongpress(item)"
             >
               <view class="avatar-wrap" @click="handleAvatarClick(item?.member_id)">
-                <image :src="item.avatar" class="avatar" lazy-load />
+                <view
+                  class="avatar"
+                  :class="{ 'is-default-avatar': item.isDefaultAvatar }"
+                  :style="item.isDefaultAvatar ? undefined : item.avatarStyle"
+                ></view>
                 <view class="levelIcon">
-                  <image :src="item.levelIconSrc" mode="widthFix" lazy-load />
+                  <view
+                    v-if="item.levelBadgeClass"
+                    class="levelBadge"
+                    :class="item.levelBadgeClass"
+                  ></view>
                 </view>
               </view>
               <view class="member-info">
@@ -107,7 +123,7 @@
                   {{ item.nickname }}
                   <!-- 静音标识 -->
                   <view class="mute-badge" v-if="item.is_muted">
-                    <image src="/static/images/silenced.png" mode="widthFix" lazy-load />
+                    <view class="mute-badge-icon"></view>
                   </view>
                 </view>
               </view>
@@ -237,6 +253,7 @@ import { ref, computed, watch, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/store'
 import { getImageUrl } from '@/utils'
+import { getAvatarStyle, isDefaultAvatarSource } from '@/utils/avatarCache'
 import { useToast } from 'wot-design-uni'
 import { debounce } from 'lodash-es'
 import {
@@ -288,9 +305,11 @@ type MemberActionItem = {
   destructive?: boolean
 }
 type MemberDisplayItem = ApiChatMember & {
+  isDefaultAvatar: boolean
+  avatarStyle: Record<string, string>
   actionList: MemberActionItem[]
   hasActions: boolean
-  levelIconSrc: string
+  levelBadgeClass: string
 }
 type ActionSheetAction = {
   name: string
@@ -300,6 +319,17 @@ type ActionSheetAction = {
   iconSrc?: string
   iconSize?: string
   destructive?: boolean
+}
+
+const normalizeLevelBadgeLevel = (level?: number | string | null) => {
+  const normalizedLevel = Number(level || 0)
+  if (!Number.isFinite(normalizedLevel) || normalizedLevel <= 0) return 0
+  return Math.min(4, normalizedLevel)
+}
+
+const getLevelBadgeClass = (level?: number | string | null) => {
+  const normalizedLevel = normalizeLevelBadgeLevel(level)
+  return normalizedLevel ? `levelBadge--${normalizedLevel}` : ''
 }
 
 // 管理员列表（role: founder, moderator）
@@ -451,12 +481,15 @@ const normalizeMemberList = (memberData: ApiChatMember[] = []): MemberDisplayIte
       is_self: item.member_id === userStore.userInfo?.member_id,
     } as ApiChatMember
     const actionList = buildMemberActionList(normalizedItem)
+    const isDefaultAvatar = isDefaultAvatarSource(normalizedItem.avatar || '')
 
     return {
       ...normalizedItem,
+      isDefaultAvatar,
+      avatarStyle: isDefaultAvatar ? {} : getAvatarStyle(normalizedItem.avatar || '', 'member'),
+      levelBadgeClass: getLevelBadgeClass(normalizedItem.level?.level),
       actionList,
       hasActions: actionList.length > 0,
-      levelIconSrc: `/static/images/level/${normalizedItem.level?.level || 0}.png`,
     }
   })
 }
@@ -998,9 +1031,28 @@ const confirmMute = async () => {
     bottom: 12rpx;
     width: 28rpx;
     height: 28rpx;
-    image {
+    .levelBadge {
       width: 100%;
       height: 100%;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: contain;
+
+      &.levelBadge--1 {
+        background-image: url('/static/images/level/1.png');
+      }
+
+      &.levelBadge--2 {
+        background-image: url('/static/images/level/2.png');
+      }
+
+      &.levelBadge--3 {
+        background-image: url('/static/images/level/3.png');
+      }
+
+      &.levelBadge--4 {
+        background-image: url('/static/images/level/4.png');
+      }
     }
   }
 }
@@ -1009,6 +1061,14 @@ const confirmMute = async () => {
   width: 96rpx;
   height: 96rpx;
   border-radius: 50%;
+  background-color: #eee;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+
+  &.is-default-avatar {
+    background-image: url('/static/images/default_avatar.png');
+  }
 }
 
 .member-info {
@@ -1028,9 +1088,13 @@ const confirmMute = async () => {
     font-size: 28rpx;
     color: #ff4d4f;
 
-    image {
+    .mute-badge-icon {
       width: 28rpx;
       height: 28rpx;
+      background-image: url('/static/images/silenced.png');
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: contain;
     }
   }
 }
