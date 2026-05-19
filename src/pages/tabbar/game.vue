@@ -115,7 +115,15 @@ const openGameUrl = (gameType: string) => {
     // 把token拼接到url上，注意url本身可能带参数
     // const url = gameUrl + (gameUrl.includes('?') ? '&' : '?') + 'token=' + token
     const url = res.data.jumpUrl
-    toUrl('/pages/game/index?url=' + encodeURIComponent(url))
+    // 优先在 App 上使用 webview 预加载能力，打开已预加载的实例以实现秒开体验
+    if (typeof uni.preloadWebview === 'function' || (typeof plus !== 'undefined' && plus?.osName)) {
+      uni.navigateTo({
+        url: '/pages/game/index?url=' + encodeURIComponent(url),
+        webviewPreload: true,
+      })
+    } else {
+      toUrl('/pages/game/index?url=' + encodeURIComponent(url))
+    }
   })
 }
 </script>

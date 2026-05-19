@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { onLaunch, onShow, onHide } from '@dcloudio/uni-app'
 import { checkTokenApi, getSystemConfigApi, getSystemConfigApiV2 } from '@/service/api/user'
 import { useUserStore } from '@/store/user'
@@ -10,6 +11,7 @@ import buildInfo from '@/../build-info.json'
 import { useSystemStore } from '@/store/system'
 
 const systemStore = useSystemStore()
+export const preloadedWebViewReady = ref(false)
 const version = `${buildInfo.version}`
 const userStore = useUserStore()
 const systemReady = ref(false)
@@ -43,6 +45,54 @@ onLaunch(() => {
     plus.navigator.closeSplashscreen()
   }, 1000) // 5秒后关闭启动页
   // #endif
+
+  // 预加载 WebView：App 空闲时预热游戏页面，减少首次打开白屏与加载时间
+  setTimeout(() => {
+    try {
+      const sys = uni.getSystemInfoSync()
+      const platform = (sys.platform || sys.osName || '').toLowerCase()
+      const isLowMem = !!(sys && (sys.totalMemory || sys.memory) && (sys.totalMemory || sys.memory) < 4096)
+      if (isLowMem) {
+        console.log('skip preload: low memory device')
+        return
+      }
+
+      // 仅在 App 上执行预加载
+      if (typeof uni.preloadWebview === 'function') {
+        const preloadUrl = '/pages/game/index?url=' + encodeURIComponent('https://game.libertycats.app/minigame/index.html?preload=1')
+        uni.preloadWebview({
+          url: preloadUrl,
+          success: () => {
+            preloadedWebViewReady.value = true
+            console.log('WebView preloaded via uni.preloadWebview')
+          },
+          fail: (e) => {
+            console.warn('preloadWebview failed', e)
+          },
+        })
+      } else {
+        // fallback: 打开并立即返回，尝试保留 WebView 实例（部分平台有效）
+        const preloadUrl = '/pages/game/index?url=' + encodeURIComponent('https://game.libertycats.app/minigame/index.html?preload=1') + '&preload=true'
+        uni.navigateTo({
+          url: preloadUrl,
+          success: () => {
+            preloadedWebViewReady.value = true
+            console.log('WebView preloaded via navigateTo fallback')
+            setTimeout(() => {
+              try {
+                uni.navigateBack({ delta: 1 })
+              } catch (e) {}
+            }, 300)
+          },
+          fail: (e) => {
+            console.warn('navigateTo preload failed', e)
+          },
+        })
+      }
+    } catch (err) {
+      console.warn('preload error', err)
+    }
+  }, 3000)
 })
 
 onShow(() => {

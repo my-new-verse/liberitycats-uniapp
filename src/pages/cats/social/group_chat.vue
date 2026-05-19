@@ -30,8 +30,14 @@
               </view>
             </view>
           </view>
-          <view class="right-icons" @click="goToMembers()">
-            <wd-icon name="usergroup" size="22px" color="#fff"></wd-icon>
+          <view class="right-icons">
+            <wd-icon
+              name="notification"
+              size="22px"
+              color="#fff"
+              @click="goToAnnouncementList()"
+            ></wd-icon>
+            <wd-icon name="usergroup" size="22px" color="#fff" @click="goToMembers()"></wd-icon>
           </view>
         </view>
       </view>
@@ -656,6 +662,8 @@ import {
   deleteChatMessageApi,
 } from '@/service/api/groupChat'
 import { defaultEmojiList } from '@/utils/defaultEmojiList'
+import VirtualList from '@/components/virtual-list/virtual-list.vue'
+const virtualListRef = ref<InstanceType<typeof VirtualList> | null>(null)
 
 const raf = (fn: () => void) => {
   if (typeof requestAnimationFrame !== 'undefined') {
@@ -811,7 +819,7 @@ const isIosRuntime = runtimeSystemInfo.platform === 'ios'
 const navigateBack = () => {
   if (isPageLeaving.value) return
   isPageLeaving.value = true
-  void flushPendingReadOnLeave()
+  flushPendingReadOnLeave()
   clearPendingMessageLongPress()
 
   // 停止 socket
@@ -844,7 +852,23 @@ const navigateBack = () => {
 
   uni.navigateBack({ delta: 1 })
 }
-
+const scrollToBottom = () => {
+  nextTick(() => {
+    const totalHeight = messages.value.length * VIRTUAL_ITEM_HEIGHT
+    virtualListRef.value?.scrollTo(totalHeight)
+  })
+}
+const goToAnnouncementList = async () => {
+  const roomId = roomDetail.value?.room.id || routeRoomId.value
+  if (!roomId) return
+  await ensureRoomMemberMapLoaded(true)
+  chatSocketClient.value?.setKeepAliveOnHide(true)
+  toUrl(
+    `/pages/cats/social/group_announcement_list?room_id=${roomId}&currentUserRole=${roomDetail.value?.speaking.role}`,
+    true,
+    false,
+  )
+}
 // 跳转到成员列表页面
 const goToMembers = async () => {
   const roomId = roomDetail.value?.room.id || routeRoomId.value
@@ -872,8 +896,8 @@ const CLIENT_DEVICE_ID_STORAGE_KEY = 'group_chat_client_device_id'
 onLoad((options: any) => {
   roomCode.value = options?.code || ''
   routeRoomId.value = Number(options?.room_id || 0)
-  void ensureAuxiliaryDataLoaded()
-  void ensureRoomDetailLoaded()
+  ensureAuxiliaryDataLoaded()
+  ensureRoomDetailLoaded()
 })
 
 const formatUuidFromBytes = (bytes: number[]) =>
@@ -2361,16 +2385,14 @@ const prependHistoryMessages = async (
     return
   }
 
+  // 过滤重复消息（不变）
   const existingMessageIds = new Set(messages.value.map((msg) => msg.id))
   const oldestLoadedMessage = messages.value[0]
   const prependMessages = olderMessages.filter((msg) => {
     if (existingMessageIds.has(msg.id)) return false
     if (!oldestLoadedMessage) return true
-
-    if (typeof msg.room_seq === 'number' && typeof oldestLoadedMessage.room_seq === 'number') {
+    if (typeof msg.room_seq === 'number' && typeof oldestLoadedMessage.room_seq === 'number')
       return msg.room_seq < oldestLoadedMessage.room_seq
-    }
-
     return Number(msg.id) < Number(oldestLoadedMessage.id)
   })
   if (prependMessages.length === 0) {
@@ -2380,24 +2402,55 @@ const prependHistoryMessages = async (
     return
   }
 
-  const viewportAnchorMessageId = getCurrentViewportAnchorMessageId() || anchorMessageId
-  const targetHistoryAnchorViewId = `msg-row-${viewportAnchorMessageId}`
+  // ① 获取加载前视口顶部的消息 ID（这就是我们要重新对齐到顶部的目标）
+  const viewportAnchorId = getCurrentViewportAnchorMessageId() || anchorMessageId
 
+  // ② 合并消息，重建前缀高度（以便虚拟列表正确计算）
   messages.value = dedupeMessages(sortMessagesByRoomSeq([...prependMessages, ...messages.value]))
   rebuildMessagePrefixHeights()
-  updateVirtualRange(scrollTop.value, true)
 
-  lockHistoryRestore()
+  // ③ 找到锚点消息在新列表中的索引
+  const anchorIndex = messages.value.findIndex(
+    (m) => String(m.id) === String(viewportAnchorId)
+  )
+  if (anchorIndex < 0) {
+    // 如果找不到锚点，回退到高度差法（极少数情况）
+    const oldScrollTop = scrollTop.value
+    const added = getMessageOffsetTop(0)  // 新插入总高度
+    const target = oldScrollTop + added
+    lockHistoryRestore(400)
+    setProgrammaticScrollTop(target)
+    return
+  }
+
+  // ④ 强制虚拟窗口包含锚点消息，保证它被渲染
+  if (shouldUseVirtualList.value) {
+    const buffer = VIRTUAL_BUFFER_COUNT
+    const start = Math.max(0, anchorIndex - buffer)
+    const end = Math.min(messages.value.length - 1, anchorIndex + buffer)
+    virtualRange.value = { start, end }
+    virtualTopSpacer.value = getMessageOffsetTop(start)
+    virtualBottomSpacer.value = Math.max(0, getTotalMessageHeight() - getMessageOffsetTop(end + 1))
+  }
+
+  // ⑤ 锁定恢复，避免 scroll 事件干扰，同时释放可能冲突的 scroll-top
+  lockHistoryRestore(600)
   if (scrollTopBindingTimer) {
     clearTimeout(scrollTopBindingTimer)
     scrollTopBindingTimer = null
   }
-  scrollTopBinding.value = undefined
-  historyAnchorViewId.value = targetHistoryAnchorViewId
+  scrollTopBinding.value = undefined   // 释放 scroll-top 绑定
+
+  // ⑥ 设置 scroll-into-view，让锚点消息回到 scroll-view 顶部
+  historyAnchorViewId.value = `msg-row-${viewportAnchorId}`
   scrollIntoViewId.value = ''
   await nextTick()
-  scrollIntoViewId.value = targetHistoryAnchorViewId
-  await nextTick()
+  scrollIntoViewId.value = `msg-row-${viewportAnchorId}`
+
+  // ⑦ 等待 scroll-into-view 完成，并做一次最终渲染检查
+  await new Promise(resolve => setTimeout(resolve, 100))
+  // 再次确保虚拟窗口覆盖当前区域（scroll-into-view 可能改变了滚动位置）
+  updateVirtualRange(scrollTop.value, true)
   refreshViewportMetrics()
   forceIosHistoryListRepaint()
 }
@@ -3747,7 +3800,6 @@ const shouldUseVirtualList = computed(
   () =>
     isTouchRuntime &&
     !isIosRuntime &&
-    !historyRestoreLocked.value &&
     messages.value.length > VIRTUAL_LIST_ACTIVATION_COUNT,
 )
 const visibleMessages = computed(() => {
@@ -4606,6 +4658,7 @@ const EmotionTool = (() => {
         display: flex;
         justify-content: center;
         align-items: center;
+        gap: 12rpx;
       }
     }
   }
