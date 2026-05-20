@@ -125,7 +125,9 @@
                   <image
                     class="Icon"
                     :src="
-                      item.is_liked === 1 ? '/static/images/unlike.png' : '/static/images/like.png'
+                      item.is_liked === 1
+                        ? '/static/images/unlike.png'
+                        : '/static/images/zan0.33.png'
                     "
                     mode="aspectFit"
                     :style="{ opacity: item.currentGif ? 0 : 1 }"
@@ -485,7 +487,7 @@ const likePost = (id: number) => {
 
           setTimeout(() => {
             targetItem.currentGif = ''
-          }, 1000)
+          }, 800)
         }
       } else {
         toast.show(res.msg || t('common.error'))
