@@ -88,17 +88,6 @@ const handleTabClick = (index: number, url: string) => {
   uni.switchTab({ url: '/' + url.replace(/^\//, '') }) // 保证只有一个 /
 }
 
-watch(
-  () => systemStore.ready,
-  (ready) => {
-    if (ready) {
-      buildTabbar()
-      updateCurrentTab()
-    }
-  },
-  { immediate: true },
-)
-
 // 更新当前选中的tab
 const updateCurrentTab = () => {
   const pages = getCurrentPages()
@@ -110,6 +99,17 @@ const updateCurrentTab = () => {
     current.value = currentIndex
   }
 }
+
+watch(
+  () => systemStore.ready,
+  (ready) => {
+    if (ready) {
+      buildTabbar()
+      updateCurrentTab()
+    }
+  },
+  { immediate: true },
+)
 
 onShow(() => {
   updateCurrentTab()

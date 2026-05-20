@@ -20,10 +20,10 @@
           </view>
           <view class="searchBox">
             <view class="chat-title-info">
-              <view
+              <!-- <view
                 class="group-avatar"
                 :style="getAvatarStyle(roomDetail?.room.avatar || '', 'room')"
-              ></view>
+              ></view> -->
               <view class="title-text-wrap">
                 <text class="main-title">{{ roomDetail?.room.name || t('group.chat.title') }}</text>
                 <text class="sub-title">({{ roomDetail?.room.member_count || 0 }})</text>
@@ -32,6 +32,7 @@
           </view>
           <view class="right-icons">
             <wd-icon
+              v-if="false"
               name="notification"
               size="22px"
               color="#fff"
@@ -313,7 +314,7 @@
           class="fixedCommentBox"
           style="padding-bottom: calc(env(safe-area-inset-bottom) + 24rpx)"
         >
-          <wd-popover
+          <!-- <wd-popover
             v-model="stressMenuVisible"
             mode="menu"
             placement="top-start"
@@ -327,7 +328,7 @@
             >
               压测工具
             </wd-button>
-          </wd-popover>
+          </wd-popover> -->
           <!-- ✅ 使用原生 uni.chooseImage 替代 wd-upload -->
           <view
             class="upload-icon-btn"
