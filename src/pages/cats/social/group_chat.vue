@@ -1960,7 +1960,7 @@ const initChatSocketClient = () => {
 
   chatSocketClient.value = new EchoPrivateChannelClient({
     key: import.meta.env.VITE_WS_APP_KEY || 'libertycats-key',
-    wsHost: import.meta.env.VITE_WS_HOST || 'test-app.libertycats.app',
+    wsHost: import.meta.env.VITE_WS_HOST || 'app.libertycats.app',
     authEndpoint: import.meta.env.VITE_SERVER_BASEURL.replace('/api', '') + '/broadcasting/auth',
     getToken: () => userStore.userInfo.token || uni.getStorageSync('token'),
     debug: false,
