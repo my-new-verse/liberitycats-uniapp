@@ -1,6 +1,8 @@
 type ReconnectingWebSocketOptions = {
   reconnectInterval?: number
   maxReconnectAttempts?: number
+  maxReconnectInterval?: number
+  reconnectBackoffFactor?: number
   debug?: boolean
 }
 
@@ -14,6 +16,8 @@ export class ReconnectingWebSocket {
   private url: string
   private reconnectInterval: number
   private maxReconnectAttempts: number
+  private maxReconnectInterval: number
+  private reconnectBackoffFactor: number
   private reconnectAttempts = 0
   private socketTask: UniApp.SocketTask | null = null
   private manuallyClosed = false
@@ -30,6 +34,8 @@ export class ReconnectingWebSocket {
     this.url = url
     this.reconnectInterval = options.reconnectInterval ?? 3000
     this.maxReconnectAttempts = options.maxReconnectAttempts ?? 10
+    this.maxReconnectInterval = options.maxReconnectInterval ?? 30000
+    this.reconnectBackoffFactor = options.reconnectBackoffFactor ?? 1.5
     this.debug = options.debug ?? false
   }
 
@@ -101,12 +107,16 @@ export class ReconnectingWebSocket {
       return
     }
 
+    const delay = Math.min(
+      Math.round(this.reconnectInterval * this.reconnectBackoffFactor ** this.reconnectAttempts),
+      this.maxReconnectInterval,
+    )
     this.reconnectAttempts += 1
     this.clearReconnectTimer()
-    this.log(`reconnect attempt ${this.reconnectAttempts}`)
+    this.log(`reconnect attempt ${this.reconnectAttempts}, delay ${delay}ms`)
     this.reconnectTimer = setTimeout(() => {
       this.connect()
-    }, this.reconnectInterval)
+    }, delay)
   }
 
   send(data: string) {

@@ -17,6 +17,8 @@ type EchoPrivateChannelClientOptions = {
   pongTimeout?: number
   reconnectInterval?: number
   maxReconnectAttempts?: number
+  maxReconnectInterval?: number
+  reconnectBackoffFactor?: number
   debug?: boolean
   eventHandlers?: Record<string, (payload: any) => Promise<void> | void>
   beforeReconnect?: (reason: string) => Promise<void> | void
@@ -109,8 +111,10 @@ export class EchoPrivateChannelClient {
     if (this.socket) return
 
     this.socket = new ReconnectingWebSocket(this.buildSocketUrl(), {
-      reconnectInterval: this.options.reconnectInterval ?? 3000,
+      reconnectInterval: this.options.reconnectInterval ?? 5000,
       maxReconnectAttempts: this.options.maxReconnectAttempts ?? 10,
+      maxReconnectInterval: this.options.maxReconnectInterval ?? 30000,
+      reconnectBackoffFactor: this.options.reconnectBackoffFactor ?? 1.5,
       debug: this.options.debug ?? false,
     })
 

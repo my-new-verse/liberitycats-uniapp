@@ -15,6 +15,13 @@ const avatarStyleCache = new Map<string, Record<string, string>>()
 const levelBadgeUrlCache = new Map<number, string>()
 const levelBadgeStyleCache = new Map<number, Record<string, string>>()
 
+type AvatarCacheStats = {
+  avatarUrlEntries: number
+  avatarStyleEntries: number
+  levelBadgeUrlEntries: number
+  levelBadgeStyleEntries: number
+}
+
 const stripUrlQueryAndHash = (url: string) => {
   if (!url) return ''
   return url.split('#')[0].split('?')[0]
@@ -145,3 +152,10 @@ export const preloadLevelBadgeUrls = (levels: Array<number | string | null | und
     getLevelBadgeStyle(level)
   })
 }
+
+export const getAvatarCacheStats = (): AvatarCacheStats => ({
+  avatarUrlEntries: avatarUrlCache.size,
+  avatarStyleEntries: avatarStyleCache.size,
+  levelBadgeUrlEntries: levelBadgeUrlCache.size,
+  levelBadgeStyleEntries: levelBadgeStyleCache.size,
+})
