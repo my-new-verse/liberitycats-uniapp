@@ -709,15 +709,15 @@ const shareRef = ref<any>(null)
   background-color: #fff;
 }
 .zanWrapper {
-  width: 70rpx !important;
-  height: 70rpx !important;
+  width: 85rpx !important;
+  height: 85rpx !important;
   position: relative !important;
   display: inline-flex !important;
   align-items: center;
   justify-content: center;
   flex-shrink: 0 !important;
   vertical-align: middle;
-  margin: 0 -19rpx !important;
+  margin: 0 -22rpx !important;
   overflow: visible !important;
 
   .Icon {

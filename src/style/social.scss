@@ -63,7 +63,7 @@
       background-size: 100%;
     }
     .jbBox {
-      background-image: url('@/static/images/jb.png');
+      background-image: url('@/static/images/more.png');
     }
     .socialHead {
       display: flex;
@@ -192,19 +192,19 @@
           background-size: 100% 100%;
         }
         .socialBtnIcon.view {
-          background-image: url('@/static/images/view@2x.png');
+          background-image: url('@/static/images/view.svg');
         }
         .socialBtnIcon.share {
-          background-image: url('@/static/images/share@2x.png');
+          background-image: url('@/static/images/share1.75.svg');
         }
         .socialBtnIcon.zan {
-          background-image: url('@/static/images/zan@2x.png');
+          background-image: url('@/static/images/zan0.33.png');
         }
         .socialBtnIcon.zan.on {
           background-image: url('@/static/images/zan_on@2x.png');
         }
         .socialBtnIcon.quote {
-          background-image: url('@/static/images/quote@2x.png');
+          background-image: url('@/static/images/message1.75.svg');
         }
       }
       .socialBtn {

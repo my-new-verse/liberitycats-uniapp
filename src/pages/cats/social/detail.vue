@@ -80,7 +80,7 @@
                       :src="
                         postDetail.is_liked === 1
                           ? '/static/images/unlike.png'
-                          : '/static/images/like.png'
+                          : '/static/images/zan0.33.png'
                       "
                       mode="aspectFit"
                       :style="{ opacity: postDetail.currentGif ? 0 : 1 }"
@@ -170,7 +170,7 @@
                             :src="
                               item.is_liked === 1
                                 ? '/static/images/unlike.png'
-                                : '/static/images/like.png'
+                                : '/static/images/zan0.33.png'
                             "
                             mode="aspectFit"
                             :style="{ opacity: item.currentGif ? 0 : 1 }"
@@ -250,7 +250,7 @@
                                     :src="
                                       reply.is_liked === 1
                                         ? '/static/images/unlike.png'
-                                        : '/static/images/like.png'
+                                        : '/static/images/zan0.33.png'
                                     "
                                     mode="aspectFit"
                                     :style="{ opacity: reply.currentGif ? 0 : 1 }"
@@ -990,7 +990,7 @@ const likePost = (id: number) => {
 
       setTimeout(() => {
         postDetail.value.currentGif = ''
-      }, 1000)
+      }, 800)
     })
     .finally(() => {
       // uni.hideLoading()
@@ -1022,7 +1022,7 @@ const likeComment = (item: any) => {
 
       setTimeout(() => {
         item.currentGif = ''
-      }, 1000)
+      }, 800)
     })
     .finally(() => {
       // uni.hideLoading()
@@ -1259,7 +1259,7 @@ const likeReply = async (replyItem: any, itemId: number) => {
 
           setTimeout(() => {
             targetReply.currentGif = ''
-          }, 1000)
+          }, 800)
         }
       }
     })
@@ -1684,15 +1684,15 @@ const handleOpenShare = (item: any) => {
             align-items: center;
             // justify-content: center;
             .zanWrapper {
-              width: 60rpx !important;
-              height: 60rpx !important;
+              width: 70rpx !important;
+              height: 70rpx !important;
               position: relative !important;
               display: inline-flex !important;
               align-items: center;
               justify-content: center;
               flex-shrink: 0 !important;
               vertical-align: middle;
-              margin: 0 -19rpx !important;
+              margin: 0 -22rpx !important;
               overflow: visible !important;
             }
             .Icon {
@@ -1840,15 +1840,15 @@ const handleOpenShare = (item: any) => {
   }
 }
 .zanWrapper {
-  width: 70rpx !important;
-  height: 70rpx !important;
+  width: 85rpx !important;
+  height: 85rpx !important;
   position: relative !important;
   display: inline-flex !important;
   align-items: center;
   justify-content: center;
   flex-shrink: 0 !important;
   vertical-align: middle;
-  margin: 0 -19rpx !important;
+  margin: 0 -22rpx !important;
   overflow: visible !important;
 
   .Icon {
