@@ -58,6 +58,8 @@ interface NavigateToOptions {
        "/pages/cats/settings/virtual_account" |
        "/pages/cats/social/detail" |
        "/pages/cats/social/detail_sktiy_comment" |
+       "/pages/cats/social/group_announcement_detail" |
+       "/pages/cats/social/group_announcement_list" |
        "/pages/cats/social/group_chat" |
        "/pages/cats/social/group_members" |
        "/pages/cats/social/publish" |

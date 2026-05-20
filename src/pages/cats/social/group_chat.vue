@@ -69,6 +69,11 @@
         @scrolltoupper="handleScrollToUpper"
       >
         <view id="message-list-root" class="message-list">
+          <!-- 加载历史消息中提示 -->
+          <view v-if="loadingMoreHistory" class="history-tip">
+            <wd-loading :size="10" color="#fff" />
+            <text class="history-tip-text">{{ t('group.chat.loadingMoreHistory') }}</text>
+          </view>
           <view
             v-if="!loadingMoreHistory && !hasMoreHistory && messages.length > 0"
             class="history-tip"
@@ -779,8 +784,8 @@ const ESTIMATED_TIME_DIVIDER_HEIGHT_RPX = 104
 const MESSAGE_ROW_MARGIN_BOTTOM_RPX = 28
 const TOP_HISTORY_TRIGGER_PX = 20
 const TOP_HISTORY_RESET_PX = 80
-const INITIAL_HISTORY_LIMIT = 50
-const LOAD_MORE_HISTORY_LIMIT = 20
+const INITIAL_HISTORY_LIMIT = 20
+const LOAD_MORE_HISTORY_LIMIT = 50
 const BOTTOM_AUTO_SCROLL_THRESHOLD_PX = 100
 const MESSAGE_BOTTOM_GAP_PX = 16
 const MESSAGE_LONG_PRESS_DURATION_MS = 450
@@ -1872,9 +1877,9 @@ const shouldNotifyGroupMembersRefresh = (
 
   return Boolean(
     payload?.message?.payload?.params?.member_id ||
-    payload?.data?.message?.payload?.params?.member_id ||
-    payload?.payload?.params?.member_id ||
-    message?.payload?.params?.member_id,
+      payload?.data?.message?.payload?.params?.member_id ||
+      payload?.payload?.params?.member_id ||
+      message?.payload?.params?.member_id,
   )
 }
 
@@ -2410,13 +2415,11 @@ const prependHistoryMessages = async (
   rebuildMessagePrefixHeights()
 
   // ③ 找到锚点消息在新列表中的索引
-  const anchorIndex = messages.value.findIndex(
-    (m) => String(m.id) === String(viewportAnchorId)
-  )
+  const anchorIndex = messages.value.findIndex((m) => String(m.id) === String(viewportAnchorId))
   if (anchorIndex < 0) {
     // 如果找不到锚点，回退到高度差法（极少数情况）
     const oldScrollTop = scrollTop.value
-    const added = getMessageOffsetTop(0)  // 新插入总高度
+    const added = getMessageOffsetTop(0) // 新插入总高度
     const target = oldScrollTop + added
     lockHistoryRestore(400)
     setProgrammaticScrollTop(target)
@@ -2439,16 +2442,18 @@ const prependHistoryMessages = async (
     clearTimeout(scrollTopBindingTimer)
     scrollTopBindingTimer = null
   }
-  scrollTopBinding.value = undefined   // 释放 scroll-top 绑定
+  scrollTopBinding.value = undefined // 释放 scroll-top 绑定
 
   // ⑥ 设置 scroll-into-view，让锚点消息回到 scroll-view 顶部
   historyAnchorViewId.value = `msg-row-${viewportAnchorId}`
   scrollIntoViewId.value = ''
   await nextTick()
-  scrollIntoViewId.value = `msg-row-${viewportAnchorId}`
+  setTimeout(() => {
+    scrollIntoViewId.value = `msg-row-${viewportAnchorId}`
+  }, 500)
 
   // ⑦ 等待 scroll-into-view 完成，并做一次最终渲染检查
-  await new Promise(resolve => setTimeout(resolve, 100))
+  await new Promise((resolve) => setTimeout(resolve, 100))
   // 再次确保虚拟窗口覆盖当前区域（scroll-into-view 可能改变了滚动位置）
   updateVirtualRange(scrollTop.value, true)
   refreshViewportMetrics()
@@ -3797,10 +3802,7 @@ const toggleReaction = async (msg: ChatMessage, reactionType: string, reactionVa
 
 const messages = ref<ChatMessage[]>([])
 const shouldUseVirtualList = computed(
-  () =>
-    isTouchRuntime &&
-    !isIosRuntime &&
-    messages.value.length > VIRTUAL_LIST_ACTIVATION_COUNT,
+  () => isTouchRuntime && !isIosRuntime && messages.value.length > VIRTUAL_LIST_ACTIVATION_COUNT,
 )
 const visibleMessages = computed(() => {
   if (!shouldUseVirtualList.value) return messages.value
@@ -4674,6 +4676,8 @@ const EmotionTool = (() => {
     display: flex;
     justify-content: center;
     padding: 12rpx 0 8rpx;
+    gap: 12px;
+    align-items: center;
   }
 
   .history-tip-text {

@@ -545,6 +545,23 @@
       }
     },
     {
+      "path": "pages/cats/social/group_announcement_detail",
+      "type": "page",
+      "layout": "default",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    {
+      "path": "pages/cats/social/group_announcement_list",
+      "type": "page",
+      "layout": "default",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/cats/social/group_chat",
       "type": "page",
       "layout": "default",
