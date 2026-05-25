@@ -126,16 +126,41 @@ export const deletePostApi = (id: number) => {
   })
 }
 
-// 举报帖子
-export const reportPostApi = (id: number) => {
-  return http.post('/v1/community/post/report', {
-    id,
-  })
+export type CommunityReportReason =
+  | 'spam_ad'
+  | 'pornographic'
+  | 'violence'
+  | 'illegal'
+  | 'fraud'
+  | 'harassment'
+  | 'misinformation'
+  | 'infringement'
+  | 'other'
+
+export const reportPostApi = (params: {
+  target_type: 'post' | 'comment'
+  target_id: number
+  reason: CommunityReportReason
+  description?: string
+}) => {
+  return http.post('/v1/community/post/report', params)
 }
 
 export const blockUserApi = (id: number) => {
   return http.post('/v1/community/post/block-user', {
     id,
+  })
+}
+
+export const adminRemovalApi = (
+  targetId: number,
+  targetType: 'post' | 'comment',
+  reason?: string,
+) => {
+  return http.post('/v1/community/post/admin-take-down', {
+    target_id: targetId,
+    target_type: targetType,
+    ...(reason ? { reason } : {}),
   })
 }
 
@@ -234,4 +259,16 @@ export interface PostShareCopyResponse {
 
 export const getPostShareCopy = (params: { id: number | string; locale?: string }) => {
   return http.get<PostShareCopyResponse>('/v1/community/post/share-copy', params)
+}
+
+export interface GeneratePosterData {
+  status: 'done' | 'processing'
+  url?: string
+}
+
+// 调用生成海报接口
+export const generatePostPosterApi = (postId: number) => {
+  return http.post<GeneratePosterData>('/v1/community/post/generate-poster', {
+    post_id: postId,
+  })
 }

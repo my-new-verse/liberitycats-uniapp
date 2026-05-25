@@ -192,6 +192,7 @@ import {
   blockUserApi,
   createFollowApi,
   deleteFollowApi,
+  adminRemovalApi,
 } from '@/service/api/community'
 import { preloadChatRoomsApi } from '@/service/api/groupChat'
 import SharePopup from '@/components/SharePopup/SharePopup.vue'
@@ -563,15 +564,7 @@ onUnmounted(() => {
 })
 
 const reportShow = ref<boolean>(false)
-const reportActions = ref([
-  {
-    name: t('social.index.post.report'),
-    color: '#ff6b03',
-  },
-  {
-    name: t('social.index.user.block'),
-  },
-])
+const reportActions = ref<any[]>([])
 
 function reportSheetClose() {
   reportShow.value = false
@@ -580,8 +573,10 @@ function reportSheetClose() {
 function reportSheetSelect({ item, index }) {
   if (index === 0) {
     handleReportPost()
-  } else {
+  } else if (index === 1) {
     handleReportUser()
+  } else if (index === 2) {
+    handleRemovePost()
   }
 }
 
@@ -591,6 +586,20 @@ const reportPost = (post: getCommunityPostListApiResponse['data'][number]) => {
     toUrl('/pages/cats/login/login', true)
     return
   }
+
+  const actions = [
+    { name: t('social.index.post.report'), color: '#ff6b03' },
+    { name: t('social.index.user.block') },
+  ]
+
+  // 有权限
+  if (userStore.userInfo.community_permissions?.can_take_down === 1) {
+    actions.push({
+      name: t('report.admin.remove_post'),
+      color: '#FF3B30',
+    })
+  }
+  reportActions.value = actions
   reportShow.value = true
   reportPostItem.value = post
 }
@@ -600,28 +609,42 @@ const handleReportPost = () => {
     toUrl('/pages/cats/login/login', true)
     return
   }
-  // 举报并刷新页面（或者删去当前列表项）
-  message
-    .confirm({
-      msg: t('social.index.report_post_confirm_txt'),
-    })
-    .then(() => {
-      uni.showLoading()
-      reportPostApi(reportPostItem.value.id)
-        .then((res) => {
-          if (res.data?.result === 1) {
-            socialList.value.data = socialList.value.data.filter(
-              (item) => item.id !== reportPostItem.value.id,
-            )
-          } else {
-            toast.show(res.msg || t('common.error'))
-          }
-        })
-        .finally(() => {
-          uni.hideLoading()
-        })
-    })
-    .catch(() => {})
+  toUrl(`/pages/cats/report/content?id=${reportPostItem.value.id}&type=post`)
+}
+
+// 管理员下架
+const handleRemovePost = () => {
+  if (!userStore.isLogin) {
+    toUrl('/pages/cats/login/login', true)
+    return
+  }
+
+  uni.showModal({
+    title: t('report.admin.remove_post'),
+    content: t('social.index.post.remove_content'),
+    confirmText: t('social.index.post.confirm_remove'),
+    cancelText: t('common.cancel'),
+    confirmColor: '#FF6B03',
+    success: (res) => {
+      if (res.confirm) {
+        uni.showLoading()
+        adminRemovalApi(reportPostItem.value.id, 'post')
+          .then((res) => {
+            if (res.data?.status === 0) {
+              socialList.value.data = socialList.value.data.filter(
+                (item) => item.id !== reportPostItem.value.id,
+              )
+              toast.success(t('common.operation_success'))
+            } else {
+              toast.show(res.msg || t('common.operationFailedRetry'))
+            }
+          })
+          .finally(() => {
+            uni.hideLoading()
+          })
+      }
+    },
+  })
 }
 
 const handleReportUser = () => {

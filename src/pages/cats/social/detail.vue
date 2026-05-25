@@ -186,16 +186,16 @@
                         v-if="userStore.userInfo?.member_id === item.member_id"
                         @click.stop="handleDelPost(item.id, 'l1')"
                       ></view>
-                      <view class="jbBox" v-else @click.stop="handleReportPost(item.id)"></view>
+                      <view class="jbBox" v-else @click.stop="reportPost(item)"></view>
                     </view>
                   </view>
 
                   <!-- 二级评论 -->
-                  <view
-                    class="replyList"
-                    v-if="item.reply_preview && item.reply_preview.length > 0"
-                  >
-                    <view class="replyListCnt">
+                  <view class="replyList" v-if="item.reply_count > 0">
+                    <view
+                      class="replyListCnt"
+                      v-if="item.reply_preview && item.reply_preview.length > 0"
+                    >
                       <view
                         class="replyItem"
                         v-for="reply in item.reply_preview"
@@ -266,11 +266,7 @@
                                 v-if="userStore.userInfo?.member_id === reply.member_id"
                                 @click.stop="handleDelPost(reply.id, 'l2', item)"
                               ></view>
-                              <view
-                                class="jbBox"
-                                v-else
-                                @click.stop="handleReplyReportPost(reply, item.id)"
-                              ></view>
+                              <view class="jbBox" v-else @click.stop="reportPost(reply)"></view>
                             </view>
                           </view>
                         </view>
@@ -419,6 +415,14 @@
     </custom-nav2>
     <wd-message-box selector="wd-message-box-slot" />
     <SharePopup ref="shareRef" />
+    <wd-action-sheet
+      custom-class="reportSheet"
+      v-model="reportShow"
+      :actions="reportActions"
+      :z-index="97"
+      @close="reportSheetClose"
+      @select="reportSheetSelect"
+    />
   </view>
 </template>
 
@@ -436,6 +440,8 @@ import {
   deletePostApi,
   reportPostApi,
   getCommunityPostThreadApi,
+  adminRemovalApi,
+  blockUserApi,
 } from '@/service/api/community'
 import {
   formatNickname,
@@ -466,6 +472,29 @@ const toast = useToast()
 const message = useMessage('wd-message-box-slot')
 
 const postId = ref<number>(0)
+const reportShow = ref<boolean>(false)
+const reportActions = ref<any[]>([])
+const reportPostItem = ref<getCommunityPostListApiResponse['data'][number]>({})
+const reportPost = (post: getCommunityPostListApiResponse['data'][number]) => {
+  if (!userStore.isLogin) {
+    toUrl('/pages/cats/login/login', true)
+    return
+  }
+  const actions = [
+    { name: t('social.index.post.report_comment'), color: '#ff6b03' },
+    // { name: t('social.index.user.block') },
+  ]
+  // 有权限
+  if (userStore.userInfo.community_permissions?.can_take_down === 1) {
+    actions.push({
+      name: t('report.admin.remove_comment'),
+      color: '#FF3B30',
+    })
+  }
+  reportActions.value = actions
+  reportShow.value = true
+  reportPostItem.value = post
+}
 
 const currentRequestId = ref('')
 
@@ -502,6 +531,74 @@ onBackPress((options) => {
   }
   return false
 })
+
+function reportSheetClose() {
+  reportShow.value = false
+}
+
+function reportSheetSelect({ item, index }) {
+  if (index === 0) {
+    handleReportPost()
+    //   } else if (index === 1) {
+    //     handleReportUser()
+  } else if (index === 1) {
+    handleRemovePost()
+  }
+}
+
+const handleReportPost = () => {
+  if (!userStore.isLogin) {
+    toUrl('/pages/cats/login/login', true)
+    return
+  }
+  toUrl(`/pages/cats/report/content?id=${reportPostItem.value.id}&type=comment`)
+}
+
+// 管理员下架
+const handleRemovePost = () => {
+  if (!userStore.isLogin) {
+    toUrl('/pages/cats/login/login', true)
+    return
+  }
+  const item = reportPostItem.value // 当前点击的评论
+
+  uni.showModal({
+    title: t('report.admin.remove_post'),
+    content: t('social.index.post.remove_content'),
+    confirmText: t('social.index.post.confirm_remove'),
+    cancelText: t('common.cancel'),
+    confirmColor: '#FF6B03',
+    success: (res) => {
+      if (res.confirm) {
+        uni.showLoading()
+        adminRemovalApi(reportPostItem.value.id, 'comment')
+          .then((res) => {
+            if (res.data?.status === 0) {
+              // 删除点击下架的这条评论
+              if (item.reply_preview) {
+                // 一级评论
+                commentList.value.data = commentList.value.data.filter((i) => i.id !== item.id)
+              } else {
+                // 二级评论
+                const parentComment = commentList.value.data.find((i) => i.id === item.reply_to_id)
+                if (parentComment) {
+                  parentComment.reply_preview = parentComment.reply_preview.filter(
+                    (reply) => reply.id !== item.id,
+                  )
+                }
+              }
+              toast.success(t('common.operation_success'))
+            } else {
+              toast.show(res.msg || t('common.operationFailedRetry'))
+            }
+          })
+          .finally(() => {
+            uni.hideLoading()
+          })
+      }
+    },
+  })
+}
 
 const placeholderText = computed(() => {
   if (replyTarget.value.type !== 'post' && replyTarget.value.nickname) {
@@ -1117,59 +1214,6 @@ const handleDelPost = (id: number, type: 'l1' | 'l2', parentItem?: any) => {
     .catch(() => {})
 }
 
-const handleReplyReportPost = (replyItem: any, itemId: number) => {
-  if (!userStore.isLogin) {
-    toUrl('/pages/cats/login/login', true)
-    return
-  }
-  message
-    .confirm({
-      msg: t('social.index.report_post_confirm_txt'),
-    })
-    .then(() => {
-      uni.showLoading()
-      reportPostApi(replyItem.id)
-        .then((res) => {
-          if (res.data?.result === 1) {
-            const targetComment = commentList.value.data.find((item) => item.id === itemId)
-            if (targetComment) {
-              targetComment.reply_preview = targetComment.reply_preview.filter(
-                (reply) => reply.id !== replyItem.id,
-              )
-            }
-          }
-        })
-        .finally(() => {
-          uni.hideLoading()
-        })
-    })
-    .catch(() => {})
-}
-const handleReportPost = (id: number) => {
-  if (!userStore.isLogin) {
-    toUrl('/pages/cats/login/login', true)
-    return
-  }
-  // 举报并刷新页面（或者删去当前列表项）
-  message
-    .confirm({
-      msg: t('social.index.report_post_confirm_txt'),
-    })
-    .then(() => {
-      uni.showLoading()
-      reportPostApi(id)
-        .then((res) => {
-          if (res.data?.result === 1) {
-            commentList.value.data = commentList.value.data.filter((item) => item.id !== id)
-          }
-        })
-        .finally(() => {
-          uni.hideLoading()
-        })
-    })
-    .catch(() => {})
-}
-
 const scrollToComment = () => {
   const query = uni.createSelectorQuery()
   query.select('#commentSection').boundingClientRect()
@@ -1303,7 +1347,13 @@ const expandReplies = async (item: any) => {
   try {
     let fetchLimit = 5
     if (!item.next_last_id) {
-      item.next_last_id = item.reply_preview[0].id
+      const firstReply = item.reply_preview?.[0]
+      if (firstReply) {
+        item.next_last_id = firstReply.id
+      } else {
+        item.next_last_id = 0
+      }
+
       const hiddenCount = item.hidden_reply_count || 0
       fetchLimit = hiddenCount > 5 ? 5 : hiddenCount
     }
@@ -1352,6 +1402,11 @@ const handleOpenShare = (item: any) => {
 <style lang="scss" scoped>
 @import '/src/style/base';
 @import '/src/style/social';
+:deep(.reportSheet) {
+  font-family:
+    Alimama FangYuanTi VF,
+    sans-serif;
+}
 :deep(.zh-Hans, .zh-Hant) {
   .socialBox .socialItem .socialCntBox .socialCnt {
     font-family: Alibaba PuHuiTi2 !important;

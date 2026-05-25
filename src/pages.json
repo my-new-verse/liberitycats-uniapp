@@ -36,10 +36,10 @@
         "selectedIconPath": "static/LibertyCats/type=on-1.png",
         "pagePath": "pages/tabbar/mall"
       },
-       {
+      {
+        "pagePath": "pages/tabbar/game",
         "iconPath": "/static/images/game/game@2x.png",
-        "selectedIconPath": "/static/images/game/game@2x.png",
-        "pagePath": "pages/tabbar/game"
+        "selectedIconPath": "/static/images/game/game@2x.png"
       },
       {
         "iconPath": "static/LibertyCats/type=off-2.png",
@@ -84,6 +84,10 @@
       "style": {
         "navigationBarTitleText": "数据回写"
       }
+    },
+    {
+      "path": "pages/cats/bulletins",
+      "type": "page"
     },
     {
       "path": "pages/demo/detail_demo",
@@ -199,6 +203,10 @@
         "navigationStyle": "custom",
         "navigationBarTitleText": "%my.page_title%"
       }
+    },
+    {
+      "path": "pages/test/bulletin-test",
+      "type": "page"
     },
     {
       "path": "pages/test/i18n",
@@ -481,6 +489,14 @@
       }
     },
     {
+      "path": "pages/cats/report/content",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f7f6f4"
+      }
+    },
+    {
       "path": "pages/cats/settings/avatar",
       "type": "page",
       "style": {
@@ -558,7 +574,20 @@
       "type": "page",
       "layout": "default",
       "style": {
-        "navigationStyle": "custom"
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "群公告",
+        "enablePullDownRefresh": true,
+        "backgroundTextStyle": "dark",
+        "backgroundColor": "#f7f6f4",
+        "navigationBarTextStyle": "black",
+        "onReachBottomDistance": 80,
+        "app-plus": {
+          "pullToRefresh": {
+            "style": "circle",
+            "color": "#ff6b03",
+            "offset": "140rpx"
+          }
+        }
       }
     },
     {
@@ -576,7 +605,8 @@
       "layout": "default",
       "style": {
         "navigationStyle": "custom",
-        "backgroundColor": "#f7f6f4"
+        "backgroundColor": "#f7f6f4",
+        "onReachBottomDistance": 80
       }
     },
     {

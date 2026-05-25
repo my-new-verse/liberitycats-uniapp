@@ -26,6 +26,19 @@
         </view>
       </view>
     </wd-popup>
+
+    <!-- 海报预览 -->
+    <wd-popup v-model="showPosterPreview" position="center" :z-index="100000">
+      <view class="poster-preview">
+        <image :src="posterUrl" class="poster-img" mode="widthFix" />
+        <view class="poster-buttons">
+          <wd-button type="primary" block @click="savePoster">保存图片</wd-button>
+          <wd-button plain block style="margin-top: 20rpx" @click="showPosterPreview = false">
+            关闭
+          </wd-button>
+        </view>
+      </view>
+    </wd-popup>
   </root-portal>
 </template>
 
@@ -35,21 +48,26 @@ import { useUserStore } from '@/store'
 import { toUrl, openUrl } from '@/utils'
 import i18n, { t } from '@/locale/index'
 import { getPostShareCopy } from '@/service/api/community'
+import { generatePostPoster } from '@/utils/poster'
 
 const userStore = useUserStore()
 
 const showShare = ref(false)
+const isLoading = ref(false)
+const showPosterPreview = ref(false)
+const posterUrl = ref('')
 
 interface ShareOption {
   label: string
   icon: string
-  type: 'discord' | 'X' | 'copy'
+  type: 'discord' | 'X' | 'copy' | 'download'
 }
 
 const shareOptions = ref<ShareOption[]>([
   { label: 'discord', icon: '/static/images/Discord.png', type: 'discord' },
   { label: 'X', icon: '/static/images/X.png', type: 'X' },
   { label: '复制链接', icon: '/static/images/link.png', type: 'copy' },
+  { label: '下载图片', icon: '/static/images/download.png', type: 'download' },
 ])
 
 const currentSharePost: { value: any } = { value: null }
@@ -71,17 +89,34 @@ const openSharePopup = (post: any) => {
     toUrl('/pages/cats/login', true)
     return
   }
-  console.log(post)
-
   currentSharePost.value = post
   showShare.value = true
 }
 
-const handleShareClick = async (type: 'discord' | 'X' | 'copy') => {
+const handleShareClick = async (type: 'discord' | 'X' | 'copy' | 'download') => {
   showShare.value = false
 
   const post = currentSharePost.value
   if (!post.id) return
+
+  if (type === 'download') {
+    if (isLoading.value) return
+    isLoading.value = true
+    uni.showLoading({ title: '海报生成中...', mask: true })
+    try {
+      const url = await generatePostPoster(post.id)
+      posterUrl.value = url
+
+      uni.hideLoading()
+      showPosterPreview.value = true
+    } catch (err) {
+      uni.hideLoading()
+      uni.showToast({ title: String(err), icon: 'none' })
+    } finally {
+      isLoading.value = false
+    }
+    return
+  }
   try {
     const res = await getPostShareCopy({
       id: post.id,
@@ -138,9 +173,22 @@ const handleShareClick = async (type: 'discord' | 'X' | 'copy') => {
   }
 }
 
-defineExpose({
-  openSharePopup,
-})
+// 保存海报到相册
+const savePoster = () => {
+  if (!posterUrl.value) return
+  uni.saveImageToPhotosAlbum({
+    filePath: posterUrl.value,
+    success: () => {
+      uni.showToast({ title: t('common.save_success'), icon: 'success' })
+      showPosterPreview.value = false
+    },
+    fail: () => {
+      uni.showToast({ title: t('common.save_failed'), icon: 'none' })
+    },
+  })
+}
+
+defineExpose({ openSharePopup })
 </script>
 
 <style scoped>
@@ -188,5 +236,20 @@ defineExpose({
   font-family:
     Alimama FangYuanTi VF,
     sans-serif;
+}
+
+.poster-preview {
+  width: 90vw;
+  padding: 30rpx;
+  background: #fff;
+  border-radius: 24rpx;
+}
+.poster-img {
+  width: 100%;
+  border-radius: 16rpx;
+  margin-bottom: 30rpx;
+}
+.poster-buttons {
+  margin-top: 20rpx;
 }
 </style>
