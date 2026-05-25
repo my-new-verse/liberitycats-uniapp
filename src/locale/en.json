@@ -517,5 +517,6 @@
   "report.admin.remove_post": "Remove Post (Admin)",
   "report.admin.remove_comment": "Remove Comment (Admin)",
   "social.index.post.remove_content": "Confirm to remove this post?\nThe content will be invisible to others.\nThis action cannot be undone, please proceed carefully.",
-  "social.index.post.confirm_remove": "Confirm Removal"
+  "social.index.comment.remove_content": "Confirm to remove this comment?\nThe content will be invisible to others.\nThis action cannot be undone, please proceed carefully.",
+  "social.index.post.confirm_remove": "Confirm"
 }

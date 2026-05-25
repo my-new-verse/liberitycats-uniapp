@@ -563,8 +563,8 @@ const handleRemovePost = () => {
   const item = reportPostItem.value // 当前点击的评论
 
   uni.showModal({
-    title: t('report.admin.remove_post'),
-    content: t('social.index.post.remove_content'),
+    title: t('report.admin.remove_comment'),
+    content: t('social.index.comment.remove_content'),
     confirmText: t('social.index.post.confirm_remove'),
     cancelText: t('common.cancel'),
     confirmColor: '#FF6B03',

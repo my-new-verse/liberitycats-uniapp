@@ -532,5 +532,6 @@
   "report.admin.remove_post": "下架帖子（管理员）",
   "report.admin.remove_comment": "下架评论（管理员）",
   "social.index.post.remove_content": "确认下架该帖子？\n该内容将对其他用户不可见。\n操作不可撤销，请谨慎操作。",
+  "social.index.comment.remove_content": "确认下架该评论？\n该内容将对其他用户不可见。\n操作不可撤销，请谨慎操作。",
   "social.index.post.confirm_remove": "确认下架"
 }
