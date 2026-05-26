@@ -47,15 +47,20 @@
     <view class="cnt" :style="{ paddingTop: cntPaddingTop + 'rpx' }">
       <!-- ✅ 全群禁言提示横幅 roomDetail?.speaking.is_room_muted === 1-->
       <wd-notice-bar
-        v-if="roomDetail?.speaking.is_room_muted === 1"
-        class="custom-notice"
-        prefix="warn-bold"
+        v-if="currentAnnouncement"
         :scrollable="false"
+        @click="goToCurrentAnnouncementDetail"
       >
-        <template #default>
-          <text class="banner-text">
-            {{ roomDetail?.speaking.reason || t('group.chat.roomMuted') }}
-          </text>
+        <template #prefix>
+          <wd-img src="/static/images/notice_outlined.png" size="22px"></wd-img>
+        </template>
+        <view style="margin-left: 24rpx">{{ currentAnnouncementText }}</view>
+        <template #suffix>
+          <wd-icon
+            @click.stop="goToCurrentAnnouncementDetail"
+            name="arrow-right"
+            size="22px"
+          ></wd-icon>
         </template>
       </wd-notice-bar>
       <scroll-view
@@ -650,6 +655,10 @@ import {
 } from '@/service/api/community'
 import { getAliyunOssConfigApi, getAliyunOssConfigApiResponse } from '@/service/api/upload'
 import {
+  getCurrentGroupAnnouncementApi,
+  type AnnouncementSummary,
+} from '@/service/api/groupAnnouncement'
+import {
   getChatRoomDetailApi,
   getChatRoomMembersApi,
   sendChatMessageApi,
@@ -732,6 +741,12 @@ const locale = uni.getLocale()
 const roomCode = ref('')
 const routeRoomId = ref<number>(0)
 const roomDetail = ref<ChatRoomDetail | null>(null)
+const currentAnnouncement = ref<AnnouncementSummary | null>(null)
+const currentAnnouncementText = computed(() => {
+  const announcement = currentAnnouncement.value
+  if (!announcement) return ''
+  return announcement.summary || announcement.title || ''
+})
 const roomDetailLoading = ref(false)
 let roomDetailPreloadPromise: Promise<boolean> | null = null
 let auxiliaryPreloadPromise: Promise<void> | null = null
@@ -864,6 +879,35 @@ const scrollToBottom = () => {
     virtualListRef.value?.scrollTo(totalHeight)
   })
 }
+const loadCurrentAnnouncement = async (roomId: number) => {
+  if (!roomId) {
+    currentAnnouncement.value = null
+    return
+  }
+  try {
+    const res = await getCurrentGroupAnnouncementApi(roomId)
+    if (res.code === 1) {
+      currentAnnouncement.value = res.data?.announcement ?? null
+    }
+  } catch (error) {
+    console.error('loadCurrentAnnouncement error:', error)
+    currentAnnouncement.value = null
+  }
+}
+
+const goToCurrentAnnouncementDetail = async () => {
+  const announcement = currentAnnouncement.value
+  if (!announcement?.id) return
+  const roomId = roomDetail.value?.room.id || routeRoomId.value
+  if (!roomId) return
+  chatSocketClient.value?.setKeepAliveOnHide(true)
+  toUrl(
+    `/pages/cats/social/group_announcement_detail?room_id=${roomId}&id=${announcement.id}&currentUserRole=${roomDetail.value?.speaking.role}`,
+    true,
+    false,
+  )
+}
+
 const goToAnnouncementList = async () => {
   const roomId = roomDetail.value?.room.id || routeRoomId.value
   if (!roomId) return
@@ -2088,6 +2132,7 @@ const ensureRoomDetailLoaded = async () => {
 
       roomDetail.value = res.data
       routeRoomId.value = res.data.room.id
+      await loadCurrentAnnouncement(res.data.room.id)
       await loadHistoryMessages()
       refreshViewportMetrics()
       return true
@@ -2591,6 +2636,10 @@ onShow(() => {
   hasFlushedReadOnLeave = false
   clearPendingRealtimeMessageIndicator()
   resumeChatAfterForeground()
+  const roomId = roomDetail.value?.room.id || routeRoomId.value
+  if (roomId) {
+    void loadCurrentAnnouncement(roomId)
+  }
   refreshViewportMetrics()
   if (perfPanelVisible.value) {
     void startPerfMonitoring()
@@ -4656,12 +4705,12 @@ const EmotionTool = (() => {
       }
 
       .right-icons {
-        width: 60rpx;
+        min-width: 60rpx;
         flex-shrink: 0;
         display: flex;
         justify-content: center;
         align-items: center;
-        gap: 12rpx;
+        gap: 24rpx;
       }
     }
   }

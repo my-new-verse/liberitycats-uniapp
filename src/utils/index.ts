@@ -929,7 +929,7 @@ export const getChatImageUrl = (
     const ext = matchResult[1].toLowerCase()
 
     // 4. 拼接新的 OSS 处理 URL，format 替换为对应的后缀
-    path = `${path.split('?')[0]}?x-oss-process=image/resize,w_${width / 2},h_${height / 2},m_fill/format,${ext}`
+    path = `${path.split('?')[0]}?x-oss-process=image/resize,w_${Math.trunc(width / 2)},h_${Math.trunc(height / 2)},m_fill/format,${ext}`
   }
   if (path.startsWith('http://') || path.startsWith('https://')) {
     url = path

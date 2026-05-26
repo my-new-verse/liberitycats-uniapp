@@ -3,106 +3,210 @@
   layout: 'default',
   style: {
     navigationStyle: 'custom',
-    backgroundColor: '#ffffff',
+    enablePullDownRefresh: true,
+    backgroundTextStyle: 'dark',
+    backgroundColor: '#f7f6f4',
+    navigationBarTextStyle: 'black',
   },
 }
 </route>
 
 <template>
-  <view class="page">
-    <view class="nav" :style="{ paddingTop: safeTop + 'px' }">
-      <view class="nav-inner">
-        <view class="nav-back" @click="navigateBack">‹</view>
-        <text class="nav-title">公告详情</text>
-        <view class="nav-more" @click="showActionSheet = true">···</view>
-      </view>
-    </view>
-
-    <scroll-view class="content" scroll-y :style="{ paddingTop: navHeight + 'px' }">
+  <custom-nav :title="t('group.announcement.detail.title')" page-background-color="#f7f6f4">
+    <template #right v-if="currentUserRole === 'moderator'">
+      <view @click="showActionSheet = true"><wd-icon name="ellipsis" size="38rpx"></wd-icon></view>
+    </template>
+    <template #default>
+      <!-- <scroll-view scroll-y :style="{ paddingTop: navHeight + 'px' }"> -->
       <view class="detail" v-if="announcement">
-        <text class="tag">公告</text>
+        <text class="tag">{{ t('group.announcement.tag') }}</text>
+        <text class="tag pin-tag" v-if="announcement.isPinned">
+          {{ t('group.announcement.pinned') }}
+        </text>
         <text class="title">{{ announcement.title }}</text>
         <view class="meta">
-          <text>{{ announcement.publisher }}</text>
-          <text>{{ announcement.publish_time_text }}</text>
+          <text v-if="announcement.author?.name">{{ announcement.author.name }}</text>
+          <text>{{ formatTimestamp(announcement.publishTime) }}</text>
         </view>
 
-        <text class="body">{{ announcement.content }}</text>
-        <image class="cover" :src="announcement.cover" mode="aspectFill" />
+        <!-- 封面图 -->
+        <image
+          v-if="announcement.coverImage"
+          class="cover"
+          :src="announcement.coverImage.url"
+          mode="aspectFill"
+        />
 
-        <view class="info-card">
-          <view class="info-row">
-            <text class="info-icon">⏱</text>
-            <text class="info-label">发布时间：</text>
-            <text class="info-value">{{ announcement.publish_time }}</text>
-          </view>
-          <view class="info-row">
-            <text class="info-icon">⌛</text>
-            <text class="info-label">发布平台：</text>
-            <text class="info-value">小程序商城</text>
-          </view>
-          <view class="info-row">
-            <text class="info-icon">👥</text>
-            <text class="info-label">规则：</text>
-            <text class="info-value">{{ announcement.scope }}</text>
-          </view>
-        </view>
+        <!-- 内容块渲染 -->
+        <template v-for="(block, idx) in announcement.content?.blocks" :key="idx">
+          <!-- 段落文本 -->
+          <text v-if="block.type === 'paragraph'" class="body">{{ block.text }}</text>
 
-        <text class="tip">* 本公告将展示在群聊顶部</text>
+          <!-- 内联图片 -->
+          <image
+            v-else-if="block.type === 'image'"
+            class="cover"
+            :src="block.image.url"
+            :alt="block.image.alt"
+            mode="widthFix"
+          />
+
+          <!-- 信息列表 -->
+          <view v-else-if="block.type === 'infoList'" class="info-card">
+            <view v-for="(infoItem, i) in block.items" :key="i" class="info-row">
+              <!-- <text class="info-icon">{{ getBlockIcon(infoItem.icon) }}</text> -->
+              <wd-icon
+                v-if="infoItem.icon.type === 'iconfont'"
+                :name="infoItem.icon?.value || infoItem.icon"
+                size="28rpx"
+                custom-style="margin-right : 8rpx"
+              ></wd-icon>
+              <wd-img
+                v-else-if="infoItem.icon.type === 'image'"
+                :src="infoItem.icon?.value"
+                height="28rpx"
+                width="28rpx"
+              ></wd-img>
+              <view v-if="infoItem.label" class="info-label">{{ infoItem.label }}：</view>
+              <view class="info-value">{{ infoItem.value }}</view>
+            </view>
+          </view>
+
+          <!-- 提示 -->
+          <text v-else-if="block.type === 'tip'" class="tip">* {{ block.text }}</text>
+        </template>
       </view>
-    </scroll-view>
+      <!-- </scroll-view> -->
 
-    <wd-action-sheet
-      v-model="showActionSheet"
-      :actions="actions"
-      cancel-text="取消"
-      @select="handleActionSelect"
-    />
-  </view>
+      <wd-action-sheet
+        v-model="showActionSheet"
+        :actions="actions"
+        :cancel-text="t('group.announcement.cancel')"
+        @select="handleActionSelect"
+        custom-class="annount-action-sheet"
+      />
+    </template>
+  </custom-nav>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { formatTime } from '@/utils'
+import { t } from '@/locale'
 import {
-  getMockGroupAnnouncementDetail,
-  type GroupAnnouncementItem,
-} from '@/service/mock/groupAnnouncement'
+  getGroupAnnouncementDetailApi,
+  pinGroupAnnouncementApi,
+  unpinGroupAnnouncementApi,
+  deleteGroupAnnouncementApi,
+  type AnnouncementDetail,
+} from '@/service/api/groupAnnouncement'
+import CustomNav from '@/components/CustomNav/CustomNav.vue'
 
 const systemInfo = uni.getSystemInfoSync()
 const safeTop = ref(systemInfo.statusBarHeight || 0)
 const navHeight = ref(safeTop.value + 52)
-const announcement = ref<GroupAnnouncementItem | null>(null)
+const announcement = ref<AnnouncementDetail | null>(null)
 const showActionSheet = ref(false)
+const roomId = ref(0)
+const announcementId = ref(0)
+const currentUserRole = ref('')
+const actions = computed(() => {
+  // 如果没有数据，返回空数组
+  if (!announcement.value) return []
 
-const actions = [
-  {
-    name: '置顶',
-    subname: '置顶后，该公告将在群聊顶部展示',
-    value: 'pin',
-  },
-  {
-    name: '取消置顶',
-    subname: '取消后，该公告不再展示在群聊顶部',
-    value: 'unpin',
-  },
-  {
-    name: '下架',
-    subname: '下架后，群成员将不可见该公告',
-    value: 'offline',
-  },
-]
+  const baseActions = [
+    {
+      name: t('group.announcement.action.delete'),
+      subname: t('group.announcement.action.delete.desc'),
+      value: 'delete',
+    },
+  ]
 
-onLoad((options: any) => {
-  announcement.value = getMockGroupAnnouncementDetail(options?.id)
+  // 根据 isPinned 动态添加置顶/取消置顶
+  if (announcement.value.isPinned) {
+    baseActions.unshift({
+      name: t('group.announcement.action.unpin'),
+      subname: t('group.announcement.action.unpin.desc'),
+      value: 'unpin',
+    })
+  } else {
+    baseActions.unshift({
+      name: t('group.announcement.action.pin'),
+      subname: t('group.announcement.action.pin.desc'),
+      value: 'pin',
+    })
+  }
+
+  return baseActions
 })
 
-const navigateBack = () => {
-  uni.navigateBack({ delta: 1 })
+const fetchDetail = async () => {
+  try {
+    const res = await getGroupAnnouncementDetailApi(roomId.value, announcementId.value)
+    announcement.value = res.data
+  } catch (e) {
+    console.error(t('group.announcement.toast.loadFailed'), e)
+  }
 }
 
-const handleActionSelect = ({ item }: any) => {
-  const actionName = item?.name || '操作'
-  uni.showToast({ title: `${actionName}成功`, icon: 'none' })
+onLoad((options: any) => {
+  roomId.value = Number(options?.room_id || 0)
+  announcementId.value = Number(options?.id || 0)
+  currentUserRole.value = options?.currentUserRole
+  fetchDetail()
+})
+const ensureRoomDetailLoaded = async () => {
+  if (roomDetail.value?.room.id) return true
+  if (roomDetailPreloadPromise) return roomDetailPreloadPromise
+
+  roomDetailLoading.value = true
+  roomDetailPreloadPromise = (async () => {
+    try {
+      const res = await getChatRoomDetailApi(roomCode.value)
+      if (res.code !== 1) {
+        toast.show(res.msg || t('common.loadFailed'))
+        return false
+      }
+
+      roomDetail.value = res.data
+      routeRoomId.value = res.data.room.id
+      await loadCurrentAnnouncement(res.data.room.id)
+      await loadHistoryMessages()
+      refreshViewportMetrics()
+      return true
+    } catch (error) {
+      // console.error('loadRoomDetail error:', error)
+      toast.show(t('common.loadFailed'))
+      return false
+    } finally {
+    }
+  })()
+
+  return roomDetailPreloadPromise
+}
+
+const formatTimestamp = (ts?: number) => {
+  if (!ts) return ''
+  return formatTime(ts, 'YYYY-M-D H:i')
+}
+
+const handleActionSelect = async ({ item }: any) => {
+  const value = item?.value
+  try {
+    if (value === 'pin') {
+      await pinGroupAnnouncementApi(roomId.value, announcementId.value)
+      // uni.showToast({ title: t('group.announcement.toast.pinSuccess'), icon: 'success' })
+      fetchDetail()
+    } else if (value === 'unpin') {
+      await unpinGroupAnnouncementApi(roomId.value, announcementId.value)
+      // uni.showToast({ title: t('group.announcement.toast.unpinSuccess'), icon: 'success' })
+      fetchDetail()
+    } else if (value === 'delete') {
+      await deleteGroupAnnouncementApi(roomId.value, announcementId.value)
+      // uni.showToast({ title: t('group.announcement.toast.deleteSuccess'), icon: 'success' })
+      setTimeout(() => uni.navigateBack({ delta: 1 }), 1200)
+    }
+  } catch (e) {}
 }
 </script>
 
@@ -159,7 +263,7 @@ const handleActionSelect = ({ item }: any) => {
 }
 
 .detail {
-  padding: 34rpx 36rpx 72rpx;
+  // padding: 34rpx 36rpx 72rpx;
 }
 
 .tag {
@@ -167,18 +271,23 @@ const handleActionSelect = ({ item }: any) => {
   align-items: center;
   width: fit-content;
   height: 34rpx;
-  padding: 0 10rpx;
+  padding: 6rpx 12rpx;
   border-radius: 8rpx;
   color: #de8b2f;
   background: #fff3df;
-  font-size: 20rpx;
+  font-size: 24rpx;
+  margin-right: 12rpx;
+}
+.pin-tag {
+  color: #ff6b03 !important;
+  background: rgba(255, 107, 3, 0.1) !important;
 }
 
 .title {
   display: block;
   margin-top: 16rpx;
   color: #121212;
-  font-size: 36rpx;
+  font-size: 30rpx;
   font-weight: 800;
   line-height: 1.38;
 }
@@ -215,25 +324,19 @@ const handleActionSelect = ({ item }: any) => {
 
 .info-row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   padding: 12rpx 0;
   color: #2b2b2b;
   font-size: 26rpx;
   line-height: 1.45;
 }
 
+.info-label {
+  margin-left: 18rpx;
+}
 .info-icon {
   width: 42rpx;
   margin-top: 2rpx;
-}
-
-.info-label {
-  flex: 0 0 auto;
-  font-weight: 700;
-}
-
-.info-value {
-  flex: 1;
 }
 
 .tip {
@@ -241,5 +344,24 @@ const handleActionSelect = ({ item }: any) => {
   margin-top: 18rpx;
   color: #c2a37b;
   font-size: 24rpx;
+}
+::v-deep .annount-action-sheet {
+  display: flex;
+  flex-direction: column;
+  padding-top: 32rpx;
+  .wd-action-sheet__action {
+    margin-bottom: 32rpx;
+  }
+  .wd-action-sheet__name {
+    align-items: flex-start;
+    display: flex;
+    line-height: 1.5;
+  }
+  .wd-action-sheet__subname {
+    margin-left: 0;
+    align-items: flex-start;
+    display: flex;
+    line-height: 1.5;
+  }
 }
 </style>
