@@ -86,10 +86,6 @@
       }
     },
     {
-      "path": "pages/cats/bulletins",
-      "type": "page"
-    },
-    {
       "path": "pages/demo/detail_demo",
       "type": "page",
       "layout": "default",
@@ -203,10 +199,6 @@
         "navigationStyle": "custom",
         "navigationBarTitleText": "%my.page_title%"
       }
-    },
-    {
-      "path": "pages/test/bulletin-test",
-      "type": "page"
     },
     {
       "path": "pages/test/i18n",
@@ -566,7 +558,10 @@
       "layout": "default",
       "style": {
         "navigationStyle": "custom",
-        "backgroundColor": "#ffffff"
+        "enablePullDownRefresh": true,
+        "backgroundTextStyle": "dark",
+        "backgroundColor": "#f7f6f4",
+        "navigationBarTextStyle": "black"
       }
     },
     {
@@ -575,7 +570,6 @@
       "layout": "default",
       "style": {
         "navigationStyle": "custom",
-        "navigationBarTitleText": "群公告",
         "enablePullDownRefresh": true,
         "backgroundTextStyle": "dark",
         "backgroundColor": "#f7f6f4",
@@ -598,6 +592,50 @@
         "navigationStyle": "custom",
         "backgroundColor": "#f7f6f4"
       }
+    },
+    {
+      "path": "pages/cats/social/group_chat2",
+      "type": "page"
+    },
+    {
+      "path": "pages/cats/social/group_chat3",
+      "type": "page",
+      "layout": "default",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f7f6f4"
+      }
+    },
+    {
+      "path": "pages/cats/social/group_chat4",
+      "type": "page",
+      "layout": "default",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f7f6f4"
+      }
+    },
+    {
+      "path": "pages/cats/social/group_chat5",
+      "type": "page",
+      "layout": "default",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f7f6f4"
+      }
+    },
+    {
+      "path": "pages/cats/social/group_chat5_lastest",
+      "type": "page",
+      "layout": "default",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f7f6f4"
+      }
+    },
+    {
+      "path": "pages/cats/social/group_chat_new",
+      "type": "page"
     },
     {
       "path": "pages/cats/social/group_members",

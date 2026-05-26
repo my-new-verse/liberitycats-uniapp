@@ -519,5 +519,21 @@
   "report.admin.remove_comment": "下架評論（管理員）",
   "social.index.post.remove_content": "確認下架該貼文？\n內容將對其他使用者隱藏。\n操作無法復原，請謹慎處理。",
   "social.index.comment.remove_content": "確認下架該評論？\n內容將對其他使用者隱藏。\n操作無法復原，請謹慎處理。",
-  "social.index.post.confirm_remove": "確認下架"
+  "social.index.post.confirm_remove": "確認下架",
+
+  "group.announcement.list.title": "群公告",
+  "group.announcement.detail.title": "公告詳情",
+  "group.announcement.tag": "公告",
+  "group.announcement.pinned": "置頂",
+  "group.announcement.cancel": "取消",
+  "group.announcement.action.delete": "刪除公告",
+  "group.announcement.action.delete.desc": "刪除後將無法恢復，請謹慎操作",
+  "group.announcement.action.unpin": "取消置頂",
+  "group.announcement.action.unpin.desc": "取消後該公告將不再置頂展示",
+  "group.announcement.action.pin": "置頂公告",
+  "group.announcement.action.pin.desc": "置頂後該公告將優先展示在列表頂部",
+  "group.announcement.toast.loadFailed": "公告加載失敗",
+  "group.announcement.toast.pinSuccess": "置頂成功",
+  "group.announcement.toast.unpinSuccess": "取消置頂成功",
+  "group.announcement.toast.deleteSuccess": "刪除成功"
 }

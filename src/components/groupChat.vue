@@ -2,13 +2,13 @@
   <view class="group-container">
     <scroll-view scroll-y class="scroll-v">
       <view
-        v-for="item in groupList"
+        v-for="(item, index) in groupList"
         :key="item.id"
         class="group-item"
         @click="handleJoinOrEnter(item)"
       >
         <wd-img
-          :src="getImageUrl(item.banner_image || item.avatar)"
+          :src="getImageUrl(item.banner_image)"
           mode="aspectFill"
           class="group-banner"
         ></wd-img>
@@ -19,13 +19,32 @@
         /> -->
         <view class="banner-mask"></view>
 
+        <view class="group-avatar">
+          <wd-img
+            v-if="item.avatar && item.avatar.length"
+            :src="getImageUrl(item.avatar)"
+            mode="heightFix"
+            width="48rpx"
+            height="48rpx"
+          ></wd-img>
+          <view v-if="item.access_levels.length" class="level-icon">
+            <wd-img
+              v-for="(levelItem, levelIndex) in item.access_levels"
+              :key="levelItem.level_id"
+              :src="getImageUrl(levelItem.icon)"
+              mode="heightFix"
+              :width="index === 1 ? '256rpx' : index === 2 ? '192rpx' : ''"
+              height="48rpx"
+            ></wd-img>
+          </view>
+        </view>
         <view class="group-content">
           <view class="group-text">
             <text class="g-name">{{ item.name }}</text>
             <text class="g-sub-title">{{ item.sub_title || item.description }}</text>
           </view>
 
-          <wd-button class="join-button" @click.stop="handleJoinOrEnter(item)">
+          <wd-button class="join-button" @click.stop="handleJoinOrEnter(item)" size="small">
             {{ t(item.is_joined === 1 ? 'group.chat.enter_chat' : 'group.chat.join_now') }}
           </wd-button>
         </view>
@@ -208,9 +227,38 @@ onUnmounted(() => {
   align-items: flex-end;
   justify-content: space-between;
   padding: 16rpx 28rpx;
-  gap: 24rpx;
+  gap: 12rpx;
 }
 
+.group-avatar {
+  position: absolute;
+  inset: 0;
+  padding: 16rpx 28rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  pointer-events: none;
+
+  .level-icon {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    height: 48rpx;
+    overflow: visible;
+    gap: 8rpx;
+
+    :deep(.wd-img) {
+      min-width: 192rpx !important;
+      flex-shrink: 0;
+      overflow: visible;
+    }
+
+    :deep(.wd-img__image) {
+      display: block;
+      max-width: none;
+    }
+  }
+}
 .group-text {
   flex: 1;
   min-width: 0;

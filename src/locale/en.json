@@ -518,5 +518,21 @@
   "report.admin.remove_comment": "Remove Comment (Admin)",
   "social.index.post.remove_content": "Confirm to remove this post?\nThe content will be invisible to others.\nThis action cannot be undone, please proceed carefully.",
   "social.index.comment.remove_content": "Confirm to remove this comment?\nThe content will be invisible to others.\nThis action cannot be undone, please proceed carefully.",
-  "social.index.post.confirm_remove": "Confirm"
+  "social.index.post.confirm_remove": "Confirm",
+
+  "group.announcement.list.title": "Group Announcements",
+  "group.announcement.detail.title": "Announcement Detail",
+  "group.announcement.tag": "Announcement",
+  "group.announcement.pinned": "Pinned",
+  "group.announcement.cancel": "Cancel",
+  "group.announcement.action.delete": "Delete Announcement",
+  "group.announcement.action.delete.desc": "It cannot be recovered after deletion, please operate with caution",
+  "group.announcement.action.unpin": "Unpin Announcement",
+  "group.announcement.action.unpin.desc": "The announcement will no longer be pinned after cancellation",
+  "group.announcement.action.pin": "Pin Announcement",
+  "group.announcement.action.pin.desc": "The announcement will be displayed at the top of the list after pinning",
+  "group.announcement.toast.loadFailed": "Failed to load announcement",
+  "group.announcement.toast.pinSuccess": "Pinned successfully",
+  "group.announcement.toast.unpinSuccess": "Unpinned successfully",
+  "group.announcement.toast.deleteSuccess": "Deleted successfully"
 }
