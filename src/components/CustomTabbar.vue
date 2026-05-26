@@ -2,7 +2,7 @@
   <view class="custom-tabbar">
     <view
       v-for="(item, index) in tabbarList"
-      :key="item.pagePath"
+      :key="index"
       class="tabbar-item"
       :class="{ 'tabbar-item--active': current === index }"
       @tap="handleTabClick(index, item.pagePath)"
@@ -23,6 +23,7 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { useSystemStore } from '@/store/system'
+import { getServerOnOff } from '@/utils'
 
 const props = defineProps<{
   current?: number
@@ -31,8 +32,6 @@ const props = defineProps<{
 const systemStore = useSystemStore()
 
 const current = ref(props.current || 0)
-
-const tabbarList = ref<any[]>([])
 
 const home = {
   pagePath: '/pages/tabbar/home',
@@ -68,11 +67,13 @@ const game = {
   selectedIconPath: '/static/images/game/game@2x.png',
   text: '游戏',
 }
+const tabbarList = ref<any[]>([home, mall, discover, mine])
 
 const buildTabbar = () => {
   const config = systemStore.config
 
-  const gameEnable = config?.config?.common?.minigame_enable === '1'
+  // const gameEnable = config?.config?.common?.minigame_enable === '1'
+  const gameEnable = getServerOnOff('minigame_enable')
   console.log('Game enable:', gameEnable)
 
   const baseList = [home, mall, discover, mine]

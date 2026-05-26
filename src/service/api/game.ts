@@ -3,6 +3,7 @@ import { http } from '@/utils/http'
 export interface getGameParamsApiResponse {
   tempToken: string
   jumpUrl: string
+  gameVersion: string // 新增游戏版本字段
 }
 
 /**

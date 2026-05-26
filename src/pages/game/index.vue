@@ -1,72 +1,60 @@
-<route lang="json5">
+<route lang="json5" type="page">
 {
   style: {
     navigationStyle: 'custom',
-    navigationBarTitleText: '游戏中心',
-    'app-plus': {
-      titleNView: {
-        titleText: '游戏中心',
-        buttons: [
-          {
-            text: '关闭',
-            fontSize: '14px',
-            width: '80rpx',
-            onclick: 'closeGame',
-          },
-        ],
-      },
-      webView: {
-        hardwareAccelerated: true,
-        domStorage: true,
-        database: true,
-        mixedContent: 'compatibility',
-        allowFileAccess: true,
-        allowContentAccess: true,
-        allowFileAccessFromFileURLs: true,
-        allowUniversalAccessFromFileURLs: true,
-        useWideViewPort: true,
-        loadWithOverviewMode: true,
-        cacheMode: 'LOAD_DEFAULT',
-      },
-    },
+    backgroundColor: '#000000',
   },
 }
 </route>
 <template>
-  <view class="game-container">
-    <!-- 游戏容器 -->
-    <web-view
-      v-if="gameUrl"
-      v-show="webViewVisible"
-      :src="gameUrl"
-      @message="handleMessage"
-      @onPostMessage="handlePostMessage"
-      @error="handleError"
-      :webview-styles="webviewStyles"
-    ></web-view>
+  <page-meta></page-meta>
+  <!-- #ifdef H5 -->
+  <view class="bg-white overflow-hidden page3" :class="[locale]">
+    <view class="game-container">
+      <!-- 游戏容器 -->
+      <web-view
+        v-if="gameUrl"
+        v-show="webViewVisible"
+        :src="gameUrl"
+        @message="handleMessage"
+        @onPostMessage="handlePostMessage"
+        @error="handleError"
+        :webview-styles="webviewStyles"
+      ></web-view>
+      <!-- 交互提示层 -->
+      <view v-if="showInteractionHint" class="interaction-hint" @click="handleUserInteraction">
+        <view class="hint-content">
+          <text>点击屏幕开始游戏</text>
+        </view>
+      </view>
 
-    <!-- 交互提示层 -->
-    <view v-if="showInteractionHint" class="interaction-hint" @click="handleUserInteraction">
-      <view class="hint-content">
-        <text>点击屏幕开始游戏</text>
+      <!-- 调试信息 -->
+      <view v-if="debugInfo" class="debug-info">
+        <text>{{ debugInfo }}</text>
       </view>
     </view>
-
-    <!-- 调试信息 -->
-    <view v-if="debugInfo" class="debug-info">
-      <text>{{ debugInfo }}</text>
+  </view>
+  <!-- #endif -->
+  <!-- #ifndef H5 -->
+  <view v-if="showInteractionHint" class="interaction-hint" @click="handleUserInteraction">
+    <view class="hint-content">
+      <text>点击屏幕开始游戏</text>
     </view>
   </view>
+  <!-- #endif -->
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { onLoad, onShow } from '@dcloudio/uni-app'
+import { ref, onMounted, onUnmounted } from 'vue'
+import { onLoad, onShow, onHide } from '@dcloudio/uni-app'
+import { showGameWebView } from '@/utils/plusGameWebViewPool'
 
 const gameUrl = ref('')
 const webViewVisible = ref(false)
 const showInteractionHint = ref(true)
 const debugInfo = ref('')
+const currentGameType = ref('')
+const isPreloadedInstance = ref(false)
 
 const webviewStyles = {
   progress: {
@@ -77,33 +65,27 @@ const webviewStyles = {
   backgroundColor: '#000000',
 }
 
-// 构建游戏URL
-const buildGameUrl = () => {
-  const query = {
-    token: uni.getStorageSync('token') || 'test_token',
-    userId: uni.getStorageSync('userId') || 'test_user',
-    timestamp: Date.now(),
-    platform: 'app',
-    lang: uni.getLocale() || 'zh',
-    debug: 1,
-    disableWebGL: 0,
-    disableAudio: 0,
-  }
-
-  const queryString = Object.entries(query)
-    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
-    .join('&')
-
-  return `https://game.libertycats.app/minigame/index.html?${queryString}`
-}
-
 // 处理用户交互
-const handleUserInteraction = () => {
+const handleUserInteraction = async () => {
   if (showInteractionHint.value) {
     // 保持已预加载的 web-view，仅控制显示，避免因创建时机导致的白屏
     showInteractionHint.value = false
+    console.log('currentGameType', currentGameType.value)
+    // 尝试使用预加载的WebView
+    if (currentGameType.value) {
+      const success = await showGameWebView(currentGameType.value)
+      console.log('success', success)
+      if (success) {
+        isPreloadedInstance.value = true
+        debugInfo.value = `开始游戏，使用预加载的${currentGameType.value}实例`
+        console.log(debugInfo.value)
+        return
+      }
+    }
+
+    // 回退到普通WebView显示
     webViewVisible.value = true
-    debugInfo.value = '开始游戏，展示已预加载内容'
+    debugInfo.value = '开始游戏，展示动态加载内容'
   }
 }
 
@@ -132,8 +114,24 @@ const handleError = (e) => {
 onLoad((options) => {
   // 页面加载时即开始预加载游戏 URL，但不显示，用户点击后再展示
   gameUrl.value = decodeURIComponent(options.url) || ''
+  currentGameType.value = options.gameType
   console.log('gameUrl.value', gameUrl.value)
-  debugInfo.value = '页面加载完成，已开始预加载游戏，等待用户交互...'
+  debugInfo.value = '页面加载完成，等待用户交互...'
+})
+
+onShow(() => {
+  // 页面显示时，如果是预加载实例，确保正确状态
+  if (isPreloadedInstance.value) {
+    // 预加载实例已经在后台加载，只需等待用户交互
+    debugInfo.value += '\n页面显示，预加载实例已就绪'
+  }
+})
+
+onHide(() => {
+  // 页面隐藏时，如果是预加载实例，保持隐藏状态以便复用
+  if (isPreloadedInstance.value) {
+    debugInfo.value += '\n页面隐藏，保持预加载实例状态'
+  }
 })
 
 // 添加全局错误监听
@@ -151,9 +149,22 @@ onMounted(() => {
     debugInfo.value += `\n未处理的Promise错误: ${JSON.stringify(err)}`
   })
 })
+
+// 页面销毁时清理资源
+onUnmounted(() => {
+  if (!isPreloadedInstance.value && typeof plus !== 'undefined') {
+    // 非预加载实例，可以安全销毁
+    const currentWebview = plus.webview.currentWebview()
+    if (currentWebview) {
+      currentWebview.close()
+    }
+  }
+})
 </script>
 
 <style lang="scss" scoped>
+@import '/src/style/base';
+@import '/src/style/social';
 .game-container {
   position: relative;
   width: 100%;
@@ -189,5 +200,11 @@ onMounted(() => {
   line-height: 1.4;
   color: #0f0;
   white-space: pre-wrap;
+}
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow: auto;
 }
 </style>
