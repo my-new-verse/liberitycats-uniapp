@@ -197,14 +197,19 @@ const handleActionSelect = async ({ item }: any) => {
       await pinGroupAnnouncementApi(roomId.value, announcementId.value)
       // uni.showToast({ title: t('group.announcement.toast.pinSuccess'), icon: 'success' })
       fetchDetail()
+      uni.$emit('groupAnnounceStatusChange')
     } else if (value === 'unpin') {
       await unpinGroupAnnouncementApi(roomId.value, announcementId.value)
       // uni.showToast({ title: t('group.announcement.toast.unpinSuccess'), icon: 'success' })
       fetchDetail()
+      uni.$emit('groupAnnounceStatusChange')
     } else if (value === 'delete') {
       await deleteGroupAnnouncementApi(roomId.value, announcementId.value)
       // uni.showToast({ title: t('group.announcement.toast.deleteSuccess'), icon: 'success' })
-      setTimeout(() => uni.navigateBack({ delta: 1 }), 1200)
+      setTimeout(() => {
+        uni.navigateBack({ delta: 1 })
+        uni.$emit('groupAnnounceStatusChange')
+      }, 1200)
     }
   } catch (e) {}
 }
@@ -264,6 +269,7 @@ const handleActionSelect = async ({ item }: any) => {
 
 .detail {
   // padding: 34rpx 36rpx 72rpx;
+  padding-bottom: 72rpx;
 }
 
 .tag {
