@@ -32,7 +32,6 @@
           </view>
           <view class="right-icons">
             <wd-icon
-              v-if="false"
               name="notification"
               size="22px"
               color="#fff"
@@ -499,7 +498,7 @@
                     class="expressionItem"
                     v-for="(item, index) in emotionList[expressionCategory].emotions"
                     :key="index"
-                    @click="addCustomEmoji(item.icon, item.id)"
+                    @click="sendExpressionEmoji(item.id)"
                   >
                     <image :src="getImageUrl(item.icon)" mode="heightFix" />
                   </view>
@@ -2993,6 +2992,30 @@ const sendPlainTextMessage = async (text: string) => {
     clientMessageId,
     payload,
   )
+}
+
+const sendExpressionEmoji = async (emotionId?: number) => {
+  if (!emotionId) return
+  if (!validateBeforeSend()) return
+  if (!roomDetail.value?.room.id) return
+
+  const clientMessageId = createClientMessageId()
+  const payload: ChatMessagePayload = { emotion_id: emotionId }
+
+  insertLocalPendingMessage(createLocalPendingMessage(clientMessageId, 'emotion', payload))
+  commentPopupVisible.value = false
+
+  try {
+    await sendChatMessageWithClientMessageId(
+      roomDetail.value.room.id,
+      'emotion',
+      clientMessageId,
+      payload,
+    )
+  } catch (error: any) {
+    markLocalMessageFailed(clientMessageId)
+    toast.show(error?.errMsg || error?.message || t('group.chat.sendFailed'))
+  }
 }
 
 const sendStressTestMessages = async (count = 100, intervalMs = 3000) => {
