@@ -106,33 +106,7 @@
       "type": "page",
       "style": {
         "navigationStyle": "custom",
-        "navigationBarTitleText": "游戏中心",
-        "app-plus": {
-          "titleNView": {
-            "titleText": "游戏中心",
-            "buttons": [
-              {
-                "text": "关闭",
-                "fontSize": "14px",
-                "width": "80rpx",
-                "onclick": "closeGame"
-              }
-            ]
-          },
-          "webView": {
-            "hardwareAccelerated": true,
-            "domStorage": true,
-            "database": true,
-            "mixedContent": "compatibility",
-            "allowFileAccess": true,
-            "allowContentAccess": true,
-            "allowFileAccessFromFileURLs": true,
-            "allowUniversalAccessFromFileURLs": true,
-            "useWideViewPort": true,
-            "loadWithOverviewMode": true,
-            "cacheMode": "LOAD_DEFAULT"
-          }
-        }
+        "backgroundColor": "#000000"
       }
     },
     {
@@ -592,50 +566,6 @@
         "navigationStyle": "custom",
         "backgroundColor": "#f7f6f4"
       }
-    },
-    {
-      "path": "pages/cats/social/group_chat2",
-      "type": "page"
-    },
-    {
-      "path": "pages/cats/social/group_chat3",
-      "type": "page",
-      "layout": "default",
-      "style": {
-        "navigationStyle": "custom",
-        "backgroundColor": "#f7f6f4"
-      }
-    },
-    {
-      "path": "pages/cats/social/group_chat4",
-      "type": "page",
-      "layout": "default",
-      "style": {
-        "navigationStyle": "custom",
-        "backgroundColor": "#f7f6f4"
-      }
-    },
-    {
-      "path": "pages/cats/social/group_chat5",
-      "type": "page",
-      "layout": "default",
-      "style": {
-        "navigationStyle": "custom",
-        "backgroundColor": "#f7f6f4"
-      }
-    },
-    {
-      "path": "pages/cats/social/group_chat5_lastest",
-      "type": "page",
-      "layout": "default",
-      "style": {
-        "navigationStyle": "custom",
-        "backgroundColor": "#f7f6f4"
-      }
-    },
-    {
-      "path": "pages/cats/social/group_chat_new",
-      "type": "page"
     },
     {
       "path": "pages/cats/social/group_members",

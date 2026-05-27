@@ -534,5 +534,6 @@
   "group.announcement.toast.loadFailed": "Failed to load announcement",
   "group.announcement.toast.pinSuccess": "Pinned successfully",
   "group.announcement.toast.unpinSuccess": "Unpinned successfully",
-  "group.announcement.toast.deleteSuccess": "Deleted successfully"
+  "group.announcement.toast.deleteSuccess": "Deleted successfully",
+  "report.please_fill_remark": "Please fill in additional remarks"
 }

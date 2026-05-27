@@ -72,7 +72,7 @@
           <view class="pubCommentBox">
             <view class="commentTextAreaBox">
               <wd-textarea
-                v-model="content"
+                v-model="description"
                 :placeholder="t('report.remarkPlaceholder')"
                 :maxlength="500"
                 show-word-limit
@@ -87,7 +87,7 @@
               />
             </view>
 
-            <view class="opBarBox" style="justify-content: end">
+            <!-- <view class="opBarBox" style="justify-content: end">
               <wd-button
                 type="primary"
                 custom-class="sendCommentBtn"
@@ -95,7 +95,7 @@
               >
                 {{ t('report.done') }}
               </wd-button>
-            </view>
+            </view> -->
           </view>
           <view class="commentHidden" :style="{ height: `${keyboardHeight}px` }"></view>
         </wd-popup>
@@ -121,7 +121,7 @@ const selectedReason = ref('')
 const shouldFocus = ref(false)
 const keyboardHeight = ref(0)
 // 评论内容
-const content = ref('')
+// const content = ref('')
 const description = ref('')
 const reportType = ref<'post' | 'comment' | undefined>()
 
@@ -148,10 +148,10 @@ onLoad((options) => {
 })
 
 // 完成输入
-const inputCompleted = () => {
-  description.value = content.value
-  handleCloseCommentPopup()
-}
+// const inputCompleted = () => {
+//   description.value = content.value
+//   handleCloseCommentPopup()
+// }
 
 // 提交举报
 const handleSubmit = async () => {
@@ -162,6 +162,11 @@ const handleSubmit = async () => {
       title: '请选择举报原因',
       icon: 'none',
     })
+    return
+  }
+
+  if (selectedReason.value === 'other' && !description.value?.trim()) {
+    uni.showToast({ title: t('report.please_fill_remark'), icon: 'none' })
     return
   }
 
@@ -212,7 +217,7 @@ const textAreaFocus = (e: any) => {
 
 // 文本域
 const showCommentPopup = () => {
-  content.value = description.value
+  //   content.value = description.value
   commentPopupVisible.value = true
   // 重置焦点状态
   shouldFocus.value = false
@@ -228,7 +233,7 @@ const showCommentPopup = () => {
 const handleCloseCommentPopup = () => {
   commentPopupVisible.value = false
   shouldFocus.value = false
-  content.value = ''
+  //   content.value = ''
 }
 </script>
 

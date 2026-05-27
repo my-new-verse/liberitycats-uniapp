@@ -619,32 +619,29 @@ const handleRemovePost = () => {
     return
   }
 
-  uni.showModal({
-    title: t('report.admin.remove_post'),
-    content: t('social.index.post.remove_content'),
-    confirmText: t('social.index.post.confirm_remove'),
-    cancelText: t('common.cancel'),
-    confirmColor: '#FF6B03',
-    success: (res) => {
-      if (res.confirm) {
-        uni.showLoading()
-        adminRemovalApi(reportPostItem.value.id, 'post')
-          .then((res) => {
-            if (res.data?.status === 0) {
-              socialList.value.data = socialList.value.data.filter(
-                (item) => item.id !== reportPostItem.value.id,
-              )
-              toast.success(t('common.operation_success'))
-            } else {
-              toast.show(res.msg || t('common.operationFailedRetry'))
-            }
-          })
-          .finally(() => {
-            uni.hideLoading()
-          })
-      }
-    },
-  })
+  message
+    .confirm({
+      title: t('report.admin.remove_post'),
+      msg: t('social.index.post.remove_content'),
+    })
+    .then(() => {
+      uni.showLoading()
+      adminRemovalApi(reportPostItem.value.id, 'post')
+        .then((res) => {
+          if (res.data?.status === 0) {
+            socialList.value.data = socialList.value.data.filter(
+              (item) => item.id !== reportPostItem.value.id,
+            )
+            toast.success(t('common.operation_success'))
+          } else {
+            toast.show(res.msg || t('common.operationFailedRetry'))
+          }
+        })
+        .finally(() => {
+          uni.hideLoading()
+        })
+    })
+    .catch(() => {})
 }
 
 const handleReportUser = () => {

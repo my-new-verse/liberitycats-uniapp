@@ -535,5 +535,6 @@
   "group.announcement.toast.loadFailed": "公告加載失敗",
   "group.announcement.toast.pinSuccess": "置頂成功",
   "group.announcement.toast.unpinSuccess": "取消置頂成功",
-  "group.announcement.toast.deleteSuccess": "刪除成功"
+  "group.announcement.toast.deleteSuccess": "刪除成功",
+  "report.please_fill_remark": "請填寫補充說明"
 }

@@ -562,42 +562,40 @@ const handleRemovePost = () => {
   }
   const item = reportPostItem.value // 当前点击的评论
 
-  uni.showModal({
-    title: t('report.admin.remove_comment'),
-    content: t('social.index.comment.remove_content'),
-    confirmText: t('social.index.post.confirm_remove'),
-    cancelText: t('common.cancel'),
-    confirmColor: '#FF6B03',
-    success: (res) => {
-      if (res.confirm) {
-        uni.showLoading()
-        adminRemovalApi(reportPostItem.value.id, 'comment')
-          .then((res) => {
-            if (res.data?.status === 0) {
-              // 删除点击下架的这条评论
-              if (item.reply_preview) {
-                // 一级评论
-                commentList.value.data = commentList.value.data.filter((i) => i.id !== item.id)
-              } else {
-                // 二级评论
-                const parentComment = commentList.value.data.find((i) => i.id === item.reply_to_id)
-                if (parentComment) {
-                  parentComment.reply_preview = parentComment.reply_preview.filter(
-                    (reply) => reply.id !== item.id,
-                  )
-                }
-              }
-              toast.success(t('common.operation_success'))
+  message
+    .confirm({
+      title: t('report.admin.remove_comment'),
+      msg: t('social.index.comment.remove_content'),
+    })
+    .then(() => {
+      uni.showLoading()
+      adminRemovalApi(reportPostItem.value.id, 'comment')
+        .then((res) => {
+          if (res.data?.status === 0) {
+            // 删除点击下架的这条评论
+            if (item.reply_preview) {
+              // 一级评论
+              commentList.value.data = commentList.value.data.filter((i) => i.id !== item.id)
             } else {
-              toast.show(res.msg || t('common.operationFailedRetry'))
+              // 二级评论
+              const parentComment = commentList.value.data.find((i) => i.id === item.reply_to_id)
+              if (parentComment) {
+                parentComment.reply_preview = parentComment.reply_preview.filter(
+                  (reply) => reply.id !== item.id,
+                )
+              }
             }
-          })
-          .finally(() => {
-            uni.hideLoading()
-          })
-      }
-    },
-  })
+            toast.success(t('common.operation_success'))
+          } else {
+            toast.show(res.msg || t('common.operationFailedRetry'))
+          }
+        })
+
+        .finally(() => {
+          uni.hideLoading()
+        })
+    })
+    .catch(() => {})
 }
 
 const placeholderText = computed(() => {
