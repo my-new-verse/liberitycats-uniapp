@@ -69,7 +69,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, defineExpose } from 'vue'
 import CustomNav from '@/components/CustomNav/CustomNav.vue'
 import { formatTime, getImageUrl, formatRelativeTime, toUrl } from '@/utils'
 import { t } from '@/locale'
@@ -175,6 +175,15 @@ const goToDetail = (id: number) => {
     false,
   )
 }
+defineExpose({
+  resetAndReload,
+})
+onMounted(() => {
+  uni.$on('groupAnnounceStatusChange', resetAndReload)
+})
+onUnmounted(() => {
+  uni.$off('groupAnnounceStatusChange')
+})
 </script>
 
 <style lang="scss" scoped>
