@@ -63,6 +63,7 @@ onLaunch(() => {
 })
 
 onShow(() => {
+  const systemInfo = uni.getSystemInfoSync()
   const platform = systemInfo.platform?.toLowerCase() || systemInfo.osName?.toLowerCase()
   // todo 加载初始配置
   uni.removeStorageSync('app_update_close')
