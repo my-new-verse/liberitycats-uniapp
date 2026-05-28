@@ -33,8 +33,7 @@
               :key="levelItem.level_id"
               :src="getImageUrl(levelItem.icon)"
               mode="heightFix"
-              :width="index === 1 ? '256rpx' : index === 2 ? '192rpx' : ''"
-              height="48rpx"
+              custom-class="responsive-img"
             ></wd-img>
           </view>
         </view>
@@ -292,5 +291,9 @@ onUnmounted(() => {
   border-color: rgba(255, 208, 86, 1) !important;
   height: var(--wot-button-medium-height, 18px);
   padding: var(--wot-button-medium-padding, 0 12px) !important;
+}
+.responsive-img {
+  height: 148rpx;
+  width: auto;
 }
 </style>
