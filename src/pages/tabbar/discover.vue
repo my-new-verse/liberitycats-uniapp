@@ -56,7 +56,10 @@
       </view>
     </wd-tabs>
     <wd-loadmore :state="currentTabState" style="padding-bottom: 10rpx" />
-    <wd-backtop :scrollTop="scrollTop"></wd-backtop>
+    <wd-backtop
+      :scrollTop="scrollTop"
+      custom-style="bottom: calc(120rpx + env(safe-area-inset-bottom) + 5rpx);"
+    ></wd-backtop>
     <SharePopup ref="shareRef" />
   </view>
 </template>

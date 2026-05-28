@@ -50,7 +50,10 @@
         </view>
       </template>
       <template #footer>
-        <view class="fixedCommentBox" style="padding-bottom: env(safe-area-inset-bottom)">
+        <view
+          class="fixedCommentBox"
+          style="padding-bottom: max(env(safe-area-inset-bottom), 20rpx)"
+        >
           <view
             class="commentTextArea"
             @click="handleSubmit()"
@@ -415,7 +418,7 @@ const handleCloseCommentPopup = () => {
   width: calc(100% - 48rpx);
   height: calc(120rpx - 48rpx);
   padding: 24rpx;
-  padding-bottom: env(safe-area-inset-bottom);
+  padding-bottom: max(env(safe-area-inset-bottom), 20rpx);
   background-color: #ffffff;
   border-top: 1rpx solid #f3f3f4;
   .commentTextArea {

@@ -3,9 +3,15 @@ import { generatePostPosterApi } from '@/service/api/community'
 const POLL_INTERVAL = 3000 // 3秒
 const MAX_RETRIES = 10 // 最多轮询10次
 
-export async function generatePostPoster(postId: number): Promise<string> {
+export async function generatePostPoster(
+  postId: number,
+  options?: { template_id?: number; locale?: string },
+): Promise<string> {
   for (let i = 0; i < MAX_RETRIES; i++) {
-    const res = await generatePostPosterApi(postId)
+    const res = await generatePostPosterApi({
+      post_id: postId,
+      ...options,
+    })
 
     if (res.code !== 1) {
       // 频率限制错误 → 立即停止轮询，抛出错误

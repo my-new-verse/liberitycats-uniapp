@@ -179,6 +179,8 @@
   "social.index.user.follow.success": "关注成功",
   "social.index.user.follow.canceled": "已取消关注",
   "social.share.to": "分享至",
+  "social.share.asPortfolio": "Share as Portfolio",
+  "social.share.generatingPoster": "海报生成中...",
 
   "notication.index.page_title": "通知",
 

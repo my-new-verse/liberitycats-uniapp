@@ -132,7 +132,7 @@
                 :class="{ highlight: highlightId === `commentItem_${item.id}` }"
                 @click.stop="showCommentPopup('l1', item)"
               >
-                <view class="avatarBox" @click="debouncedToUserHomeRef?.(item.member_id)">
+                <view class="avatarBox" @click.stop="debouncedToUserHomeRef?.(item.member_id)">
                   <image
                     class="avatar"
                     :src="getImageUrl(item.member.avatar + '?x-oss-process=style/jzcq')"

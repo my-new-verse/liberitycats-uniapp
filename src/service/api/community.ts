@@ -242,6 +242,18 @@ export const getCommunityPostThreadApi = (id: number, limit: number = 20, last_i
   })
 }
 
+export interface PostSharePosterTemplate {
+  id: number
+  code: string
+  name: string
+  previewUrl: string
+}
+
+export interface PostSharePosterConfig {
+  enabled: boolean
+  templates: PostSharePosterTemplate[]
+}
+
 export interface PostShareCopyData {
   summary: string
   url: string
@@ -249,6 +261,7 @@ export interface PostShareCopyData {
   text: string
   discordText: string
   twitterText: string
+  poster: PostSharePosterConfig
 }
 
 export interface PostShareCopyResponse {
@@ -258,7 +271,7 @@ export interface PostShareCopyResponse {
 }
 
 export const getPostShareCopy = (params: { id: number | string; locale?: string }) => {
-  return http.get<PostShareCopyResponse>('/v1/community/post/share-copy', params)
+  return http.get<PostShareCopyData>('/v1/community/post/share-copy', params)
 }
 
 export interface GeneratePosterData {
@@ -267,8 +280,10 @@ export interface GeneratePosterData {
 }
 
 // 调用生成海报接口
-export const generatePostPosterApi = (postId: number) => {
-  return http.post<GeneratePosterData>('/v1/community/post/generate-poster', {
-    post_id: postId,
-  })
+export const generatePostPosterApi = (params: {
+  post_id: number
+  template_id?: number
+  locale?: string
+}) => {
+  return http.post<GeneratePosterData>('/v1/community/post/generate-poster', params)
 }
