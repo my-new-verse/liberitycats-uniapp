@@ -13,7 +13,7 @@
 
 <template>
   <custom-nav :title="t('group.announcement.detail.title')" page-background-color="#f7f6f4">
-    <template #right v-if="currentUserRole === 'moderator'">
+    <template #right v-if="currentUserRole === 'moderator' || currentUserRole === 'founder'">
       <view @click="showActionSheet = true"><wd-icon name="ellipsis" size="38rpx"></wd-icon></view>
     </template>
     <template #default>
