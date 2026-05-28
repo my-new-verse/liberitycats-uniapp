@@ -63,6 +63,14 @@ onLaunch(() => {
 })
 
 onShow(() => {
+  const platform = systemInfo.platform?.toLowerCase() || systemInfo.osName?.toLowerCase()
+  // todo 加载初始配置
+  uni.removeStorageSync('app_update_close')
+  getSystemConfigApiV2(version, platform).then((res) => {
+    uni.setStorageSync('systemConfigV2', res.data)
+    systemStore.setConfig(res.data)
+  })
+
   // #ifdef APP-PLUS
   setTimeout(() => {
     const args = plus.runtime.arguments
