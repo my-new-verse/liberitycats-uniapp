@@ -8,10 +8,13 @@ import {
   loginAppleApi,
   logoffApi,
 } from '@/service/api/login'
-import { getUserInfoApi } from '@/service/api/user'
+import { getUserInfoApi, getSystemConfigApiV2 } from '@/service/api/user'
 import { disconnectWalletApi } from '@/service/api/web3'
 import { getGameParamsApi } from '@/service/api/game'
 import { scheduleDualGamePreload } from '@/utils/plusGameWebViewPool'
+import { useSystemStore } from '@/store/system'
+import buildInfo from '@/../build-info.json'
+
 const initState = {
   nickname: '',
   avatar: '',
@@ -188,7 +191,16 @@ export const useUserStore = defineStore(
           url: '/pages/tabbar/my',
         })
       }
+      // 登陆成功后重新调用getSystemConfigApiV2
+      const systemInfo = uni.getSystemInfoSync()
+      const platform = systemInfo.platform?.toLowerCase() || systemInfo.osName?.toLowerCase()
+      const systemStore = useSystemStore()
+      const version = `${buildInfo.version}`
 
+      getSystemConfigApiV2(version, platform).then((res) => {
+        uni.setStorageSync('systemConfigV2', res.data)
+        systemStore.setConfig(res.data)
+      })
       // 登录成功后触发 WebView 预加载（仅在App端）
       setTimeout(async () => {
         try {
