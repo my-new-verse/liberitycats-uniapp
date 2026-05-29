@@ -113,8 +113,9 @@ const buildFormData = ({ file, formData, resolve }) => {
   // #ifdef H5
   // h5端url中不包含扩展名，可以拼接一下name
   imageName = imageName + file.name
-  const uniqueId = generateUniqueIdWithUser()
   // #endif
+  const uniqueId = generateUniqueIdWithUser()
+
   const key = `${ossConfig.value?.dir}/${uniqueId}_${imageName}` // 图片上传到oss的路径(拼接你的文件夹和文件名)
   // eslint-disable-next-line camelcase
   const success_action_status = '200' // 将上传成功状态码设置为200，默认状态码为204

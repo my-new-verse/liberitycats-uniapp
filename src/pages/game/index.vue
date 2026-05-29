@@ -44,10 +44,11 @@
   <!-- #endif -->
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { onLoad, onShow, onHide } from '@dcloudio/uni-app'
-import { showGameWebView } from '@/utils/plusGameWebViewPool'
+import { showGameWebView, setGameWebViewConfig } from '@/utils/plusGameWebViewPool'
+import type { GameType } from '@/utils/plusGameWebViewPool'
 
 const gameUrl = ref('')
 const webViewVisible = ref(false)
@@ -65,28 +66,29 @@ const webviewStyles = {
   backgroundColor: '#000000',
 }
 
-// 处理用户交互
+// 用户点击「开始游戏」后才展示 WebView
 const handleUserInteraction = async () => {
-  if (showInteractionHint.value) {
-    // 保持已预加载的 web-view，仅控制显示，避免因创建时机导致的白屏
-    showInteractionHint.value = false
-    console.log('currentGameType', currentGameType.value)
-    // 尝试使用预加载的WebView
-    if (currentGameType.value) {
-      const success = await showGameWebView(currentGameType.value)
-      console.log('success', success)
-      if (success) {
-        isPreloadedInstance.value = true
-        debugInfo.value = `开始游戏，使用预加载的${currentGameType.value}实例`
-        console.log(debugInfo.value)
-        return
-      }
-    }
+  if (!showInteractionHint.value || !gameUrl.value) return
 
-    // 回退到普通WebView显示
-    webViewVisible.value = true
-    debugInfo.value = '开始游戏，展示动态加载内容'
+  showInteractionHint.value = false
+
+  // #ifdef APP-PLUS
+  if (currentGameType.value) {
+    setGameWebViewConfig(currentGameType.value as GameType, {
+      gameType: currentGameType.value as GameType,
+      url: gameUrl.value,
+    })
+    const success = await showGameWebView(currentGameType.value as GameType)
+    if (success) {
+      isPreloadedInstance.value = true
+      debugInfo.value = `开始游戏，加载 ${currentGameType.value}`
+      return
+    }
   }
+  // #endif
+
+  webViewVisible.value = true
+  debugInfo.value = '开始游戏，展示 WebView'
 }
 
 // 处理游戏发送的消息
@@ -112,11 +114,11 @@ const handleError = (e) => {
 }
 
 onLoad((options) => {
-  // 页面加载时即开始预加载游戏 URL，但不显示，用户点击后再展示
-  gameUrl.value = decodeURIComponent(options.url) || ''
-  currentGameType.value = options.gameType
-  console.log('gameUrl.value', gameUrl.value)
-  debugInfo.value = '页面加载完成，等待用户交互...'
+  gameUrl.value = decodeURIComponent(options.url || '')
+  currentGameType.value = options.gameType || ''
+  webViewVisible.value = false
+  showInteractionHint.value = true
+  debugInfo.value = '页面已就绪，点击屏幕开始游戏'
 })
 
 onShow(() => {
@@ -136,8 +138,7 @@ onHide(() => {
 
 // 添加全局错误监听
 onMounted(() => {
-  // 这里保留文案，onLoad 已设置一次
-  debugInfo.value = '页面加载完成，已开始预加载游戏，等待用户交互...'
+  debugInfo.value = '页面已就绪，点击屏幕开始游戏'
 
   // 使用uni.onError替代window.onerror
   uni.onError((err) => {

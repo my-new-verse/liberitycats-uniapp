@@ -47,17 +47,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { getImageUrl, toUrl, formatRelativeTime, getChatImageUrl } from '@/utils'
 import chatItem from '@/components/chat-item/chat-item.vue'
 import CryptoJS from 'crypto-js'
 import { EchoPrivateChannelClient } from '@/utils/echoPrivateChannelClient'
-import {
-  getCommunityEmotionListItem,
-  getCommunityEmotionListByCategoryApi,
-} from '@/service/api/community'
-import { getAliyunOssConfigApi, getAliyunOssConfigApiResponse } from '@/service/api/upload'
+import { getCommunityEmotionListByCategoryApi } from '@/service/api/community'
 import {
   getCurrentGroupAnnouncementApi,
   type AnnouncementSummary,
@@ -82,6 +77,15 @@ import {
 } from '@/service/api/groupChat'
 import { useUserStore } from '@/store'
 import { useToast } from 'wot-design-uni'
+import {
+  enrichChatMessageAssets,
+  enrichChatMessagesAssets,
+  preloadMessageAssets,
+  patchEmotionMessagesAssets,
+} from '@/utils/chatAssetCache'
+import { preloadAvatarUrls } from '@/utils/avatarCache'
+import { initEmotionTool } from '@/utils/emotionTool'
+import { normalizeChatMessage } from '@/utils/groupChatMessageManager'
 // z-paging ref
 /*
 页面离开标志，用于标识当前页面是否正在被关闭或返回上一页。
@@ -105,7 +109,49 @@ const toast = useToast()
 const { t } = useI18n()
 const roomDetailLoading = ref(false)
 const showArrow = ref(false)
+// 定义每次预加载的消息窗口大小为 80 条
+const PRELOAD_MESSAGE_WINDOW = 80
+let auxiliaryPreloadPromise: Promise<void> | null = null
+/*
+确保辅助数据（如表情资源）只加载一次的异步缓存函数
+ */
+const ensureAuxiliaryDataLoaded = () => {
+  if (auxiliaryPreloadPromise) return auxiliaryPreloadPromise
+
+  auxiliaryPreloadPromise = getCommunityEmotionListByCategoryApi()
+    .then((res) => {
+      if (res.data) {
+        initEmotionTool(res.data)
+        const { messages: patched, changed } = patchEmotionMessagesAssets(messages.value)
+        if (changed) {
+          messages.value = patched
+        }
+      }
+    })
+    .catch((error) => {
+      console.error('ensureAuxiliaryDataLoaded error:', error)
+      auxiliaryPreloadPromise = null
+    })
+
+  return auxiliaryPreloadPromise
+}
+/*
+基于滚动窗口的渐进式资源预加载策略：
+只在消息列表长度变化时（新消息到来或翻页）自动触发。
+只预加载最新的 80 条消息，平衡性能与体验。
+ */
+watch(
+  () => messages.value.length,
+  () => {
+    const windowMessages = messages.value.slice(-PRELOAD_MESSAGE_WINDOW)
+    console.log('preloadMessageAssets', windowMessages)
+    preloadMessageAssets(windowMessages, roomDetail.value?.room.avatar)
+  },
+  { flush: 'post' },
+)
+
 onMounted(() => {
+  void ensureAuxiliaryDataLoaded()
   loadRoomDetail()
   // setTimeout(() => {
   //   showArrow.value = true
@@ -182,12 +228,18 @@ const filterExistingMessages = (
   return newMessages.filter((msg) => !existingIds.has(msg.id))
 }
 const applyMessagesBatch = (incomingMessages: ChatMessage[], scrollToLatest = false) => {
+  const currentMemberId = Number(userStore.userInfo.member_id || 0)
   const normalizedMessages = incomingMessages
     .filter((message) => !!message?.id)
-    .map((message) => ({
-      ...message,
-      local_status: message.local_status || 'sent',
-    }))
+    .map((message) =>
+      normalizeChatMessage(
+        {
+          ...message,
+          local_status: message.local_status || 'sent',
+        },
+        { currentMemberId },
+      ),
+    )
 
   if (normalizedMessages.length === 0) return
   console.log(paging.value)
@@ -622,12 +674,13 @@ const getChatMessageList = async (before_message_id: strin | number = null, sile
     before_message_id,
   })
   // lastestMessageId.value = res.data.messages[0].id
-  const newMessages = reverseMessageArray(res.data.messages)
+  const newMessages = enrichChatMessagesAssets(reverseMessageArray(res.data.messages))
   const newLastestId = res.data.messages[0].id
   if (!silent) {
     lastestMessageId.value = newLastestId
     paging.value.complete(newMessages || [])
     messages.value.push(...newMessages)
+    preloadMessageAssets(newMessages, roomDetail.value?.room.avatar)
   } else {
     messageCache.set(before_message_id, {
       messages: newMessages,
@@ -650,88 +703,7 @@ const keyboardHeightChange = (res) => {
 const hidedKeyboard = () => {
   // inputBar.value.hidedKeyboard()
 }
-const getEmotionMessageSrc = (message: ChatMessage) => {
-  return getImageUrl(EmotionTool.findById(message.payload?.emotion_id)?.icon)
-}
-const getImageMessageBoxSize = (message: ChatMessage) => {
-  const systemInfo = uni.getSystemInfoSync()
-  const maxWidth = Math.min(Math.round(systemInfo.windowWidth * 0.52), 220)
-  const minWidth = 120
-  const rawWidth = Number(message.payload?.width || 0)
-  const rawHeight = Number(message.payload?.height || 0)
-  if (!rawWidth || !rawHeight) {
-    return {
-      width: maxWidth,
-      height: maxWidth,
-    }
-  }
-  const widthRatio = maxWidth / rawWidth
-  const scaledWidth = Math.max(minWidth, Math.min(maxWidth, Math.round(rawWidth * widthRatio)))
-  const scaledHeight = Math.max(90, Math.round(rawHeight * (scaledWidth / rawWidth)))
-  return {
-    width: scaledWidth,
-    height: scaledHeight,
-  }
-}
-const EmotionTool = (() => {
-  const idMap = new Map()
-  const groupMap = new Map()
-  const nameMap = new Map()
-  /**
-   * 初始化数据（只调用一次）
-   * @param {Array} groupList 表情分组数组
-   */
-  function init(groupList) {
-    if (!Array.isArray(groupList)) return
-    // 清空旧数据
-    idMap.clear()
-    groupMap.clear()
-    nameMap.clear()
 
-    // 构建缓存（一次遍历完成，性能最高）
-    groupList.forEach((group) => {
-      const groupInfo = {
-        id: group.id,
-        name: group.name,
-        icon: group.icon,
-        emotions: [...group.emotions],
-      }
-      groupMap.set(group.id, groupInfo)
-
-      group.emotions.forEach((emo) => {
-        idMap.set(emo.id, emo)
-        nameMap.set(emo.name, emo)
-      })
-    })
-  }
-
-  //  按 ID 查找（最快 O(1)）
-  function findById(id) {
-    return idMap.get(Number(id)) || null
-  }
-  // 按名称精确查找（O(1)）
-  function findByName(name) {
-    return nameMap.get(name) || null
-  }
-
-  // 获取所有表情（平铺）
-  function getAllEmotions() {
-    return Array.from(idMap.values())
-  }
-  //  清空缓存
-  function clear() {
-    idMap.clear()
-    groupMap.clear()
-    nameMap.clear()
-  }
-  return {
-    init,
-    findById,
-    findByName,
-    getAllEmotions,
-    clear,
-  }
-})()
 const scrollToBottom = () => {
   paging.value.scrollToBottom()
 }
@@ -746,7 +718,7 @@ const createLocalPendingMessage = (
   const memberId = Number(userStore.userInfo.member_id || 0)
   const now = Math.floor(Date.now() / 1000)
 
-  return {
+  return enrichChatMessageAssets({
     id: Date.now(),
     room_seq: messages.value[messages.value.length - 1]?.room_seq || 0 + 1,
     room_id: roomId,
@@ -769,7 +741,7 @@ const createLocalPendingMessage = (
     client_message_id: clientMessageId,
     local_id: clientMessageId,
     local_status: 'sending' as const,
-  } satisfies ChatMessage
+  } satisfies ChatMessage)
 }
 const sendChatMessageWithClientMessageId = async (
   roomId: number,
@@ -779,11 +751,11 @@ const sendChatMessageWithClientMessageId = async (
 ) => {
   const res = await sendChatMessageApi(roomId, messageType, clientMessageId, payload)
   if (res.code === 1) {
-    const nextMessage = {
+    const nextMessage = enrichChatMessageAssets({
       ...res.data.message,
       client_message_id: res.data.message.client_message_id || clientMessageId,
       local_status: 'sent' as const,
-    }
+    })
 
     const updated = updateChatMessageByClientMessageId(clientMessageId, nextMessage)
     if (updated) {
@@ -812,10 +784,14 @@ const updateChatMessageByClientMessageId = (
   const index = messages.value.findIndex((msg) => msg.client_message_id === clientMessageId)
   if (index < 0) return false
 
-  messages.value.splice(index, 1, {
-    ...messages.value[index],
-    ...message,
-  })
+  messages.value.splice(
+    index,
+    1,
+    enrichChatMessageAssets({
+      ...messages.value[index],
+      ...message,
+    }),
+  )
   return true
 }
 const doSend = (messageType, payload) => {

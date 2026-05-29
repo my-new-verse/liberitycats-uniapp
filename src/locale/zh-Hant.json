@@ -423,7 +423,7 @@
   "group.chat.muted": "目前已被禁言",
   "group.chat.loadingMoreHistory": "載入更多訊息...",
   "group.chat.noMoreHistory": "沒有更多歷史訊息了",
-  "group.chat.newMessages": "{count}條新訊息",
+  "group.chat.newMessages": "條新訊息",
   "group.chat.unmuteDialogTitle": "解除禁言",
   "group.chat.unmuteReasonOptionalLabel": "解除禁言原因（選填）",
   "group.chat.unmuteReasonOptionalPlaceholder": "請輸入解除禁言原因，不輸入則為空",

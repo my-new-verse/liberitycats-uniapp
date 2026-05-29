@@ -2029,6 +2029,7 @@ const initChatSocketClient = () => {
     beforeReconnect: async () => {},
     onMessage: handleIncomingMessage,
     onAllEvent: (eventName, data) => {
+      console.log(eventName)
       const normalizedEventName = eventName.startsWith('.') ? eventName.slice(1) : eventName
       const shouldHandleMemberEvent =
         normalizedEventName.endsWith('member.kicked') ||
@@ -2996,6 +2997,7 @@ const sendPlainTextMessage = async (text: string) => {
 
 const sendExpressionEmoji = async (emotionId?: number) => {
   if (!emotionId) return
+  commentPopupVisible.value = false
   if (!validateBeforeSend()) return
   if (!roomDetail.value?.room.id) return
 
@@ -3003,7 +3005,6 @@ const sendExpressionEmoji = async (emotionId?: number) => {
   const payload: ChatMessagePayload = { emotion_id: emotionId }
 
   insertLocalPendingMessage(createLocalPendingMessage(clientMessageId, 'emotion', payload))
-  commentPopupVisible.value = false
 
   try {
     await sendChatMessageWithClientMessageId(

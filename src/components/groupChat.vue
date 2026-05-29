@@ -1,12 +1,7 @@
 <template>
   <view class="group-container">
     <scroll-view scroll-y class="scroll-v">
-      <view
-        v-for="(item, index) in groupList"
-        :key="item.id"
-        class="group-item"
-        @click="handleJoinOrEnter(item)"
-      >
+      <view v-for="(item, index) in groupList" :key="item.id" class="group-item">
         <wd-img
           :src="getImageUrl(item.banner_image)"
           mode="aspectFill"
@@ -123,9 +118,13 @@ const handleJoinOrEnter = async (group: GroupChatItem) => {
     ...enteringGroupMap.value,
     [group.id]: true,
   }
-
+  console.log(group.code)
+  const groupChatUrl =
+    group.code === 'test_group_chat'
+      ? `/pages/cats/social/group_chat_new?code=${group.code}&room_id=${1}`
+      : `/pages/cats/social/group_chat?code=${group.code}&room_id=${group.id}`
   if (group.is_joined === 1) {
-    toUrl(`/pages/cats/social/group_chat?code=${group.code}&room_id=${group.id}`)
+    toUrl(groupChatUrl)
     setTimeout(() => {
       const nextEnteringGroupMap = { ...enteringGroupMap.value }
       delete nextEnteringGroupMap[group.id]
@@ -141,7 +140,7 @@ const handleJoinOrEnter = async (group: GroupChatItem) => {
     if (res.code === 1) {
       group.is_joined = 1
       patchCachedChatRoom(group.id, { is_joined: 1, is_accessible: 1 })
-      toUrl(`/pages/cats/social/group_chat?code=${group.code}&room_id=${group.id}`)
+      toUrl(groupChatUrl)
     } else {
       uni.showToast({ title: res.msg || '进入失败', icon: 'none' })
     }

@@ -98,6 +98,7 @@ export interface ChatMessagePayload {
 
   // emotion 消息
   emotion_id?: number
+  emotion_url?: string
 
   // rich 消息
   parts?: ChatMessagePart[]
@@ -112,6 +113,7 @@ export interface ChatMessagePart {
 
   // type=emotion 时必填
   emotion_id?: number
+  emotion_url?: string
 
   // type=image 时必填
   url?: string

@@ -568,6 +568,10 @@
       }
     },
     {
+      "path": "pages/cats/social/group_chat_new",
+      "type": "page"
+    },
+    {
       "path": "pages/cats/social/group_members",
       "type": "page",
       "layout": "default",
