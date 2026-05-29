@@ -90,7 +90,7 @@
               />
             </view>
 
-            <!-- <view class="opBarBox" style="justify-content: end">
+            <view class="opBarBox" style="justify-content: end">
               <wd-button
                 type="primary"
                 custom-class="sendCommentBtn"
@@ -98,7 +98,7 @@
               >
                 {{ t('report.done') }}
               </wd-button>
-            </view> -->
+            </view>
           </view>
           <view class="commentHidden" :style="{ height: `${keyboardHeight}px` }"></view>
         </wd-popup>
@@ -151,10 +151,9 @@ onLoad((options) => {
 })
 
 // 完成输入
-// const inputCompleted = () => {
-//   description.value = content.value
-//   handleCloseCommentPopup()
-// }
+const inputCompleted = () => {
+  handleCloseCommentPopup()
+}
 
 // 提交举报
 const handleSubmit = async () => {
