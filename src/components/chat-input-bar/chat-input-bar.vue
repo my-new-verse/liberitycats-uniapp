@@ -4,19 +4,30 @@
       <!-- ✅ 使用原生 uni.chooseImage 替代 wd-upload -->
       <view
         class="upload-icon-btn"
-        :class="{ 'is-disabled': canspeak !== 1 }"
-        @click="canspeak === 1 && handleChooseImage()"
+        :class="{ 'is-disabled': roomDetail?.speaking.can_speak !== 1 }"
+        @click="roomDetail?.speaking.can_speak === 1 && handleChooseImage()"
       >
-        <wd-icon name="picture" size="22px" :color="canspeak !== 1 ? '#ccc' : '#666'"></wd-icon>
+        <wd-icon
+          name="picture"
+          size="22px"
+          :color="roomDetail?.speaking.can_speak !== 1 ? '#ccc' : '#666'"
+        ></wd-icon>
       </view>
       <view
         class="commentTextArea"
-        :class="{ 'is-muted': canspeak !== 1 }"
-        @click="canspeak === 1 && showCommentPopup()"
+        :class="{ 'is-muted': roomDetail?.speaking.can_speak !== 1 }"
+        @click="roomDetail?.speaking.can_speak === 1 && showCommentPopup()"
       >
-        {{ canspeak !== 1 ? canSpeakReason : t('social.detail.comment.placeholder') }}
+        {{
+          roomDetail?.speaking.can_speak !== 1
+            ? roomDetail?.speaking.reason
+            : t('social.detail.comment.placeholder')
+        }}
       </view>
     </view>
+
+    <!-- <wd-backtop :scrollTop="scrollTop"></wd-backtop> -->
+    <!-- 发布消息 -->
     <wd-popup
       v-model="commentPopupVisible"
       lock-scroll
@@ -56,7 +67,7 @@
             <wd-button
               type="primary"
               custom-class="sendCommentBtn"
-              :disabled="canspeak !== 1"
+              :disabled="roomDetail?.speaking.can_speak !== 1"
               @click.stop="handleSendButtonClick"
             >
               {{ t('social.detail.comment.btn.send') }}
@@ -81,7 +92,7 @@
               v-for="(item, index) in emotionList"
               :key="index"
             >
-              <image :src="getCachedEmotionUrl(undefined, item.icon)" mode="heightFix" />
+              <image :src="getImageUrl(item.icon)" mode="heightFix" />
             </view>
           </template>
         </view>
@@ -102,9 +113,9 @@
                 class="expressionItem"
                 v-for="(item, index) in emotionList[expressionCategory].emotions"
                 :key="index"
-                @click="sendExpressionEmoji(item.id)"
+                @click="sendExpressionEmoji(item.id, item.icon)"
               >
-                <image :src="getCachedEmotionUrl(item.id, item.icon)" mode="heightFix" />
+                <image :src="getImageUrl(item.icon)" mode="heightFix" />
               </view>
             </template>
           </scroll-view>
@@ -117,7 +128,7 @@
 
 <script setup lang="ts">
 import { ref, nextTick, computed, watch, onMounted } from 'vue'
-import { getChatImageUrl } from '@/utils'
+import { getImageUrl, toUrl, formatRelativeTime, getChatImageUrl } from '@/utils'
 import { ChatMessagePayload } from '@/service/api/groupChat'
 import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/store'
@@ -149,6 +160,8 @@ const props = defineProps({
     required: true, // 必传
   },
 })
+const { roomDetail } = toRefs(props)
+console.log('roomDetail', roomDetail.value)
 // 切换表情分类
 const expressionCategory = ref(-1)
 const changeExpressionCategory = (index: number) => {
@@ -167,7 +180,21 @@ const changeOpBtn = () => {
     textareaFocus.value = true
   }
 }
+
+const commentTextarea = ref()
+
+// 修改showCommentPopup方法
 const showCommentPopup = () => {
+  // 检查用户是否被禁言
+  if (roomDetail.value?.speaking.is_member_muted === 1) {
+    toast.show(roomDetail.value.speaking.reason || t('group.chat.muted'))
+    return
+  }
+
+  if (userStore.isLogin === false) {
+    toUrl('/pages/cats/login', true)
+    return
+  }
   commentPopupVisible.value = true
   // 重置焦点状态
   shouldFocus.value = false
@@ -198,7 +225,16 @@ const textAreaFocus = (e: any) => {
     currentOpBtn.value = 'keyboard'
     textareaFocus.value = true
   }
+
+  // console.log('textAreaFocus =======================', e, keyboardHeight.value)
 }
+
+const MAX_UPLOAD_IMAGE_SIZE = 10 * 1024 * 1024
+const MAX_UPLOAD_IMAGE_WIDTH = 4096
+const MAX_UPLOAD_IMAGE_HEIGHT = 4096
+const IMAGE_COMPRESS_QUALITY_STEPS = [85, 70, 55, 40]
+const IMAGE_LIMIT_HINT = t('group.chat.imageLimitHint')
+
 let auxiliaryPreloadPromise: Promise<void> | null = null
 const ensureAuxiliaryDataLoaded = () => {
   if (auxiliaryPreloadPromise) return auxiliaryPreloadPromise
@@ -213,7 +249,13 @@ const ensureAuxiliaryDataLoaded = () => {
       ? Promise.resolve()
       : getCommunityEmotionListByCategoryApi().then((res) => {
           emotionList.value = res.data
-          initEmotionTool(emotionList.value)
+          // 预解析所有表情和分类图标 URL，避免切换分类时反复调用 getCachedEmotionUrl
+          emotionList.value.forEach((cat) => {
+            ;(cat as any)._cachedUrl = getCachedEmotionUrl(cat.id, cat.icon)
+            cat.emotions.forEach((emotion) => {
+              ;(emotion as any)._cachedUrl = getCachedEmotionUrl(emotion.id, emotion.icon)
+            })
+          })
         }),
   ]).then(() => undefined)
 
@@ -228,9 +270,9 @@ const handleSendButtonClick = () => {
   doSend('text', { text: commentContent.value })
 }
 
-const sendExpressionEmoji = async (emotionId?: number) => {
+const sendExpressionEmoji = async (emotionId?: number, emotionUrl: string) => {
   if (!emotionId) return
-  const payload: ChatMessagePayload = { emotion_id: emotionId }
+  const payload: ChatMessagePayload = { emotion_id: emotionId, emotion_url: emotionUrl }
   commentPopupVisible.value = false
   doSend('emotion', payload)
 }
@@ -294,7 +336,18 @@ const validateBeforeSend = (): boolean => {
 
   return true
 }
-onMounted(() => {
+const getEmotionImageUrl = (emotion) => {
+  // 优先使用预缓存的本地 URL
+  if (emotion._cachedUrl) return emotion._cachedUrl
+  // 如果未缓存，使用原 URL 并触发缓存
+  const cached = getCachedEmotionUrl(emotion.id, emotion.icon)
+  if (cached !== emotion.icon) {
+    emotion._cachedUrl = cached
+    return cached
+  }
+  return emotion.icon
+}
+onLoad(() => {
   ensureAuxiliaryDataLoaded()
 })
 </script>
