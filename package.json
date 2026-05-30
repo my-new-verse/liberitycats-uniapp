@@ -48,6 +48,7 @@
     "dev:quickapp-webview-huawei": "uni -p quickapp-webview-huawei",
     "dev:quickapp-webview-union": "uni -p quickapp-webview-union",
     "build:app": "bash build-app.sh",
+    "build:app-test": "uni build -p app --mode development",
     "build:app2": "uni build -p app",
     "build:app3": "node updateVersion && bash build-app.sh",
     "build:app-android": "uni build -p app-android",
