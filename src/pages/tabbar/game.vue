@@ -44,8 +44,6 @@ import { getImageUrl, getServerOnOff, toUrl } from '@/utils'
 import { useUserStore } from '@/store/user'
 import { useToast } from 'wot-design-uni'
 import { getGameParamsApi } from '@/service/api/game'
-import { showGameWebView, setGameWebViewConfig } from '@/utils/plusGameWebViewPool'
-import type { GameType } from '@/utils/plusGameWebViewPool'
 uni.hideTabBar()
 const userStore = useUserStore()
 const toast = useToast()
@@ -107,7 +105,7 @@ const openGameUrl = (gameType: string) => {
   //     return
   //   }
 
-  getGameParamsApi(gameType).then(async (res) => {
+  getGameParamsApi(gameType).then((res) => {
     const token = res.data.tempToken || ''
     console.log('token', token)
     if (!token) {
@@ -118,16 +116,6 @@ const openGameUrl = (gameType: string) => {
     // const url = gameUrl + (gameUrl.includes('?') ? '&' : '?') + 'token=' + token
     const url = res.data.jumpUrl
     // 优先在 App 上使用 webview 预加载能力，打开已预加载的实例以实现秒开体验
-
-    // #ifdef APP-PLUS
-    setGameWebViewConfig(gameType as GameType, {
-      gameType: gameType as GameType,
-      url,
-      tempToken: token,
-    })
-    const opened = await showGameWebView(gameType as GameType)
-    if (opened) return
-    // #endif
     toUrl(`/pages/game/index?gameType=${gameType}&url=` + encodeURIComponent(url))
   })
 }
