@@ -69,6 +69,8 @@ const httpInterceptor = {
     if (token) {
       options.header.Authorization = `Bearer ${token}`
     }
+    options.header['X-App-Environment'] =
+      process.env.NODE_ENV === 'production' ? 'production' : 'test'
   },
 }
 
