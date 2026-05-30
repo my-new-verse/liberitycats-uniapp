@@ -98,7 +98,6 @@ export interface ChatMessagePayload {
 
   // emotion 消息
   emotion_id?: number
-  emotion_url?: string
 
   // rich 消息
   parts?: ChatMessagePart[]
@@ -113,7 +112,6 @@ export interface ChatMessagePart {
 
   // type=emotion 时必填
   emotion_id?: number
-  emotion_url?: string
 
   // type=image 时必填
   url?: string
@@ -250,6 +248,12 @@ export const clearPreloadedChatRoomsApi = () => {
   cachedChatRoomsResponse = null
   cachedChatRoomsAt = 0
   chatRoomsPreloadPromise = null
+}
+
+/** 用最新 API 响应整体替换房间列表缓存 */
+export const setCachedChatRoomsApi = (data: ChatRoomsResponse) => {
+  cachedChatRoomsResponse = data
+  cachedChatRoomsAt = Date.now()
 }
 
 export const patchCachedChatRoom = (roomId: number, patch: Partial<ChatRoom>) => {

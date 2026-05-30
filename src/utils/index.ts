@@ -383,6 +383,7 @@ export const getStickerUrl = (path: string, useCache?: boolean) => {
 }
 
 const getImageCache = (filePath, fileMd5) => {
+  // #ifndef H5
   const storageKey = 'IMAGE_CACHE_INFO_' + fileMd5
   const cacheFileInfo = uni.getStorageSync(storageKey)
   if (cacheFileInfo) {
@@ -411,6 +412,7 @@ const getImageCache = (filePath, fileMd5) => {
     })
     return filePath
   }
+  // #endif
 }
 
 export const getI18nNameMap = () => {

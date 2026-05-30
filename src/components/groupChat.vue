@@ -54,9 +54,9 @@ import { getImageUrl, toUrl } from '@/utils'
 import {
   getChatRoomsApi,
   getCachedChatRoomsApi,
-  preloadChatRoomsApi,
   joinChatRoomApi,
   patchCachedChatRoom,
+  setCachedChatRoomsApi,
   ChatRoom,
 } from '@/service/api/groupChat'
 import { useUserStore } from '@/store/user'
@@ -80,26 +80,29 @@ const loadGroupList = async (forceRefresh = false) => {
   if (groupLoading.value) return
   groupLoading.value = true
   try {
-    const cachedRooms = getCachedChatRoomsApi()
-    if (cachedRooms?.rooms?.length) {
-      groupList.value = cachedRooms.rooms
+    // 缓存仅用于首次快速展示，避免白屏
+    if (!forceRefresh) {
+      const cachedRooms = getCachedChatRoomsApi()
+      if (cachedRooms?.rooms?.length) {
+        groupList.value = [...cachedRooms.rooms]
+      }
     }
 
-    const res = await preloadChatRoomsApi(1, forceRefresh)
+    // 始终请求 API 获取最新数据，不走缓存短路
+    const res = await getChatRoomsApi(1)
     console.log('getChatRoomsApi', '====', res)
 
-    if (res.code === 1) {
-      groupList.value = res.data?.rooms || []
-    } else {
+    if (res.code === 1 && res.data) {
+      groupList.value = [...(res.data?.rooms || [])]
+      // 同步更新缓存，保证后续 getCachedChatRoomsApi 返回最新数据
+      setCachedChatRoomsApi(res.data)
+    } else if (!groupList.value.length) {
       uni.showToast({ title: res.msg || '加载失败', icon: 'none' })
     }
   } catch (error) {
-    console.error('loadGroupList preload error:', error)
-    const res = await getChatRoomsApi(1)
-    if (res.code === 1) {
-      groupList.value = res.data?.rooms || []
-    } else {
-      uni.showToast({ title: res.msg || '加载失败', icon: 'none' })
+    console.error('loadGroupList error:', error)
+    if (!groupList.value.length) {
+      uni.showToast({ title: '加载失败', icon: 'none' })
     }
   } finally {
     groupLoading.value = false
