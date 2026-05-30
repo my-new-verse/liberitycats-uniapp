@@ -3,56 +3,109 @@
 <!-- 如果必须实现高度根据内容动态撑高+虚拟列表功能，可监听图片加载完毕事件，并在其中调用z-paging的didUpdateVirtualListCell刷新缓存高度 -->
 
 <!-- 注意此demo为聊天记录模式+内置虚拟列表模式，在微信小程序一些平台此虚拟列表会有问题，请自行参考虚拟列表在不同平台兼容性进行更改 -->
+<route lang="json5" type="page">
+{
+  layout: 'default',
+  style: {
+    navigationStyle: 'custom',
+    backgroundColor: '#f7f6f4',
+  },
+}
+</route>
 <template>
-  <view class="content">
-    <!-- use-chat-record-mode：开启聊天记录模式 -->
-    <!-- use-virtual-list：开启虚拟列表模式 -->
-    <!-- cell-height-mode：设置虚拟列表模式高度不固定 -->
-    <!-- safe-area-inset-bottom：开启底部安全区域适配 -->
-    <!-- bottom-bg-color：设置slot="bottom"容器的背景色，这里设置为和chat-input-bar的背景色一致 -->
-    <z-paging
-      ref="paging"
-      v-model="messages"
-      use-chat-record-mode
-      use-virtual-list
-      cell-height-mode="dynamic"
-      safe-area-inset-bottom
-      bottom-bg-color="#f8f8f8"
-      @query="queryList"
-      @scroll="handleChatScroll"
-    >
-      <!-- 顶部提示文字 -->
-      <!-- style="transform: scaleY(-1)"必须写，否则会导致列表倒置！！！ -->
-      <!-- 注意不要直接在chat-item组件标签上设置style，因为在微信小程序中是无效的，请包一层view -->
-      <template #cell="{ item, index }">
-        <view style="transform: scaleY(-1)">
-          <chat-item :item="item"></chat-item>
+  <view class="page">
+    <view class="customNav" :style="{ height: navHeight + 'rpx' }">
+      <!-- 顶部导航栏 -->
+      <view class="navHeaderBg" :style="{ paddingTop: navHeaderPaddingTop + 'rpx' }">
+        <view class="navCnt">
+          <view class="left" @click="navigateBack()">
+            <image src="/static/images/back2.png" mode="widthFix" />
+          </view>
+          <view class="searchBox">
+            <view class="chat-title-info">
+              <!-- <view
+                class="group-avatar"
+                :style="getAvatarStyle(roomDetail?.room.avatar || '', 'room')"
+              ></view> -->
+              <view class="title-text-wrap">
+                <text class="main-title">{{ roomDetail?.room.name || t('group.chat.title') }}</text>
+                <text class="sub-title">({{ roomDetail?.room.member_count || 0 }})</text>
+              </view>
+            </view>
+          </view>
+          <view class="right-icons">
+            <wd-icon
+              name="notification"
+              size="22px"
+              color="#fff"
+              @click="goToAnnouncementList()"
+            ></wd-icon>
+            <wd-icon name="usergroup" size="22px" color="#fff" @click="goToMembers()"></wd-icon>
+          </view>
         </view>
-      </template>
+      </view>
+    </view>
+    <view class="cnt content" :style="{ paddingTop: cntPaddingTop + 'rpx' }">
+      <!-- use-chat-record-mode：开启聊天记录模式 -->
+      <!-- use-virtual-list：开启虚拟列表模式 -->
+      <!-- cell-height-mode：设置虚拟列表模式高度不固定 -->
+      <!-- safe-area-inset-bottom：开启底部安全区域适配 -->
+      <!-- bottom-bg-color：设置slot="bottom"容器的背景色，这里设置为和chat-input-bar的背景色一致 -->
+      <z-paging
+        ref="paging"
+        v-model="messages"
+        use-chat-record-mode
+        use-virtual-list
+        cell-height-mode="dynamic"
+        safe-area-inset-bottom
+        bottom-bg-color="#f8f8f8"
+        @query="queryList"
+        @scroll="handleChatScroll"
+        cellKeyName="id"
+      >
+        <template v-for="(item, index) in messages" :key="item.id">
+          <view style="transform: scaleY(-1)">
+            <chat-item :item="item"></chat-item>
+          </view>
+        </template>
+        <!-- 顶部提示文字 -->
+        <!-- style="transform: scaleY(-1)"必须写，否则会导致列表倒置！！！ -->
+        <!-- 注意不要直接在chat-item组件标签上设置style，因为在微信小程序中是无效的，请包一层view -->
+        <!-- <template #cell="{ item, index }">
+          <view style="transform: scaleY(-1)">
+            <chat-item :item="item"></chat-item>
+          </view>
+        </template> -->
 
-      <!-- 底部聊天输入框 -->
-      <template #bottom>
-        <view
-          v-if="showNewMessageIndicator"
-          class="new-message-indicator"
-          @click="handleJumpToLatestMessage"
-        >
-          <wd-icon name="arrow-down" size="16px" color="#1f1f1f"></wd-icon>
-          <text class="new-message-indicator-text">{{ getNewMessageIndicatorText() }}</text>
-        </view>
-        <chat-input-bar ref="inputBar" @sendMsg="doSend" :room-detail="roomDetail" />
-      </template>
-    </z-paging>
+        <!-- 底部聊天输入框 -->
+        <template #bottom>
+          <view
+            v-if="showNewMessageIndicator"
+            class="new-message-indicator"
+            @click="handleJumpToLatestMessage"
+          >
+            <wd-icon name="arrow-down" size="16px" color="#1f1f1f"></wd-icon>
+            <text class="new-message-indicator-text">{{ getNewMessageIndicatorText() }}</text>
+          </view>
+          <chat-input-bar ref="inputBar" @sendMsg="doSend" :room-detail="roomDetail" />
+        </template>
+      </z-paging>
+    </view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { getImageUrl, toUrl, formatRelativeTime, getChatImageUrl } from '@/utils'
 import chatItem from '@/components/chat-item/chat-item.vue'
 import CryptoJS from 'crypto-js'
 import { EchoPrivateChannelClient } from '@/utils/echoPrivateChannelClient'
-import { getCommunityEmotionListByCategoryApi } from '@/service/api/community'
+import {
+  getCommunityEmotionListItem,
+  getCommunityEmotionListByCategoryApi,
+} from '@/service/api/community'
+import { getAliyunOssConfigApi, getAliyunOssConfigApiResponse } from '@/service/api/upload'
 import {
   getCurrentGroupAnnouncementApi,
   type AnnouncementSummary,
@@ -77,15 +130,6 @@ import {
 } from '@/service/api/groupChat'
 import { useUserStore } from '@/store'
 import { useToast } from 'wot-design-uni'
-import {
-  enrichChatMessageAssets,
-  enrichChatMessagesAssets,
-  preloadMessageAssets,
-  patchEmotionMessagesAssets,
-} from '@/utils/chatAssetCache'
-import { preloadAvatarUrls } from '@/utils/avatarCache'
-import { initEmotionTool } from '@/utils/emotionTool'
-import { normalizeChatMessage } from '@/utils/groupChatMessageManager'
 // z-paging ref
 /*
 页面离开标志，用于标识当前页面是否正在被关闭或返回上一页。
@@ -109,49 +153,30 @@ const toast = useToast()
 const { t } = useI18n()
 const roomDetailLoading = ref(false)
 const showArrow = ref(false)
-// 定义每次预加载的消息窗口大小为 80 条
-const PRELOAD_MESSAGE_WINDOW = 80
-let auxiliaryPreloadPromise: Promise<void> | null = null
-/*
-确保辅助数据（如表情资源）只加载一次的异步缓存函数
- */
-const ensureAuxiliaryDataLoaded = () => {
-  if (auxiliaryPreloadPromise) return auxiliaryPreloadPromise
 
-  auxiliaryPreloadPromise = getCommunityEmotionListByCategoryApi()
-    .then((res) => {
-      if (res.data) {
-        initEmotionTool(res.data)
-        const { messages: patched, changed } = patchEmotionMessagesAssets(messages.value)
-        if (changed) {
-          messages.value = patched
-        }
-      }
-    })
-    .catch((error) => {
-      console.error('ensureAuxiliaryDataLoaded error:', error)
-      auxiliaryPreloadPromise = null
-    })
+// 布局相关的
+const { safeAreaInsets } = uni.getSystemInfoSync()
+const safeTopRpx = ref<number>(0)
 
-  return auxiliaryPreloadPromise
-}
-/*
-基于滚动窗口的渐进式资源预加载策略：
-只在消息列表长度变化时（新消息到来或翻页）自动触发。
-只预加载最新的 80 条消息，平衡性能与体验。
- */
-watch(
-  () => messages.value.length,
-  () => {
-    const windowMessages = messages.value.slice(-PRELOAD_MESSAGE_WINDOW)
-    console.log('preloadMessageAssets', windowMessages)
-    preloadMessageAssets(windowMessages, roomDetail.value?.room.avatar)
-  },
-  { flush: 'post' },
-)
-
+const navHeight = ref<number>(0)
+const navHeaderPaddingTop = ref<number>(0)
+const cntPaddingTop = ref<number>(0)
 onMounted(() => {
-  void ensureAuxiliaryDataLoaded()
+  // 获取状态栏高度
+  const systemInfo = uni.getSystemInfoSync()
+  const statusBarHeight = systemInfo.statusBarHeight || 0
+
+  // 如果是Android设备，直接使用状态栏高度
+  // 如果是iOS设备，使用safeAreaInsets.top
+  safeTopRpx.value =
+    systemInfo.platform === 'android' ? statusBarHeight : safeAreaInsets?.top || statusBarHeight
+
+  // 转换为rpx
+  safeTopRpx.value = safeTopRpx.value / (systemInfo.windowWidth / 750)
+
+  navHeight.value = safeTopRpx.value + 104
+  navHeaderPaddingTop.value = safeTopRpx.value
+  cntPaddingTop.value = navHeight.value
   loadRoomDetail()
   // setTimeout(() => {
   //   showArrow.value = true
@@ -228,18 +253,12 @@ const filterExistingMessages = (
   return newMessages.filter((msg) => !existingIds.has(msg.id))
 }
 const applyMessagesBatch = (incomingMessages: ChatMessage[], scrollToLatest = false) => {
-  const currentMemberId = Number(userStore.userInfo.member_id || 0)
   const normalizedMessages = incomingMessages
     .filter((message) => !!message?.id)
-    .map((message) =>
-      normalizeChatMessage(
-        {
-          ...message,
-          local_status: message.local_status || 'sent',
-        },
-        { currentMemberId },
-      ),
-    )
+    .map((message) => ({
+      ...message,
+      local_status: message.local_status || 'sent',
+    }))
 
   if (normalizedMessages.length === 0) return
   console.log(paging.value)
@@ -319,6 +338,8 @@ const stageReadMessage = (messageId?: number | null) => {
 所有群聊实时消息、连接、监听、发送都在这里
 ==============================================
  */
+const GROUP_MEMBERS_REFRESH_EVENT = 'group_members:refresh'
+const GROUP_CHAT_REFRESH_SENDERS_EVENT = 'group_chat:refresh_message_senders'
 // 存储 WebSocket 客户端实例，用于管理连接和订阅
 const chatSocketClient = ref<EchoPrivateChannelClient | null>(null)
 // 用于指示在批量刷新实时消息后是否需要自动滚动到最新消息（通常是最底部）。
@@ -363,9 +384,9 @@ const handleRealtimeEvent = async (eventName: string, payload: any) => {
   if (payload?.room_id && payload.room_id !== roomDetail.value?.room.id) return
   console.log('payload', payload)
   const message = resolveIncomingMessage(payload) // 尝试解析消息对象
-  console.log('normalizedEventName', normalizedEventName, message)
   const normalizedEventName = eventName.startsWith('.') ? eventName.slice(1) : eventName
-  const kickedMemberPayload = resolveMemberKickPayload(payload) // 尝试解析踢人负载
+  console.log('normalizedEventName', normalizedEventName, message)
+  const kickedMemberPayload = payload // 尝试解析踢人负载
 
   // 如果事件涉及成员变动，触发全局刷新成员列表事件
   if (shouldNotifyGroupMembersRefresh(normalizedEventName, message, payload)) {
@@ -375,10 +396,15 @@ const handleRealtimeEvent = async (eventName: string, payload: any) => {
   // 处理消息创建事件（新消息）
   if (normalizedEventName === 'message.created' || normalizedEventName === 'GroupMessageEvent') {
     if (message?.id) {
-      const isSelf: boolean = message.sender?.member_id === userStore.userInfo.member_id
-      if (!isSelf) {
+      if (message.sender?.role === 'system' || message.sender?.member_id === 0) {
         bumpPendingRealtimeMessageIndicator() // 新消息计数+1（显示未读提示）
-        enqueueRealtimeMessage({ ...message, is_self: isSelf }, false) // 将消息加入队列，批量渲染
+        enqueueRealtimeMessage({ ...message, is_self: false }, false) //
+      } else {
+        const isSelf: boolean = message.sender?.member_id === userStore.userInfo.member_id
+        if (!isSelf) {
+          bumpPendingRealtimeMessageIndicator() // 新消息计数+1（显示未读提示）
+          enqueueRealtimeMessage({ ...message, is_self: isSelf }, false) // 将消息加入队列，批量渲染
+        }
       }
     }
     return
@@ -572,8 +598,28 @@ const initChatSocketClient = () => {
       'member.status_changed': (payload) => handleRealtimeEvent('member.status_changed', payload),
     }),
     onMessage: handleIncomingMessage,
+    onConnectionError: (error) => {
+      console.error('[GroupChat] Echo connection error:', error)
+    },
+    onPrivateChannelError: (error) => {
+      console.error('[GroupChat] private channel error:', error)
+    },
     onAllEvent: (eventName, data) => {
       console.log(eventName)
+      const normalizedEventName = eventName.startsWith('.') ? eventName.slice(1) : eventName
+      const shouldHandleMemberEvent =
+        normalizedEventName.endsWith('member.kicked') ||
+        normalizedEventName.endsWith('member.removed') ||
+        normalizedEventName.endsWith('member.status_changed')
+
+      const isDirectRegisteredMemberEvent =
+        normalizedEventName === 'member.kicked' ||
+        normalizedEventName === 'member.removed' ||
+        normalizedEventName === 'member.status_changed'
+
+      if (shouldHandleMemberEvent && !isDirectRegisteredMemberEvent) {
+        handleRealtimeEvent(eventName, data)
+      }
     },
   })
 
@@ -674,13 +720,12 @@ const getChatMessageList = async (before_message_id: strin | number = null, sile
     before_message_id,
   })
   // lastestMessageId.value = res.data.messages[0].id
-  const newMessages = enrichChatMessagesAssets(reverseMessageArray(res.data.messages))
+  const newMessages = reverseMessageArray(res.data.messages)
   const newLastestId = res.data.messages[0].id
   if (!silent) {
     lastestMessageId.value = newLastestId
     paging.value.complete(newMessages || [])
     messages.value.push(...newMessages)
-    preloadMessageAssets(newMessages, roomDetail.value?.room.avatar)
   } else {
     messageCache.set(before_message_id, {
       messages: newMessages,
@@ -718,7 +763,7 @@ const createLocalPendingMessage = (
   const memberId = Number(userStore.userInfo.member_id || 0)
   const now = Math.floor(Date.now() / 1000)
 
-  return enrichChatMessageAssets({
+  return {
     id: Date.now(),
     room_seq: messages.value[messages.value.length - 1]?.room_seq || 0 + 1,
     room_id: roomId,
@@ -741,7 +786,7 @@ const createLocalPendingMessage = (
     client_message_id: clientMessageId,
     local_id: clientMessageId,
     local_status: 'sending' as const,
-  } satisfies ChatMessage)
+  } satisfies ChatMessage
 }
 const sendChatMessageWithClientMessageId = async (
   roomId: number,
@@ -751,11 +796,11 @@ const sendChatMessageWithClientMessageId = async (
 ) => {
   const res = await sendChatMessageApi(roomId, messageType, clientMessageId, payload)
   if (res.code === 1) {
-    const nextMessage = enrichChatMessageAssets({
+    const nextMessage = {
       ...res.data.message,
       client_message_id: res.data.message.client_message_id || clientMessageId,
       local_status: 'sent' as const,
-    })
+    }
 
     const updated = updateChatMessageByClientMessageId(clientMessageId, nextMessage)
     if (updated) {
@@ -784,14 +829,10 @@ const updateChatMessageByClientMessageId = (
   const index = messages.value.findIndex((msg) => msg.client_message_id === clientMessageId)
   if (index < 0) return false
 
-  messages.value.splice(
-    index,
-    1,
-    enrichChatMessageAssets({
-      ...messages.value[index],
-      ...message,
-    }),
-  )
+  messages.value.splice(index, 1, {
+    ...messages.value[index],
+    ...message,
+  })
   return true
 }
 const doSend = (messageType, payload) => {

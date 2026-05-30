@@ -1,12 +1,10 @@
 import type { ChatMessage } from '@/service/api/groupChat'
-import { enrichChatMessageAssets } from '@/utils/chatAssetCache'
 
 export type ChatMessagePatch = Partial<ChatMessage>
 
 export interface NormalizeMessageOptions {
   currentMemberId?: number
   defaultLocalStatus?: ChatMessage['local_status']
-  skipAssetEnrichment?: boolean
 }
 
 export interface MessageApplyResult {
@@ -28,17 +26,11 @@ export const normalizeChatMessage = (
   const currentMemberId = Number(options.currentMemberId || 0)
   const senderMemberId = Number(message.sender?.member_id || message.member_id || 0)
 
-  const normalized = {
+  return {
     ...message,
     is_self: currentMemberId && senderMemberId === currentMemberId ? 1 : message.is_self,
     local_status: message.local_status || options.defaultLocalStatus || 'sent',
   }
-
-  if (options.skipAssetEnrichment) {
-    return normalized
-  }
-
-  return enrichChatMessageAssets(normalized)
 }
 
 export const sortChatMessages = (messages: ChatMessage[]) => {

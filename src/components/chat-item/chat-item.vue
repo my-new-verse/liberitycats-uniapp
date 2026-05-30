@@ -2,6 +2,7 @@
 
 <template>
   <view class="chat-item">
+    {{ item.id }}
     <text class="chat-time" v-if="item.show_time">
       {{ formatRelativeTime(item.create_time) }}
     </text>
@@ -85,9 +86,37 @@
                 mode="aspectFill"
                 width="140rpx"
                 height="140rpx"
-                :src="item.payload?.emotion_url || ''"
+                :src="
+                  item.payload?.emotion_url
+                    ? getImageUrl(item.payload?.emotion_url)
+                    : getEmotionMessageSrc(item)
+                "
               />
             </template>
+            <view v-else-if="item.message_type === 'rich'" class="rich-item">
+              <view v-for="(richItem, index) in item.payload?.parts" :key="index">
+                <template v-if="richItem.type === 'text'">
+                  <view>
+                    <text :class="{ 'chat-text': true, 'chat-text-me': richItem.is_self }">
+                      {{ richItem.text }}
+                    </text>
+                  </view>
+                </template>
+                <view v-else-if="richItem.type === 'emotion'">
+                  <wd-img
+                    custom-class="chat-img-custom"
+                    mode="aspectFill"
+                    width="140rpx"
+                    height="140rpx"
+                    :src="
+                      richItem?.emotion_url
+                        ? getImageUrl(richItem?.emotion_url)
+                        : getRichEmotionMessageSrc(richItem.emotion_id)
+                    "
+                  />
+                </view>
+              </view>
+            </view>
           </view>
         </view>
       </template>
@@ -96,11 +125,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { formatRelativeTime } from '@/utils'
-import { getAvatarStyle, getLevelBadgeStyle } from '@/utils/avatarCache'
-import type { ChatMessage } from '@/service/api/groupChat'
-
+import { getImageUrl, toUrl, formatRelativeTime, getChatImageUrl } from '@/utils'
+import {
+  getAvatarStyle,
+  getAvatarCacheStats,
+  getLevelBadgeStyle,
+  preloadAvatarUrls,
+  preloadLevelBadgeUrls,
+} from '@/utils/avatarCache'
 const props = defineProps({
   item: {
     type: Object,
@@ -133,13 +165,98 @@ const getImageMessageBoxSize = (message: ChatMessage) => {
     height: scaledHeight,
   }
 }
+const getEmotionMessageSrc = (message: ChatMessage) => {
+  return getImageUrl(EmotionTool.findById(message.payload?.emotion_id)?.icon)
+}
+
+const getRichEmotionMessageSrc = (emotionId?: number) => {
+  return getImageUrl(EmotionTool.findById(emotionId)?.icon)
+}
+const EmotionTool = (() => {
+  const idMap = new Map()
+  const groupMap = new Map()
+  const nameMap = new Map()
+  /**
+   * 初始化数据（只调用一次）
+   * @param {Array} groupList 表情分组数组
+   */
+  function init(groupList) {
+    if (!Array.isArray(groupList)) return
+    // 清空旧数据
+    idMap.clear()
+    groupMap.clear()
+    nameMap.clear()
+
+    // 构建缓存（一次遍历完成，性能最高）
+    groupList.forEach((group) => {
+      const groupInfo = {
+        id: group.id,
+        name: group.name,
+        icon: group.icon,
+        emotions: [...group.emotions],
+      }
+      groupMap.set(group.id, groupInfo)
+
+      group.emotions.forEach((emo) => {
+        idMap.set(emo.id, emo)
+        nameMap.set(emo.name, emo)
+      })
+    })
+  }
+
+  //  按 ID 查找（最快 O(1)）
+  function findById(id) {
+    return idMap.get(Number(id)) || null
+  }
+  // 按名称精确查找（O(1)）
+  function findByName(name) {
+    return nameMap.get(name) || null
+  }
+
+  // 获取所有表情（平铺）
+  function getAllEmotions() {
+    return Array.from(idMap.values())
+  }
+  //  清空缓存
+  function clear() {
+    idMap.clear()
+    groupMap.clear()
+    nameMap.clear()
+  }
+  return {
+    init,
+    findById,
+    findByName,
+    getAllEmotions,
+    clear,
+  }
+})()
 </script>
 
 <style scoped lang="scss">
+@import '/src/style/base';
+@import '/src/style/social';
+
+:deep(.zh-Hans, .zh-Hant) {
+  .wd-backtop__backicon {
+    font-family: wd-icons !important;
+  }
+}
+.page {
+  height: 100vh;
+  overflow: hidden;
+  background-color: var(--liberty-cats-page-background-color);
+  display: flex;
+  flex-direction: column;
+}
+
 .chat-item {
   display: flex;
   flex-direction: column;
   padding: 20rpx;
+  font-family:
+    Alimama FangYuanTi VF,
+    sans-serif;
 }
 .chat-time {
   padding: 4rpx 0rpx;
@@ -183,9 +300,27 @@ const getImageMessageBoxSize = (message: ChatMessage) => {
   /* #ifndef APP-NVUE */
   max-width: 500rpx;
   /* #endif */
+  background-color: #ffffff;
+  padding: 20rpx 28rpx;
+  /* 他人消息气泡圆角：左上角为小圆角，其余大圆角 */
+  border-radius: 8rpx 30rpx 30rpx 30rpx;
+  font-size: 28rpx;
+  line-height: 1.5;
+  color: #1a1a1a;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.03);
+  word-break: break-all;
+  display: inline-block;
+  max-width: 100%;
+}
+.rich-item {
+  background-color: #f1f1f1;
+  border-radius: 8rpx;
+  padding: 10rpx 15rpx;
+  flex-direction: column;
 }
 .chat-text-container-me {
-  background-color: #007aff;
+  background-color: var(--liberty-cats-primary-color);
+  // background-color: #007aff;
 }
 .chat-text-container-super {
   display: flex;
