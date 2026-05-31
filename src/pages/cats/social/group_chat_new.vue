@@ -12,8 +12,9 @@
   },
 }
 </route>
+
 <template>
-  <view class="page">
+  <view class="page" :class="[locale]">
     <view class="customNav" :style="{ height: navHeight + 'rpx' }">
       <!-- 顶部导航栏 -->
       <view class="navHeaderBg" :style="{ paddingTop: navHeaderPaddingTop + 'rpx' }">
@@ -46,6 +47,24 @@
       </view>
     </view>
     <view class="cnt content" :style="{ paddingTop: cntPaddingTop + 'rpx' }">
+      <wd-notice-bar
+        v-if="currentAnnouncement"
+        :scrollable="false"
+        @click="goToCurrentAnnouncementDetail"
+        custom-style="z-index: 9999"
+      >
+        <template #prefix>
+          <wd-img src="/static/images/notice_outlined.png" size="22px"></wd-img>
+        </template>
+        <view style="margin-left: 24rpx">{{ currentAnnouncementText }}</view>
+        <template #suffix>
+          <wd-icon
+            @click.stop="goToCurrentAnnouncementDetail"
+            name="arrow-right"
+            size="22px"
+          ></wd-icon>
+        </template>
+      </wd-notice-bar>
       <!-- use-chat-record-mode：开启聊天记录模式 -->
       <!-- use-virtual-list：开启虚拟列表模式 -->
       <!-- cell-height-mode：设置虚拟列表模式高度不固定 -->
@@ -144,7 +163,6 @@ const inputBar = ref(null)
 // v-model绑定的这个变量不要在分页请求结束中自己赋值！！！
 const messages = ref([])
 const roomDetail = ref<ChatRoomDetail | null>(null)
-const currentAnnouncement = ref<AnnouncementSummary | null>(null)
 const roomCode = ref('')
 const routeRoomId = ref<number>(0)
 let roomDetailPreloadPromise: Promise<boolean> | null = null
@@ -192,6 +210,10 @@ onHide(() => {
 })
 onShow(() => {
   // ...
+  const roomId = roomDetail.value?.room.id || routeRoomId.value
+  if (roomId) {
+    void loadCurrentAnnouncement(roomId)
+  }
   resumeChatAfterForeground()
   // ...
 })
@@ -226,12 +248,19 @@ let lastScrollTop = 0
 
 const handleChatScroll = (e) => {
   const scrollTop = e.detail ? e.detail.scrollTop : e.contentOffset.y
-  // 检测用户意图：向上滚动
-  if (lastScrollTop === 0 && lastScrollTop - scrollTop < 0) {
-    clearPendingRealtimeMessageIndicator()
-  }
   lastScrollTop = scrollTop
   scrollTopValue.value = e.detail.scrollTop
+
+  // 用户滚动到底部时，追加暂存的离屏消息并清除指示器
+  if (isNearBottom()) {
+    if (pendingOffscreenMessages.length > 0) {
+      applyMessagesBatch(pendingOffscreenMessages, true)
+      pendingOffscreenMessages.length = 0
+    }
+    if (pendingRealtimeMessageCount.value > 0) {
+      clearPendingRealtimeMessageIndicator()
+    }
+  }
 }
 // 用于判断是否在底部附近
 const BOTTOM_AUTO_SCROLL_THRESHOLD_PX = 100
@@ -265,6 +294,7 @@ const applyMessagesBatch = (incomingMessages: ChatMessage[], scrollToLatest = fa
   paging.value.addChatRecordData(
     filterExistingMessages(messages.value, normalizedMessages),
     scrollToLatest,
+    false,
   )
 
   normalizedMessages.forEach((message) => stageReadMessage(message.id))
@@ -395,14 +425,11 @@ const handleRealtimeEvent = async (eventName: string, payload: any) => {
   if (normalizedEventName === 'message.created' || normalizedEventName === 'GroupMessageEvent') {
     if (message?.id) {
       if (message.sender?.role === 'system' || message.sender?.member_id === 0) {
-        bumpPendingRealtimeMessageIndicator() // 新消息计数+1（显示未读提示）
-        enqueueRealtimeMessage({ ...message, is_self: false }, false) //
+        enqueueRealtimeMessage({ ...message, is_self: false }, false)
       } else {
         const isSelf: boolean = message.sender?.member_id === userStore.userInfo.member_id
-        if (!isSelf) {
-          bumpPendingRealtimeMessageIndicator() // 新消息计数+1（显示未读提示）
-          enqueueRealtimeMessage({ ...message, is_self: isSelf }, false) // 将消息加入队列，批量渲染
-        }
+        // 未读计数统一由 flushRealtimeMessages 按位置判断，此处不再单独 bump
+        enqueueRealtimeMessage({ ...message, is_self: isSelf }, false)
       }
     }
     return
@@ -529,6 +556,8 @@ const resolveMessageStatePayload = (payload: any): MessageStatePayload | null =>
 }
 // 暂存待处理的实时消息（Map 用于去重）
 const pendingRealtimeMessages = new Map<string, ChatMessage>()
+// 不在底部时暂存他人消息，等点击箭头或滚到底部再追加到列表
+const pendingOffscreenMessages: ChatMessage[] = []
 // 定时器（realtimeFlushTimer），将多条消息合并为一次批量更新，避免高频渲染。
 let realtimeFlushTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -557,6 +586,8 @@ const enqueueRealtimeMessage = (incomingMessage: ChatMessage, scrollToLatest = f
 
 /**
  * 批量将队列中的消息合并到 messages 数组并更新界面
+ * - 自己发的消息始终立即追加
+ * - 他人消息：在底部则立即追加，不在底部则暂存到 pendingOffscreenMessages
  */
 const flushRealtimeMessages = () => {
   realtimeFlushTimer = null
@@ -569,7 +600,25 @@ const flushRealtimeMessages = () => {
   pendingRealtimeMessages.clear()
   const shouldScrollToLatest = pendingRealtimeScrollToLatest
   pendingRealtimeScrollToLatest = false
-  applyMessagesBatch(queuedMessages, shouldScrollToLatest)
+
+  // 自己发的消息始终立即追加（用户期望立即看到自己的消息）
+  const selfMessages = queuedMessages.filter((msg) => msg.is_self)
+  if (selfMessages.length > 0) {
+    applyMessagesBatch(selfMessages, shouldScrollToLatest)
+    pendingRealtimeMessageCount.value += selfMessages.length
+  }
+
+  // 他人消息：在底部则立即追加，不在底部则暂存并更新未读计数
+  const otherMessages = queuedMessages.filter((msg) => !msg.is_self)
+  if (otherMessages.length > 0) {
+    if (isNearBottom()) {
+      applyMessagesBatch(otherMessages, shouldScrollToLatest)
+    } else {
+      pendingOffscreenMessages.push(...otherMessages)
+      // 更新未读计数（这里才是真正暂存时才计数）
+      pendingRealtimeMessageCount.value += otherMessages.length
+    }
+  }
 }
 /**
  * 初始化 WebSocket 连接客户端
@@ -673,6 +722,11 @@ const getNewMessageIndicatorText = () => {
   return count + '' + t('group.chat.newMessages')
 }
 const handleJumpToLatestMessage = () => {
+  // 先追加暂存的离屏消息
+  if (pendingOffscreenMessages.length > 0) {
+    applyMessagesBatch(pendingOffscreenMessages, true)
+    pendingOffscreenMessages.length = 0
+  }
   clearPendingRealtimeMessageIndicator()
   scrollToBottom()
 }
@@ -875,8 +929,18 @@ const doSend = (messageType, payload) => {
   let pendingClientMessageId = ''
   const clientMessageId = createClientMessageId()
   pendingClientMessageId = clientMessageId
-  // 在用户点击发送消息后，立即在本地消息列表中插入一条“发送中”的临时消息，实现乐观更新（Optimistic Update），让用户无需等待网络请求就能立刻看到自己的消息出现在聊天界面上。
+
+  // 先追加暂存的离屏消息（确保时序正确：他人消息在自己消息之前）
+  if (pendingOffscreenMessages.length > 0) {
+    applyMessagesBatch(pendingOffscreenMessages, false)
+    pendingOffscreenMessages.length = 0
+  }
+  clearPendingRealtimeMessageIndicator()
+
+  // 再追加自己的消息，乐观更新
   paging.value.addChatRecordData(createLocalPendingMessage(clientMessageId, messageType, payload))
+  scrollToBottom()
+
   sendChatMessageWithClientMessageId(
     roomDetail.value.room.id,
     messageType,
@@ -888,7 +952,13 @@ const doSend = (messageType, payload) => {
     toast.show(error?.errMsg || error?.message || t('group.chat.sendFailed'))
   })
 }
-
+/* 公告start 📣📣📣📣📣📣📣📣📣📣📣 */
+const currentAnnouncement = ref<AnnouncementSummary | null>(null)
+const currentAnnouncementText = computed(() => {
+  const announcement = currentAnnouncement.value
+  if (!announcement) return ''
+  return announcement.summary || announcement.title || ''
+})
 const loadCurrentAnnouncement = async (roomId: number) => {
   if (!roomId) {
     currentAnnouncement.value = null
@@ -904,6 +974,30 @@ const loadCurrentAnnouncement = async (roomId: number) => {
     currentAnnouncement.value = null
   }
 }
+const goToCurrentAnnouncementDetail = async () => {
+  const announcement = currentAnnouncement.value
+  if (!announcement?.id) return
+  const roomId = roomDetail.value?.room.id || routeRoomId.value
+  if (!roomId) return
+  chatSocketClient.value?.setKeepAliveOnHide(true)
+  toUrl(
+    `/pages/cats/social/group_announcement_detail?room_id=${roomId}&id=${announcement.id}&currentUserRole=${roomDetail.value?.speaking.role}`,
+    true,
+    false,
+  )
+}
+const goToAnnouncementList = async () => {
+  const roomId = roomDetail.value?.room.id || routeRoomId.value
+  if (!roomId) return
+  // await ensureRoomMemberMapLoaded(true)
+  chatSocketClient.value?.setKeepAliveOnHide(true)
+  toUrl(
+    `/pages/cats/social/group_announcement_list?room_id=${roomId}&currentUserRole=${roomDetail.value?.speaking.role}`,
+    true,
+    false,
+  )
+}
+/* 公告end 📣📣📣📣📣📣📣📣📣📣📣 */
 const ensureRoomDetailLoaded = async () => {
   if (roomDetail.value?.room.id) return true
   if (roomDetailPreloadPromise) return roomDetailPreloadPromise
@@ -1003,6 +1097,62 @@ const createClientMessageId = () => {
 /*
 幂等 🆔🆔🆔🆔🆔🆔🆔🆔🆔END
  */
+
+/* 群成员start 📝📝📝📝📝📝📝 */
+// 跳转到成员列表页面
+const roomMemberMap = ref<Record<number, ChatMember>>({})
+
+const goToMembers = async () => {
+  const roomId = roomDetail.value?.room.id || routeRoomId.value
+  if (!roomId) return
+  await ensureRoomMemberMapLoaded(true)
+  chatSocketClient.value?.setKeepAliveOnHide(true)
+  toUrl(
+    `/pages/cats/social/group_members?room_id=${roomId}&currentUserRole=${roomDetail.value?.speaking.role}`,
+    true,
+    false,
+  )
+}
+let roomMemberMapPromise: Promise<void> | null = null
+
+const ensureRoomMemberMapLoaded = async (forceRefresh = false) => {
+  if (!forceRefresh && Object.keys(roomMemberMap.value).length > 0) return
+  if (roomMemberMapPromise) return roomMemberMapPromise
+
+  roomMemberMapPromise = loadRoomMemberMap().finally(() => {
+    roomMemberMapPromise = null
+  })
+
+  return roomMemberMapPromise
+}
+
+const loadRoomMemberMap = async () => {
+  const roomId = roomDetail.value?.room.id || routeRoomId.value
+  if (!roomId) return
+
+  const [adminRes, memberRes] = await Promise.all([
+    getChatRoomMembersApi(roomId, 'moderator'),
+    getChatRoomMembersApi(roomId),
+  ])
+
+  const mergedMembers: ChatMember[] = []
+  if (adminRes.code === 1) {
+    mergedMembers.push(...(adminRes.data?.data || []))
+  }
+  if (memberRes.code === 1) {
+    mergedMembers.push(...(memberRes.data?.data || []))
+  }
+
+  setRoomMemberMap(mergedMembers)
+}
+const setRoomMemberMap = (memberList: ChatMember[]) => {
+  const nextMemberMap: Record<number, ChatMember> = {}
+  memberList.forEach((member) => {
+    nextMemberMap[member.member_id] = member
+  })
+  roomMemberMap.value = nextMemberMap
+}
+/* 群成员end 📝📝📝📝📝📝📝 */
 </script>
 
 <style lang="scss" scoped>

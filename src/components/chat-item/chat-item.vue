@@ -24,7 +24,15 @@
                 user_name: segItem.type === 'user',
               }"
             >
-              {{ segItem.text }}
+              <!-- {{ segItem.text }} -->
+              <text
+                v-if="segItem.type === 'user'"
+                style="color: #167fff; margin-right: 8rpx"
+                @click="handleAvatarClick(item?.payload.params?.member_id)"
+              >
+                "{{ segItem.text }}"
+              </text>
+              <text v-else>{{ segItem.text }}</text>
             </view>
             <!-- <view v-for="(segItem, segIndex) in item.payload?.segments" :key="segIndex">
               <text v-if="segItem.type === 'user'" style="color: #167fff; margin-right: 8rpx">
@@ -39,7 +47,7 @@
         <!-- <view class="chat-icon-container">
           <image class="chat-icon" :src="item.sender.avatar" mode="aspectFill" />
         </view> -->
-        <view class="avatarBox" @click="!item.is_self && handleAvatarClick(msg?.member_id)">
+        <view class="avatarBox" @click="!item.is_self && handleAvatarClick(item?.member_id)">
           <view class="u-avatar" :style="getAvatarStyle(item?.sender?.avatar || '', 'chat')"></view>
           <view class="levelIcon">
             <view v-if="levelBadgeStyle" class="levelBadge" :style="levelBadgeStyle"></view>
@@ -244,6 +252,14 @@ const EmotionTool = (() => {
 
 const retryFailedMessage = (msg) => {
   emit('retry', msg)
+}
+// ✅ 点击头像查看用户主页
+const handleAvatarClick = (memberId: number | undefined) => {
+  console.log(memberId)
+  if (!memberId) return
+  uni.navigateTo({
+    url: `/pages/cats/user/home?member_id=${memberId}`,
+  })
 }
 </script>
 
