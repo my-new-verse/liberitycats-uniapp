@@ -351,6 +351,11 @@ onShow(() => {
   if (roomId) {
     loadCurrentAnnouncement(roomId)
   }
+  // 页面回到前台时，检查并回填可能缺失的消息
+  const lastPersistedMessage = getLastPersistedMessage()
+  if (lastPersistedMessage) {
+    backfillMissingMessagesByRoomSeq(lastPersistedMessage)
+  }
 })
 onUnmounted(() => {
   clearPendingMessageLongPress()
@@ -433,13 +438,66 @@ const applyMessagesBatch = (incomingMessages: ChatMessage[], scrollToLatest = fa
 
   if (normalizedMessages.length === 0) return
   console.log(paging.value)
-  paging.value.addChatRecordData(
-    filterExistingMessages(messages.value, normalizedMessages),
-    scrollToLatest,
-    false,
-  )
+  paging.value &&
+    paging.value.addChatRecordData(
+      filterExistingMessages(messages.value, normalizedMessages),
+      scrollToLatest,
+      false,
+    )
 
   normalizedMessages.forEach((message) => stageReadMessage(message.id))
+}
+
+const getLastPersistedMessage = () => {
+  for (let index = messages.value.length - 1; index >= 0; index -= 1) {
+    const message = messages.value[index]
+    const messageId = Number(message?.id || 0)
+    if (Number.isFinite(messageId) && messageId > 0) {
+      return message
+    }
+  }
+  return null
+}
+const getLastPersistedMessageId = () => getLastPersistedMessage()?.id || null
+
+const backfillMissingMessagesByRoomSeq = async (incomingMessage: ChatMessage) => {
+  const roomId = roomDetail.value?.room.id || routeRoomId.value
+  const lastMessageId = getLastPersistedMessageId()
+  if (!roomId || !lastMessageId || !incomingMessage?.id) return
+
+  let nextAfterMessageId = Number(lastMessageId)
+  if (!Number.isFinite(nextAfterMessageId) || nextAfterMessageId <= 0) return
+  let shouldContinue = true
+
+  while (shouldContinue && nextAfterMessageId) {
+    const res = await getChatMessageListApi({
+      room_id: roomId,
+      after_message_id: nextAfterMessageId,
+      limit: 50,
+    })
+
+    if (res.code !== 1 || !res.data) break
+
+    const messageList = res.data.messages || []
+    if (messageList.length === 0) break
+
+    const normalizedMessages = messageList.map((message) => ({
+      ...message,
+      is_self: message.sender?.member_id === userStore.userInfo.member_id ? 1 : 0,
+    }))
+    applyMessagesBatch(normalizedMessages, false)
+
+    if (messageList.some((message) => Number(message.id) === Number(incomingMessage.id))) {
+      break
+    }
+
+    if (res.data.has_more_latest !== 1 || !res.data.next_after_message_id) {
+      shouldContinue = false
+      break
+    }
+
+    nextAfterMessageId = res.data.next_after_message_id
+  }
 }
 
 const dedupeMessages = (messageList: ChatMessage[]) => {
@@ -579,6 +637,9 @@ const handleRealtimeEvent = async (eventName: string, payload: any) => {
         bumpPendingRealtimeMessageIndicator()
       }
       enqueueRealtimeMessage({ ...message, is_self }, false)
+
+      // 消息回填：防止消息断层
+      backfillMissingMessagesByRoomSeq({ ...message, is_self })
 
       // if (!isSelf) {
       // } else if (message.client_message_id) {

@@ -122,10 +122,7 @@ const handleJoinOrEnter = async (group: GroupChatItem) => {
     [group.id]: true,
   }
   console.log(group.code)
-  const groupChatUrl =
-    group.code === 'test_group_chat'
-      ? `/pages/cats/social/group_chat_new?code=${group.code}&room_id=${1}`
-      : `/pages/cats/social/group_chat?code=${group.code}&room_id=${group.id}`
+  const groupChatUrl = `/pages/cats/social/group_chat_new?code=${group.code}&room_id=${group.id}`
   if (group.is_joined === 1) {
     toUrl(groupChatUrl)
     setTimeout(() => {
