@@ -28,7 +28,8 @@ interface WebViewState {
   isPreloading: boolean
   isLoaded: boolean
   retryCount: number
-  gameVersion: string | null // 新增：存储游戏版本号
+  gameVersion: string | null
+  hasBeenHidden: boolean // 标记是否曾被 hide 过（iOS 会回收 WebGL 上下文）
 }
 
 const webViewPool: Record<GameType, WebViewState> = {
@@ -39,6 +40,7 @@ const webViewPool: Record<GameType, WebViewState> = {
     isLoaded: false,
     retryCount: 0,
     gameVersion: null,
+    hasBeenHidden: false,
   },
   JUMP: {
     instance: null,
@@ -47,6 +49,7 @@ const webViewPool: Record<GameType, WebViewState> = {
     isLoaded: false,
     retryCount: 0,
     gameVersion: null,
+    hasBeenHidden: false,
   },
 }
 
@@ -58,7 +61,7 @@ const getContentStyle = () => {
   const sysInfo = uni.getSystemInfoSync()
   const safeAreaTop = sysInfo.safeAreaInsets?.top || 0
   const safeAreaBottom = sysInfo.safeAreaInsets?.bottom || 0
-  // 用负偷移延伸覆盖全屏（含状态栏 + home indicator）
+  // 用负偏移延伸覆盖全屏（含状态栏 + home indicator）
   // 注意：有注入返回按鈕后，popGesture 不再是唯一退出方式，全屏优先
   return {
     top: `${-safeAreaTop}px`,
@@ -68,6 +71,8 @@ const getContentStyle = () => {
     hardwareAccelerated: true,
     bounce: 'none',
     scrollIndicator: 'none',
+    // iOS 使用 WKWebView 进程（对 WebGL/Unity 兼容性更好）
+    kernelCategory: 'UIWebView',
   }
 }
 
@@ -269,6 +274,10 @@ export const initDualGamePreload = async (gameConfigs: [GameConfig, GameConfig])
 
 /**
  * 显示指定游戏的WebView（入口页面调用）
+ *
+ * 重要：iOS 会在 WebView 不可见时回收 WebGL 上下文，
+ * 导致 Unity shader 引用失效（GL.shaders[id] 为 null），
+ * 所以每次 show 前如果之前已被 hide 过，必须重新加载页面。
  */
 export const showGameWebView = (gameType: GameType): Promise<boolean> => {
   return new Promise((resolve) => {
@@ -294,7 +303,7 @@ export const showGameWebView = (gameType: GameType): Promise<boolean> => {
       bindWebViewEvents(gameType, webView)
       state.instance = webView
       webView.loadURL(state.config.url)
-      // 不立即 show，等 isLoaded 后再显示，与兜底2共用同一段逻辑
+      // 不立即 show ，等 isLoaded 后再显示，与兜底2共用同一段逻辑
     }
 
     // 兜底1 / 兜底2：加载中，等待加载完成后再显示（无论是新建还是预加载中）
@@ -315,6 +324,32 @@ export const showGameWebView = (gameType: GameType): Promise<boolean> => {
       }, 10000)
       return
     }
+
+    // 正常流程：已加载的实例
+    // iOS 在 WebView hide 后会回收 WebGL 上下文，导致 Unity 的 GL.shaders 失效
+    // 如果之前被 hide 过（hasBeenHidden 标记），需要重新加载页面恢复 WebGL 上下文
+    if (state.hasBeenHidden && state.config) {
+      console.log(`[GamePool] ${gameType} 曾被隐藏，重新加载以恢复 WebGL 上下文`)
+      state.isPreloading = true
+      state.isLoaded = false
+      state.hasBeenHidden = false
+      state.instance.setStyle(fullScreenStyle)
+      state.instance.show('slide-in-right')
+      state.instance.loadURL(state.config.url)
+      // 等待重新加载完成
+      const checkReloaded = setInterval(() => {
+        if (state.isLoaded) {
+          clearInterval(checkReloaded)
+          resolve(true)
+        }
+      }, 100)
+      setTimeout(() => {
+        clearInterval(checkReloaded)
+        resolve(false)
+      }, 15000)
+      return
+    }
+
     console.log(`[GamePool] ${gameType} 已加载，直接显示.`, fullScreenStyle)
     // 正常流程：直接显示已加载的WebView
     // 确保WebView铺满全屏（含安全区），popGesture保持一致
@@ -330,12 +365,15 @@ export const showGameWebView = (gameType: GameType): Promise<boolean> => {
 export const hideAllGameWebViews = () => {
   if (typeof plus === 'undefined') return
 
-  Object.values(WEBVIEW_ID_MAP).forEach((webviewId) => {
+  Object.entries(WEBVIEW_ID_MAP).forEach(([gameType, webviewId]) => {
     const webView = plus.webview.getWebviewById(webviewId)
     if (webView) {
       webView.hide()
-      // 不要重置样式，避免影响popGesture等设置
-      // webView.setStyle({ top: '100%' })
+      // 标记已被隐藏，下次 show 时需要重新加载（iOS 会回收 WebGL 上下文）
+      const state = webViewPool[gameType as GameType]
+      if (state) {
+        state.hasBeenHidden = true
+      }
     }
   })
 }
@@ -360,6 +398,7 @@ export const destroyAllGameWebViews = () => {
       isLoaded: false,
       retryCount: 0,
       gameVersion: null,
+      hasBeenHidden: false,
     }
   })
 }
