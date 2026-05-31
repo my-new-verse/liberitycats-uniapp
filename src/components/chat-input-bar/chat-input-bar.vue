@@ -264,6 +264,269 @@ const ensureAuxiliaryDataLoaded = () => {
 
   return auxiliaryPreloadPromise
 }
+
+// ✅ 图片上传工具函数
+const getImageInfo = (src: string) => {
+  return new Promise<UniApp.GetImageInfoSuccessData>((resolve, reject) => {
+    uni.getImageInfo({
+      src,
+      success: resolve,
+      fail: reject,
+    })
+  })
+}
+
+const getFileSize = (filePath: string, fallbackSize = 0) => {
+  return new Promise<number>((resolve) => {
+    uni.getFileInfo({
+      filePath,
+      success: (res) => resolve(Number(res.size) || fallbackSize),
+      fail: () => resolve(fallbackSize),
+    })
+  })
+}
+
+const getImageExtension = (filePath: string) => {
+  const purePath = filePath.split('?')[0]
+  const match = purePath.match(/\.([a-zA-Z0-9]+)$/)
+  return match?.[1]?.toLowerCase() || 'jpg'
+}
+
+const createCompressedImagePath = (filePath: string, quality: number) => {
+  const extension = getImageExtension(filePath)
+  return `_doc/chat_upload_${Date.now()}_${Math.random().toString(36).slice(2)}_${quality}.${extension}`
+}
+
+const calcTargetSize = (width: number, height: number) => {
+  const scale = Math.min(1, MAX_UPLOAD_IMAGE_WIDTH / width, MAX_UPLOAD_IMAGE_HEIGHT / height)
+  return {
+    width: Math.max(1, Math.round(width * scale)),
+    height: Math.max(1, Math.round(height * scale)),
+  }
+}
+
+const isImageWithinLimit = (size: number, width: number, height: number) => {
+  return (
+    size <= MAX_UPLOAD_IMAGE_SIZE &&
+    width <= MAX_UPLOAD_IMAGE_WIDTH &&
+    height <= MAX_UPLOAD_IMAGE_HEIGHT
+  )
+}
+
+const compressImageByUni = (src: string, quality: number) => {
+  return new Promise<string>((resolve, reject) => {
+    uni.compressImage({
+      src,
+      quality,
+      success: (res) => resolve(res.tempFilePath || src),
+      fail: reject,
+    })
+  })
+}
+
+const compressImageForApp = (src: string, width: number, height: number, quality: number) => {
+  return new Promise<string>((resolve, reject) => {
+    if (typeof plus === 'undefined' || !plus?.zip?.compressImage) {
+      reject(new Error('APP-PLUS only'))
+      return
+    }
+
+    plus.zip.compressImage(
+      {
+        src,
+        dst: createCompressedImagePath(src, quality),
+        width: `${width}px`,
+        height: `${height}px`,
+        quality,
+      },
+      (event) => resolve(event.target),
+      reject,
+    )
+  })
+}
+
+const getMimeFromUrl = (url: string) => {
+  const extension = getImageExtension(url)
+  const normalizedExtension = extension === 'jpg' ? 'jpeg' : extension
+  return `image/${normalizedExtension}`
+}
+
+const normalizeImageMimeType = (filePath: string, mimeType?: string) => {
+  if (typeof mimeType === 'string' && mimeType.startsWith('image/')) {
+    return mimeType
+  }
+  return getMimeFromUrl(filePath)
+}
+
+const stripImageExtensionFromUrl = (url: string) => {
+  return url.replace(/\.(png|jpe?g|webp|gif|bmp|heic|heif)$/i, '')
+}
+
+const getFileNameFromPath = (filePath: string) => {
+  const normalizedPath = filePath.split('?')[0] || filePath
+  const pathSegments = normalizedPath.split('/')
+  const rawFileName = stripImageExtensionFromUrl(pathSegments[pathSegments.length - 1] || '')
+
+  if (rawFileName) {
+    return rawFileName
+  }
+
+  const extension = getImageExtension(filePath)
+  return `chat-image-${Date.now()}.${extension}`
+}
+
+const resolveUploadFileName = (filePath: string, fileName?: string) => {
+  const normalizedFileName = (fileName || '').trim()
+  if (normalizedFileName) return normalizedFileName
+  return getFileNameFromPath(filePath)
+}
+
+/**
+ * ✅ 处理图片选择
+ */
+const handleChooseImage = async () => {
+  if (!validateBeforeSend()) {
+    return
+  }
+
+  try {
+    const chooseRes = await new Promise<UniApp.ChooseImageSuccessCallbackResult>(
+      (resolve, reject) => {
+        uni.chooseImage({
+          count: 1,
+          sizeType: ['compressed'],
+          sourceType: ['album', 'camera'],
+          success: resolve,
+          fail: reject,
+        })
+      },
+    )
+
+    if (!chooseRes.tempFilePaths || chooseRes.tempFilePaths.length === 0) {
+      return
+    }
+    const tempFilePath = chooseRes.tempFilePaths[0]
+    const tempFileSize = chooseRes.tempFiles?.[0]?.size || 0
+    const tempFileType = normalizeImageMimeType(tempFilePath, chooseRes.tempFiles?.[0]?.type || '')
+    const tempFileName = resolveUploadFileName(tempFilePath, chooseRes.tempFiles?.[0]?.name)
+
+    if (tempFileSize > MAX_UPLOAD_IMAGE_SIZE) {
+      toast.show(IMAGE_LIMIT_HINT)
+      return
+    }
+
+    const imageInfo = await getImageInfo(tempFilePath)
+    if (imageInfo.width > MAX_UPLOAD_IMAGE_WIDTH || imageInfo.height > MAX_UPLOAD_IMAGE_HEIGHT) {
+      toast.show(IMAGE_LIMIT_HINT)
+      return
+    }
+
+    let finalPath = tempFilePath
+    if (!isImageWithinLimit(tempFileSize, imageInfo.width, imageInfo.height)) {
+      const targetSize = calcTargetSize(imageInfo.width, imageInfo.height)
+      for (const quality of IMAGE_COMPRESS_QUALITY_STEPS) {
+        try {
+          // #ifdef APP-PLUS
+          finalPath = await compressImageForApp(
+            tempFilePath,
+            targetSize.width,
+            targetSize.height,
+            quality,
+          )
+          // #endif
+          // #ifndef APP-PLUS
+          finalPath = await compressImageByUni(tempFilePath, quality)
+          // #endif
+          const compressedInfo = await getImageInfo(finalPath)
+          const compressedSize = await getFileSize(finalPath, tempFileSize)
+          if (isImageWithinLimit(compressedSize, compressedInfo.width, compressedInfo.height)) {
+            break
+          }
+        } catch (error) {
+          continue
+        }
+      }
+    }
+
+    await uploadImageToOss(finalPath, normalizeImageMimeType(finalPath, tempFileType), tempFileName)
+  } catch (error) {
+    if (error?.errMsg !== 'chooseImage:fail cancel') {
+      // 用户取消不报错
+    }
+  }
+}
+
+/**
+ * ✅ 上传图片到 OSS 并发送消息
+ */
+const uploadImageToOss = async (filePath: string, mimeType: string, fileName: string) => {
+  if (!ossConfig.value) {
+    toast.show(t('group.chat.ossConfigNotLoaded'))
+    return
+  }
+
+  if (!roomDetail.value?.room?.id) {
+    toast.show(t('group.chat.roomInfoNotLoaded'))
+    return
+  }
+
+  try {
+    uni.showLoading({ title: t('group.chat.uploading'), mask: true })
+    const resolvedFileName = resolveUploadFileName(filePath, fileName)
+    const key = `${ossConfig.value.dir}/${resolvedFileName}`
+
+    const imageInfo = await getImageInfo(filePath)
+    const fileSize = await getFileSize(filePath)
+    const formData = {
+      key,
+      OSSAccessKeyId: ossConfig.value?.accessKeyId,
+      policy: ossConfig.value?.policy,
+      signature: ossConfig.value?.signature,
+      x_oss_region: ossConfig.value?.region,
+      success_action_status: '200',
+    }
+
+    const uploadRes = await new Promise<UniApp.UploadFileSuccessCallbackResult>(
+      (resolve, reject) => {
+        uni.uploadFile({
+          url: ossConfig.value.host,
+          filePath,
+          name: 'file',
+          formData,
+          success: resolve,
+          fail: reject,
+        })
+      },
+    )
+
+    uni.hideLoading()
+    if (uploadRes.statusCode !== 200) {
+      throw new Error(
+        t('group.chat.uploadFailedStatusCode', {
+          statusCode: uploadRes.statusCode,
+        }),
+      )
+    }
+
+    const originalUrl = `${ossConfig.value.host}/${key}`
+    const thumbUrl = getChatImageUrl(originalUrl, imageInfo.width, imageInfo.height)
+    const normalizedMimeType = normalizeImageMimeType(filePath, mimeType)
+    const payload = {
+      url: originalUrl,
+      thumb_url: thumbUrl,
+      width: imageInfo.width,
+      height: imageInfo.height,
+      mime: normalizedMimeType,
+      size: fileSize,
+    }
+
+    doSend('image', payload)
+  } catch (error: any) {
+    uni.hideLoading()
+    toast.show(error?.message || t('group.chat.uploadImageFailed'))
+  }
+}
+
 let lastSendTriggerAt = 0
 const handleSendButtonClick = () => {
   if (commentContent.value === '') {
