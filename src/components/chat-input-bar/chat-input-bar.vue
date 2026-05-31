@@ -140,6 +140,7 @@ import { defaultEmojiList } from '@/utils/defaultEmojiList'
 import { getAliyunOssConfigApi, getAliyunOssConfigApiResponse } from '@/service/api/upload'
 import { getCachedEmotionUrl } from '@/utils/chatAssetCache'
 import { initEmotionTool } from '@/utils/emotionTool'
+import { useToast } from 'wot-design-uni'
 
 const emit = defineEmits(['sendMsg'])
 const { t } = useI18n()
@@ -154,6 +155,8 @@ const shouldFocus = ref(false)
 const emotionList = ref<getCommunityEmotionListItem[]>([])
 const ossConfig = ref<getAliyunOssConfigApiResponse | null>(null)
 const customEmojiList = ref<{ id: number; url: string }[]>([])
+const toast = useToast()
+
 const props = defineProps({
   roomDetail: {
     type: Object,
@@ -263,11 +266,15 @@ const ensureAuxiliaryDataLoaded = () => {
 }
 let lastSendTriggerAt = 0
 const handleSendButtonClick = () => {
+  if (commentContent.value === '') {
+    toast.show(t('group.chat.empty_message'))
+    return
+  }
   const now = Date.now()
   if (now - lastSendTriggerAt < 200) return
   lastSendTriggerAt = now
   commentPopupVisible.value = false
-  doSend('text', { text: commentContent.value })
+  doSend('text', { text: commentContent.value.trim() })
 }
 
 const sendExpressionEmoji = async (emotionId?: number, emotionUrl: string) => {
