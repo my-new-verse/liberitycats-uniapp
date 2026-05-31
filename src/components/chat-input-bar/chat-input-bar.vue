@@ -159,7 +159,7 @@ const toast = useToast()
 
 const props = defineProps({
   roomDetail: {
-    type: Object,
+    type: [Object, null],
     required: true, // 必传
   },
 })

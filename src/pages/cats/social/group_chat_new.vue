@@ -51,7 +51,7 @@
         v-if="currentAnnouncement"
         :scrollable="false"
         @click="goToCurrentAnnouncementDetail"
-        custom-style="z-index: 9999"
+        custom-class="announcement-notice"
       >
         <template #prefix>
           <wd-img src="/static/images/notice_outlined.png" size="22px"></wd-img>
@@ -83,7 +83,14 @@
         cellKeyName="id"
       >
         <template v-for="(item, index) in messages" :key="item.id">
-          <view style="transform: scaleY(-1)">
+          <view
+            style="transform: scaleY(-1)"
+            @contextmenu.stop.prevent="handleMessageContextMenu($event, item)"
+            @touchstart="handleMessageTouchStart($event, item)"
+            @touchmove="handleMessageTouchMove($event)"
+            @touchend="handleMessageTouchEnd"
+            @touchcancel="handleMessageTouchEnd"
+          >
             <chat-item :item="item" @retry="retryFailedMessage"></chat-item>
           </view>
         </template>
@@ -109,6 +116,126 @@
           <chat-input-bar ref="inputBar" @sendMsg="doSend" :room-detail="roomDetail" />
         </template>
       </z-paging>
+      <wd-action-sheet
+        custom-class="messageActionSheet"
+        custom-style="margin: 0 10px calc(var(--window-bottom) + 10px) 10px; border-radius: 16px; background: #fff;"
+        v-model="messageActionSheetVisible"
+        :title="t('group.chat.messageActionSheetTitle')"
+      >
+        <view class="action-sheet-slot">
+          <view
+            v-for="(item, index) in messageActionSheetActions"
+            :key="`${item.action || 'action'}-${index}`"
+            class="action-sheet-item"
+            :class="{ destructive: item.destructive }"
+            @click="handleMessageActionSheetItemClick(item)"
+          >
+            <view class="action-sheet-item-content">
+              <wd-icon
+                v-if="item.iconName"
+                :name="item.iconName"
+                :size="item.iconSize || '38rpx'"
+                class="action-sheet-item-icon"
+              />
+              <image
+                v-else-if="item.iconSrc"
+                :src="item.iconSrc"
+                mode="aspectFit"
+                class="action-sheet-item-image"
+              />
+              <view v-else class="action-sheet-item-icon-placeholder"></view>
+              <text class="action-sheet-item-text">{{ item.name }}</text>
+            </view>
+          </view>
+        </view>
+      </wd-action-sheet>
+      <wd-popup v-model="showUnmuteReasonPopup" position="bottom" :close-on-click-modal="false">
+        <view class="mute-popup">
+          <view class="popup-header">
+            <text class="popup-title">{{ t('group.chat.unmuteDialogTitle') }}</text>
+            <view class="close-btn" @click="showUnmuteReasonPopup = false">
+              <wd-icon name="close" size="20px"></wd-icon>
+            </view>
+          </view>
+          <view class="popup-content">
+            <view class="form-item">
+              <text class="label">{{ t('group.chat.unmuteReasonOptionalLabel') }}</text>
+              <wd-input
+                v-model="unmuteReason"
+                :placeholder="t('group.chat.unmuteReasonOptionalPlaceholder')"
+                clearable
+                maxlength="100"
+              />
+            </view>
+          </view>
+          <view class="popup-footer">
+            <wd-button custom-class="cancel-btn" @click="showUnmuteReasonPopup = false">
+              {{ t('common.cancel') }}
+            </wd-button>
+            <wd-button type="primary" custom-class="confirm-btn" @click="confirmMessageUnmute">
+              {{ t('common.confirm') }}
+            </wd-button>
+          </view>
+        </view>
+      </wd-popup>
+      <wd-popup v-model="showDeleteReasonPopup" position="bottom" :close-on-click-modal="false">
+        <view class="mute-popup">
+          <view class="popup-header">
+            <text class="popup-title">{{ t('group.chat.deleteDialogTitle') }}</text>
+            <view class="close-btn" @click="showDeleteReasonPopup = false">
+              <wd-icon name="close" size="20px"></wd-icon>
+            </view>
+          </view>
+          <view class="popup-content">
+            <view class="form-item">
+              <text class="label">{{ t('group.chat.deleteReasonOptionalLabel') }}</text>
+              <wd-input
+                v-model="deleteReason"
+                :placeholder="t('group.chat.deleteReasonOptionalPlaceholder')"
+                clearable
+                maxlength="100"
+              />
+            </view>
+          </view>
+          <view class="popup-footer">
+            <wd-button custom-class="cancel-btn" @click="showDeleteReasonPopup = false">
+              {{ t('common.cancel') }}
+            </wd-button>
+            <wd-button type="primary" custom-class="confirm-btn" @click="confirmDeleteMessage">
+              {{ t('common.confirm') }}
+            </wd-button>
+          </view>
+        </view>
+      </wd-popup>
+      <wd-popup v-model="showKickReasonPopup" position="bottom" :close-on-click-modal="false">
+        <view class="mute-popup">
+          <view class="popup-header">
+            <text class="popup-title">{{ t('group.chat.kickDialogTitle') }}</text>
+            <view class="close-btn" @click="showKickReasonPopup = false">
+              <wd-icon name="close" size="20px"></wd-icon>
+            </view>
+          </view>
+          <view class="popup-content">
+            <view class="form-item">
+              <text class="label">{{ t('group.chat.kickReasonOptionalLabel') }}</text>
+              <wd-input
+                v-model="kickReason"
+                :placeholder="t('group.chat.kickReasonOptionalPlaceholder')"
+                clearable
+                maxlength="100"
+              />
+            </view>
+          </view>
+          <view class="popup-footer">
+            <wd-button custom-class="cancel-btn" @click="showKickReasonPopup = false">
+              {{ t('common.cancel') }}
+            </wd-button>
+            <wd-button type="primary" custom-class="confirm-btn" @click="confirmKickMember">
+              {{ t('common.confirm') }}
+            </wd-button>
+          </view>
+        </view>
+      </wd-popup>
     </view>
   </view>
 </template>
@@ -149,6 +276,8 @@ import {
 } from '@/service/api/groupChat'
 import { useUserStore } from '@/store'
 import { useToast } from 'wot-design-uni'
+const locale = uni.getLocale()
+
 // z-paging ref
 /*
 页面离开标志，用于标识当前页面是否正在被关闭或返回上一页。
@@ -158,6 +287,9 @@ import { useToast } from 'wot-design-uni'
 const paging = ref(null)
 const isPageLeaving = ref(false)
 const commentPopupVisible = ref(false)
+const runtimeSystemInfo = uni.getSystemInfoSync()
+const isTouchRuntime = ['ios', 'android'].includes(runtimeSystemInfo.platform)
+const isIosRuntime = runtimeSystemInfo.platform === 'ios'
 
 const inputBar = ref(null)
 // v-model绑定的这个变量不要在分页请求结束中自己赋值！！！
@@ -414,7 +546,7 @@ const handleRealtimeEvent = async (eventName: string, payload: any) => {
   const message = resolveIncomingMessage(payload) // 尝试解析消息对象
   const normalizedEventName = eventName.startsWith('.') ? eventName.slice(1) : eventName
   console.log('normalizedEventName', normalizedEventName, message)
-  const kickedMemberPayload = payload // 尝试解析踢人负载
+  const kickedMemberPayload = resolveMemberKickPayload(payload)
 
   // 如果事件涉及成员变动，触发全局刷新成员列表事件
   if (shouldNotifyGroupMembersRefresh(normalizedEventName, message, payload)) {
@@ -424,13 +556,18 @@ const handleRealtimeEvent = async (eventName: string, payload: any) => {
   // 处理消息创建事件（新消息）
   if (normalizedEventName === 'message.created' || normalizedEventName === 'GroupMessageEvent') {
     if (message?.id) {
-      if (message.sender?.role === 'system' || message.sender?.member_id === 0) {
-        enqueueRealtimeMessage({ ...message, is_self: false }, false)
-      } else {
-        const isSelf: boolean = message.sender?.member_id === userStore.userInfo.member_id
-        // 未读计数统一由 flushRealtimeMessages 按位置判断，此处不再单独 bump
-        enqueueRealtimeMessage({ ...message, is_self: isSelf }, false)
+      const is_self = message.sender?.member_id === userStore.userInfo.member_id
+      if (!is_self) {
+        bumpPendingRealtimeMessageIndicator()
       }
+      enqueueRealtimeMessage({ ...message, is_self }, false)
+
+      // if (!isSelf) {
+      // } else if (message.client_message_id) {
+      //   await upsertChatMessage(message, true)
+      //   await upsertChatMessage(message, false)
+      // }
+      return
     }
     return
   }
@@ -440,23 +577,25 @@ const handleRealtimeEvent = async (eventName: string, payload: any) => {
     normalizedEventName === 'message.state_changed' ||
     normalizedEventName === 'message.reaction_changed'
   ) {
-    // const statePayload =
-    //   normalizedEventName === 'message.state_changed' ? resolveMessageStatePayload(payload) : null
-    // if (message?.id) {
-    //   enqueueRealtimeMessage(
-    //     normalizedEventName === 'message.state_changed'
-    //       ? normalizeStateChangedMessage(message, statePayload)
-    //       : message,
-    //     false,
-    //   )
-    //   return
-    // }
-    // if (normalizedEventName === 'message.state_changed') {
-    //   if (statePayload && applyMessageDisplayStatus(statePayload)) {
-    //     return
-    //   }
-    // }
-    // return
+    const statePayload =
+      normalizedEventName === 'message.state_changed' ? resolveMessageStatePayload(payload) : null
+
+    if (message?.id) {
+      enqueueRealtimeMessage(
+        normalizedEventName === 'message.state_changed'
+          ? normalizeStateChangedMessage(message, statePayload)
+          : message,
+        false,
+      )
+      return
+    }
+
+    if (normalizedEventName === 'message.state_changed') {
+      if (statePayload && applyMessageDisplayStatus(statePayload)) {
+        return
+      }
+    }
+    return
   }
 
   // 处理成员踢出 / 状态变更
@@ -475,6 +614,46 @@ const handleRealtimeEvent = async (eventName: string, payload: any) => {
   if (message?.id) {
     enqueueRealtimeMessage(message, false)
   }
+}
+
+const resolveDeletedMessageText = (
+  displayStatus?: string,
+  payloadText?: string,
+  placeholderText?: string,
+) => {
+  if (displayStatus !== 'deleted') return ''
+  return payloadText || placeholderText || ''
+}
+const applyMessageDisplayStatus = (payload: MessageStatePayload) => {
+  if (!payload.message_id || !payload.display_status) return false
+
+  const targetIndex = messages.value.findIndex((msg) => msg.id === payload.message_id)
+  if (targetIndex < 0) return false
+
+  const currentMessage = messages.value[targetIndex]
+  const deletedText = resolveDeletedMessageText(
+    payload.display_status,
+    payload.payload?.text,
+    payload.placeholder?.text,
+  )
+  const nextMessage: ChatMessage = {
+    ...currentMessage,
+    display_status: payload.display_status,
+    placeholder: deletedText ? { text: deletedText } : payload.placeholder,
+    ...(deletedText
+      ? {
+          message_type: 'text' as const,
+          payload: {
+            text: deletedText,
+          },
+        }
+      : {}),
+  }
+
+  console.log(nextMessage)
+  messages.value.splice(targetIndex, 1, nextMessage)
+  // paging.value.refresh()
+  return true
 }
 /**
  * 从 WebSocket 推送的原始负载中解析“成员被踢出/移除”的事件数据
@@ -632,16 +811,24 @@ const initChatSocketClient = () => {
     authEndpoint: import.meta.env.VITE_SERVER_BASEURL.replace('/api', '') + '/broadcasting/auth',
     getToken: () => userStore.userInfo.token || uni.getStorageSync('token'),
     debug: false,
-    eventHandlers: createEventHandlers({
+    eventHandlers: {
       GroupMessageEvent: handleIncomingMessage,
+      '.GroupMessageEvent': handleIncomingMessage,
       'message.created': (payload) => handleRealtimeEvent('message.created', payload),
+      '.message.created': (payload) => handleRealtimeEvent('.message.created', payload),
       'message.state_changed': (payload) => handleRealtimeEvent('message.state_changed', payload),
+      '.message.state_changed': (payload) => handleRealtimeEvent('.message.state_changed', payload),
       'message.reaction_changed': (payload) =>
         handleRealtimeEvent('message.reaction_changed', payload),
+      '.message.reaction_changed': (payload) =>
+        handleRealtimeEvent('.message.reaction_changed', payload),
       'member.kicked': (payload) => handleRealtimeEvent('member.kicked', payload),
+      '.member.kicked': (payload) => handleRealtimeEvent('.member.kicked', payload),
       'member.removed': (payload) => handleRealtimeEvent('member.removed', payload),
+      '.member.removed': (payload) => handleRealtimeEvent('.member.removed', payload),
       'member.status_changed': (payload) => handleRealtimeEvent('member.status_changed', payload),
-    }),
+      '.member.status_changed': (payload) => handleRealtimeEvent('.member.status_changed', payload),
+    },
     onMessage: handleIncomingMessage,
     onConnectionError: (error) => {
       console.error('[GroupChat] Echo connection error:', error)
@@ -1098,6 +1285,544 @@ const createClientMessageId = () => {
 幂等 🆔🆔🆔🆔🆔🆔🆔🆔🆔END
  */
 
+/* 长按START 👆👆👆👆👆👆👆 */
+// 弹窗相关的响应式变量
+const showUnmuteReasonPopup = ref(false)
+const unmuteReason = ref('')
+
+const showDeleteReasonPopup = ref(false)
+const deleteReason = ref('')
+
+const showKickReasonPopup = ref(false)
+const kickReason = ref('')
+const MESSAGE_LONG_PRESS_DURATION_MS = 450 // 长按触发时间（毫秒）
+const MESSAGE_LONG_PRESS_MOVE_THRESHOLD_PX = 12 // 移动阈值（像素），超过则取消长按
+const selectedMessageActionTarget = ref<ChatMessage | null>(null) // 被长按的消息对象
+const messageActionSheetVisible = ref(false) // 操作菜单显示状态
+let messageLongPressTimer: ReturnType<typeof setTimeout> | null = null // 长按定时器
+let messageLongPressStartX = 0 // 触摸起始 X 坐标
+let messageLongPressStartY = 0 // 触摸起始 Y 坐标
+let messageLongPressMoved = false // 是否发生了超过阈值的移动
+let lastTriggeredContextMenuAt = 0 // 上次触发上下文菜单的时间（用于防抖）
+// 清除长按定时器函数
+const clearPendingMessageLongPress = () => {
+  if (!messageLongPressTimer) return
+  clearTimeout(messageLongPressTimer)
+  messageLongPressTimer = null
+}
+// 触摸开始处理
+const handleMessageTouchStart = (event: any, msg: ChatMessage) => {
+  if (!isTouchRuntime || msg.display_status === 'recalled') return
+
+  clearPendingMessageLongPress()
+  const touch = event?.touches?.[0] || event?.changedTouches?.[0]
+  if (!touch) return
+
+  messageLongPressStartX = Number(touch.clientX || touch.pageX || 0)
+  messageLongPressStartY = Number(touch.clientY || touch.pageY || 0)
+  messageLongPressMoved = false
+  messageLongPressTimer = setTimeout(() => {
+    messageLongPressTimer = null
+    if (messageLongPressMoved) return
+    lastTriggeredContextMenuAt = Date.now()
+    showMessageContextMenu(msg)
+  }, MESSAGE_LONG_PRESS_DURATION_MS)
+}
+// 触摸移动处理
+const handleMessageTouchMove = (event: any) => {
+  if (!messageLongPressTimer) return
+
+  const touch = event?.touches?.[0] || event?.changedTouches?.[0]
+  if (!touch) return
+
+  const currentX = Number(touch.clientX || touch.pageX || 0)
+  const currentY = Number(touch.clientY || touch.pageY || 0)
+  const deltaX = Math.abs(currentX - messageLongPressStartX)
+  const deltaY = Math.abs(currentY - messageLongPressStartY)
+
+  if (
+    deltaX >= MESSAGE_LONG_PRESS_MOVE_THRESHOLD_PX ||
+    deltaY >= MESSAGE_LONG_PRESS_MOVE_THRESHOLD_PX
+  ) {
+    messageLongPressMoved = true
+    clearPendingMessageLongPress()
+  }
+}
+// 触摸结束/取消处理
+const handleMessageTouchEnd = () => {
+  clearPendingMessageLongPress()
+}
+// 右键菜单（contextmenu）处理
+const handleMessageContextMenu = (event: Event, msg: ChatMessage) => {
+  event.preventDefault()
+  event.stopPropagation()
+
+  if (isTouchRuntime) {
+    // 移动端由 touch 事件处理，避免重复触发
+    if (Date.now() - lastTriggeredContextMenuAt < 300) return
+    return
+  }
+
+  showMessageContextMenu(msg)
+}
+// 显示上下文菜单（ActionSheet）
+const showMessageContextMenu = async (msg: ChatMessage) => {
+  console.log(msg)
+  if (msg.display_status === 'recalled') return
+
+  selectedMessageActionTarget.value = msg
+  if (messageActionSheetActions.value.length === 0) return
+  messageActionSheetVisible.value = true
+}
+// 菜单项选择处理
+const handleMessageActionSheetSelect = ({ item }: { item: ActionSheetAction }) => {
+  const targetMessage = selectedMessageActionTarget.value
+  if (!targetMessage || !item?.action) return
+  messageActionSheetVisible.value = false
+  handleMessageMenuClick(
+    {
+      item: {
+        content: item.name,
+        action: item.action,
+      },
+    },
+    targetMessage,
+  )
+}
+
+const handleMessageActionSheetItemClick = (item: ActionSheetAction) => {
+  handleMessageActionSheetSelect({ item })
+}
+// 复制消息内容
+const handleCopyMessage = (msg: ChatMessage) => {
+  if (msg.display_status === 'recalled') {
+    toast.show(t('group.chat.unableToCopy'))
+    return
+  }
+
+  let content = ''
+
+  if (msg.message_type === 'text') {
+    content = msg.payload?.text || ''
+  } else if (msg.message_type === 'rich') {
+    if (msg.payload?.parts) {
+      content = msg.payload.parts
+        .filter((part) => part.type === 'text' && !!part.text)
+        .map((part) => part.text || '')
+        .join('')
+    }
+  }
+
+  if (content) {
+    uni.setClipboardData({
+      data: content,
+      showToast: false,
+    })
+  } else {
+    toast.show(t('group.chat.unableToCopy'))
+  }
+}
+
+const canRecallMessage = (msg: ChatMessage) => {
+  if (msg.is_self !== 1 || msg.display_status === 'recalled') return false
+
+  const currentTime = Math.floor(Date.now() / 1000)
+  const messageTime = msg.create_time || 0
+  return currentTime - messageTime <= MESSAGE_RECALL_TIME_LIMIT_SECONDS
+}
+
+const canReeditRecalledMessage = (msg: ChatMessage) => {
+  if (msg.is_self !== 1 || msg.display_status !== 'recalled') return false
+  if (!msg.placeholder?.text) return false
+
+  const currentTime = Math.floor(Date.now() / 1000)
+  const messageTime = msg.create_time || 0
+  return currentTime - messageTime <= MESSAGE_RECALL_TIME_LIMIT_SECONDS
+}
+// 菜单动作分发（复制、删除、禁言、踢人…）
+const handleMessageMenuClick = ({ item }: { item: MessageMenuItem }, msg: ChatMessage) => {
+  switch (item.action) {
+    case 'copy':
+      handleCopyMessage(msg)
+      break
+    case 'delete':
+      handleDeleteMessage(msg)
+      break
+    case 'mute':
+    case 'unmute':
+      handleMessageMemberMuteAction(msg)
+      break
+    case 'kick':
+      handleMessageKickMember(msg)
+      break
+    case 'removed':
+      toast.show(t('group.chat.memberKicked'))
+      break
+  }
+}
+const canManageTargetMute = (targetRole?: string, isSelf = false) => {
+  if (!canOperateTargetRole(targetRole, isSelf)) return false
+  const currentRank = getGovernanceRoleRank(getCurrentGovernanceRole())
+  const normalizedRole = normalizeGovernanceRole(targetRole)
+
+  if (currentRank === 1) {
+    return normalizedRole === 'member'
+  }
+
+  return currentRank >= 2
+}
+const MESSAGE_RECALL_TIME_LIMIT_SECONDS = 2 * 60
+
+const isMessageSenderRemoved = (msg: ChatMessage) => {
+  return Number(msg.sender?.member_status || 0) === 3
+}
+
+const isMessageSenderMuted = (msg?: ChatMessage | null) => {
+  return Number(msg?.sender?.member_status || 0) === 4
+}
+
+const getMessageSenderDisplayName = (msg: ChatMessage) => {
+  const nickname = msg.sender?.nickname || ''
+  if (!isMessageSenderRemoved(msg)) return nickname
+  return `${nickname}${t('group.chat.memberRemovedLabel')}`
+}
+
+const getMemberByMessage = (msg: ChatMessage) => {
+  if (isMessageSenderRemoved(msg)) return null
+  const memberId = Number(msg.sender?.member_id || msg.member_id || 0)
+  if (!memberId) return null
+  return roomMemberMap.value[memberId] || null
+}
+
+const getMessageTargetMemberId = (msg?: ChatMessage | null) => {
+  if (!msg) return 0
+  return Number(getMemberByMessage(msg)?.member_id || msg.sender?.member_id || msg.member_id || 0)
+}
+
+const getGovernanceMenuOptions = (msg: ChatMessage): MessageMenuItem[] => {
+  const member = getMemberByMessage(msg)
+  const isDeletedMessage = msg.display_status === 'deleted'
+  if (isMessageSenderRemoved(msg)) {
+    const menuOptions: MessageMenuItem[] = []
+
+    if (!isDeletedMessage) {
+      menuOptions.push({
+        content: t('common.copy'),
+        action: 'copy',
+      })
+      menuOptions.push({
+        content: t('group.chat.delete'),
+        action: 'delete',
+      })
+    }
+
+    menuOptions.push({
+      content: t('group.chat.memberKicked'),
+      action: 'removed',
+    })
+
+    return menuOptions
+  }
+
+  const memberId = Number(member?.member_id || msg.sender?.member_id || msg.member_id || 0)
+  const isSelf = memberId === userStore.userInfo.member_id || msg.is_self === 1
+  const menuOptions: MessageMenuItem[] = []
+  const targetRole = member?.role || msg.sender?.role || 'member'
+  const isMuted = isMessageSenderMuted(msg)
+
+  if (!isDeletedMessage) {
+    menuOptions.push({
+      content: t('common.copy'),
+      action: 'copy',
+    })
+
+    menuOptions.push({
+      content: t('group.chat.delete'),
+      action: 'delete',
+    })
+  }
+
+  if (canManageTargetMute(targetRole, isSelf)) {
+    menuOptions.push({
+      content: isMuted ? t('group.chat.member.action.unmute') : t('group.chat.member.action.mute'),
+      action: isMuted ? 'unmute' : 'mute',
+    })
+  }
+
+  if (!isSelf && !isMessageSenderRemoved(msg)) {
+    menuOptions.push({
+      content: t('group.chat.kickMember'),
+      action: 'kick',
+    })
+  }
+
+  return menuOptions
+}
+
+const getMessageMenuOptions = (msg: ChatMessage): MessageMenuItem[] => {
+  if (msg.display_status === 'deleted') {
+    return []
+  }
+
+  const menuOptions: MessageMenuItem[] = [
+    {
+      content: t('common.copy'),
+      action: 'copy',
+    },
+  ]
+
+  if (msg.is_self === 1) {
+    menuOptions.push({
+      content: t('group.chat.delete'),
+      action: 'delete',
+    })
+  }
+
+  return menuOptions
+}
+const canShowGovernanceMessageActions = (msg: ChatMessage) => {
+  return msg.is_self !== 1 && getGovernanceRoleRank(getCurrentGovernanceRole()) > 0
+}
+const normalizeGovernanceRole = (role?: string) => {
+  switch (role) {
+    case 'founder':
+    case 'owner':
+      return 'owner'
+    case 'host':
+      return 'host'
+    case 'moderator':
+    case 'admin':
+      return 'admin'
+    default:
+      return 'member'
+  }
+}
+const getGovernanceRoleRank = (role?: string) => {
+  const normalizedRole = normalizeGovernanceRole(role)
+  if (normalizedRole === 'owner') return 3
+  if (normalizedRole === 'host') return 2
+  if (normalizedRole === 'admin') return 1
+  return 0
+}
+
+const getCurrentGovernanceRole = () => roomDetail.value?.speaking.role || 'member'
+const canOperateTargetRole = (targetRole?: string, isSelf = false) => {
+  if (isSelf) return false
+
+  const currentRank = getGovernanceRoleRank(getCurrentGovernanceRole())
+  const targetRank = getGovernanceRoleRank(targetRole)
+
+  if (currentRank <= 0) return false
+  if (currentRank === 3) return true
+  return currentRank > targetRank
+}
+
+// 菜单项构建（根据消息类型和权限）
+const messageActionSheetActions = computed<ActionSheetAction[]>(() => {
+  const targetMessage = selectedMessageActionTarget.value
+  if (!targetMessage) return []
+
+  const menuOptions = canShowGovernanceMessageActions(targetMessage)
+    ? getGovernanceMenuOptions(targetMessage)
+    : getMessageMenuOptions(targetMessage)
+
+  return menuOptions.map((item) => ({
+    name: item.content,
+    action: item.action,
+    destructive: item.action === 'kick',
+    iconName:
+      item.action === 'kick'
+        ? 'user-clear'
+        : item.action === 'removed'
+          ? 'user-clear'
+          : item.action === 'delete'
+            ? 'delete-thin'
+            : item.action === 'copy'
+              ? 'file-copy'
+              : undefined,
+    iconSrc:
+      item.action === 'mute' || item.action === 'unmute' ? MESSAGE_ACTION_MUTE_ICON : undefined,
+  }))
+})
+// 辅助变量（用于菜单图标等）
+const MESSAGE_ACTION_MUTE_ICON = '/static/images/mute_1.png'
+// 弹窗确认函数（由长按菜单项触发）
+// 解除禁言确认
+const confirmMessageUnmute = async () => {
+  const targetMessage = selectedMessageActionTarget.value
+  const roomId = targetMessage?.room_id || roomDetail.value?.room.id || routeRoomId.value
+  const memberId = getMessageTargetMemberId(targetMessage)
+  const reason = unmuteReason.value.trim()
+
+  if (!roomId || !memberId) return
+
+  try {
+    uni.showLoading({ title: t('common.processing'), mask: true })
+    const res = await unmuteMemberApi(roomId, memberId, reason)
+    if (res.code === 1) {
+      showUnmuteReasonPopup.value = false
+      await refreshMessageSendersBeforeCurrentLast(memberId, res.data.status)
+      uni.hideLoading()
+      toast.show(t('group.member.action.unmuteSuccess'))
+      return
+    }
+    uni.hideLoading()
+    toast.show(res.msg || t('common.operationFailed'))
+  } catch (error: any) {
+    uni.hideLoading()
+    toast.show(error?.message || t('common.operationFailed'))
+  }
+}
+
+// 删除消息确认
+const confirmDeleteMessage = async () => {
+  const targetMessage = selectedMessageActionTarget.value
+  const roomId = targetMessage?.room_id || roomDetail.value?.room.id || routeRoomId.value
+  const reason = deleteReason.value.trim()
+
+  if (!roomId || !targetMessage?.id) return
+
+  uni.showLoading({ title: t('common.processing'), mask: true })
+  try {
+    const res = await deleteChatMessageApi(targetMessage.id, reason)
+    uni.hideLoading()
+    if (res.code === 1) {
+      showDeleteReasonPopup.value = false
+      return
+    }
+    toast.show(res.msg || t('group.chat.deleteFailed'))
+  } catch (error: any) {
+    uni.hideLoading()
+    toast.show(error?.message || t('group.chat.deleteFailed'))
+  }
+}
+
+// 踢出成员确认
+const confirmKickMember = async () => {
+  const targetMessage = selectedMessageActionTarget.value
+  const roomId = targetMessage?.room_id || roomDetail.value?.room.id || routeRoomId.value
+  const memberId = getMessageTargetMemberId(targetMessage)
+  const reason = kickReason.value.trim()
+  if (!roomId || !memberId) {
+    toast.show(t('common.operationFailed'))
+    return
+  }
+
+  uni.showLoading({ title: t('common.processing'), mask: true })
+  try {
+    const res = await removeMemberApi(roomId, memberId, reason)
+    if (res.code === 1) {
+      showKickReasonPopup.value = false
+      applyMemberKickedState(memberId)
+      uni.hideLoading()
+      return
+    }
+    uni.hideLoading()
+    toast.show(res.msg || t('common.operationFailed'))
+  } catch (error: any) {
+    uni.hideLoading()
+    toast.show(error?.message || t('common.operationFailed'))
+  }
+}
+const applyMemberKickedState = (memberId: number) => {
+  if (!memberId) return false
+
+  let hasUpdated = false
+  messages.value = messages.value.map((message) => {
+    const senderMemberId = Number(message.sender?.member_id || message.member_id || 0)
+    if (senderMemberId !== memberId) return message
+    hasUpdated = true
+    return {
+      ...message,
+      sender: {
+        ...message.sender,
+        member_status: 3,
+      },
+    }
+  })
+
+  if (!hasUpdated) return false
+
+  const nextMemberMap = { ...roomMemberMap.value }
+  delete nextMemberMap[memberId]
+  roomMemberMap.value = nextMemberMap
+  return true
+}
+// 长按菜单项中触发上述弹窗的函数
+// 处理“禁言/解除禁言”动作（如果已经是禁言状态则弹出解除原因弹窗）
+const handleMessageMemberMuteAction = async (msg: ChatMessage) => {
+  const roomId = msg.room_id || roomDetail.value?.room.id || routeRoomId.value
+  const memberId = getMessageTargetMemberId(msg)
+  if (!roomId || !memberId) return
+
+  if (isMessageSenderMuted(msg)) {
+    selectedMessageActionTarget.value = msg
+    unmuteReason.value = ''
+    showUnmuteReasonPopup.value = true
+    return
+  }
+
+  // 非禁言状态直接禁言（不弹窗）
+  uni.showLoading({ title: t('common.processing'), mask: true })
+  try {
+    const res = await muteMemberApi(roomId, memberId, 0)
+    if (res.code === 1) {
+      await refreshMessageSendersBeforeCurrentLast(memberId, res.data.status)
+      uni.hideLoading()
+      toast.show(t('group.member.action.muteSuccess'))
+      return
+    }
+    uni.hideLoading()
+    toast.show(res.msg || t('common.operationFailed'))
+  } catch (error: any) {
+    uni.hideLoading()
+    toast.show(error?.message || t('common.operationFailed'))
+  }
+}
+
+// 处理“删除消息”动作（弹出删除原因弹窗）
+const handleDeleteMessage = async (msg: ChatMessage) => {
+  requestDeleteMessage(msg)
+}
+
+const requestDeleteMessage = (msg: ChatMessage) => {
+  selectedMessageActionTarget.value = msg
+  deleteReason.value = ''
+  showDeleteReasonPopup.value = true
+}
+
+// 处理“踢出成员”动作（弹出踢出原因弹窗）
+const handleMessageKickMember = async (msg: ChatMessage) => {
+  requestKickMember(msg)
+}
+
+const requestKickMember = (msg: ChatMessage) => {
+  selectedMessageActionTarget.value = msg
+  kickReason.value = ''
+  showKickReasonPopup.value = true
+}
+const refreshMessageSendersBeforeCurrentLast = async (
+  memberId: string | number,
+  status: number | string,
+) => {
+  const normalizedMemberId = Number(memberId)
+  let changed = false
+  for (let i = 0; i < messages.value.length; i++) {
+    const msg = messages.value[i]
+    if (msg.sender?.member_id === normalizedMemberId && msg.sender.member_status !== status) {
+      messages.value[i] = {
+        ...msg,
+        sender: { ...msg.sender, member_status: status as any },
+      }
+      changed = true
+    }
+  }
+  if (changed) {
+    // paging.value?.refresh()
+  }
+}
+
+/* 长按END 👆👆👆👆👆👆👆 */
 /* 群成员start 📝📝📝📝📝📝📝 */
 // 跳转到成员列表页面
 const roomMemberMap = ref<Record<number, ChatMember>>({})
@@ -1191,6 +1916,11 @@ const setRoomMemberMap = (memberList: ChatMember[]) => {
   }
 }
 
+.announcement-notice {
+  position: fixed;
+  z-index: 9999;
+  width: 100vw;
+}
 .customNav {
   position: fixed;
   top: 0;

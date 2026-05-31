@@ -1,7 +1,7 @@
 <!-- z-paging聊天item -->
 
 <template>
-  <view class="chat-item">
+  <view class="chat-item" :id="'msg-row-' + item.id">
     <text class="chat-time" v-if="item.show_time">
       {{ formatRelativeTime(item.create_time) }}
     </text>
@@ -61,7 +61,7 @@
               is_self: item.is_self,
             }"
           >
-            {{ item.sender.nickname }}
+            {{ item.is_self ? '' : getMessageSenderDisplayName(item) }}
           </text>
           <view
             class="chat-text-container-super"
@@ -149,7 +149,10 @@ import {
   preloadAvatarUrls,
   preloadLevelBadgeUrls,
 } from '@/utils/avatarCache'
+import { useI18n } from 'vue-i18n'
+
 const emit = defineEmits(['retry'])
+const { t } = useI18n()
 
 const props = defineProps({
   item: {
@@ -157,6 +160,15 @@ const props = defineProps({
     default: () => ({}),
   },
 })
+const getMessageSenderDisplayName = (msg: ChatMessage) => {
+  const nickname = msg.sender?.nickname || ''
+  if (!isMessageSenderRemoved(msg)) return nickname
+  return `${nickname}${t('group.chat.memberRemovedLabel')}`
+}
+const isMessageSenderRemoved = (msg: ChatMessage) => {
+  return Number(msg.sender?.member_status || 0) === 3
+}
+const roomMemberMap = ref<Record<number, ChatMember>>({})
 
 const levelBadgeStyle = computed(() => getLevelBadgeStyle(props.item?.sender?.level?.level))
 
