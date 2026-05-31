@@ -47,24 +47,6 @@
       </view>
     </view>
     <view class="cnt content" :style="{ paddingTop: cntPaddingTop + 'rpx' }">
-      <wd-notice-bar
-        v-if="currentAnnouncement"
-        :scrollable="false"
-        @click="goToCurrentAnnouncementDetail"
-        custom-class="announcement-notice"
-      >
-        <template #prefix>
-          <wd-img src="/static/images/notice_outlined.png" size="22px"></wd-img>
-        </template>
-        <view style="margin-left: 24rpx">{{ currentAnnouncementText }}</view>
-        <template #suffix>
-          <wd-icon
-            @click.stop="goToCurrentAnnouncementDetail"
-            name="arrow-right"
-            size="22px"
-          ></wd-icon>
-        </template>
-      </wd-notice-bar>
       <!-- use-chat-record-mode：开启聊天记录模式 -->
       <!-- use-virtual-list：开启虚拟列表模式 -->
       <!-- cell-height-mode：设置虚拟列表模式高度不固定 -->
@@ -82,6 +64,26 @@
         @scroll="handleChatScroll"
         cellKeyName="id"
       >
+        <template #top>
+          <wd-notice-bar
+            v-if="currentAnnouncement"
+            :scrollable="false"
+            @click="goToCurrentAnnouncementDetail"
+            custom-class="announcement-notice"
+          >
+            <template #prefix>
+              <wd-img src="/static/images/notice_outlined.png" size="22px"></wd-img>
+            </template>
+            <view style="margin-left: 24rpx; font-size: 24rpx">{{ currentAnnouncementText }}</view>
+            <template #suffix>
+              <wd-icon
+                @click.stop="goToCurrentAnnouncementDetail"
+                name="arrow-right"
+                size="22px"
+              ></wd-icon>
+            </template>
+          </wd-notice-bar>
+        </template>
         <template v-for="(item, index) in messages" :key="item.id">
           <view
             style="transform: scaleY(-1)"
@@ -426,7 +428,14 @@ const filterExistingMessages = (
   newMessages: ChatMessage[],
 ): ChatMessage[] => {
   const existingIds = new Set(currentMessages.map((msg) => msg.id))
-  return newMessages.filter((msg) => !existingIds.has(msg.id))
+  const existingClientMessageIds = new Set(
+    currentMessages.map((msg) => msg.client_message_id).filter(Boolean),
+  )
+  return newMessages.filter((msg) => {
+    if (existingIds.has(msg.id)) return false
+    if (msg.client_message_id && existingClientMessageIds.has(msg.client_message_id)) return false
+    return true
+  })
 }
 const applyMessagesBatch = (incomingMessages: ChatMessage[], scrollToLatest = false) => {
   const normalizedMessages = incomingMessages
@@ -437,13 +446,11 @@ const applyMessagesBatch = (incomingMessages: ChatMessage[], scrollToLatest = fa
     }))
 
   if (normalizedMessages.length === 0) return
-  console.log(paging.value)
-  paging.value &&
-    paging.value.addChatRecordData(
-      filterExistingMessages(messages.value, normalizedMessages),
-      scrollToLatest,
-      false,
-    )
+
+  const filtered = filterExistingMessages(messages.value, normalizedMessages)
+  if (filtered.length > 0) {
+    paging.value?.addChatRecordData(filtered, scrollToLatest, false)
+  }
 
   normalizedMessages.forEach((message) => stageReadMessage(message.id))
 }
@@ -633,9 +640,7 @@ const handleRealtimeEvent = async (eventName: string, payload: any) => {
   if (normalizedEventName === 'message.created' || normalizedEventName === 'GroupMessageEvent') {
     if (message?.id) {
       const is_self = message.sender?.member_id === userStore.userInfo.member_id
-      if (!is_self) {
-        bumpPendingRealtimeMessageIndicator()
-      }
+      // 不在此处计数，由 flushRealtimeMessages 统一在「不在底部」时计数，避免重复累加
       enqueueRealtimeMessage({ ...message, is_self }, false)
 
       // 消息回填：防止消息断层
@@ -859,11 +864,10 @@ const flushRealtimeMessages = () => {
   const shouldScrollToLatest = pendingRealtimeScrollToLatest
   pendingRealtimeScrollToLatest = false
 
-  // 自己发的消息始终立即追加（用户期望立即看到自己的消息）
+  // 自己发的消息始终立即追加（用户期望立即看到自己的消息），不计入未读计数
   const selfMessages = queuedMessages.filter((msg) => msg.is_self)
   if (selfMessages.length > 0) {
     applyMessagesBatch(selfMessages, shouldScrollToLatest)
-    pendingRealtimeMessageCount.value += selfMessages.length
   }
 
   // 他人消息：在底部则立即追加，不在底部则暂存并更新未读计数
@@ -999,13 +1003,16 @@ const handleJumpToLatestMessage = () => {
 //  向下的箭头 ⬇️⬇️⬇️⬇️⬇️⬇️⬇️⬇️⬇️ end
 const messageCache = new Map()
 const lastestMessageId = ref('')
+const hasMoreHistory = ref(true)
 // @query所绑定的方法不要自己调用！！需要刷新列表数据时，只需要调用paging.value.reload()即可
 const queryList = async (pageNo, pageSize) => {
   if (pageNo === 1) {
     await getChatMessageList()
     setTimeout(() => {
-      getChatMessageList(lastestMessageId.value, true)
-    }, 2000)
+      if (hasMoreHistory.value) {
+        getChatMessageList(lastestMessageId.value, true)
+      }
+    }, 5000)
   } else {
     let earliestId
     if (messages.value && messages.value.length > 0) {
@@ -1015,8 +1022,8 @@ const queryList = async (pageNo, pageSize) => {
     }
     if (earliestId && messageCache.has(earliestId)) {
       const cachedMessages = messageCache.get(earliestId)
-      paging.value.complete(cachedMessages.messages)
-      messages.value.push(...cachedMessages.messages)
+      const filtered = filterExistingMessages(messages.value, cachedMessages.messages)
+      paging.value?.complete(filtered)
       messageCache.delete(earliestId)
       // 继续后台预取下一页（用更新后列表的最早id）
       setTimeout(() => {
@@ -1025,28 +1032,49 @@ const queryList = async (pageNo, pageSize) => {
           : undefined
         if (newEarliestId) getChatMessageList(newEarliestId, true)
       }, 200)
+    } else if (hasMoreHistory.value) {
+      // 兜底：缓存未命中且有更多历史数据时，直接请求 API 加载
+      await getChatMessageList(earliestId)
+    } else {
+      // 没有更多历史数据了，告知 z-paging 加载完毕
+      paging.value?.complete([])
     }
   }
 }
-const getChatMessageList = async (before_message_id: strin | number = null, silent = false) => {
-  const res = await getChatMessageListApi({
-    room_id: 1,
-    limit: silent ? 100 : 50,
-    before_message_id,
-  })
-  // lastestMessageId.value = res.data.messages[0].id
-  const newMessages = reverseMessageArray(res.data.messages)
-  const newLastestId = res.data.messages[0].id
+const getChatMessageList = async (beforeMessageId: string | number = null, silent = false) => {
+  const roomId = roomDetail.value?.room.id || routeRoomId.value
+  const params = { room_id: roomId, limit: silent ? 100 : 50 }
+  if (beforeMessageId) params.before_message_id = beforeMessageId
+  const res = await getChatMessageListApi(params)
+  if (res.code !== 1 || !res.data) return
+
+  const messageList = res.data.messages || []
+  // 没有历史数据了，不再做后续处理
+  if (messageList.length === 0) {
+    if (!silent) {
+      paging.value?.complete([])
+    }
+    hasMoreHistory.value = false
+    return
+  }
+
+  const newMessages = reverseMessageArray(messageList)
+  const newLastestId = messageList[0].id
   if (!silent) {
     lastestMessageId.value = newLastestId
-    paging.value.complete(newMessages || [])
-    messages.value.push(...newMessages)
+    const filtered = filterExistingMessages(messages.value, newMessages)
+    paging.value?.complete(filtered)
   } else {
-    messageCache.set(before_message_id, {
+    messageCache.set(beforeMessageId, {
       messages: newMessages,
       newLastestId: lastestMessageId.value,
     })
     lastestMessageId.value = newLastestId
+  }
+
+  // 接口返回 has_more_history === 0 表示没有更多历史数据
+  if (res.data.has_more_history === 0) {
+    hasMoreHistory.value = false
   }
 }
 const reverseMessageArray = (arr) => {
@@ -1119,8 +1147,13 @@ const sendChatMessageWithClientMessageId = async (
 
     const updated = updateChatMessageByClientMessageId(clientMessageId, nextMessage)
     if (updated) {
-      // 如果更新就不更新视图了，毕竟已经更新过了
-      // messages.value = dedupeMessages(sortMessagesByRoomSeq(messages.value))
+      // 服务端确认后去重排序，防止 WS 回推导致重复
+      // const deduped = dedupeMessages(sortMessagesByRoomSeq(messages.value))
+      // paging.value?.resetTotalData(deduped)
+      // // resetTotalData 会重建列表并重置滚动位置，需要在渲染后重新滚到底部
+      // nextTick(() => {
+      //   scrollToBottom()
+      // })
     }
     return true
   }
@@ -1203,9 +1236,13 @@ const doSend = (messageType, payload) => {
   }
   clearPendingRealtimeMessageIndicator()
 
-  // 再追加自己的消息，乐观更新
-  paging.value.addChatRecordData(createLocalPendingMessage(clientMessageId, messageType, payload))
-  scrollToBottom()
+  // 再追加自己的消息，乐观更新（addChatRecordData 会自动往 v-model 的 messages 里 push）
+  // 第二个参数 scrollToLatest=true 让 z-paging 在添加完数据后自动滚动到底部
+  paging.value?.addChatRecordData(
+    createLocalPendingMessage(clientMessageId, messageType, payload),
+    true,
+    false,
+  )
 
   sendChatMessageWithClientMessageId(
     roomDetail.value.room.id,
@@ -1585,10 +1622,12 @@ const getGovernanceMenuOptions = (msg: ChatMessage): MessageMenuItem[] => {
     const menuOptions: MessageMenuItem[] = []
 
     if (!isDeletedMessage) {
-      menuOptions.push({
-        content: t('common.copy'),
-        action: 'copy',
-      })
+      if (msg.message_type === 'text') {
+        menuOptions.push({
+          content: t('common.copy'),
+          action: 'copy',
+        })
+      }
       menuOptions.push({
         content: t('group.chat.delete'),
         action: 'delete',
@@ -1610,10 +1649,12 @@ const getGovernanceMenuOptions = (msg: ChatMessage): MessageMenuItem[] => {
   const isMuted = isMessageSenderMuted(msg)
 
   if (!isDeletedMessage) {
-    menuOptions.push({
-      content: t('common.copy'),
-      action: 'copy',
-    })
+    if (msg.message_type === 'text') {
+      menuOptions.push({
+        content: t('common.copy'),
+        action: 'copy',
+      })
+    }
 
     menuOptions.push({
       content: t('group.chat.delete'),
@@ -1643,14 +1684,18 @@ const getMessageMenuOptions = (msg: ChatMessage): MessageMenuItem[] => {
     return []
   }
 
-  const menuOptions: MessageMenuItem[] = [
-    {
+  const menuOptions: MessageMenuItem[] = []
+
+  // 只有 text 类型消息才能复制
+  if (msg.message_type === 'text') {
+    menuOptions.push({
       content: t('common.copy'),
       action: 'copy',
-    },
-  ]
+    })
+  }
 
-  if (msg.is_self === 1) {
+  // 管理员及以上才能删除消息
+  if (getGovernanceRoleRank(getCurrentGovernanceRole()) > 0) {
     menuOptions.push({
       content: t('group.chat.delete'),
       action: 'delete',
@@ -2025,9 +2070,9 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
 }
 
 .announcement-notice {
-  position: fixed;
-  z-index: 9999;
-  width: 100vw;
+  // position: fixed;
+  // z-index: 9999;
+  // width: 100vw;
 }
 .customNav {
   position: fixed;
@@ -3102,5 +3147,8 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
 
 .action-sheet-item::before {
   height: 1px;
+}
+::v-deep .z-paging-content {
+  padding-top: inherit !important;
 }
 </style>

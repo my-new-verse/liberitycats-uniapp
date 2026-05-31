@@ -303,7 +303,8 @@ const handleAvatarClick = (memberId: number | undefined) => {
 .chat-time {
   padding: 4rpx 0rpx;
   text-align: center;
-  font-size: 22rpx;
+  // font-size: 22rpx;
+  font-size: 24rpx;
   color: #aaaaaa;
 }
 .chat-container {
@@ -330,7 +331,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
   margin: 0rpx 15rpx;
 }
 .chat-user-name {
-  font-size: 26rpx;
+  font-size: 24rpx;
   color: #888888;
 }
 .chat-text-container {
@@ -346,13 +347,14 @@ const handleAvatarClick = (memberId: number | undefined) => {
   padding: 20rpx 28rpx;
   /* 他人消息气泡圆角：左上角为小圆角，其余大圆角 */
   border-radius: 8rpx 30rpx 30rpx 30rpx;
-  font-size: 28rpx;
+  // font-size: 26rpx;
+  font-size: 24rpx;
   line-height: 1.5;
   color: #1a1a1a;
   box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.03);
   word-break: break-all;
   display: inline-block;
-  max-width: 100%;
+  max-width: 80%;
 }
 .rich-item {
   background-color: #f1f1f1;
@@ -369,7 +371,8 @@ const handleAvatarClick = (memberId: number | undefined) => {
   flex-direction: row;
 }
 .chat-text {
-  font-size: 28rpx;
+  // font-size: 28rpx;
+  font-size: 24rpx;
   /* #ifndef APP-NVUE */
   word-break: break-all;
   /* #endif */
@@ -383,7 +386,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
 
 .msg-row {
   display: flex;
-  margin-bottom: 28rpx;
+  margin-bottom: 16rpx;
   .filled-icon {
     display: flex;
     align-items: center;
@@ -427,7 +430,8 @@ const handleAvatarClick = (memberId: number | undefined) => {
       }
 
       .msg-time {
-        font-size: 20rpx;
+        // font-size: 20rpx;
+        font-size: 24rpx;
         color: #bbb;
       }
     }
@@ -496,7 +500,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
         padding: 20rpx 28rpx;
         /* 他人消息气泡圆角：左上角为小圆角，其余大圆角 */
         border-radius: 8rpx 30rpx 30rpx 30rpx;
-        font-size: 28rpx;
+        font-size: 24rpx;
         line-height: 1.5;
         color: #1a1a1a;
         box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.03);
@@ -631,13 +635,15 @@ const handleAvatarClick = (memberId: number | undefined) => {
     }
 
     .reaction-count {
-      font-size: 22rpx;
+      // font-size: 22rpx;
+      font-size: 24rpx;
       line-height: 1;
     }
 
     .message-status {
       margin-top: 10rpx;
-      font-size: 22rpx;
+      // font-size: 22rpx;
+      font-size: 24rpx;
       color: #999;
 
       &.failed {

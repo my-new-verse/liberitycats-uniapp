@@ -455,7 +455,16 @@ const handleChooseImage = async () => {
     }
   }
 }
-
+/**
+ * 生成基于用户 ID 的唯一标识（用于上传文件名）
+ * @param userId 用户 ID（数字或字符串）
+ * @returns 唯一字符串，格式如：`{userId}_{timestamp}_{random}`
+ */
+function generateUniqueIdWithUser(): string {
+  const timestamp = Date.now() // 毫秒级时间戳
+  const randomStr = Math.random().toString(36).substring(2, 10) // 随机 8 位字母数字
+  return `${userStore.userInfo?.member_id || ''}_${timestamp}_${randomStr}`
+}
 /**
  * ✅ 上传图片到 OSS 并发送消息
  */
@@ -473,7 +482,9 @@ const uploadImageToOss = async (filePath: string, mimeType: string, fileName: st
   try {
     uni.showLoading({ title: t('group.chat.uploading'), mask: true })
     const resolvedFileName = resolveUploadFileName(filePath, fileName)
-    const key = `${ossConfig.value.dir}/${resolvedFileName}`
+    const uniqueId = generateUniqueIdWithUser()
+
+    const key = `${ossConfig.value?.dir}/${uniqueId}_${resolvedFileName}` // 图片上传到oss的路径(拼接你的文件夹和文件名)
 
     const imageInfo = await getImageInfo(filePath)
     const fileSize = await getFileSize(filePath)

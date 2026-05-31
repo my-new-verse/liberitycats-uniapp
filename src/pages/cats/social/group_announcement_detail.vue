@@ -3,7 +3,6 @@
   layout: 'default',
   style: {
     navigationStyle: 'custom',
-    enablePullDownRefresh: true,
     backgroundTextStyle: 'dark',
     backgroundColor: '#f7f6f4',
     navigationBarTextStyle: 'black',

@@ -44,6 +44,7 @@
         <scroll-view
           class="member-scroll"
           scroll-y
+          :style="{ height: scrollHeight }"
           lower-threshold="80"
           @scrolltolower="handleMemberScrollToLower"
         >
@@ -94,13 +95,13 @@
           </template>
 
           <!-- 普通成员分组 -->
-          <view v-if="filteredMemberList.length && !isSearching" class="group-title">
+          <view v-if="memberList.length && !isSearching" class="group-title">
             {{ t('group.chat.member.memberGroupTitle') }}
           </view>
-          <view class="member-group" v-if="filteredMemberList.length > 0">
+          <view class="member-group" v-if="memberList.length > 0">
             <view
               class="member-item"
-              v-for="item in filteredMemberList"
+              v-for="item in memberList"
               :key="item.member_id"
               @longpress="handleMemberItemLongpress(item)"
             >
@@ -139,13 +140,13 @@
 
           <wd-loadmore v-if="memberLoadingMore" custom-class="loadmore" state="loading" />
           <wd-loadmore
-            v-else-if="!memberHasMore && filteredMemberList.length > 0"
+            v-else-if="!memberHasMore && memberList.length > 0"
             custom-class="loadmore"
             state="finished"
           />
 
           <!-- 搜索无结果提示 -->
-          <template v-if="!memberLoading && filteredMemberList.length === 0">
+          <template v-if="!memberLoading && memberList.length === 0">
             <view class="emptyBox">
               <view class="emptyImg"></view>
             </view>
@@ -453,6 +454,7 @@ const buildMemberActionList = (item: ApiChatMember): MemberActionItem[] => {
 }
 
 const canUseMemberLongpress = computed(() => getRoleRank(currentUserRole.value) > 0)
+let scrollHeight = 'calc(100vh - 200rpx)' // iOS scroll-view 需要明确高度
 const MEMBER_ACTION_ADMIN_ICON = '/static/images/add_administrator.png'
 const MEMBER_ACTION_MUTE_ICON = '/static/images/mute_1.png'
 
@@ -499,6 +501,13 @@ const getMemberSearchKeyword = () => {
   return keyword || undefined
 }
 
+watch(
+  memberList,
+  (newVal, oldVal) => {
+    console.log('memberList 发生变化', newVal)
+  },
+  { deep: true, immediate: true },
+)
 const loadAdminMembers = async () => {
   const roomId = routeRoomId.value
   if (!roomId) return
@@ -537,6 +546,7 @@ const applyMemberPageResult = (responseData: ChatMembersResponse, reset = false)
 
 const loadMemberPage = async (reset = false) => {
   console.time()
+  console.log('==========', routeRoomId.value)
   const roomId = routeRoomId.value
   if (!roomId) return
   if (!reset && (memberLoading.value || memberLoadingMore.value)) return
@@ -555,8 +565,6 @@ const loadMemberPage = async (reset = false) => {
   }
 
   try {
-    console.timeEnd()
-
     const memberRes = await getChatRoomMembersApi(
       roomId,
       roleFilter,
@@ -625,9 +633,13 @@ onMounted(() => {
   navHeaderPaddingTop.value = safeTopRpx.value
   cntPaddingTop.value = navHeight.value
 
+  // 计算 scroll-view 可用高度（iOS 需要 scroll-view 有明确高度）
+  const windowHeightRpx = systemInfo.windowHeight / (systemInfo.windowWidth / 750)
+  scrollHeight = `${windowHeightRpx - navHeight.value - 80}rpx` // 80rpx = padding 40rpx*2
+
   // 加载成员列表
+  reloadCurrentMemberLists()
   uni.$on(GROUP_MEMBERS_REFRESH_EVENT, handleGroupMembersRefreshEvent)
-  void reloadCurrentMemberLists()
 })
 
 // 返回上一页
@@ -769,12 +781,12 @@ const handleMemberActionSheetItemClick = async (item: ActionSheetAction) => {
 }
 
 const debouncedSearchMembers = debounce(() => {
-  void reloadCurrentMemberLists()
+  reloadCurrentMemberLists()
 }, 180)
 
 const debouncedRefreshMembersBySocket = debounce((eventRoomId?: number) => {
   if (Number(eventRoomId || 0) !== Number(routeRoomId.value || 0)) return
-  void reloadCurrentMemberLists()
+  reloadCurrentMemberLists()
 }, 200)
 
 watch(searchKeyword, (value, oldValue) => {
@@ -793,7 +805,7 @@ watch(searchKeyword, (value, oldValue) => {
 })
 
 onReachBottom(() => {
-  void loadMemberPage(false)
+  loadMemberPage(false)
 })
 
 onUnmounted(() => {
@@ -973,9 +985,7 @@ const confirmMute = async () => {
 }
 
 .member-scroll {
-  flex: 1;
-  height: 0;
-  min-height: 0;
+  width: 100%;
 }
 
 .search-bar {

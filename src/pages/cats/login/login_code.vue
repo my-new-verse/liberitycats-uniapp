@@ -148,7 +148,7 @@ onLoad((option) => {
 
 const doSendEmail = (email: string) => {
   code.value = ''
-  sendEmailApi(email).then((res) => {
+  sendEmailApi(email.trim()).then((res) => {
     if (res.data.expire > 0) {
       data.cuntDown = res.data.expire
       cuntDownStep.value = 1
