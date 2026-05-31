@@ -446,6 +446,7 @@
   "group.chat.imageLimitHint": "圖片必須不超過 10MB，且寬高不超過 4096",
   "group.chat.stressSendFailed": "壓測發送失敗",
   "group.chat.recalling": "正在撤回",
+  "group.chat.empty_message": "無法發送空白訊息",
   "group.chat.member.searchPlaceholder": "搜尋成員...",
   "group.chat.member.adminGroupTitle": "群主及群管理員",
   "group.chat.member.memberGroupTitle": "群成員",

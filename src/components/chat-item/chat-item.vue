@@ -2,7 +2,6 @@
 
 <template>
   <view class="chat-item">
-    {{ item.id }}
     <text class="chat-time" v-if="item.show_time">
       {{ formatRelativeTime(item.create_time) }}
     </text>

@@ -70,7 +70,7 @@ const httpInterceptor = {
       options.header.Authorization = `Bearer ${token}`
     }
     options.header['X-App-Environment'] =
-      process.env.NODE_ENV === 'production' ? 'production' : 'test'
+      process.env.VITE_MODE === 'production' ? 'production' : 'test'
   },
 }
 

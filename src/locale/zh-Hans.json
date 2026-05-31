@@ -460,6 +460,7 @@
   "group.chat.imageLimitHint": "图片必须不超过 10MB，且宽高不超过 4096",
   "group.chat.stressSendFailed": "压测发送失败",
   "group.chat.recalling": "正在撤回",
+  "group.chat.empty_message": "不能发送空消息",
   "group.chat.member.searchPlaceholder": "搜索成员...",
   "group.chat.member.adminGroupTitle": "群主及群管理员",
   "group.chat.member.memberGroupTitle": "群成员",

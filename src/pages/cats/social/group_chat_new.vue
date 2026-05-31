@@ -355,7 +355,6 @@ const subscribeChatRoomChannel = () => {
 
   const channelName = getPrivateChannelName(roomId) // 'chat.room.{roomId}'
   // 实际订阅时会自动加上 'private-' 前缀
-  console.log('=========', channelName)
   initChatSocketClient().subscribe(channelName)
 }
 
@@ -382,7 +381,6 @@ const createEventHandlers = <T extends Record<string, (...args: any[]) => any>>(
 const handleRealtimeEvent = async (eventName: string, payload: any) => {
   // 如果事件携带 room_id 且与当前房间不匹配，则忽略
   if (payload?.room_id && payload.room_id !== roomDetail.value?.room.id) return
-  console.log('payload', payload)
   const message = resolveIncomingMessage(payload) // 尝试解析消息对象
   const normalizedEventName = eventName.startsWith('.') ? eventName.slice(1) : eventName
   console.log('normalizedEventName', normalizedEventName, message)
@@ -571,8 +569,6 @@ const flushRealtimeMessages = () => {
   pendingRealtimeMessages.clear()
   const shouldScrollToLatest = pendingRealtimeScrollToLatest
   pendingRealtimeScrollToLatest = false
-  console.log('pendingRealtimeScrollToLatest', pendingRealtimeScrollToLatest)
-  console.log('shouldScrollToLatest', shouldScrollToLatest)
   applyMessagesBatch(queuedMessages, shouldScrollToLatest)
 }
 /**
@@ -605,7 +601,6 @@ const initChatSocketClient = () => {
       console.error('[GroupChat] private channel error:', error)
     },
     onAllEvent: (eventName, data) => {
-      console.log(eventName)
       const normalizedEventName = eventName.startsWith('.') ? eventName.slice(1) : eventName
       const shouldHandleMemberEvent =
         normalizedEventName.endsWith('member.kicked') ||
@@ -826,7 +821,6 @@ const markLocalMessageFailed = (clientMessageId: string | undefined) => {
 }
 // 重新发送消息
 const retryFailedMessage = async (msg: ChatMessage) => {
-  console.log(msg)
   if (msg.local_status !== 'failed') return
   // if (!validateBeforeSend()) return
   if (!msg.client_message_id || !roomDetail.value?.room.id) return
@@ -878,7 +872,6 @@ const updateChatMessageByClientMessageId = (
   return true
 }
 const doSend = (messageType, payload) => {
-  console.log(messageType, payload)
   let pendingClientMessageId = ''
   const clientMessageId = createClientMessageId()
   pendingClientMessageId = clientMessageId
@@ -890,9 +883,8 @@ const doSend = (messageType, payload) => {
     clientMessageId,
     payload,
   ).catch((error: any) => {
-    console.log(error)
     markLocalMessageFailed(pendingClientMessageId)
-    // console.error('sendChatMessageWithClientMessageId error:', error)
+    console.error('sendChatMessageWithClientMessageId error:', error)
     toast.show(error?.errMsg || error?.message || t('group.chat.sendFailed'))
   })
 }

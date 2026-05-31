@@ -275,6 +275,7 @@ const handleSendButtonClick = () => {
   lastSendTriggerAt = now
   commentPopupVisible.value = false
   doSend('text', { text: commentContent.value.trim() })
+  commentContent.value = ''
 }
 
 const sendExpressionEmoji = async (emotionId?: number, emotionUrl: string) => {
