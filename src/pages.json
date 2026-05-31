@@ -569,7 +569,12 @@
     },
     {
       "path": "pages/cats/social/group_chat_new",
-      "type": "page"
+      "type": "page",
+      "layout": "default",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f7f6f4"
+      }
     },
     {
       "path": "pages/cats/social/group_members",
