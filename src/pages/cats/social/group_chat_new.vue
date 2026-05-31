@@ -65,7 +65,7 @@
       >
         <template v-for="(item, index) in messages" :key="item.id">
           <view style="transform: scaleY(-1)">
-            <chat-item :item="item"></chat-item>
+            <chat-item :item="item" @retry="retryFailedMessage"></chat-item>
           </view>
         </template>
         <!-- 顶部提示文字 -->
@@ -810,10 +810,52 @@ const sendChatMessageWithClientMessageId = async (
     return true
   }
 
-  // markLocalMessageFailed(clientMessageId)
+  markLocalMessageFailed(clientMessageId)
   toast.show(res.msg || t('group.chat.sendFailed'))
   return false
 }
+/*
+重新发送消息start 🔄🔄🔄🔄🔄🔄🔄🔄
+*/
+// 本地消息发送失败处理
+const markLocalMessageFailed = (clientMessageId: string | undefined) => {
+  if (!clientMessageId) return
+  updateChatMessageByClientMessageId(clientMessageId, {
+    local_status: 'failed',
+  })
+}
+// 重新发送消息
+const retryFailedMessage = async (msg: ChatMessage) => {
+  console.log(msg)
+  if (msg.local_status !== 'failed') return
+  // if (!validateBeforeSend()) return
+  if (!msg.client_message_id || !roomDetail.value?.room.id) return
+
+  markLocalMessageSending(msg.client_message_id)
+
+  try {
+    const sent = await sendChatMessageWithClientMessageId(
+      roomDetail.value.room.id,
+      msg.message_type,
+      msg.client_message_id,
+      msg.payload,
+    )
+    if (!sent) return
+  } catch (error: any) {
+    markLocalMessageFailed(msg.client_message_id)
+    // console.error('retryFailedMessage error:', error)
+    toast.show(error?.message || t('group.chat.sendFailed'))
+  }
+}
+const markLocalMessageSending = (clientMessageId: string | undefined) => {
+  if (!clientMessageId) return
+  updateChatMessageByClientMessageId(clientMessageId, {
+    local_status: 'sending',
+  })
+}
+/*
+重新发送消息end 🔄🔄🔄🔄🔄🔄🔄🔄
+*/
 /*
 根据客户端临时 ID 更新本地消息对象
 1、消息发送成功，用服务端数据替换临时消息

@@ -120,6 +120,15 @@
           </view>
         </view>
       </template>
+      <view class="filled-icon">
+        <wd-icon
+          name="error-circle-filled"
+          size="22px"
+          @click.stop="retryFailedMessage(item)"
+          color="#FF0000"
+          v-if="item.local_status === 'failed'"
+        ></wd-icon>
+      </view>
     </view>
   </view>
 </template>
@@ -133,6 +142,8 @@ import {
   preloadAvatarUrls,
   preloadLevelBadgeUrls,
 } from '@/utils/avatarCache'
+const emit = defineEmits(['retry'])
+
 const props = defineProps({
   item: {
     type: Object,
@@ -231,6 +242,10 @@ const EmotionTool = (() => {
     clear,
   }
 })()
+
+const retryFailedMessage = (msg) => {
+  emit('retry', msg)
+}
 </script>
 
 <style scoped lang="scss">
@@ -253,7 +268,7 @@ const EmotionTool = (() => {
 .chat-item {
   display: flex;
   flex-direction: column;
-  padding: 20rpx;
+  padding: 12rpx;
   font-family:
     Alimama FangYuanTi VF,
     sans-serif;
@@ -342,7 +357,10 @@ const EmotionTool = (() => {
 .msg-row {
   display: flex;
   margin-bottom: 28rpx;
-
+  .filled-icon {
+    display: flex;
+    align-items: center;
+  }
   // 系统消息样式：居中显示
   &.is-system {
     justify-content: center;
