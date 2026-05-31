@@ -327,44 +327,54 @@ onMounted(() => {
   navHeight.value = safeTopRpx.value + 104
   navHeaderPaddingTop.value = safeTopRpx.value
   cntPaddingTop.value = navHeight.value
+  uni.$on(GROUP_CHAT_REFRESH_SENDERS_EVENT, handleRefreshMessageSendersEvent)
   loadRoomDetail()
-  // setTimeout(() => {
-  //   showArrow.value = true
-  // }, 2000)
 })
 onLoad((options: any) => {
   roomCode.value = options?.code || ''
   routeRoomId.value = Number(options?.room_id || 0)
 })
 onHide(() => {
-  // ...
+  // console.log('onHide')
+  clearPendingMessageLongPress()
+  messageActionSheetVisible.value = false
+  selectedMessageActionTarget.value = null
+  clearPendingRealtimeMessageIndicator()
+  flushPendingReadOnLeave()
   chatSocketClient.value?.handlePageHide()
 })
 onShow(() => {
-  // ...
+  hasFlushedReadOnLeave = false
+  clearPendingRealtimeMessageIndicator()
+  resumeChatAfterForeground()
   const roomId = roomDetail.value?.room.id || routeRoomId.value
   if (roomId) {
-    void loadCurrentAnnouncement(roomId)
+    loadCurrentAnnouncement(roomId)
   }
-  resumeChatAfterForeground()
-  // ...
 })
 onUnmounted(() => {
-  // ...
+  clearPendingMessageLongPress()
+  messageActionSheetVisible.value = false
+  selectedMessageActionTarget.value = null
+  clearPendingRealtimeMessageIndicator()
+  flushPendingReadOnLeave()
   chatSocketClient.value?.destroy()
   chatSocketClient.value = null
-  // ... 清理定时器
+  pendingRealtimeMessages.clear()
+  pendingRealtimeScrollToLatest = false
+  uni.$off(GROUP_CHAT_REFRESH_SENDERS_EVENT, handleRefreshMessageSendersEvent)
 })
 const navigateBack = () => {
   if (isPageLeaving.value) return
   isPageLeaving.value = true
-  // flushPendingReadOnLeave()
-  // clearPendingMessageLongPress()
+  flushPendingReadOnLeave()
+  clearPendingMessageLongPress()
 
   // 停止 socket 连接
   chatSocketClient.value?.destroy()
   chatSocketClient.value = null
-
+  pendingRealtimeMessages.clear()
+  pendingRealtimeScrollToLatest = false
   // 清理其他定时器...
   uni.navigateBack({ delta: 1 })
 }
@@ -511,6 +521,14 @@ let pendingRealtimeScrollToLatest = false
  * 订阅当前群聊的私有 WebSocket 频道
  * 频道命名规则：private-chat.room.{roomId}
  */
+const handleRefreshMessageSendersEvent = (payload?: { roomId?: number }) => {
+  if (
+    Number(payload?.roomId || 0) !== Number(roomDetail.value?.room.id || routeRoomId.value || 0)
+  ) {
+    return
+  }
+  refreshMessageSendersBeforeCurrentLast()
+}
 const subscribeChatRoomChannel = () => {
   const roomId = roomDetail.value?.room.id
   if (!roomId) return
@@ -1878,6 +1896,35 @@ const setRoomMemberMap = (memberList: ChatMember[]) => {
   roomMemberMap.value = nextMemberMap
 }
 /* 群成员end 📝📝📝📝📝📝📝 */
+let hasFlushedReadOnLeave = false
+// 离开页面时，把当前看到的最新消息 ID 告诉服务器，标记为已读
+const flushPendingReadOnLeave = async () => {
+  // if (hasFlushedReadOnLeave) return
+
+  const roomId = roomDetail.value?.room.id || routeRoomId.value
+  // 兜底：如果从来没有消息触发过 stageReadMessage，用列表最后一条消息的 id
+  const lastReadMessageId =
+    pendingReadMessageId.value || messages.value[messages.value.length - 1]?.id || 0
+  if (!roomId || !lastReadMessageId) return
+
+  hasFlushedReadOnLeave = true
+  await markAsRead(roomId, lastReadMessageId)
+}
+// 标记消息为已读
+const markAsRead = async (roomId: number, lastReadMessageId: number) => {
+  try {
+    const res = await markMessageReadApi(roomId, lastReadMessageId)
+    if (res.code === 1) {
+      // console.log('标记已读成功，未读数:', res.data.unread_count)
+      // 可以在这里更新房间详情的未读数
+      if (roomDetail.value) {
+        roomDetail.value.room.unread_count = res.data.unread_count
+      }
+    }
+  } catch (error) {
+    // console.error('markAsRead error:', error)
+  }
+}
 </script>
 
 <style lang="scss" scoped>
