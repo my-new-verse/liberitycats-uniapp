@@ -402,12 +402,20 @@ const handleChatScroll = (e) => {
 
   // 用户滚动到底部时，追加暂存的离屏消息并清除指示器
   if (isNearBottom()) {
-    if (pendingOffscreenMessages.length > 0) {
+    const hadPendingOffscreen = pendingOffscreenMessages.length > 0
+    if (hadPendingOffscreen) {
       applyMessagesBatch(pendingOffscreenMessages, true)
       pendingOffscreenMessages.length = 0
     }
     if (pendingRealtimeMessageCount.value > 0) {
       clearPendingRealtimeMessageIndicator()
+    }
+    // 滚到底部后执行延迟的回填（防止消息断层）
+    if (hadPendingOffscreen) {
+      const lastMsg = messages.value[messages.value.length - 1]
+      if (lastMsg) {
+        backfillMissingMessagesByRoomSeq(lastMsg)
+      }
     }
   }
 }
@@ -643,8 +651,10 @@ const handleRealtimeEvent = async (eventName: string, payload: any) => {
       // 不在此处计数，由 flushRealtimeMessages 统一在「不在底部」时计数，避免重复累加
       enqueueRealtimeMessage({ ...message, is_self }, false)
 
-      // 消息回填：防止消息断层
-      backfillMissingMessagesByRoomSeq({ ...message, is_self })
+      // 消息回填：防止消息断层（仅在底部时立即执行，不在底部时延迟到点击箭头或滚到底部）
+      if (isNearBottom()) {
+        backfillMissingMessagesByRoomSeq({ ...message, is_self })
+      }
 
       // if (!isSelf) {
       // } else if (message.client_message_id) {
@@ -864,10 +874,18 @@ const flushRealtimeMessages = () => {
   const shouldScrollToLatest = pendingRealtimeScrollToLatest
   pendingRealtimeScrollToLatest = false
 
-  // 自己发的消息始终立即追加（用户期望立即看到自己的消息），不计入未读计数
+  // 自己发的消息：在底部则立即追加，不在底部也暂存（通常会被 filterExistingMessages 过滤因为 doSend 已添加）
   const selfMessages = queuedMessages.filter((msg) => msg.is_self)
   if (selfMessages.length > 0) {
-    applyMessagesBatch(selfMessages, shouldScrollToLatest)
+    if (isNearBottom()) {
+      applyMessagesBatch(selfMessages, shouldScrollToLatest)
+    } else {
+      const filtered = filterExistingMessages(messages.value, selfMessages)
+      if (filtered.length > 0) {
+        pendingOffscreenMessages.push(...filtered)
+        // 自己的消息不计入未读计数
+      }
+    }
   }
 
   // 他人消息：在底部则立即追加，不在底部则暂存并更新未读计数
@@ -999,6 +1017,11 @@ const handleJumpToLatestMessage = () => {
   }
   clearPendingRealtimeMessageIndicator()
   scrollToBottom()
+  // 到达底部后执行延迟的回填（防止消息断层）
+  const lastMsg = messages.value[messages.value.length - 1]
+  if (lastMsg) {
+    backfillMissingMessagesByRoomSeq(lastMsg)
+  }
 }
 //  向下的箭头 ⬇️⬇️⬇️⬇️⬇️⬇️⬇️⬇️⬇️ end
 const messageCache = new Map()
