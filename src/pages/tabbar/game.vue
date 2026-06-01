@@ -44,6 +44,9 @@ import { getImageUrl, getServerOnOff, toUrl } from '@/utils'
 import { useUserStore } from '@/store/user'
 import { useToast } from 'wot-design-uni'
 import { getGameParamsApi } from '@/service/api/game'
+import { debounce } from 'lodash-es'
+import { updateGameConfigUrl } from '@/utils/plusGameWebViewPool'
+import { buildGameUrlWithToken } from '@/utils/gameUrl'
 uni.hideTabBar()
 const userStore = useUserStore()
 const toast = useToast()
@@ -88,37 +91,44 @@ onMounted(() => {
   console.log('cntPaddingTop.value', cntPaddingTop.value)
 })
 
-const openGameUrl = (gameType: string) => {
-  if (!userStore.isLogin) {
-    toUrl('/pages/cats/login/login', true, false)
-    return
-  }
-
-  //   const gameEnableKey = 'game_' + gameType + '_enable'
-  //   const gameEnable = getServerOnOff(gameEnableKey, 'common')
-  //   const gameUrlKey = 'game_' + gameType + '_url'
-  //   const gameUrl = getServerOnOff(gameUrlKey, 'common', true)
-  //   console.log('gameEnable', gameEnable)
-  //   console.log('gameUrl', gameUrl)
-  //   if (!gameEnable || !gameUrl || gameUrl.length < 10) {
-  //     toast.show(t('game.toast.game_not_open'))
-  //     return
-  //   }
-
-  getGameParamsApi(gameType).then((res) => {
-    const token = res.data.tempToken || ''
-    console.log('token', token)
-    if (!token) {
-      toast.show(t('game.toast.game_not_open'))
+const openGameUrl = debounce(
+  (gameType: string) => {
+    if (!userStore.isLogin) {
+      toUrl('/pages/cats/login/login', true, false)
       return
     }
-    // 把token拼接到url上，注意url本身可能带参数
-    // const url = gameUrl + (gameUrl.includes('?') ? '&' : '?') + 'token=' + token
-    const url = res.data.jumpUrl
-    // 优先在 App 上使用 webview 预加载能力，打开已预加载的实例以实现秒开体验
-    toUrl(`/pages/game/index?gameType=${gameType}&url=` + encodeURIComponent(url))
-  })
-}
+
+    //   const gameEnableKey = 'game_' + gameType + '_enable'
+    //   const gameEnable = getServerOnOff(gameEnableKey, 'common')
+    //   const gameUrlKey = 'game_' + gameType + '_url'
+    //   const gameUrl = getServerOnOff(gameUrlKey, 'common', true)
+    //   console.log('gameEnable', gameEnable)
+    //   console.log('gameUrl', gameUrl)
+    //   if (!gameEnable || !gameUrl || gameUrl.length < 10) {
+    //     toast.show(t('game.toast.game_not_open'))
+    //     return
+    //   }
+
+    getGameParamsApi(gameType).then((res) => {
+      const token = res.data.tempToken || ''
+      console.log('token', token)
+      if (!token) {
+        toast.show(t('game.toast.game_not_open'))
+        return
+      }
+      // 用 buildGameUrlWithToken 确保 token 写入 URL（与 gamePreload.ts 保持一致）
+      const url = buildGameUrlWithToken(res.data.jumpUrl, token)
+      // 更新 WebView 池的 config.url，showGameWebView 会自动使用最新 URL：
+      // - 已加载且未隐藏 → evalJS 更新 token，不重载页面
+      // - 已隐藏需重载 → loadURL 用最新 URL，浏览器缓存复用静态资源
+      updateGameConfigUrl(gameType, url, token)
+      // 优先在 App 上使用 webview 预加载能力，打开已预加载的实例以实现秒开体验
+      toUrl(`/pages/game/index?gameType=${gameType}&url=` + encodeURIComponent(url))
+    })
+  },
+  3000,
+  { leading: true, trailing: false },
+)
 </script>
 
 <style lang="scss" scoped>

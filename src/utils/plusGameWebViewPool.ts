@@ -30,6 +30,7 @@ interface WebViewState {
   retryCount: number
   gameVersion: string | null
   hasBeenHidden: boolean // 标记是否曾被 hide 过（iOS 会回收 WebGL 上下文）
+  loadedUrl: string | null // WebView 当前已加载的 URL（用于对比 token 是否变更）
 }
 
 const webViewPool: Record<GameType, WebViewState> = {
@@ -41,6 +42,7 @@ const webViewPool: Record<GameType, WebViewState> = {
     retryCount: 0,
     gameVersion: null,
     hasBeenHidden: false,
+    loadedUrl: null,
   },
   JUMP: {
     instance: null,
@@ -50,6 +52,7 @@ const webViewPool: Record<GameType, WebViewState> = {
     retryCount: 0,
     gameVersion: null,
     hasBeenHidden: false,
+    loadedUrl: null,
   },
 }
 
@@ -94,7 +97,7 @@ const injectBackButton = (webView: any) => {
   btn.id = '__uni_back_btn';
   btn.style.cssText = [
     'position:fixed',
-    'top:${safeAreaTop}px',
+    'top:${safeAreaTop + 50}px',
     'left:16px',
     'z-index:2147483647',
     'width:44px',
@@ -137,6 +140,7 @@ const bindWebViewEvents = (gameType: GameType, webView: any) => {
     state.isPreloading = false
     state.isLoaded = true
     state.retryCount = 0
+    state.loadedUrl = state.config?.url || null
     console.log(`[GamePool] ${gameType} 预加载完成`)
     // 注入返回按鈕
     injectBackButton(webView)
@@ -252,7 +256,7 @@ export const initDualGamePreload = async (gameConfigs: [GameConfig, GameConfig])
   for (const config of gameConfigs) {
     const gameType = config.gameType
     const state = webViewPool[gameType]
-
+    // console.log('----------------', webViewPool[gameType],'================')
     // 防止重复初始化
     if (state.instance || state.isPreloading) continue
 
@@ -290,7 +294,6 @@ export const showGameWebView = (gameType: GameType): Promise<boolean> => {
     const fullScreenStyle = getContentStyle()
 
     const state = webViewPool[gameType]
-
     // 兜底1：未初始化，先创建加载，等加载完再显示（避免白屏/留白）
     if (!state.instance) {
       if (!state.config) {
@@ -350,6 +353,29 @@ export const showGameWebView = (gameType: GameType): Promise<boolean> => {
       return
     }
 
+    // 已加载且未被隐藏，但 URL 中的 token 已更新
+    // 通过 evalJS 更新 URL 和 token，不重新加载页面，避免重复获取已缓存的资源
+    if (state.isLoaded && state.config && state.loadedUrl !== state.config.url) {
+      const newUrl = state.config.url
+      const newToken = state.config.tempToken || ''
+      console.log(`[GamePool] ${gameType} URL 已更新（token 变更），通过 evalJS 更新，不重新加载`)
+      // 转义单引号防止 JS 注入
+      const safeUrl = newUrl.replace(/'/g, "\\'")
+      const safeToken = newToken.replace(/'/g, "\\'")
+      state.instance.evalJS(
+        [
+          '(function() {',
+          `  history.replaceState(null, '', '${safeUrl}');`,
+          `  window.__GAME_LATEST_TOKEN__ = '${safeToken}';`,
+          `  window.dispatchEvent(new CustomEvent('game-token-update', {`,
+          `    detail: { token: '${safeToken}', url: '${safeUrl}' }`,
+          `  }));`,
+          '})();',
+        ].join('\n'),
+      )
+      state.loadedUrl = newUrl
+    }
+
     console.log(`[GamePool] ${gameType} 已加载，直接显示.`, fullScreenStyle)
     // 正常流程：直接显示已加载的WebView
     // 确保WebView铺满全屏（含安全区），popGesture保持一致
@@ -399,8 +425,52 @@ export const destroyAllGameWebViews = () => {
       retryCount: 0,
       gameVersion: null,
       hasBeenHidden: false,
+      loadedUrl: null,
     }
   })
+}
+
+export const destroyGameWebViewByType = (gameType: string) => {
+  if (typeof plus === 'undefined') return
+
+  plus.webview.close(WEBVIEW_ID_MAP[gameType as GameType])
+  // 重置状态
+  webViewPool[gameType as GameType] = {
+    instance: null,
+    config: null,
+    isPreloading: false,
+    isLoaded: false,
+    retryCount: 0,
+    gameVersion: null,
+    hasBeenHidden: false,
+    loadedUrl: null,
+  }
+}
+
+/**
+ * 更新游戏 WebView 的 URL 配置（主要用于 token 刷新）
+ * 调用后 showGameWebView 会自动使用最新 URL：
+ * - 已加载且未隐藏：通过 evalJS 更新 token（不重载页面、不重新获取资源）
+ * - 已隐藏需重载：loadURL 使用最新 URL（浏览器缓存自动复用静态资源）
+ */
+export const updateGameConfigUrl = (gameType: string, newUrl: string, tempToken?: string) => {
+  const state = webViewPool[gameType as GameType]
+  if (!state) return
+
+  if (state.config) {
+    state.config.url = newUrl
+    if (tempToken !== undefined) {
+      state.config.tempToken = tempToken
+    }
+  } else {
+    state.config = {
+      gameType: gameType as GameType,
+      url: newUrl,
+      tempToken,
+    }
+  }
+  console.log(`[GamePool] ${gameType} config.url 已更新为最新 URL`)
+  console.log('---', state.config)
 }
 
 /**

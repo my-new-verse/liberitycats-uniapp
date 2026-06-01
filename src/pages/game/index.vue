@@ -48,6 +48,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { onLoad, onShow, onHide } from '@dcloudio/uni-app'
 import { showGameWebView } from '@/utils/plusGameWebViewPool'
+import { destroyGameWebViewByType } from '@/utils/plusGameWebViewPool'
 
 const gameUrl = ref('')
 const webViewVisible = ref(false)
@@ -64,6 +65,10 @@ const webviewStyles = {
   background: '#000000',
   backgroundColor: '#000000',
 }
+onBackPress(() => {
+  destroyGameWebViewByType(currentGameType.value)
+  return false // 允许默认返回行为
+})
 
 // 处理用户交互
 const handleUserInteraction = async () => {
