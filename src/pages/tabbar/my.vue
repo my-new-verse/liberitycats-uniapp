@@ -51,12 +51,35 @@
                 @click="bindArGame"
               ></view>
             </view>
-            <view class="points" @click="toUrl('/pages/cats/asset/log?assetKey=point', true)">
+            <!-- <view class="points" @click="toUrl('/pages/cats/asset/log?assetKey=point', true)">
               <view class="label">{{ t('my.asset.points') }}:</view>
               <view class="amount">
                 {{ formatNumber(assetResp?.point.usable_balance || 0, 0) }}
               </view>
               <view class="unit">g</view>
+            </view> -->
+            <view class="asset-resps" style="display: flex">
+              <view
+                v-if="assetResp"
+                v-for="(item, key) in assetResp"
+                :key="key"
+                class="points"
+                @click="toUrl(`/pages/cats/asset/log?assetKey=${key}`, true)"
+              >
+                <template v-if="key !== 'pledge_point'">
+                  <wd-img
+                    mode="aspectFit"
+                    width="28rpx"
+                    height="28rpx"
+                    :src="iconMap[key]"
+                  ></wd-img>
+                  <view class="label">{{ item.name }}:</view>
+                  <view class="amount">
+                    {{ formatNumber(item.usable_balance || 0, 0) }}
+                  </view>
+                  <view class="unit">{{ item.unit || '' }}</view>
+                </template>
+              </view>
             </view>
           </template>
         </view>
@@ -433,7 +456,8 @@ import {
   bindArGameApi,
 } from '@/service/api/user'
 import { getServerI18nKey } from '@/utils/i18n'
-
+import pointIcon from '@/static/images/game.png'
+import ccIcon from '@/static/images/cc@2x.png'
 import FloatingCat from '@/components/FloatingCat.vue'
 
 uni.hideTabBar()
@@ -488,6 +512,10 @@ onShow(() => {
   refreshLevel()
 })
 
+const iconMap = {
+  point: pointIcon,
+  cc_token: ccIcon,
+}
 const showNftMoreOnOff = ref(false)
 const showNftMore = () => {
   showNftMoreOnOff.value = !showNftMoreOnOff.value
@@ -825,18 +853,27 @@ const bindArGame = () => {
         line-height: 56rpx;
         color: #ffffff;
       }
+      .asset-resps {
+        diisplay: flex !important;
+        justify-content: space-between;
+        flex-wrap: nowrap;
+      }
       .points {
         font-size: 24rpx;
         font-style: normal;
         line-height: 56rpx;
         color: #ffffff;
         display: flex;
+        align-items: center;
         .amount {
           margin: 0 12rpx;
           font-weight: 600;
         }
         .unit {
           font-weight: 600;
+        }
+        .label {
+          margin-left: 12rpx;
         }
       }
       .connect {
