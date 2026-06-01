@@ -89,6 +89,8 @@
   "my.game.bind_ar.msgbox.inputError": "绑定口令错误，请重新输入",
   "my.game.bind_ar.msgbox.was_bond.title": "已绑定AR游戏",
   "my.game.bind_ar.msgbox.was_bond.msg": "绑定口令是: {0}",
+  "my.game.bind_ar.msgbox.change_bind.confirm_msg": "确认要换绑吗？",
+  "my.game.bind_ar.msgbox.success.msg": "绑定成功",
 
   "publish.index.header.publish_btn": "发布",
   "publish.index.content.placeholder": "说点什么...",

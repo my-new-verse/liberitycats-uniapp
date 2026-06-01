@@ -64,7 +64,14 @@ watch(
 
 // 更新提示相关逻辑
 const isClose = computed(() => {
-  return uni.getStorageSync('app_update_close') || false
+  const systemConfig = uni.getStorageSync('systemConfigV2')
+
+  const data = uni.getStorageSync('app_update_close')
+  if (data == null) return false
+  // 兼容旧版直接存布尔值 true 的情况
+  if (typeof data === 'boolean') return false
+  // 只有版本号匹配且 closed 为 true 才认为已关闭
+  return data.version === systemConfig?.update?.version && data.closed === true
 })
 
 const appUpdatePopupShow = ref(false)
@@ -75,6 +82,7 @@ const appUpdateUrl = ref('')
 
 onMounted(() => {
   const systemConfig = uni.getStorageSync('systemConfigV2')
+  console.log('-----------', systemConfig?.update?.version, !isClose.value)
   if (systemConfig?.update?.version && !isClose.value) {
     appUpdatePopupTitle.value = systemConfig.update.update_log?.title || ''
     appUpdatePopupContent.value = systemConfig.update.update_log?.content || ''
@@ -91,8 +99,12 @@ const appBtnClick = () => {
 }
 
 const closeAppUpdatePopup = () => {
+  const systemConfig = uni.getStorageSync('systemConfigV2')
   appUpdatePopupShow.value = false
-  uni.setStorageSync('app_update_close', true)
+  uni.setStorageSync('app_update_close', {
+    version: systemConfig?.update?.version, // 当前版本号
+    closed: true,
+  })
 }
 </script>
 

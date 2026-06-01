@@ -88,6 +88,8 @@
   "my.game.bind_ar.msgbox.inputError": "Binding password error, please re-enter",
   "my.game.bind_ar.msgbox.was_bond.title": "Already Bound Ar",
   "my.game.bind_ar.msgbox.was_bond.msg": "Bound Password is: {0}",
+  "my.game.bind_ar.msgbox.change_bind.confirm_msg": "Confirm to rebind?",
+  "my.game.bind_ar.msgbox.success.msg": "Bind successful",
 
   "publish.index.header.publish_btn": "Publish",
   "publish.index.content.placeholder": "Say something...",

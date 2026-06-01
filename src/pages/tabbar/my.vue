@@ -456,7 +456,7 @@ import {
   bindArGameApi,
 } from '@/service/api/user'
 import { getServerI18nKey } from '@/utils/i18n'
-import pointIcon from '@/static/images/game.png'
+import pointIcon from '@/static/images/game1.png'
 import ccIcon from '@/static/images/cc@2x.png'
 import FloatingCat from '@/components/FloatingCat.vue'
 
@@ -742,33 +742,61 @@ const toGame = () => {
   toUrl('/pages/game/index', true)
 }
 
+// 绑定/换绑的公共请求逻辑
+const doBindArGame = (code: string) => {
+  bindArGameApi(code).then((res) => {
+    console.log('bind Ar Game', res)
+    if (res.code === 1) {
+      toast.show(res.msg && res.msg.length ? res.msg : t('my.game.bind_ar.msgbox.success.msg'))
+      userStore.getUserInfo()
+    }
+  })
+}
+
+// 弹出输入框让用户输入绑定口令
+const showBindArPrompt = () => {
+  return message2.prompt({
+    title: t('my.game.bind_ar.msgbox.title'),
+    inputValue: '',
+    inputPlaceholder: t('my.game.bind_ar.msgbox.placeholder'),
+    inputPattern: /^[a-zA-Z0-9]{6,12}$/,
+    inputError: t('my.game.bind_ar.msgbox.inputError'),
+    cancelButtonText: t('common.cancel'),
+    confirmButtonText: t('common.confirm'),
+  })
+}
+
 const bindArGame = () => {
   const hasValue = !!userStore?.userInfo?.bind_ar?.third_open_id
   if (hasValue) {
-    message2.alert({
-      title: t('my.game.bind_ar.msgbox.was_bond.title'),
-      msg: t('my.game.bind_ar.msgbox.was_bond.msg', {
-        0: userStore?.userInfo?.bind_ar?.third_open_id,
-      }),
-    })
-  } else {
+    // 已绑定：confirm 提示是否换绑
     message2
-      .prompt({
-        title: t('my.game.bind_ar.msgbox.title'),
-        inputValue: userStore?.userInfo?.bind_ar?.third_open_id || '',
-        inputPlaceholder: t('my.game.bind_ar.msgbox.placeholder'),
-        inputPattern: /^[a-zA-Z0-9]{6,12}$/,
-        inputError: t('my.game.bind_ar.msgbox.inputError'),
+      .confirm({
+        title: t('my.game.bind_ar.msgbox.was_bond.title'),
+        msg:
+          t('my.game.bind_ar.msgbox.was_bond.msg', {
+            0: userStore?.userInfo?.bind_ar?.third_open_id,
+          }) +
+          '\n\n' +
+          t('my.game.bind_ar.msgbox.change_bind.confirm_msg'),
+        cancelButtonText: t('common.cancel'),
+        confirmButtonText: t('common.confirm'),
       })
+      .then(() => {
+        showBindArPrompt()
+          .then((resp) => {
+            doBindArGame(resp.value)
+          })
+          .catch((error) => {
+            console.log(error)
+          })
+      })
+      .catch(() => {})
+  } else {
+    // 未绑定：直接弹出输入框
+    showBindArPrompt()
       .then((resp) => {
-        console.log('FFFFFFFFFFFFFFF', resp)
-        bindArGameApi(resp.value).then((res) => {
-          console.log('bind Ar Game', res)
-          if (res.code === 1) {
-            toast.show(res.msg)
-            userStore.getUserInfo()
-          }
-        })
+        doBindArGame(resp.value)
       })
       .catch((error) => {
         console.log(error)

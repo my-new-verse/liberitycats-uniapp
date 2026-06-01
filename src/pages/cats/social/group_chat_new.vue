@@ -50,16 +50,16 @@
       <!-- use-chat-record-mode：开启聊天记录模式 -->
       <!-- use-virtual-list：开启虚拟列表模式 -->
       <!-- cell-height-mode：设置虚拟列表模式高度不固定 -->
-      <!-- safe-area-inset-bottom：开启底部安全区域适配 -->
       <!-- bottom-bg-color：设置slot="bottom"容器的背景色，这里设置为和chat-input-bar的背景色一致 -->
+      <!-- 注意：不开启 safe-area-inset-bottom，由 chat-input-bar 内部自己处理底部安全区，避免重复叠加 -->
       <z-paging
         ref="paging"
         v-model="messages"
         use-chat-record-mode
         use-virtual-list
         cell-height-mode="dynamic"
-        safe-area-inset-bottom
-        bottom-bg-color="#f8f8f8"
+        :safe-area-inset-bottom="false"
+        bottom-bg-color="#ffffff"
         @query="queryList"
         @scroll="handleChatScroll"
         cellKeyName="id"
