@@ -464,7 +464,7 @@ const applyMessagesBatch = (incomingMessages: ChatMessage[], scrollToLatest = fa
 }
 
 const getLastPersistedMessage = () => {
-  for (let index = messages.value.length - 1; index >= 0; index -= 1) {
+  for (let index = 0; index < messages.value.length; index++) {
     const message = messages.value[index]
     const messageId = Number(message?.id || 0)
     if (Number.isFinite(messageId) && messageId > 0) {
@@ -636,7 +636,6 @@ const handleRealtimeEvent = async (eventName: string, payload: any) => {
   if (payload?.room_id && payload.room_id !== roomDetail.value?.room.id) return
   const message = resolveIncomingMessage(payload) // 尝试解析消息对象
   const normalizedEventName = eventName.startsWith('.') ? eventName.slice(1) : eventName
-  console.log('normalizedEventName', normalizedEventName, message)
   const kickedMemberPayload = resolveMemberKickPayload(payload)
 
   // 如果事件涉及成员变动，触发全局刷新成员列表事件
@@ -653,7 +652,7 @@ const handleRealtimeEvent = async (eventName: string, payload: any) => {
 
       // 消息回填：防止消息断层（仅在底部时立即执行，不在底部时延迟到点击箭头或滚到底部）
       if (isNearBottom()) {
-        backfillMissingMessagesByRoomSeq({ ...message, is_self })
+        // backfillMissingMessagesByRoomSeq({ ...message, is_self })
       }
 
       // if (!isSelf) {
