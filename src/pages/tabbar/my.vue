@@ -44,7 +44,7 @@
               <image :src="getImageUrl(userStore.userInfo.level.icon)" mode="widthFix" />
             </view>
             <!-- 隐藏argame -->
-            <view class="gameIconBox" v-if="getServerOnOff('ar_enable', 'common')">
+            <view class="gameIconBox">
               <view
                 class="gmAr"
                 :class="{ on: userStore.userInfo?.bind_ar?.third_open_id }"
@@ -67,12 +67,12 @@
                 @click="toUrl(`/pages/cats/asset/log?assetKey=${key}`, true)"
               >
                 <template v-if="key !== 'pledge_point'">
-                  <wd-img
+                  <!-- <wd-img
                     mode="aspectFit"
                     width="28rpx"
                     height="28rpx"
                     :src="iconMap[key]"
-                  ></wd-img>
+                  ></wd-img> -->
                   <view class="label">{{ item.name }}:</view>
                   <view class="amount">
                     {{ formatNumber(item.usable_balance || 0, 0) }}
@@ -767,31 +767,42 @@ const showBindArPrompt = () => {
 }
 
 const bindArGame = () => {
-  const hasValue = !!userStore?.userInfo?.bind_ar?.third_open_id
+  const hasValue = !!userStore?.userInfo?.bind_ar?.bind_status
   if (hasValue) {
-    // 已绑定：confirm 提示是否换绑
-    message2
-      .confirm({
+    const canRebind = !!userStore?.userInfo?.bind_ar?.can_rebind
+    if (canRebind) {
+      // 已绑定且允许换绑：confirm 提示是否换绑
+      message2
+        .confirm({
+          title: t('my.game.bind_ar.msgbox.was_bond.title'),
+          msg:
+            t('my.game.bind_ar.msgbox.was_bond.msg', {
+              0: userStore?.userInfo?.bind_ar?.third_open_id,
+            }) +
+            '\n\n' +
+            t('my.game.bind_ar.msgbox.change_bind.confirm_msg'),
+          cancelButtonText: t('common.cancel'),
+          confirmButtonText: t('common.confirm'),
+        })
+        .then(() => {
+          showBindArPrompt()
+            .then((resp) => {
+              doBindArGame(resp.value)
+            })
+            .catch((error) => {
+              console.log(error)
+            })
+        })
+        .catch(() => {})
+    } else {
+      // 已绑定但不允许换绑：仅提示已绑定信息
+      message2.alert({
         title: t('my.game.bind_ar.msgbox.was_bond.title'),
-        msg:
-          t('my.game.bind_ar.msgbox.was_bond.msg', {
-            0: userStore?.userInfo?.bind_ar?.third_open_id,
-          }) +
-          '\n\n' +
-          t('my.game.bind_ar.msgbox.change_bind.confirm_msg'),
-        cancelButtonText: t('common.cancel'),
-        confirmButtonText: t('common.confirm'),
+        msg: t('my.game.bind_ar.msgbox.was_bond.msg', {
+          0: userStore?.userInfo?.bind_ar?.third_open_id,
+        }),
       })
-      .then(() => {
-        showBindArPrompt()
-          .then((resp) => {
-            doBindArGame(resp.value)
-          })
-          .catch((error) => {
-            console.log(error)
-          })
-      })
-      .catch(() => {})
+    }
   } else {
     // 未绑定：直接弹出输入框
     showBindArPrompt()
@@ -901,7 +912,7 @@ const bindArGame = () => {
           font-weight: 600;
         }
         .label {
-          margin-left: 12rpx;
+          // margin-left: 12rpx;
         }
       }
       .connect {
