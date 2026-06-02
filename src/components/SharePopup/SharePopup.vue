@@ -52,17 +52,21 @@
     </wd-popup>
 
     <!-- 海报预览 -->
-    <wd-popup v-model="showPosterPreview" position="center" :z-index="100000">
-      <view class="poster-preview">
-        <image :src="posterUrl" class="poster-img" mode="widthFix" />
-        <view class="poster-buttons">
-          <wd-button type="primary" block @click="savePoster">保存图片</wd-button>
-          <wd-button plain block style="margin-top: 20rpx" @click="showPosterPreview = false">
-            关闭
-          </wd-button>
+    <view v-if="showPosterPreview" class="poster-overlay" @click="showPosterPreview = false">
+      <scroll-view class="poster-scroll" scroll-y :show-scrollbar="false">
+        <image :src="posterUrl" class="poster-full-img" mode="aspectFit" @click.stop />
+      </scroll-view>
+      <view class="poster-actions" @click.stop>
+        <view class="poster-action-item" @click="showPosterPreview = false">
+          <image class="poster-action-icon" src="/static/images/cancel.png" />
+          <text class="poster-action-text">取消</text>
+        </view>
+        <view class="poster-action-item" @click="savePoster">
+          <image class="poster-action-icon" src="/static/images/download.png" />
+          <text class="poster-action-text">保存图片</text>
         </view>
       </view>
-    </wd-popup>
+    </view>
   </root-portal>
 </template>
 
@@ -361,18 +365,51 @@ defineExpose({ openSharePopup })
   border-radius: 16rpx;
 }
 
-.poster-preview {
-  width: 90vw;
-  padding: 30rpx;
-  background: #fff;
-  border-radius: 24rpx;
+.poster-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100000;
+  background: #000;
 }
-.poster-img {
+.poster-scroll {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+.poster-full-img {
   width: 100%;
-  border-radius: 16rpx;
-  margin-bottom: 30rpx;
+  height: 100%;
+  padding-bottom: 120rpx;
 }
-.poster-buttons {
-  margin-top: 20rpx;
+.poster-actions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: space-around;
+  padding: 30rpx 40rpx;
+  padding-bottom: calc(30rpx + env(safe-area-inset-bottom));
+  background: linear-gradient(to top right, #ffffff 0%, #ffffff 60%, #ffecd8 100%);
+  border-radius: 24rpx 24rpx 0 0;
+}
+.poster-action-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
+}
+.poster-action-icon {
+  width: 60rpx;
+  height: 60rpx;
+}
+.poster-action-text {
+  font-size: 24rpx;
+  color: #261000;
 }
 </style>

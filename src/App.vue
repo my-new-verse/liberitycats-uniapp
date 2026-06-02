@@ -26,6 +26,7 @@ const gameWebviewStore = useGameWebViewStore()
 const version = `${buildInfo.version}`
 const userStore = useUserStore()
 const systemReady = ref(false)
+const hasPendingIntent = ref(true) // 首次启动默认需要处理深链
 
 onLaunch(() => {
   console.log('App Launch', uni.getSystemInfoSync())
@@ -60,6 +61,13 @@ onLaunch(() => {
 
   // App启动时初始化WebView预加载（无token版本）
   initializeGameWebviewPreload()
+
+  // #ifdef APP-PLUS
+  // 监听新的深链请求（App已在运行时，用户从浏览器再次点击链接）
+  plus.globalEvent.addEventListener('newintent', () => {
+    hasPendingIntent.value = true
+  })
+  // #endif
 })
 
 onShow(() => {
@@ -73,10 +81,12 @@ onShow(() => {
   })
 
   // #ifdef APP-PLUS
-  setTimeout(() => {
-    const args = plus.runtime.arguments
-    handleSchemaArgs(args)
-  }, 500) // 调整为300ms延迟
+  if (hasPendingIntent.value) {
+    hasPendingIntent.value = false
+    setTimeout(() => {
+      handleSchemaArgs(plus.runtime.arguments)
+    }, 500)
+  }
   // #endif
 
   // 检查token

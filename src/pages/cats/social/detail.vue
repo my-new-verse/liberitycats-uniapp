@@ -203,13 +203,26 @@
                         @click.stop="handleReplyL2(reply, item)"
                       >
                         <view class="replyHeader">
-                          <image
-                            class="replyAvatar"
-                            :src="getImageUrl(reply.member.avatar + '?x-oss-process=style/jzcq')"
-                            mode="aspectFill"
-                            @click.stop="toUserHome(reply.member.id)"
-                          />
-                          <view class="replyNickname" @click.stop="toUserHome(reply.member.id)">
+                          <view
+                            class="replyAvatarWrap"
+                            @click.stop="debouncedToUserHomeRef?.(reply.member.id)"
+                          >
+                            <image
+                              class="replyAvatar"
+                              :src="getImageUrl(reply.member.avatar + '?x-oss-process=style/jzcq')"
+                              mode="aspectFill"
+                            />
+                            <view class="replyLevelIcon">
+                              <image
+                                :src="`/static/images/level/${reply.member.level}.png`"
+                                mode="widthFix"
+                              />
+                            </view>
+                          </view>
+                          <view
+                            class="replyNickname"
+                            @click.stop="debouncedToUserHomeRef(reply.member.id)"
+                          >
                             <text class="nickname">{{ reply.member.nickname }}</text>
                           </view>
                         </view>
@@ -219,7 +232,7 @@
                             {{ t('social.detail.comment.reply_prefix') }}
                             <text
                               class="nickname replyNickname"
-                              @click.stop="toUserHome(reply.member.id)"
+                              @click.stop="debouncedToUserHomeRef(reply.member.id)"
                             >
                               {{ reply.reply_to_member.nickname }}
                             </text>
@@ -661,7 +674,8 @@ const publishComment = async () => {
           const threadRes = await getCommunityPostThreadApi(parentId, 100)
           if (threadRes.code === 1) {
             // 格式化信息
-            parentComment.reply_preview = threadRes.data.items.map((re: any) => {
+            const items = threadRes.data.items || []
+            parentComment.reply_preview = items.map((re: any) => {
               const reImgs = Array.isArray(re?.images) ? re.images : []
               const reProcessedImgs = reImgs.map((u: string) => getImageUrl(u))
               return {
@@ -672,6 +686,7 @@ const publishComment = async () => {
                 _previewImages: reProcessedImgs,
               }
             })
+            parentComment.reply_count = items.length
           }
         } else {
           commentList.value.current_page = 0
@@ -1188,7 +1203,7 @@ const handleDelPost = (id: number, type: 'l1' | 'l2', parentItem?: any) => {
       deletePostApi(id)
         .then(async (res) => {
           if (res.data?.result == 1) {
-            toast.show(t('common.toast.del_success'))
+            toast.show(t('common.delete_success'))
 
             if (type === 'l1') {
               commentList.value.data = commentList.value.data.filter((it) => it.id !== id)
@@ -1202,7 +1217,7 @@ const handleDelPost = (id: number, type: 'l1' | 'l2', parentItem?: any) => {
               }
             }
           } else {
-            toast.show(res.msg || t('common.toast.del_failed'))
+            toast.show(res.msg || t('group.chat.deleteFailed'))
           }
         })
         .finally(() => {
@@ -1826,6 +1841,23 @@ const handleOpenShare = (item: any) => {
   height: 36rpx;
   border-radius: 50%;
   background: #f5f5f5;
+}
+.replyAvatarWrap {
+  position: relative;
+  width: 36rpx;
+  height: 36rpx;
+  flex-shrink: 0;
+}
+.replyLevelIcon {
+  position: absolute;
+  right: -6rpx;
+  bottom: 0rpx;
+  width: 20rpx;
+  height: 20rpx;
+  image {
+    width: 100%;
+    height: 100%;
+  }
 }
 .replyContent {
   padding-left: 48rpx;
