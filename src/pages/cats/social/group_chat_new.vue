@@ -2253,7 +2253,7 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
         flex-direction: column;
         align-items: center;
         gap: 8rpx;
-        max-width: 80%;
+        max-width: 90%;
 
         &.recalled-message {
           width: 100%;

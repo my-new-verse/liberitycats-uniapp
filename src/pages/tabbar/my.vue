@@ -562,7 +562,7 @@ watch(
 const loadNftList = () => {
   if (!userStore.isLogin) return
   getMemberNftsApi(1, false).then((res) => {
-    nftList.value = res.data.data
+    nftList.value = res.data.data.filter((item) => item !== null)
   })
 }
 

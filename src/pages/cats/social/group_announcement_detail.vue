@@ -100,7 +100,9 @@ import {
   type AnnouncementDetail,
 } from '@/service/api/groupAnnouncement'
 import CustomNav from '@/components/CustomNav/CustomNav.vue'
+import { useToast } from 'wot-design-uni'
 
+const toast = useToast()
 const systemInfo = uni.getSystemInfoSync()
 const safeTop = ref(systemInfo.statusBarHeight || 0)
 const navHeight = ref(safeTop.value + 52)
@@ -191,26 +193,29 @@ const formatTimestamp = (ts?: number) => {
 
 const handleActionSelect = async ({ item }: any) => {
   const value = item?.value
+  const msg = t('common.operation_success')
   try {
     if (value === 'pin') {
-      await pinGroupAnnouncementApi(roomId.value, announcementId.value)
-      // uni.showToast({ title: t('group.announcement.toast.pinSuccess'), icon: 'success' })
+      const pinRes = await pinGroupAnnouncementApi(roomId.value, announcementId.value)
+      toast.show(pinRes.msg && pinRes.msg.length ? pinRes.msg : msg)
       fetchDetail()
       uni.$emit('groupAnnounceStatusChange')
     } else if (value === 'unpin') {
-      await unpinGroupAnnouncementApi(roomId.value, announcementId.value)
-      // uni.showToast({ title: t('group.announcement.toast.unpinSuccess'), icon: 'success' })
+      const unpinRes = await unpinGroupAnnouncementApi(roomId.value, announcementId.value)
+      toast.show(unpinRes.msg && unpinRes.msg.length ? unpinRes.msg : msg)
       fetchDetail()
       uni.$emit('groupAnnounceStatusChange')
     } else if (value === 'delete') {
-      await deleteGroupAnnouncementApi(roomId.value, announcementId.value)
-      // uni.showToast({ title: t('group.announcement.toast.deleteSuccess'), icon: 'success' })
+      const deleteRes = await deleteGroupAnnouncementApi(roomId.value, announcementId.value)
+      toast.show(deleteRes.msg && deleteRes.msg.length ? deleteRes.msg : msg)
       setTimeout(() => {
         uni.navigateBack({ delta: 1 })
         uni.$emit('groupAnnounceStatusChange')
       }, 1200)
     }
-  } catch (e) {}
+  } catch (e) {
+    console.log(e)
+  }
 }
 </script>
 
