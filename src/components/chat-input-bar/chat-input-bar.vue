@@ -4,25 +4,17 @@
       <!-- ✅ 使用原生 uni.chooseImage 替代 wd-upload -->
       <view
         class="upload-icon-btn"
-        :class="{ 'is-disabled': roomDetail?.speaking.can_speak !== 1 }"
-        @click="roomDetail?.speaking.can_speak === 1 && handleChooseImage()"
+        :class="{ 'is-disabled': cannotSpeak }"
+        @click="!cannotSpeak && handleChooseImage()"
       >
-        <wd-icon
-          name="picture"
-          size="22px"
-          :color="roomDetail?.speaking.can_speak !== 1 ? '#ccc' : '#666'"
-        ></wd-icon>
+        <wd-icon name="picture" size="22px" :color="cannotSpeak ? '#ccc' : '#666'"></wd-icon>
       </view>
       <view
         class="commentTextArea"
-        :class="{ 'is-muted': roomDetail?.speaking.can_speak !== 1 }"
-        @click="roomDetail?.speaking.can_speak === 1 && showCommentPopup()"
+        :class="{ 'is-muted': cannotSpeak }"
+        @click="!cannotSpeak && showCommentPopup()"
       >
-        {{
-          roomDetail?.speaking.can_speak !== 1
-            ? roomDetail?.speaking.reason
-            : t('social.detail.comment.placeholder')
-        }}
+        {{ inputPlaceholder }}
       </view>
     </view>
 
@@ -67,7 +59,7 @@
             <wd-button
               type="primary"
               custom-class="sendCommentBtn"
-              :disabled="roomDetail?.speaking.can_speak !== 1"
+              :disabled="cannotSpeak"
               @click.stop="handleSendButtonClick"
             >
               {{ t('social.detail.comment.btn.send') }}
@@ -128,6 +120,7 @@
 
 <script setup lang="ts">
 import { ref, nextTick, computed, watch, onMounted } from 'vue'
+import { debounce } from 'lodash-es'
 import { getImageUrl, toUrl, formatRelativeTime, getChatImageUrl } from '@/utils'
 import { ChatMessagePayload } from '@/service/api/groupChat'
 import { useI18n } from 'vue-i18n'
@@ -162,8 +155,32 @@ const props = defineProps({
     type: [Object, null],
     required: true, // 必传
   },
+  /** WS 实时禁言状态（当前用户被禁言时为 true） */
+  selfMuted: {
+    type: Boolean,
+    default: false,
+  },
+  /** WS 实时禁言原因 */
+  selfMuteReason: {
+    type: String,
+    default: '',
+  },
 })
-const { roomDetail } = toRefs(props)
+const { roomDetail, selfMuted, selfMuteReason } = toRefs(props)
+
+/** 综合判断是否可发言：优先 WS 实时禁言，再 fallback 到 roomDetail */
+const cannotSpeak = computed(() => {
+  if (selfMuted.value) return true
+  return roomDetail.value?.speaking?.can_speak !== 1
+})
+
+/** 当前展示在输入框的提示文案 */
+const inputPlaceholder = computed(() => {
+  if (selfMuted.value) return selfMuteReason.value || t('group.chat.muted')
+  if (roomDetail.value?.speaking?.can_speak !== 1)
+    return roomDetail.value?.speaking?.reason || t('group.chat.muted')
+  return t('social.detail.comment.placeholder')
+})
 console.log('roomDetail', roomDetail.value)
 // 切换表情分类
 const expressionCategory = ref(-1)
@@ -607,8 +624,12 @@ const validateBeforeSend = (): boolean => {
     return false
   }
 
-  // 6. 用户不能处于个人禁言中
-  if (roomDetail.value.speaking.is_member_muted === 1) {
+  // 6. 用户不能处于个人禁言中（优先 WS 实时禁言）
+  if (selfMuted.value) {
+    toast.show(selfMuteReason.value || t('group.chat.muted'))
+    return false
+  }
+  if (roomDetail.value?.speaking?.is_member_muted === 1) {
     toast.show(roomDetail.value.speaking.reason || t('group.chat.muted'))
     return false
   }

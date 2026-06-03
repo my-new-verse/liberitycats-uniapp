@@ -425,6 +425,7 @@
   "group.chat.enter_chat": "Enter Chat",
   "group.chat.roomMuted": "The whole group is muted",
   "group.chat.muted": "You are muted",
+  "group.chat.selfKicked": "You have been kicked from this group",
   "group.chat.loadingMoreHistory": "Loading more messages...",
   "group.chat.noMoreHistory": "No more message history",
   "group.chat.newMessages": " new messages",

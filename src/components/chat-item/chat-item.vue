@@ -354,7 +354,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
   box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.03);
   word-break: break-all;
   display: inline-block;
-  max-width: 80%;
+  max-width: 90%;
 }
 .rich-item {
   background-color: #f1f1f1;

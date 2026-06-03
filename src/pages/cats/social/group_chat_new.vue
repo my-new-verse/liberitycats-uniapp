@@ -115,7 +115,13 @@
             <wd-icon name="arrow-down" size="16px" color="#1f1f1f"></wd-icon>
             <text class="new-message-indicator-text">{{ getNewMessageIndicatorText() }}</text>
           </view>
-          <chat-input-bar ref="inputBar" @sendMsg="doSend" :room-detail="roomDetail" />
+          <chat-input-bar
+            ref="inputBar"
+            @sendMsg="doSend"
+            :room-detail="roomDetail"
+            :self-muted="isCurrentUserMuted"
+            :self-mute-reason="selfMuteReason"
+          />
         </template>
       </z-paging>
       <wd-action-sheet
@@ -697,8 +703,35 @@ const handleRealtimeEvent = async (eventName: string, payload: any) => {
     normalizedEventName === 'member.removed' ||
     normalizedEventName === 'member.status_changed'
   ) {
-    if (kickedMemberPayload && applyMemberKickedState(kickedMemberPayload.member_id)) {
-      return
+    if (kickedMemberPayload) {
+      const kickedId = kickedMemberPayload.member_id
+      // 自己被踢出群聊
+      if (kickedId && kickedId === userStore.userInfo?.member_id) {
+        handleSelfKicked()
+        return
+      }
+      applyMemberKickedState(kickedId)
+    }
+    return
+  }
+
+  // 处理禁言 / 解除禁言 / 角色变更
+  if (normalizedEventName === 'member.state_changed') {
+    const memberId = Number(payload?.member_id || payload?.data?.member_id || 0)
+    const action = payload?.action || payload?.data?.action
+    const isSelf = memberId === userStore.userInfo?.member_id
+    if (memberId && (action === 'muted' || action === 'unmuted')) {
+      const reason = payload?.data?.reason || payload?.reason || ''
+      applyMemberMuteState(memberId, action, reason)
+    } else if (memberId && action === 'kicked') {
+      if (isSelf) {
+        handleSelfKicked()
+        return
+      }
+      applyMemberKickedState(memberId)
+    } else if (memberId && action === 'role_changed') {
+      const newRole = payload?.role || payload?.data?.role || ''
+      applyMemberRoleChanged(memberId, newRole)
     }
     return
   }
@@ -784,7 +817,8 @@ const shouldNotifyGroupMembersRefresh = (
   if (
     normalizedEventName === 'member.kicked' ||
     normalizedEventName === 'member.removed' ||
-    normalizedEventName === 'member.status_changed'
+    normalizedEventName === 'member.status_changed' ||
+    normalizedEventName === 'member.state_changed'
   ) {
     return true
   }
@@ -928,6 +962,8 @@ const initChatSocketClient = () => {
       '.member.removed': (payload) => handleRealtimeEvent('.member.removed', payload),
       'member.status_changed': (payload) => handleRealtimeEvent('member.status_changed', payload),
       '.member.status_changed': (payload) => handleRealtimeEvent('.member.status_changed', payload),
+      'member.state_changed': (payload) => handleRealtimeEvent('member.state_changed', payload),
+      '.member.state_changed': (payload) => handleRealtimeEvent('.member.state_changed', payload),
     },
     onMessage: handleIncomingMessage,
     onConnectionError: (error) => {
@@ -965,6 +1001,21 @@ const handleIncomingMessage = async (payload: any) => {
  */
 const closeChatSocket = (manual = true) => {
   chatSocketClient.value?.disconnect(manual)
+}
+
+/**
+ * 自己被踢出群聊时的处理：弹窗提示 → 断开 WebSocket → 返回上一页
+ */
+const handleSelfKicked = () => {
+  uni.showModal({
+    title: '',
+    content: t('group.chat.selfKicked'),
+    showCancel: false,
+    success: () => {
+      closeChatSocket()
+      uni.navigateBack({ delta: 1 })
+    },
+  })
 }
 // 辅助函数：通知成员列表刷新
 const notifyGroupMembersRefresh = (roomId?: number) => {
@@ -1612,12 +1663,36 @@ const canManageTargetMute = (targetRole?: string, isSelf = false) => {
 const MESSAGE_RECALL_TIME_LIMIT_SECONDS = 2 * 60
 
 const isMessageSenderRemoved = (msg: ChatMessage) => {
-  return Number(msg.sender?.member_status || 0) === 3
+  const memberId = Number(msg.sender?.member_id || msg.member_id || 0)
+  // 优先以 WS 实时事件记录的状态为准，找不到再 fallback 到消息自带的 member_status
+  const realTimeStatus = memberId ? memberStateMap.value[memberId]?.status : undefined
+  const status =
+    realTimeStatus !== undefined ? realTimeStatus : Number(msg.sender?.member_status || 0)
+  return status === 3
 }
 
 const isMessageSenderMuted = (msg?: ChatMessage | null) => {
-  return Number(msg?.sender?.member_status || 0) === 4
+  if (!msg) return false
+  const memberId = Number(msg.sender?.member_id || msg.member_id || 0)
+  const realTimeStatus = memberId ? memberStateMap.value[memberId]?.status : undefined
+  const status =
+    realTimeStatus !== undefined ? realTimeStatus : Number(msg.sender?.member_status || 0)
+  return status === 4
 }
+
+/** 当前用户是否被禁言（由 WS member.state_changed 事件写入） */
+const isCurrentUserMuted = computed(() => {
+  const selfMemberId = userStore.userInfo?.member_id
+  if (!selfMemberId) return false
+  return memberStateMap.value[selfMemberId]?.status === 4
+})
+
+/** 自己的实时禁言信息，传给 chat-input-bar 作为禁用状态和提示文案 */
+const selfMuteReason = computed(() => {
+  const selfMemberId = userStore.userInfo?.member_id
+  if (!selfMemberId) return ''
+  return memberStateMap.value[selfMemberId]?.muteReason || ''
+})
 
 const getMessageSenderDisplayName = (msg: ChatMessage) => {
   const nickname = msg.sender?.nickname || ''
@@ -1667,7 +1742,9 @@ const getGovernanceMenuOptions = (msg: ChatMessage): MessageMenuItem[] => {
   const memberId = Number(member?.member_id || msg.sender?.member_id || msg.member_id || 0)
   const isSelf = memberId === userStore.userInfo.member_id || msg.is_self === 1
   const menuOptions: MessageMenuItem[] = []
-  const targetRole = member?.role || msg.sender?.role || 'member'
+  // 优先取 memberStateMap 中的最新角色，没有再 fallback
+  const realTimeRole = memberId ? memberStateMap.value[memberId]?.role : undefined
+  const targetRole = realTimeRole || member?.role || msg.sender?.role || 'member'
   const isMuted = isMessageSenderMuted(msg)
 
   if (!isDeletedMessage) {
@@ -1751,7 +1828,12 @@ const getGovernanceRoleRank = (role?: string) => {
   return 0
 }
 
-const getCurrentGovernanceRole = () => roomDetail.value?.speaking.role || 'member'
+const getCurrentGovernanceRole = () => {
+  // 优先取 WS 实时事件记录的最新角色，没有再 fallback
+  const selfMemberId = userStore.userInfo?.member_id
+  const realTimeRole = selfMemberId ? memberStateMap.value[selfMemberId]?.role : undefined
+  return realTimeRole || roomDetail.value?.speaking.role || 'member'
+}
 const canOperateTargetRole = (targetRole?: string, isSelf = false) => {
   if (isSelf) return false
 
@@ -1894,6 +1976,35 @@ const applyMemberKickedState = (memberId: number) => {
   roomMemberMap.value = nextMemberMap
   return true
 }
+
+/**
+ * 处理禁言/解除禁言状态变更（member.state_changed 事件）
+ * 只写入 memberStateMap，菜单读取时通过 isMessageSenderMuted 动态计算
+ */
+const applyMemberMuteState = (memberId: number, action: 'muted' | 'unmuted', reason?: string) => {
+  if (!memberId) return
+  const newStatus = action === 'muted' ? 4 : 1
+  memberStateMap.value = {
+    ...memberStateMap.value,
+    [memberId]: {
+      ...memberStateMap.value[memberId],
+      status: newStatus,
+      ...(action === 'muted' ? { muteReason: reason || '' } : { muteReason: undefined }),
+    },
+  }
+}
+
+/**
+ * 处理角色变更（member.state_changed + action=role_changed 事件）
+ * 只写入 memberStateMap，菜单读取时动态计算
+ */
+const applyMemberRoleChanged = (memberId: number, newRole: string) => {
+  if (!memberId || !newRole) return
+  memberStateMap.value = {
+    ...memberStateMap.value,
+    [memberId]: { ...memberStateMap.value[memberId], role: newRole },
+  }
+}
 // 长按菜单项中触发上述弹窗的函数
 // 处理“禁言/解除禁言”动作（如果已经是禁言状态则弹出解除原因弹窗）
 const handleMessageMemberMuteAction = async (msg: ChatMessage) => {
@@ -1972,6 +2083,15 @@ const refreshMessageSendersBeforeCurrentLast = async (
 /* 群成员start 📝📝📝📝📝📝📝 */
 // 跳转到成员列表页面
 const roomMemberMap = ref<Record<number, ChatMember>>({})
+
+/**
+ * 成员状态变更记录（由 WS 实时事件写入，优先于消息自带的 member_status / role）
+ * 键：member_id
+ * 值：{ status?: 1(正常) | 3(已踢出) | 4(禁言), role?: 最新角色 }
+ */
+const memberStateMap = ref<Record<number, { status?: number; role?: string; muteReason?: string }>>(
+  {},
+)
 
 const goToMembers = async () => {
   const roomId = roomDetail.value?.room.id || routeRoomId.value

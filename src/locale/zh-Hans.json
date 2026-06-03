@@ -437,6 +437,7 @@
   "group.chat.enter_chat": "进入群聊",
   "group.chat.roomMuted": "当前全群禁言",
   "group.chat.muted": "当前已被禁言",
+  "group.chat.selfKicked": "您已被踢出群聊",
   "group.chat.loadingMoreHistory": "加载更多消息...",
   "group.chat.noMoreHistory": "没有更多历史消息了",
   "group.chat.newMessages": "条新消息",
