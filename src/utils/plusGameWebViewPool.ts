@@ -169,12 +169,27 @@ const bindWebViewEvents = (gameType: GameType, webView: any) => {
   })
   webView.addEventListener('close', () => {
     console.log(`[GamePool] ${gameType} WebView已关闭，返回上一页面`)
-    // 重置池状态，以便下次重新创建实例
+    // 重置池状态（保留 config，用于后续重新预加载）
     state.instance = null
     state.isPreloading = false
     state.isLoaded = false
     state.retryCount = 0
+    state.hasBeenHidden = false
+    state.loadedUrl = null
     uni.navigateBack() // 页面栈回退
+
+    // 关闭后自动重新预加载，保持池子不为空
+    if (state.config) {
+      console.log(`[GamePool] ${gameType} 关闭后自动重新预加载`)
+      setTimeout(() => {
+        state.isPreloading = true
+        state.retryCount = 0
+        const newWebView = createGameWebView(gameType, state.config!)
+        bindWebViewEvents(gameType, newWebView)
+        state.instance = newWebView
+        newWebView.loadURL(state.config!.url)
+      }, 300)
+    }
   })
   let startX = 0
   webView.addEventListener('touchstart', function (e: TouchEvent) {
@@ -433,18 +448,21 @@ export const destroyAllGameWebViews = () => {
 export const destroyGameWebViewByType = (gameType: string) => {
   if (typeof plus === 'undefined') return
 
+  const state = webViewPool[gameType as GameType]
+  // 先保留 config，close 事件会触发重新预加载
+  const savedConfig = state.config
+
   plus.webview.close(WEBVIEW_ID_MAP[gameType as GameType])
-  // 重置状态
-  webViewPool[gameType as GameType] = {
-    instance: null,
-    config: null,
-    isPreloading: false,
-    isLoaded: false,
-    retryCount: 0,
-    gameVersion: null,
-    hasBeenHidden: false,
-    loadedUrl: null,
-  }
+
+  // 重置实例和加载状态（保留 config，以便 close 事件里自动重新预加载）
+  state.instance = null
+  state.isPreloading = false
+  state.isLoaded = false
+  state.retryCount = 0
+  state.hasBeenHidden = false
+  state.loadedUrl = null
+  // 恢复 config
+  state.config = savedConfig
 }
 
 /**
