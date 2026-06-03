@@ -545,7 +545,6 @@ const applyMemberPageResult = (responseData: ChatMembersResponse, reset = false)
 }
 
 const loadMemberPage = async (reset = false) => {
-  console.time()
   console.log('==========', routeRoomId.value)
   const roomId = routeRoomId.value
   if (!roomId) return
@@ -553,7 +552,7 @@ const loadMemberPage = async (reset = false) => {
 
   const nextPage = reset ? 1 : memberCurrentPage.value + 1
   const keyword = getMemberSearchKeyword()
-  const roleFilter = keyword ? undefined : 'member'
+  const roleFilter = 'member'
   const requestLimit = keyword ? MEMBER_SEARCH_LIMIT : MEMBER_PAGE_LIMIT
   if (!reset && !memberHasMore.value) return
   const currentRequestId = ++memberLoadRequestId.value
@@ -586,6 +585,8 @@ const loadMemberPage = async (reset = false) => {
       memberHasMore.value = false
     }
     console.error('load members page failed:', memberRes.msg)
+  } catch (err) {
+    console.error('捕获到错误：', err)
   } finally {
     if (currentRequestId === memberLoadRequestId.value) {
       memberLoading.value = false
