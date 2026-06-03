@@ -885,6 +885,7 @@ const bindArGame = () => {
     }
     .info {
       margin-left: 32rpx;
+      flex: 1;
       .name {
         font-size: 48rpx;
         font-style: normal;
@@ -894,7 +895,8 @@ const bindArGame = () => {
       }
       .asset-resps {
         display: flex !important;
-        justify-content: space-between;
+        justify-content: flex-start;
+        gap: 32rpx;
         flex-wrap: nowrap;
         width: 100%;
       }
