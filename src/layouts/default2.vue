@@ -28,7 +28,10 @@ import type { ConfigProviderThemeVars } from 'wot-design-uni'
 import CustomTabbar from '@/components/CustomTabbar.vue'
 import AppUpdatePopup from '@/components/AppUpdatePopup.vue'
 import { openUrl } from '@/utils'
+import buildInfo from '@/../build-info.json'
+import { getSystemConfigApiV2 } from '@/service/api/user'
 import { t } from '@/locale'
+const version = `${buildInfo.version}`
 
 const themeVars: ConfigProviderThemeVars = {
   // 主题变量配置
@@ -63,53 +66,57 @@ watch(
 )
 
 // 更新提示相关逻辑
-const isClose = computed(() => {
-  const systemConfig = uni.getStorageSync('systemConfigV2')
+const systemConfig = ref(uni.getStorageSync('systemConfigV2'))
 
-  const data = uni.getStorageSync('app_update_close')
-  if (data == null) return false
-  // 兼容旧版直接存布尔值 true 的情况
-  if (typeof data === 'boolean') return false
-  // 只有版本号匹配且 closed 为 true 才认为已关闭
-  return data.version === systemConfig?.update?.version && data.closed === true
+onShow(() => {
+  const systemInfo = uni.getSystemInfoSync()
+  // const platform = systemInfo.platform?.toLowerCase() || systemInfo.osName?.toLowerCase()
+  const platform = systemInfo.platform?.toLowerCase() || systemInfo.osName?.toLowerCase()
+  getSystemConfigApiV2(version, platform).then((res) => {
+    const newUpdate = res.data?.update
+
+    // update 为空表示已是最新版本，不再展示弹窗
+    systemConfig.value = { ...systemConfig.value, update: newUpdate ?? null }
+    uni.setStorageSync('systemConfigV2', systemConfig.value)
+  })
 })
 
-const appUpdatePopupShow = ref(false)
-const appUpdatePopupTitle = ref('')
-const appUpdatePopupContent = ref('')
-const appUpdatePopupClosAble = ref(false)
-const appUpdateUrl = ref('')
+// 用 ref 追踪关闭状态，因为 uni.getStorageSync 不是响应式的
+const updateDismissed = ref(
+  (() => {
+    const data = uni.getStorageSync('app_update_close')
+    if (data == null || typeof data === 'boolean') return false
+    return data.version === systemConfig.value?.update?.version && data.closed === true
+  })(),
+)
 
-onMounted(() => {
-  const systemConfig = uni.getStorageSync('systemConfigV2')
-  console.log('-----------', systemConfig?.update?.version, !isClose.value)
-  if (systemConfig?.update?.version && !isClose.value) {
-    appUpdatePopupTitle.value = systemConfig.update.update_log?.title || ''
-    appUpdatePopupContent.value = systemConfig.update.update_log?.content || ''
-    appUpdatePopupClosAble.value = systemConfig.update?.is_force_update !== 1
-    appUpdateUrl.value = systemConfig.update.url || ''
-    appUpdatePopupShow.value = true
-  }
+const isClose = computed(() => updateDismissed.value)
+
+const appUpdatePopupShow = computed(() => {
+  return !!systemConfig.value?.update?.version && !isClose.value
 })
+const appUpdatePopupTitle = computed(() => systemConfig.value?.update?.update_log?.title || '')
+const appUpdatePopupContent = computed(() => systemConfig.value?.update?.version || '')
+const appUpdatePopupClosAble = computed(() => systemConfig.value?.update?.is_force_update !== 1)
+const appUpdateUrl = computed(() => systemConfig.value?.update?.url || '')
+
+const dismissUpdate = () => {
+  uni.setStorageSync('app_update_close', {
+    version: systemConfig.value?.update?.version,
+    closed: true,
+  })
+  updateDismissed.value = true // 触发响应式更新
+}
 
 const appBtnClick = () => {
   if (appUpdateUrl.value) {
+    dismissUpdate()
     openUrl(appUpdateUrl.value)
-    appUpdatePopupShow.value = false
-    uni.setStorageSync('app_update_close', {
-      version: systemConfig?.update?.version, // 当前版本号
-      closed: true,
-    })
   }
 }
 
 const closeAppUpdatePopup = () => {
-  const systemConfig = uni.getStorageSync('systemConfigV2')
-  appUpdatePopupShow.value = false
-  uni.setStorageSync('app_update_close', {
-    version: systemConfig?.update?.version, // 当前版本号
-    closed: true,
-  })
+  dismissUpdate()
 }
 </script>
 
