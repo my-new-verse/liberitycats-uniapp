@@ -1220,13 +1220,26 @@ const sendChatMessageWithClientMessageId = async (
 
     const updated = updateChatMessageByClientMessageId(clientMessageId, nextMessage)
     if (updated) {
-      // 服务端确认后去重排序，防止 WS 回推导致重复
-      // const deduped = dedupeMessages(sortMessagesByRoomSeq(messages.value))
-      // paging.value?.resetTotalData(deduped)
-      // // resetTotalData 会重建列表并重置滚动位置，需要在渲染后重新滚到底部
-      // nextTick(() => {
-      //   scrollToBottom()
-      // })
+      // 兜底去重：WS 可能在 API 返回前已追加了同 id 的消息，移除重复项
+      const serverId = nextMessage.id
+      if (serverId) {
+        let firstFound = false
+        const dedupedIndices: number[] = []
+        messages.value.forEach((msg, idx) => {
+          if (msg.id === serverId) {
+            if (!firstFound) {
+              firstFound = true
+            } else {
+              dedupedIndices.push(idx)
+            }
+          }
+        })
+        if (dedupedIndices.length > 0) {
+          for (let i = dedupedIndices.length - 1; i >= 0; i--) {
+            messages.value.splice(dedupedIndices[i], 1)
+          }
+        }
+      }
     }
     return true
   }
@@ -1298,9 +1311,7 @@ const updateChatMessageByClientMessageId = (
   return true
 }
 const doSend = (messageType, payload) => {
-  let pendingClientMessageId = ''
   const clientMessageId = createClientMessageId()
-  pendingClientMessageId = clientMessageId
 
   // 先追加暂存的离屏消息（确保时序正确：他人消息在自己消息之前）
   if (pendingOffscreenMessages.length > 0) {
@@ -1309,8 +1320,7 @@ const doSend = (messageType, payload) => {
   }
   clearPendingRealtimeMessageIndicator()
 
-  // 再追加自己的消息，乐观更新（addChatRecordData 会自动往 v-model 的 messages 里 push）
-  // 第二个参数 scrollToLatest=true 让 z-paging 在添加完数据后自动滚动到底部
+  // 乐观追加本地消息，立即展示并滚动到底部
   paging.value?.addChatRecordData(
     createLocalPendingMessage(clientMessageId, messageType, payload),
     true,
@@ -1323,7 +1333,7 @@ const doSend = (messageType, payload) => {
     clientMessageId,
     payload,
   ).catch((error: any) => {
-    markLocalMessageFailed(pendingClientMessageId)
+    markLocalMessageFailed(clientMessageId)
     console.error('sendChatMessageWithClientMessageId error:', error)
     toast.show(error?.errMsg || error?.message || t('group.chat.sendFailed'))
   })
@@ -1769,6 +1779,7 @@ const getGovernanceMenuOptions = (msg: ChatMessage): MessageMenuItem[] => {
   }
 
   if (!isSelf && !isMessageSenderRemoved(msg)) {
+    // if (!isSelf && !isMessageSenderRemoved(msg) && canOperateTargetRole(targetRole, isSelf)) {
     menuOptions.push({
       content: t('group.chat.kickMember'),
       action: 'kick',
