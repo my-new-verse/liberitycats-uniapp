@@ -95,6 +95,11 @@ onMounted(() => {
 const appBtnClick = () => {
   if (appUpdateUrl.value) {
     openUrl(appUpdateUrl.value)
+    appUpdatePopupShow.value = false
+    uni.setStorageSync('app_update_close', {
+      version: systemConfig?.update?.version, // 当前版本号
+      closed: true,
+    })
   }
 }
 
