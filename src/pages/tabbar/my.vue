@@ -44,7 +44,7 @@
               <image :src="getImageUrl(userStore.userInfo.level.icon)" mode="widthFix" />
             </view>
             <!-- 隐藏argame -->
-            <view class="gameIconBox">
+            <view class="gameIconBox" v-if="getServerOnOff('ar_enable', 'common')">
               <view
                 class="gmAr"
                 :class="{ on: userStore.userInfo?.bind_ar?.third_open_id }"
@@ -893,9 +893,10 @@ const bindArGame = () => {
         color: #ffffff;
       }
       .asset-resps {
-        diisplay: flex !important;
+        display: flex !important;
         justify-content: space-between;
         flex-wrap: nowrap;
+        width: 100%;
       }
       .points {
         font-size: 24rpx;
