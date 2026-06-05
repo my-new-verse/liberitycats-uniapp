@@ -103,7 +103,7 @@
             </scroll-view>
           </view>
           <!-- 群聊start -->
-          <view class="commonTitleBox">
+          <!-- <view class="commonTitleBox">
             <view class="title navTitle">
               <image src="/static/images/nft@2x.png" class="tb" alt="" />
               {{ t('home.title.groupChat') }}
@@ -116,7 +116,7 @@
               class="activityImg"
               @click="toChatGroup()"
             />
-          </view>
+          </view> -->
           <view class="commonTitleBox">
             <view class="title navTitle">
               <image src="/static/images/nft@2x.png" class="tb" alt="" />
