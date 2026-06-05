@@ -102,7 +102,21 @@
               </template>
             </scroll-view>
           </view>
+          <!-- 群聊start -->
+          <view class="commonTitleBox">
+            <view class="title navTitle">
+              <image src="/static/images/nft@2x.png" class="tb" alt="" />
+              {{ t('home.title.groupChat') }}
+            </view>
+          </view>
 
+          <view class="activityBox" v-if="chatRoomList.length">
+            <image
+              :src="getImageUrl(chatRoomList[0].banner_image)"
+              class="activityImg"
+              @click="toChatGroup()"
+            />
+          </view>
           <view class="commonTitleBox">
             <view class="title navTitle">
               <image src="/static/images/nft@2x.png" class="tb" alt="" />
@@ -119,21 +133,6 @@
               :src="getImageUrl(NftTradeAd.ads[0].icon)"
               class="activityImg"
               @click="toAdUrl(NftTradeAd.ads[0].url, true)"
-            />
-          </view>
-          <!-- 群聊start -->
-          <view class="commonTitleBox">
-            <view class="title navTitle">
-              <image src="/static/images/nft@2x.png" class="tb" alt="" />
-              {{ t('home.title.nftTradings') }}
-            </view>
-          </view>
-
-          <view class="activityBox" v-if="chatRoomList.length">
-            <image
-              :src="getImageUrl(chatRoomList[0].banner_image)"
-              class="activityImg"
-              @click="toChatGroup()"
             />
           </view>
 
