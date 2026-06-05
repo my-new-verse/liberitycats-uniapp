@@ -8,7 +8,7 @@ import { getAdListByKeysApi } from './service/api/ad'
 import { t } from './locale'
 import buildInfo from '@/../build-info.json'
 import { useSystemStore } from '@/store/system'
-// import { getGameParamsApi } from '@/service/api/game'
+import { getGameParamsApi } from '@/service/api/game'
 // import { scheduleDualGamePreload } from '@/utils/plusGameWebViewPool'
 // import { useGameWebViewStore } from '@/store/gameWebview'
 
@@ -34,21 +34,48 @@ onLaunch(() => {
   const systemInfo = uni.getSystemInfoSync()
   const platform = systemInfo.platform?.toLowerCase() || systemInfo.osName?.toLowerCase()
   console.log('platform', platform)
-  // todo 加载初始配置
-  uni.removeStorageSync('app_update_close')
-  getSystemConfigApiV2(version, platform).then((res) => {
-    uni.setStorageSync('systemConfigV2', res.data)
-    console.log(11111111)
-    systemStore.setConfig(res.data)
-  })
 
-  // todo 检查更新包
+  // iOS 首次安装 IPA 可能网络尚未就绪，轮询等待网络连接后再发起请求，避免白屏
+  const waitForNetwork = (): Promise<void> => {
+    return new Promise((resolve) => {
+      uni.getNetworkType({
+        success: (res) => {
+          if (res.networkType !== 'none') {
+            resolve()
+            return
+          }
+          const timer = setInterval(() => {
+            uni.getNetworkType({
+              success: (r) => {
+                if (r.networkType !== 'none') {
+                  clearInterval(timer)
+                  resolve()
+                }
+              },
+            })
+          }, 1000)
+        },
+      })
+    })
+  }
 
-  // 加载用户协议
-  getAgreementsByKeys(
-    'user_login_agreement,user_privacy_policy,user_pledge_nft_agreement,user_pledge_nft_guide,user_pledge_nft_popup_content,user_redeem_nft_popup_content,virtual_email_intro',
-  ).then((res) => {
-    uni.setStorageSync('agreements', res.data)
+  waitForNetwork().then(() => {
+    // @ts-ignore 全局标记，供页面通过 uni.$on('networkReady') 监听
+    globalThis.__networkReady = true
+    uni.$emit('networkReady')
+
+    uni.removeStorageSync('app_update_close')
+    getSystemConfigApiV2(version, platform).then((res) => {
+      uni.setStorageSync('systemConfigV2', res.data)
+      console.log(11111111)
+      systemStore.setConfig(res.data)
+    })
+
+    getAgreementsByKeys(
+      'user_login_agreement,user_privacy_policy,user_pledge_nft_agreement,user_pledge_nft_guide,user_pledge_nft_popup_content,user_redeem_nft_popup_content,virtual_email_intro',
+    ).then((res) => {
+      uni.setStorageSync('agreements', res.data)
+    })
   })
 
   // 请求并缓存广告

@@ -192,6 +192,12 @@ const headBoxHeight = ref<string>('')
 const userInfoBoxPaddingTop = ref<string>('')
 const goodsListByTag = ref<searchGoodsInfo[]>()
 
+// 等待 App.vue 中 waitForNetwork 完成后再加载数据，避免 iOS 首次安装网络未就绪导致请求失败
+const onNetworkReady = () => {
+  getAdListByKeys()
+  loadHomeData()
+}
+
 onMounted(() => {
   // #ifdef H5
   headBoxHeight.value = (safeAreaInsets?.top || 0) / uni.rpx2px(1) + 878 + 'rpx'
@@ -201,9 +207,16 @@ onMounted(() => {
   headBoxHeight.value = (safeAreaInsets?.top || 0) + 878 + 'rpx'
   userInfoBoxPaddingTop.value = (safeAreaInsets?.top || 0) + 32 + 'rpx'
   // #endif
-  getAdListByKeys()
+  // @ts-ignore
+  if (globalThis.__networkReady) {
+    onNetworkReady()
+  } else {
+    uni.$on('networkReady', onNetworkReady)
+  }
+})
 
-  loadHomeData()
+onUnmounted(() => {
+  uni.$off('networkReady', onNetworkReady)
 })
 
 const loadHomeData = () => {
