@@ -551,6 +551,9 @@ onMounted(() => {
       refreshGroupChatRooms(true)
     }
   })
+  uni.$on('switchToChatGroup', () => {
+    socialFilter.value = 'groupChat'
+  })
 })
 
 // 组件卸载时移除事件监听
@@ -561,6 +564,7 @@ onUnmounted(() => {
   }
   uni.$off('refreshSocialTab')
   uni.$off('discoverActiveTabChange')
+  uni.$off('switchToChatGroup')
 })
 
 const reportShow = ref<boolean>(false)

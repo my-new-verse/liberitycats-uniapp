@@ -121,6 +121,21 @@
               @click="toAdUrl(NftTradeAd.ads[0].url, true)"
             />
           </view>
+          <!-- 群聊start -->
+          <view class="commonTitleBox">
+            <view class="title navTitle">
+              <image src="/static/images/nft@2x.png" class="tb" alt="" />
+              {{ t('home.title.nftTradings') }}
+            </view>
+          </view>
+
+          <view class="activityBox" v-if="chatRoomList.length">
+            <image
+              :src="getImageUrl(chatRoomList[0].banner_image)"
+              class="activityImg"
+              @click="toChatGroup()"
+            />
+          </view>
 
           <!-- <view class="partnerBox" v-if="NftTradePartner">
           <template v-for="(item, index) in NftTradePartner.ads" :key="index">
@@ -179,7 +194,7 @@ import { getAnnouncementListApi, AnnouncementListResponse } from '@/service/api/
 import { getAdListByKeysApi, getAdListByKeysApiResponse } from '@/service/api/ad'
 import { getUnReadNotificationCountApi } from '@/service/api/user'
 import { addFavoriteApi, getGoodsListByTagsApi, searchGoodsInfo } from '@/service/api/goods'
-
+import { getChatRoomsApi } from '@/service/api/groupChat'
 uni.hideTabBar()
 
 const locale = uni.getLocale()
@@ -227,6 +242,10 @@ const loadHomeData = () => {
   getAnnouncementListApi(1, 3).then((res) => {
     announcementList.value.data = res.data.data
   })
+
+  getChatRoomsApi(1).then((res) => {
+    chatRoomList.value = res.data.rooms
+  })
 }
 
 const current = ref<number>(0)
@@ -236,7 +255,7 @@ const announcementList = ref<AnnouncementListResponse>({
   data: [],
   last_page: 1,
 })
-
+const chatRoomList = ref([])
 const toMall = () => {
   uni.switchTab({
     url: '/pages/tabbar/mall',
@@ -317,6 +336,13 @@ const onRefresh = async () => {
     }
     isRefreshing.value = false
   }
+}
+// 跳转群聊tab
+const toChatGroup = () => {
+  uni.$emit('switchToChatGroup')
+  uni.switchTab({
+    url: '/pages/tabbar/discover',
+  })
 }
 </script>
 
