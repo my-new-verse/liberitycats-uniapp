@@ -666,12 +666,16 @@ const loadMembers = async () => {
   }
 }
 
-// 头像点击事件
-const handleAvatarClick = (userId: string | number) => {
-  uni.navigateTo({
-    url: `/pages/cats/user/home?member_id=${userId}`,
-  })
-}
+// 头像点击事件（防抖，避免连续点击重复跳转）
+const handleAvatarClick = debounce(
+  (userId: string | number) => {
+    uni.navigateTo({
+      url: `/pages/cats/user/home?member_id=${userId}`,
+    })
+  },
+  300,
+  { leading: true, trailing: false },
+)
 
 // 管理员操作
 const handleAdminAction = async (item: ApiChatMember, nextRole: 'moderator' | 'member') => {
