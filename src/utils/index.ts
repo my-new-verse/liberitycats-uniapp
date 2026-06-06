@@ -1,7 +1,9 @@
-import { pages, subPackages, tabBar } from '@/pages.json'
+import pagesConfig from '@/pages.json'
 import { isMp } from './platform'
 import { t } from '@/locale'
 import CryptoJS from 'crypto-js'
+
+const { pages = [], subPackages = [], tabBar } = pagesConfig
 
 let navigationLocked = false
 let navigationUnlockTimer: ReturnType<typeof setTimeout> | null = null

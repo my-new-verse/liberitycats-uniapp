@@ -169,6 +169,8 @@
   "social.detail.comment.reply_prefix": "Reply",
   "social.detail.comment.more": "View more replies",
   "social.detail.comment.btn.send": "Send",
+  "social.detail.open_in_app": "Open in App",
+  "social.detail.post.empty": "Post not found or deleted",
   "social.detail.content.not_audit_seed_myself": "Content not reviewed, only visible to oneself",
   "social.index.post.report": "Report Post",
   "social.index.post.report_comment": "Report Comment",

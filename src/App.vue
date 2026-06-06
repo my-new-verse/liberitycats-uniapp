@@ -187,7 +187,7 @@ const handleSchemaArgs = (args) => {
       const [path, queryString] = url.split('?')
 
       // 解析参数
-      const params = {}
+      const params: Record<string, string> = {}
       if (queryString) {
         queryString.split('&').forEach((param) => {
           const [key, value] = param.split('=')

@@ -13,14 +13,14 @@
   <view>
     <custom-nav2 :title="t('social.detail.page_title')" pageBackgroundColor="#f7f6f4">
       <template #default>
-        <view class="container">
+        <view class="container" v-if="hasPostDetail">
           <view class="socialBox">
             <view class="socialItem">
               <view class="socialHead">
                 <view class="avatarBox" @click="debouncedToUserHomeRef?.(postDetail?.member_id)">
                   <image
                     class="avatar"
-                    :src="getImageUrl(postDetail?.member?.avatar + '?x-oss-process=style/jzcq')"
+                    :src="getImageUrl(postDetail.member.avatar + '?x-oss-process=style/jzcq')"
                   />
                   <view class="levelIcon">
                     <image
@@ -29,7 +29,7 @@
                     />
                   </view>
                 </view>
-                <view class="name">{{ formatNickname(postDetail?.member?.nickname, 22) }}</view>
+                <view class="name">{{ formatNickname(postDetail.member.nickname, 22) }}</view>
                 <view
                   v-if="postDetail.tag?.name"
                   class="tag"
@@ -311,15 +311,32 @@
             </template>
           </view>
         </view>
+        <view
+          v-else
+          class="postEmptyBox"
+          :style="{ paddingBottom: 'calc(120rpx + env(safe-area-inset-bottom))' }"
+        >
+          <view class="emptyTxt">{{ postLoadError || t('social.detail.post.empty') }}</view>
+        </view>
       </template>
       <template #footer>
-        <view class="fixedCommentBox" style="padding-bottom: env(safe-area-inset-bottom)">
+        <view
+          v-if="hasPostDetail"
+          class="fixedCommentBox"
+          style="padding-bottom: env(safe-area-inset-bottom)"
+        >
           <view class="commentTextArea" @click="showCommentPopup('post')">
             {{ t('social.detail.comment.placeholder') }}
           </view>
         </view>
 
         <wd-backtop :scrollTop="scrollTop"></wd-backtop>
+
+        <!-- #ifdef H5 -->
+        <view class="openAppBtn" @click="openPostInApp">
+          {{ t('social.detail.open_in_app') }}
+        </view>
+        <!-- #endif -->
 
         <wd-popup
           v-model="commentPopupVisible"
@@ -511,6 +528,15 @@ const reportPost = (post: getCommunityPostListApiResponse['data'][number]) => {
 
 const currentRequestId = ref('')
 
+const handleH5AppOnlyAction = () => {
+  // #ifdef H5
+  openPostInApp()
+  return true
+  // #endif
+
+  return false
+}
+
 const generateUUID = () => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0
@@ -637,6 +663,8 @@ const sendLoading = ref(false)
 
 // 发布评论 start
 const publishComment = async () => {
+  if (handleH5AppOnlyAction()) return
+
   if (userStore.isLogin === false) {
     toast.show(t('common.toast.pleaseLogin'))
     return
@@ -732,6 +760,8 @@ const shouldFocus = ref(false)
 
 // 修改showCommentPopup方法
 const showCommentPopup = (type: 'post' | 'l1' = 'post', targetItem?: any) => {
+  if (handleH5AppOnlyAction()) return
+
   if (userStore.isLogin === false) {
     toUrl('/pages/cats/login', true)
     return
@@ -933,7 +963,9 @@ const deleteCustomEmoji = (src: string) => {
 }
 
 // onload 获取帖子详情和评论列表
-const postDetail = ref<getPostDetailResponse>({} as getPostDetailResponse)
+const postDetail = ref<getPostDetailResponse | null>(null)
+const postLoadError = ref('')
+const hasPostDetail = computed(() => Boolean(postDetail.value?.id && postDetail.value?.member))
 
 const emotionList = ref<getCommunityEmotionListItem[]>([])
 
@@ -947,9 +979,21 @@ onLoad((options) => {
     // uni.showLoading()
     Promise.allSettled([
       getCommentList(),
-      getCommunityPostDetailApi(Number(options.id)).then((res) => {
-        postDetail.value = res.data
-      }),
+      getCommunityPostDetailApi(Number(options.id))
+        .then((res) => {
+          if (res.code !== 1 || !res.data || Array.isArray(res.data)) {
+            postDetail.value = null
+            postLoadError.value = res.msg || t('social.detail.post.empty')
+            return
+          }
+
+          postDetail.value = res.data
+          postLoadError.value = ''
+        })
+        .catch(() => {
+          postDetail.value = null
+          postLoadError.value = t('common.request.error')
+        }),
     ]).finally(() => {
       if (options.showComment === 'true') {
         uni.hideLoading()
@@ -1072,6 +1116,7 @@ onReachBottom(() => {
 // 点赞
 const likePost = (id: number) => {
   const realId = id || postId.value
+  if (handleH5AppOnlyAction()) return
 
   if (userStore.isLogin === false) {
     toUrl('/pages/cats/login', true)
@@ -1088,6 +1133,7 @@ const likePost = (id: number) => {
         toast.show(res.msg || t('common.error'))
         return
       }
+      if (!postDetail.value) return
       postDetail.value.like_count = res.data.like_count || 0
       postDetail.value.is_liked = res.data.is_liked || 0
 
@@ -1108,6 +1154,8 @@ const likePost = (id: number) => {
 }
 
 const likeComment = (item: any) => {
+  if (handleH5AppOnlyAction()) return
+
   if (userStore.isLogin === false) {
     toUrl('/pages/cats/login', true)
     return
@@ -1139,6 +1187,62 @@ const likeComment = (item: any) => {
     })
 }
 // 点赞 end
+
+const toShare = (post: getPostDetailResponse) => {
+  if (userStore.isLogin === false && handleH5AppOnlyAction()) return
+
+  if (userStore.isLogin === false) {
+    toUrl('/pages/cats/login', true)
+    return
+  }
+  let twitterUrl = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(post.content)
+  if (post.images.length > 0) {
+    const twitterCardUrl =
+      import.meta.env.VITE_SERVER_BASEURL + '/v1/community/post/share-to-twitter?id=' + post.id
+    twitterUrl += '&url=' + encodeURIComponent(twitterCardUrl)
+  }
+  openUrl(twitterUrl)
+}
+
+const openPostInApp = () => {
+  if (!postId.value) return
+
+  // #ifdef H5
+  const appUrl = `libertycats://post/detail?id=${postId.value}`
+  const downloadUrl = 'https://download.libertycats.app'
+  let hasOpenedApp = false
+  let fallbackTimer: ReturnType<typeof setTimeout> | null = null
+
+  const clearFallback = () => {
+    hasOpenedApp = true
+    if (fallbackTimer) {
+      clearTimeout(fallbackTimer)
+      fallbackTimer = null
+    }
+    document.removeEventListener('visibilitychange', handleVisibilityChange)
+    window.removeEventListener('pagehide', clearFallback)
+  }
+
+  const handleVisibilityChange = () => {
+    if (document.hidden) {
+      clearFallback()
+    }
+  }
+
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+  window.addEventListener('pagehide', clearFallback, { once: true })
+
+  fallbackTimer = setTimeout(() => {
+    document.removeEventListener('visibilitychange', handleVisibilityChange)
+    window.removeEventListener('pagehide', clearFallback)
+    if (!hasOpenedApp && !document.hidden) {
+      window.location.href = downloadUrl
+    }
+  }, 1500)
+
+  window.location.href = appUrl
+  // #endif
+}
 
 // 使用 ref 来存储防抖函数的引用
 const debouncedCreateComment = ref<(() => Promise<void>) | null>(null)
@@ -1189,6 +1293,8 @@ const handleLoadComments = (sort: string) => {
 }
 
 const handleDelPost = (id: number, type: 'l1' | 'l2', parentItem?: any) => {
+  if (handleH5AppOnlyAction()) return
+
   if (!userStore.isLogin) {
     toUrl('/pages/cats/login/login', true)
     return
@@ -1281,6 +1387,8 @@ const highlightTargetElement = (targetId: string) => {
 
 // 跳转用户主页
 const toUserHome = (memberId: number) => {
+  if (handleH5AppOnlyAction()) return
+
   uni.navigateTo({
     url: `/pages/cats/user/home?member_id=${memberId}`,
   })
@@ -1288,6 +1396,8 @@ const toUserHome = (memberId: number) => {
 
 // 二级评论点赞
 const likeReply = async (replyItem: any, itemId: number) => {
+  if (handleH5AppOnlyAction()) return
+
   if (userStore.isLogin === false) {
     toUrl('/pages/cats/login', true)
     return
@@ -1326,6 +1436,8 @@ const likeReply = async (replyItem: any, itemId: number) => {
 }
 
 const handleReplyL2 = (replyItem: any, parentItem: any) => {
+  if (handleH5AppOnlyAction()) return
+
   if (!userStore.isLogin) {
     toUrl('/pages/cats/login/login', true)
     return
@@ -1435,6 +1547,20 @@ const handleOpenShare = (item: any) => {
   padding-bottom: 120rpx;
   .cnt {
     padding: 0;
+  }
+}
+.postEmptyBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 40rpx;
+  text-align: center;
+
+  .emptyTxt {
+    font-size: 28rpx;
+    line-height: 40rpx;
+    color: #999;
   }
 }
 :deep(.socialMedia) {
@@ -1626,6 +1752,27 @@ const handleOpenShare = (item: any) => {
     background: #f3f3f4;
     border-radius: 64rpx;
   }
+}
+
+.openAppBtn {
+  position: fixed;
+  left: 50%;
+  bottom: calc(152rpx + env(safe-area-inset-bottom));
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 176rpx;
+  height: 72rpx;
+  padding: 0 28rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  line-height: 36rpx;
+  color: #ffffff;
+  background: #ff6b03;
+  border-radius: 36rpx;
+  box-shadow: 0 8rpx 24rpx rgba(255, 107, 3, 0.28);
+  transform: translateX(-50%);
 }
 
 .container {

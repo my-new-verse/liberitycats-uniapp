@@ -1,5 +1,7 @@
 import { defineUniPages } from '@uni-helper/vite-plugin-uni-pages'
 
+const isH5SinglePageBuild = process.env.UNI_H5_SINGLE_PAGE_BUILD === 'true'
+
 export default defineUniPages({
   globalStyle: {
     navigationStyle: 'default',
@@ -19,41 +21,45 @@ export default defineUniPages({
         'z-paging/components/z-paging$1/z-paging$1.vue',
     },
   },
-  tabBar: {
-    color: '#999999',
-    selectedColor: '#FF6B03',
-    backgroundColor: '#FFFFFF',
-    borderStyle: 'black',
-    height: '50px',
-    fontSize: '10px',
-    iconWidth: '32px',
-    spacing: '3px',
-    list: [
-      {
-        iconPath: 'static/LibertyCats/type=off.png',
-        selectedIconPath: 'static/LibertyCats/type=on.png',
-        pagePath: 'pages/tabbar/home',
-      },
-      {
-        iconPath: 'static/LibertyCats/type=off-1.png',
-        selectedIconPath: 'static/LibertyCats/type=on-1.png',
-        pagePath: 'pages/tabbar/mall',
-      },
-      {
-        pagePath: 'pages/tabbar/game',
-        iconPath: '/static/images/game/game@2x.png',
-        selectedIconPath: '/static/images/game/game@2x.png',
-      },
-      {
-        iconPath: 'static/LibertyCats/type=off-2.png',
-        selectedIconPath: 'static/LibertyCats/type=on-2.png',
-        pagePath: 'pages/tabbar/discover',
-      },
-      {
-        iconPath: 'static/LibertyCats/type=off-3.png',
-        selectedIconPath: 'static/LibertyCats/type=on-3.png',
-        pagePath: 'pages/tabbar/my',
-      },
-    ],
-  },
+  ...(isH5SinglePageBuild
+    ? {}
+    : {
+        tabBar: {
+          color: '#999999',
+          selectedColor: '#FF6B03',
+          backgroundColor: '#FFFFFF',
+          borderStyle: 'black',
+          height: '50px',
+          fontSize: '10px',
+          iconWidth: '32px',
+          spacing: '3px',
+          list: [
+            {
+              iconPath: 'static/LibertyCats/type=off.png',
+              selectedIconPath: 'static/LibertyCats/type=on.png',
+              pagePath: 'pages/tabbar/home',
+            },
+            {
+              iconPath: 'static/LibertyCats/type=off-1.png',
+              selectedIconPath: 'static/LibertyCats/type=on-1.png',
+              pagePath: 'pages/tabbar/mall',
+            },
+            {
+              pagePath: 'pages/tabbar/game',
+              iconPath: '/static/images/game/game@2x.png',
+              selectedIconPath: '/static/images/game/game@2x.png',
+            },
+            {
+              iconPath: 'static/LibertyCats/type=off-2.png',
+              selectedIconPath: 'static/LibertyCats/type=on-2.png',
+              pagePath: 'pages/tabbar/discover',
+            },
+            {
+              iconPath: 'static/LibertyCats/type=off-3.png',
+              selectedIconPath: 'static/LibertyCats/type=on-3.png',
+              pagePath: 'pages/tabbar/my',
+            },
+          ],
+        },
+      }),
 })

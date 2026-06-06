@@ -36,6 +36,9 @@ export default ({ command, mode }) => {
 
   const { UNI_PLATFORM } = process.env
   console.log('UNI_PLATFORM -> ', UNI_PLATFORM) // 得到 mp-weixin, h5, app 等
+  const isH5SinglePageBuild = UNI_PLATFORM === 'h5' && command === 'build'
+  const h5SinglePagePath = 'pages/cats/social/detail'
+  process.env.UNI_H5_SINGLE_PAGE_BUILD = isH5SinglePageBuild ? 'true' : 'false'
 
   const env = loadEnv(mode, path.resolve(process.cwd(), 'env'))
   const {
@@ -57,12 +60,21 @@ export default ({ command, mode }) => {
       UniPages({
         exclude: ['**/components/**/**.*'],
         routeBlockLang: 'json5', // 虽然设了默认值，但是vue文件还是要加上 lang="json5", 这样才能很好地格式化
+        homePage: isH5SinglePageBuild ? h5SinglePagePath : ['pages/index', 'pages/index/index'],
         // homePage 通过 vue 文件的 route-block 的type="home"来设定
         // pages 目录为 src/pages，分包目录不能配置在pages目录下
         // subPackages: ['src/pages-sub'], // 是个数组，可以配置多个，但是不能为pages里面的目录
         dts: 'src/types/uni-pages.d.ts',
+        onAfterScanPages(ctx) {
+          if (!isH5SinglePageBuild) return
+
+          ctx.pagesPath = ctx.pagesPath.filter(
+            (page) => page.relativePath === `${h5SinglePagePath}.vue`,
+          )
+          ctx.subPagesPath = {}
+        },
       }),
-      UniLayouts(),
+      !isH5SinglePageBuild && UniLayouts(),
       UniPlatform(),
       UniManifest(),
       // UniXXX 需要在 Uni 之前引入
@@ -112,6 +124,7 @@ export default ({ command, mode }) => {
       // 打包分析插件，h5 + 生产环境才弹出
       UNI_PLATFORM === 'h5' &&
         mode === 'production' &&
+        !isH5SinglePageBuild &&
         visualizer({
           filename: './node_modules/.cache/visualizer/stats.html',
           open: true,
@@ -134,6 +147,7 @@ export default ({ command, mode }) => {
     define: {
       __UNI_PLATFORM__: JSON.stringify(UNI_PLATFORM),
       __VITE_APP_PROXY__: JSON.stringify(VITE_APP_PROXY),
+      __UNI_H5_SINGLE_PAGE_BUILD__: JSON.stringify(isH5SinglePageBuild),
     },
     css: {
       postcss: {

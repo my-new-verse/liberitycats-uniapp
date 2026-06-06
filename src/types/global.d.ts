@@ -14,6 +14,7 @@ declare const __UNI_PLATFORM__:
   | 'quickapp-webview-union'
 
 declare const __VITE_APP_PROXY__: 'true' | 'false'
+declare const __UNI_H5_SINGLE_PAGE_BUILD__: boolean
 
 declare namespace JSX {
   interface IntrinsicElements {

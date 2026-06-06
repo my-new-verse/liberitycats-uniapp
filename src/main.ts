@@ -11,7 +11,9 @@ export function createApp() {
   const app = createSSRApp(App)
   app.use(store)
   app.use(i18n)
-  app.use(routeInterceptor)
+  if (!__UNI_H5_SINGLE_PAGE_BUILD__) {
+    app.use(routeInterceptor)
+  }
   app.use(requestInterceptor)
   app.use(prototypeInterceptor)
   return {

@@ -172,6 +172,8 @@
   "social.detail.comment.more": "展開更多回覆",
   "social.detail.comment.reply_prefix": "回覆 ",
   "social.detail.comment.btn.send": "發表",
+  "social.detail.open_in_app": "APP內打開",
+  "social.detail.post.empty": "帖子不存在或已刪除",
   "social.detail.content.not_audit_seed_myself": "內容未稽核，僅自己可見",
   "social.index.post.report": "檢舉貼文",
   "social.index.post.report_comment": "檢舉評論",
