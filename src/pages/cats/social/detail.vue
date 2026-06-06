@@ -13,7 +13,7 @@
   <view>
     <custom-nav2 :title="t('social.detail.page_title')" pageBackgroundColor="#f7f6f4">
       <template #default>
-        <view class="container" v-if="hasPostDetail">
+        <view class="container" :class="{ h5Truncate: isH5 }" v-if="hasPostDetail">
           <view class="socialBox">
             <view class="socialItem">
               <view class="socialHead">
@@ -310,6 +310,18 @@
               </view>
             </template>
           </view>
+
+          <!-- #ifdef H5 -->
+          <view class="appGuideMask" @click="openPostInApp">
+            <view class="appGuideMaskInner">
+              <view class="appGuideTitle">{{ t('social.detail.guide.title') }}</view>
+              <view class="appGuideDesc">{{ t('social.detail.guide.desc') }}</view>
+              <view class="appGuideBtn" @click.stop="openPostInApp">
+                {{ t('social.detail.guide.btn') }}
+              </view>
+            </view>
+          </view>
+          <!-- #endif -->
         </view>
         <view
           v-else
@@ -321,7 +333,7 @@
       </template>
       <template #footer>
         <view
-          v-if="hasPostDetail"
+          v-if="hasPostDetail && !isH5"
           class="fixedCommentBox"
           style="padding-bottom: env(safe-area-inset-bottom)"
         >
@@ -331,12 +343,6 @@
         </view>
 
         <wd-backtop :scrollTop="scrollTop"></wd-backtop>
-
-        <!-- #ifdef H5 -->
-        <view class="openAppBtn" @click="openPostInApp">
-          {{ t('social.detail.open_in_app') }}
-        </view>
-        <!-- #endif -->
 
         <wd-popup
           v-model="commentPopupVisible"
@@ -527,6 +533,12 @@ const reportPost = (post: getCommunityPostListApiResponse['data'][number]) => {
 }
 
 const currentRequestId = ref('')
+
+// H5 环境标记：用于正文截断 + App 导流蒙层（仅 H5 生效）
+const isH5 = ref(false)
+// #ifdef H5
+isH5.value = true
+// #endif
 
 const handleH5AppOnlyAction = () => {
   // #ifdef H5
@@ -1780,6 +1792,74 @@ const handleOpenShare = (item: any) => {
   flex-direction: column;
   height: 100%;
   min-height: 100vh;
+}
+/* H5 内容截断：限制可视高度并裁剪正文与评论区，配合 App 导流蒙层 */
+.h5Truncate {
+  position: relative;
+  height: auto;
+  max-height: 78vh;
+  min-height: auto;
+  overflow: hidden;
+}
+/* App 导流蒙层（仅 H5）：渐变遮挡正文与评论区，引导下载/打开 App */
+.appGuideMask {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 20;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 52vh;
+  padding-bottom: calc(64rpx + env(safe-area-inset-bottom));
+  background: linear-gradient(
+    180deg,
+    rgba(247, 246, 244, 0) 0%,
+    rgba(247, 246, 244, 0.85) 38%,
+    rgba(247, 246, 244, 1) 70%
+  );
+
+  .appGuideMaskInner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    padding: 0 48rpx;
+  }
+
+  .appGuideTitle {
+    font-size: 32rpx;
+    font-weight: 600;
+    line-height: 44rpx;
+    color: #1a1a1a;
+    text-align: center;
+  }
+
+  .appGuideDesc {
+    margin-top: 12rpx;
+    font-size: 26rpx;
+    line-height: 36rpx;
+    color: #999999;
+    text-align: center;
+  }
+
+  .appGuideBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 560rpx;
+    height: 88rpx;
+    margin-top: 32rpx;
+    font-size: 30rpx;
+    font-weight: 600;
+    line-height: 88rpx;
+    color: #ffffff;
+    background: #ff6b03;
+    border-radius: 44rpx;
+    box-shadow: 0 8rpx 24rpx rgba(255, 107, 3, 0.28);
+  }
 }
 .socialBox {
   padding: 40rpx;
