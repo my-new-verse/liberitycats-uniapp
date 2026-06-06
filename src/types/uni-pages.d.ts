@@ -50,6 +50,7 @@ interface NavigateToOptions {
        "/pages/cats/pledge/index" |
        "/pages/cats/pledge/ranking" |
        "/pages/cats/posts/list" |
+       "/pages/cats/report/content" |
        "/pages/cats/settings/avatar" |
        "/pages/cats/settings/currency" |
        "/pages/cats/settings/index" |
