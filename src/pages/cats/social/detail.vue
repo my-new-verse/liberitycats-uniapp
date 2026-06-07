@@ -317,7 +317,7 @@
               <view class="appGuideTitle">{{ t('social.detail.guide.title') }}</view>
               <view class="appGuideDesc">{{ t('social.detail.guide.desc') }}</view>
               <view class="appGuideBtn" @click.stop="openPostInApp">
-                {{ t('social.detail.guide.btn') }}
+                {{ t('social.detail.open_in_app') }}
               </view>
             </view>
           </view>
@@ -1797,7 +1797,7 @@ const handleOpenShare = (item: any) => {
 .h5Truncate {
   position: relative;
   height: auto;
-  max-height: 78vh;
+  max-height: 92vh;
   min-height: auto;
   overflow: hidden;
 }
@@ -1811,13 +1811,13 @@ const handleOpenShare = (item: any) => {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  height: 52vh;
-  padding-bottom: calc(64rpx + env(safe-area-inset-bottom));
+  height: 32vh;
+  padding-bottom: calc(48rpx + env(safe-area-inset-bottom));
   background: linear-gradient(
     180deg,
     rgba(247, 246, 244, 0) 0%,
-    rgba(247, 246, 244, 0.85) 38%,
-    rgba(247, 246, 244, 1) 70%
+    rgba(247, 246, 244, 0.9) 45%,
+    rgba(247, 246, 244, 1) 72%
   );
 
   .appGuideMaskInner {
