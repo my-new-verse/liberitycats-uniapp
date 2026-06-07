@@ -73,7 +73,7 @@ const buildTabbar = () => {
   const config = systemStore.config
 
   // const gameEnable = config?.config?.common?.minigame_enable === '1'
-  const gameEnable = getServerOnOff('minigame_enable')
+  const gameEnable = getServerOnOff('minigame_enable', 'common')
   console.log('Game enable:', gameEnable)
 
   const baseList = [home, mall, discover, mine]
