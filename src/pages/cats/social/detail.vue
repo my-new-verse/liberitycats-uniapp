@@ -8,7 +8,9 @@
 </route>
 
 <template>
-  <page-meta :page-style="`overflow:${commentPopupVisible ? 'hidden' : 'visible'};`"></page-meta>
+  <page-meta
+    :page-style="`overflow:${commentPopupVisible || isH5 ? 'hidden' : 'visible'};`"
+  ></page-meta>
 
   <view>
     <custom-nav2 :title="t('social.detail.page_title')" pageBackgroundColor="#f7f6f4">
