@@ -314,7 +314,7 @@
           </view>
 
           <!-- #ifdef H5 -->
-          <view class="appGuideMask" @click="openPostInApp">
+          <view class="appGuideMask" @click="openPostInApp" @touchmove.stop.prevent>
             <view class="appGuideMaskInner">
               <view class="appGuideDesc">{{ t('social.detail.guide.desc') }}</view>
               <view class="appGuideBtn" @click.stop="openPostInApp">
@@ -1801,6 +1801,10 @@ const handleOpenShare = (item: any) => {
   max-height: 52vh;
   min-height: auto;
   overflow: hidden;
+
+  .commentBox {
+    overflow: hidden;
+  }
 }
 /* App 导流蒙层（仅 H5）：渐变遮挡正文与评论区，引导下载/打开 App */
 .appGuideMask {
