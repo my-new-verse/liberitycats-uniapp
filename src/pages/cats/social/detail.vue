@@ -541,6 +541,26 @@ const isH5 = ref(false)
 isH5.value = true
 // #endif
 
+type DetailPageOptions = Record<string, string | undefined>
+
+const getH5LocationOptions = (): DetailPageOptions => {
+  // #ifdef H5
+  if (typeof window === 'undefined') return {}
+
+  const searchList = [window.location.search, window.location.hash.split('?')[1] || '']
+
+  return searchList.reduce<DetailPageOptions>((acc, search) => {
+    const params = new URLSearchParams(search.replace(/^\?/, ''))
+    params.forEach((value, key) => {
+      if (acc[key] === undefined) acc[key] = value
+    })
+    return acc
+  }, {})
+  // #endif
+
+  return {}
+}
+
 const handleH5AppOnlyAction = () => {
   // #ifdef H5
   openPostInApp()
@@ -984,15 +1004,19 @@ const emotionList = ref<getCommunityEmotionListItem[]>([])
 
 const commentSearch = ref('latest')
 
-onLoad((options) => {
-  console.log('======', options)
+onLoad((options: DetailPageOptions) => {
+  const pageOptions: DetailPageOptions = {
+    ...getH5LocationOptions(),
+    ...options,
+  }
 
-  if (options.id) {
-    postId.value = Number(options.id)
+  if (pageOptions.id) {
+    const realPostId = Number(pageOptions.id)
+    postId.value = realPostId
     // uni.showLoading()
     Promise.allSettled([
       getCommentList(),
-      getCommunityPostDetailApi(Number(options.id))
+      getCommunityPostDetailApi(realPostId)
         .then((res) => {
           if (res.code !== 1 || !res.data || Array.isArray(res.data)) {
             postDetail.value = null
@@ -1008,11 +1032,13 @@ onLoad((options) => {
           postLoadError.value = t('common.request.error')
         }),
     ]).finally(() => {
-      if (options.showComment === 'true') {
+      if (pageOptions.showComment === 'true') {
         uni.hideLoading()
-        if (options.commentId) {
+        if (pageOptions.commentId) {
           setTimeout(() => {
-            if (commentList.value?.data?.length) scrollToAnchor('commentItem_' + options.commentId)
+            if (commentList.value?.data?.length) {
+              scrollToAnchor('commentItem_' + pageOptions.commentId)
+            }
             // uni.hideLoading()
           }, 1000)
         } else {
@@ -1034,6 +1060,9 @@ onLoad((options) => {
     getCommunityEmotionListByCategoryApi().then((res) => {
       emotionList.value = res.data
     })
+  } else {
+    postLoadError.value = t('social.detail.post.empty')
+    state.value = 'finished'
   }
 })
 // 获取帖子详情和评论列表 end
