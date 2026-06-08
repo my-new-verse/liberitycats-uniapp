@@ -103,7 +103,7 @@
             </scroll-view>
           </view>
           <!-- 群聊start -->
-          <!-- <view class="commonTitleBox">
+          <view class="commonTitleBox">
             <view class="title navTitle">
               <image src="/static/images/nft@2x.png" class="tb" alt="" />
               {{ t('home.title.groupChat') }}
@@ -111,12 +111,14 @@
           </view>
 
           <view class="activityBox" v-if="chatRoomList.length">
-            <image
+            <wd-img
               :src="getImageUrl(chatRoomList[0].banner_image)"
-              class="activityImg"
-              @click="toChatGroup()"
-            />
-          </view> -->
+              mode="widthFix"
+              width="100%"
+              height="100%"
+              custom-class="chatGroupImg"
+            ></wd-img>
+          </view>
           <view class="commonTitleBox">
             <view class="title navTitle">
               <image src="/static/images/nft@2x.png" class="tb" alt="" />
@@ -466,6 +468,10 @@ const toChatGroup = () => {
         .activityImg {
           width: 100%;
           height: 100%;
+          overflow: hidden;
+          border-radius: 40rpx;
+        }
+        .chatGroupImg {
           overflow: hidden;
           border-radius: 40rpx;
         }
