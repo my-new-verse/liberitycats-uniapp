@@ -9,6 +9,14 @@
       >
         {{ t('discover.quotes.tag.liberty_cats') }}
       </view>
+      <view
+        class="opItem"
+        :class="{ active: tabType === 'zhuange' }"
+        @click="changeTab('zhuange')"
+        v-if="getServerOnOff('enable_quote')"
+      >
+        {{ t('discover.quotes.tag.zhuange') }}
+      </view>
       <view class="opItem" :class="{ active: tabType === 'hot' }" @click="changeTab('hot')">
         {{ t('discover.quotes.tag.hot') }}
       </view>
@@ -95,46 +103,22 @@
         </view>
       </view>
     </view>
-    <!-- #ifdef APP-PLUS -->
     <view :style="{ paddingTop: cntPaddingTop + 36 + 20 + 'rpx' }">
-      <view
-        style="padding: 32rpx; background-color: #ffffff; border-radius: 32rpx"
-        v-show="tabType === 'liberty' && getServerOnOff('enable_quote')"
-      >
-        <view class="web" :style="{ height: webHeightPx ? webHeightPx + 'px' : undefined }">
-          <view
-            v-show="hasWebviewError"
-            style="height: 60%; margin-top: 128rpx; border-radius: 32rpx"
-          >
-            <NetworkError @refresh="handleWebviewReload" />
-          </view>
-          <view></view>
-        </view>
-      </view>
+      <QuoteWebview
+        ref="libertyWVRef"
+        type="liberty"
+        :url="getWebviewUrl('liberty')"
+        :heightPx="webHeightPx"
+        :active="tabType === 'liberty' && getServerOnOff('enable_quote')"
+      />
+      <QuoteWebview
+        ref="zhuangeWVRef"
+        type="zhuange"
+        :url="getWebviewUrl('zhuange')"
+        :heightPx="webHeightPx"
+        :active="tabType === 'zhuange' && getServerOnOff('enable_quote')"
+      />
     </view>
-    <!-- #endif -->
-    <!-- #ifdef H5 -->
-    <view v-if="tabType === 'liberty' && getServerOnOff('enable_quote')">
-      <view style="padding: 32rpx; background-color: #ffffff; border-radius: 32rpx">
-        <view class="web" :style="{ height: webHeightPx ? webHeightPx + 'px' : undefined }">
-          <web-view
-            :key="webviewKey"
-            v-show="tabType === 'liberty' && !hasWebviewError"
-            id="myWebView"
-            src="https://lcat8.com"
-            @load="handleWebviewLoaded"
-            @error="handleWebviewError"
-          ></web-view>
-          <view
-            v-show="hasWebviewError"
-            style="height: 60%; margin-top: 128rpx; border-radius: 32rpx"
-          >
-            <NetworkError @refresh="handleWebviewReload" />
-          </view>
-        </view>
-      </view>
-    </view>
-    <!-- #endif -->
   </view>
 </template>
 
@@ -148,7 +132,7 @@ import {
 } from '@/service/api/quotes'
 import { formatNumber, getImageUrl, getServerOnOff, openUrl } from '@/utils'
 import { t } from '@/locale'
-import NetworkError from '@/components/NetworkError.vue'
+import QuoteWebview from '@/components/quote-webview/quote-webview.vue'
 
 type LoadMoreState = 'loading' | 'finished' | 'error' | 'success'
 
@@ -182,10 +166,35 @@ const collectionDetail = ref<getCollectionDetailApiResponse>({
     floorPrice: '',
   },
 })
-let webviewembed: any = null
+type QuotesTabType = 'liberty' | 'zhuange' | 'hot'
+type WebviewTabType = 'liberty' | 'zhuange'
 
-const webRectOption = ref({})
-type QuotesTabType = 'liberty' | 'hot'
+// ========== WebView 子组件协调 ==========
+const libertyWVRef = ref<InstanceType<typeof QuoteWebview>>()
+const zhuangeWVRef = ref<InstanceType<typeof QuoteWebview>>()
+
+const LIBERTY_WEBVIEW_URL = 'https://lcat8.com'
+const ZHUANGE_WEBVIEW_URL = 'https://www.example.com/'
+
+const getWebviewUrl = (type: WebviewTabType): string => {
+  if (type === 'zhuange') return ZHUANGE_WEBVIEW_URL
+  return (getServerOnOff('quote_chart_url', 'common', true) as string) || LIBERTY_WEBVIEW_URL
+}
+
+/** 获取当前活跃 WebView 的组件 ref */
+const getActiveWebviewRef = () => {
+  if (tabType.value === 'liberty') return libertyWVRef.value
+  if (tabType.value === 'zhuange') return zhuangeWVRef.value
+  return null
+}
+
+/** 批量操作所有 WebView 组件 */
+const forEachWebviewRef = (fn: (wv: InstanceType<typeof QuoteWebview>) => void) => {
+  ;[libertyWVRef.value, zhuangeWVRef.value].forEach((r) => {
+    if (r) fn(r)
+  })
+}
+
 const tabType = ref<QuotesTabType>(getServerOnOff('enable_quote') ? 'liberty' : 'hot')
 watch(
   tabType,
@@ -198,7 +207,6 @@ watch(
   },
 )
 const webHeightPx = ref<number>(0)
-const webviewKey = ref(0)
 let isQuotesTabUnmounted = false
 const isQuotesParentTabActive = ref(false)
 
@@ -229,6 +237,11 @@ const createQuotesCache = (): QuotesCache => ({
 const quotesCacheMap = ref<Record<QuotesTabType, QuotesCache>>({
   hot: createQuotesCache(),
   liberty: {
+    ...createQuotesCache(),
+    state: 'finished',
+    hasInitialized: true,
+  },
+  zhuange: {
     ...createQuotesCache(),
     state: 'finished',
     hasInitialized: true,
@@ -273,7 +286,7 @@ const syncActiveCache = () => {
   emit('update:state', cache.state)
 }
 
-const measureRects = async () => {
+const measureRects = async (type?: WebviewTabType) => {
   return new Promise<{ webRect: any | null; tabbarRect: any | null }>((resolve) => {
     const query = uni.createSelectorQuery()
     let webRect: any | null = null
@@ -290,7 +303,8 @@ const measureRects = async () => {
       done()
     })
 
-    query.select('.web').boundingClientRect((rect) => {
+    const selector = type ? `.web-${type}` : '.web'
+    query.select(selector).boundingClientRect((rect) => {
       webRect = rect || null
       done()
     })
@@ -299,11 +313,11 @@ const measureRects = async () => {
   })
 }
 
-const updateWebHeight = async () => {
+const updateWebHeight = async (type?: WebviewTabType) => {
   await nextTick()
   const sys = uni.getSystemInfoSync()
   const { windowHeight, windowWidth } = sys
-  const { webRect, tabbarRect } = await measureRects()
+  const { webRect, tabbarRect } = await measureRects(type)
   if (!webRect) return
   const pxPerRpx = windowWidth / 750
   const yellowPaddingBottomPx = 32 * pxPerRpx
@@ -313,90 +327,6 @@ const updateWebHeight = async () => {
   const nextHeight = tabbarTopPx - extraGapPx - yellowPaddingBottomPx - webTopPx
   webHeightPx.value = Math.max(0, nextHeight)
   await nextTick()
-}
-
-const getCurrentPageWebview = () => {
-  // #ifdef APP-PLUS
-  const pages = getCurrentPages()
-  const page = pages[pages.length - 1]
-  return page?.$getAppWebview?.() || null
-  // #endif
-  return null
-}
-
-const removeWebviewListeners = (target?: any) => {
-  if (!target) return
-  target.onerror = null
-  target.onloaded = null
-  target.removeEventListener?.('loaded', handleWebviewLoaded)
-  target.removeEventListener?.('error', handleWebviewError)
-  target.removeEventListener?.('loaderror', handleWebviewError)
-  target.removeEventListener?.('receivedError', handleWebviewError)
-  target.removeEventListener?.('sslerror', handleWebviewError)
-  target.removeEventListener?.('httpError', handleWebviewError)
-}
-
-const getPageChildWebviews = () => {
-  // #ifdef APP-PLUS
-  const currentWebview = getCurrentPageWebview()
-  if (!currentWebview) return []
-  return currentWebview.children?.() || []
-  // #endif
-  return []
-}
-
-const hideAllPageWebviews = () => {
-  // #ifdef APP-PLUS
-  getPageChildWebviews().forEach((child: any) => {
-    try {
-      child.hide?.()
-    } catch (error) {
-      console.log('hide child webview failed', error)
-    }
-  })
-  // #endif
-}
-
-const destroyAllPageWebviews = () => {
-  // #ifdef APP-PLUS
-  const childWebviews = getPageChildWebviews()
-  childWebviews.forEach((child: any) => {
-    try {
-      removeWebviewListeners(child)
-      child.close?.()
-    } catch (error) {
-      console.log('close child webview failed', error)
-    }
-  })
-  if (webviewembed) {
-    removeWebviewListeners(webviewembed)
-    webviewembed = null
-  }
-  // #endif
-}
-
-const ensureLibertyWebviewReady = async () => {
-  // #ifdef APP-PLUS
-  if (!getServerOnOff('enable_quote')) return
-  if (!isQuotesParentTabActive.value || tabType.value !== 'liberty') return
-  if (webviewembed) {
-    setWebviewVisible(true)
-    return
-  }
-  await nextTick()
-  await updateWebHeight()
-  fixWebViewForApp()
-  // #endif
-}
-
-const setWebviewVisible = (visible: boolean) => {
-  // #ifdef APP-PLUS
-  if (visible && !hasWebviewError.value) {
-    webviewembed?.show?.()
-    return
-  }
-  hideAllPageWebviews()
-  // #endif
 }
 
 // 加载行情数据
@@ -474,136 +404,28 @@ watch(
   },
 )
 
-const hasWebviewError = ref(false)
-const handleWebviewLoaded = () => {
-  if (hasWebviewError.value) return
-  hasWebviewError.value = false
-}
-
-const handleWebviewError = (event?: any) => {
-  console.log('Webview load error, showing error component', event)
-  hasWebviewError.value = true
-}
-
-// 监听错误状态，自动切换 Webview 显隐
-watch(hasWebviewError, (isError) => {
-  // #ifdef APP-PLUS
-  if (isError) {
-    // 出现错误时隐藏 Webview
-    hideAllPageWebviews()
-  } else {
-    // 错误解除且当前处于 liberty 标签页时显示 Webview
-    if (tabType.value === 'liberty' && webviewembed) {
-      webviewembed.show()
-    }
-  }
-  // #endif
-})
-
-// 处理组件刷新按钮点击
-const handleWebviewReload = () => {
-  console.log('用户点击了网络错误页的刷新按钮')
-  // #ifdef APP-PLUS
-  destroyAllPageWebviews()
-  // #endif
-
-  // 重置错误状态并重新创建 WebView
-  hasWebviewError.value = false
-  webviewKey.value++
-  fixWebViewForApp()
-}
-
-const fixWebViewForApp = async () => {
-  // #ifdef APP-PLUS
-  await nextTick()
-  if (isQuotesTabUnmounted) return
-  hasWebviewError.value = false // 开始加载前重置错误状态
-
-  try {
-    const pages = getCurrentPages()
-    const page = pages[pages.length - 1]
-
-    const sys = uni.getSystemInfoSync()
-    const rpx2px = 750 / sys.windowWidth
-    const radiusPx = 32 / rpx2px
-
-    measureRects()
-      .then(({ webRect }) => {
-        if (isQuotesTabUnmounted) return
-        if (!webRect) {
-          console.log('Failed to get webRect')
-          hasWebviewError.value = true
-          return
-        }
-
-        destroyAllPageWebviews()
-
-        webRectOption.value = webRect
-
-        const wvStyle = {
-          top: webRect.top || 0,
-          left: webRect.left || 0,
-          width: webRect.width || 0,
-          height: webRect.height || 0,
-          borderRadius: radiusPx,
-          scalable: true,
-          progress: { color: '#ff6b03', height: '2px' },
-        }
-        const webviewUrl: string =
-          getServerOnOff('quote_chart_url', 'common', true) || 'https://lcat8.com'
-        // const webviewUrl: string = 'https://x.com/libertycats_app?s=21&t=WgFwIbY7xp0aZtdoT0lwqw'
-        console.log('-----', webviewUrl)
-        // 创建新的 webview 实例
-        webviewembed = plus.webview.create(webviewUrl, '', wvStyle)
-
-        // 设置错误处理 - 失败时直接显示错误组件，不重试
-        webviewembed.onerror = handleWebviewError
-        webviewembed.addEventListener?.('error', handleWebviewError)
-        webviewembed.addEventListener?.('loaderror', handleWebviewError)
-        webviewembed.addEventListener?.('receivedError', handleWebviewError)
-        webviewembed.addEventListener?.('sslerror', handleWebviewError)
-        webviewembed.addEventListener?.('httpError', handleWebviewError)
-        webviewembed.addEventListener?.('loaded', handleWebviewLoaded)
-
-        // 成功加载的处理
-        webviewembed.onloaded = () => {
-          console.log('Webview loaded successfully')
-          handleWebviewLoaded()
-        }
-
-        // 把 webview 追加到当前页面
-        const currentWebview = page.$getAppWebview()
-        if (currentWebview) {
-          currentWebview.append(webviewembed)
-        }
-
-        setWebviewVisible(tabType.value === 'liberty')
-      })
-      .catch((e) => {
-        console.log('webview创建失败', e)
-        hasWebviewError.value = true
-      })
-  } catch (e) {
-    console.log('webview修复最终失败', e)
-    hasWebviewError.value = true
-  }
-  // #endif
-}
-
 const changeTab = async (type: QuotesTabType) => {
   if (tabType.value === type) return
   await saveCurrentScrollTop()
+
+  // 隐藏所有 WebView
+  forEachWebviewRef((wv) => wv.hide())
+
   tabType.value = type
   syncActiveCache()
   restoreScrollTop(type)
-  if (type === 'liberty') {
-    await updateWebHeight()
+
+  if (type === 'liberty' || type === 'zhuange') {
+    await updateWebHeight(type as WebviewTabType)
   }
   await nextTick()
-  if (type === 'liberty' && getServerOnOff('enable_quote')) {
-    await ensureLibertyWebviewReady()
-  } else {
-    hideAllPageWebviews()
+
+  if ((type === 'liberty' || type === 'zhuange') && getServerOnOff('enable_quote')) {
+    const wvRef = getActiveWebviewRef()
+    if (wvRef) {
+      await wvRef.create()
+      wvRef.show()
+    }
   }
   if (type === 'hot' && !quotesCacheMap.value.hot.hasInitialized) {
     loadQuotes(1, 'hot')
@@ -646,19 +468,34 @@ onMounted(async () => {
   uni.$on('discoverActiveTabChange', (tabName: string) => {
     isQuotesParentTabActive.value = tabName === t('discover.tabs.quotes')
     if (!isQuotesParentTabActive.value) {
-      hideAllPageWebviews()
+      forEachWebviewRef((wv) => wv.hide())
       return
     }
-    ensureLibertyWebviewReady()
+    const wvRef = getActiveWebviewRef()
+    if (wvRef) {
+      wvRef.create().then(() => wvRef.show())
+    }
   })
   uni.$on('discoverPageVisibilityChange', (visible: boolean) => {
     if (visible) {
-      if (isQuotesParentTabActive.value) ensureLibertyWebviewReady()
+      if (isQuotesParentTabActive.value) {
+        const wvRef = getActiveWebviewRef()
+        if (wvRef) wvRef.create().then(() => wvRef.show())
+      }
       return
     }
-    destroyAllPageWebviews()
+    forEachWebviewRef((wv) => wv.destroy())
   })
-  await ensureLibertyWebviewReady()
+
+  // 初始就绪检查：先测量高度，再创建 WebView
+  if (tabType.value === 'liberty' || tabType.value === 'zhuange') {
+    await updateWebHeight(tabType.value as WebviewTabType)
+  }
+  const wvRef = getActiveWebviewRef()
+  if (wvRef) {
+    await wvRef.create()
+    wvRef.show()
+  }
 })
 
 // 组件卸载时移除事件监听
@@ -666,7 +503,7 @@ onMounted(async () => {
 onUnmounted(() => {
   console.log('destroyWebView ========')
   isQuotesTabUnmounted = true
-  destroyAllPageWebviews()
+  forEachWebviewRef((wv) => wv.destroy())
   uni.$off('discoverActiveTabChange')
   uni.$off('discoverPageVisibilityChange')
   uni.$off('refreshQuotesTab')
@@ -675,10 +512,13 @@ onUnmounted(() => {
 onShow(() => {
   syncActiveCache()
   if (!isQuotesParentTabActive.value) {
-    hideAllPageWebviews()
+    forEachWebviewRef((wv) => wv.hide())
     return
   }
-  ensureLibertyWebviewReady()
+  const wvRef = getActiveWebviewRef()
+  if (wvRef) {
+    wvRef.create().then(() => wvRef.show())
+  }
 })
 </script>
 
@@ -842,19 +682,6 @@ onShow(() => {
   color: #ff6b03;
 }
 
-.web {
-  position: relative;
-  padding: 0;
-  border-radius: 32rpx;
-  overflow: hidden;
-
-  web-view {
-    width: 100%;
-    height: 100%;
-    border-radius: 24rpx;
-    overflow: hidden;
-  }
-}
 .socialOpBox {
   position: fixed;
   width: 100vw;
