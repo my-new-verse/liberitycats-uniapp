@@ -279,7 +279,18 @@ const handleAvatarClick = (memberId: number | undefined) => {
 @import '/src/style/base';
 @import '/src/style/social';
 
+// 聊天字体混入
+@mixin chat-font {
+  font-size: 28rpx;
+  font-family: Alibaba PuHuiTi2 !important;
+}
+@mixin chat-font-important {
+  font-size: 28rpx !important;
+  font-family: Alibaba PuHuiTi2 !important;
+}
+
 :deep(.zh-Hans, .zh-Hant) {
+  @include chat-font-important;
   .wd-backtop__backicon {
     font-family: wd-icons !important;
   }
@@ -296,15 +307,18 @@ const handleAvatarClick = (memberId: number | undefined) => {
   display: flex;
   flex-direction: column;
   padding: 12rpx;
-  font-family:
-    Alimama FangYuanTi VF,
-    sans-serif;
+  @include chat-font-important;
+
+  // 覆盖全局 .zh-Hans * 的 Alimama FangYuanTi VF
+  :deep(*) {
+    font-family: Alibaba PuHuiTi2 !important;
+  }
 }
 .chat-time {
   padding: 4rpx 0rpx;
   text-align: center;
   // font-size: 22rpx;
-  font-size: 24rpx;
+  @include chat-font;
   color: #aaaaaa;
 }
 .chat-container {
@@ -331,7 +345,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
   margin: 0rpx 15rpx;
 }
 .chat-user-name {
-  font-size: 24rpx;
+  @include chat-font;
   color: #888888;
 }
 .chat-text-container {
@@ -348,7 +362,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
   /* 他人消息气泡圆角：左上角为小圆角，其余大圆角 */
   border-radius: 8rpx 30rpx 30rpx 30rpx;
   // font-size: 26rpx;
-  font-size: 24rpx;
+  @include chat-font;
   line-height: 1.5;
   color: #1a1a1a;
   box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.03);
@@ -372,7 +386,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
 }
 .chat-text {
   // font-size: 28rpx;
-  font-size: 24rpx;
+  @include chat-font;
   /* #ifndef APP-NVUE */
   word-break: break-all;
   /* #endif */
@@ -409,7 +423,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
       }
 
       .system-text {
-        font-size: 24rpx;
+        @include chat-font;
         color: #999;
         text-align: center;
         line-height: 1.5;
@@ -431,7 +445,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
 
       .msg-time {
         // font-size: 20rpx;
-        font-size: 24rpx;
+        @include chat-font;
         color: #bbb;
       }
     }
@@ -485,7 +499,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
     }
 
     .u-name {
-      font-size: 24rpx;
+      @include chat-font;
       color: #888;
       margin-bottom: 8rpx;
       margin-left: 8rpx;
@@ -500,7 +514,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
         padding: 20rpx 28rpx;
         /* 他人消息气泡圆角：左上角为小圆角，其余大圆角 */
         border-radius: 8rpx 30rpx 30rpx 30rpx;
-        font-size: 24rpx;
+        @include chat-font;
         line-height: 1.5;
         color: #1a1a1a;
         box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.03);
@@ -593,7 +607,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
       }
 
       .msg-time {
-        font-size: 24rpx;
+        @include chat-font;
         color: #bbb;
         margin-top: 12rpx;
         display: block;
@@ -630,20 +644,20 @@ const handleAvatarClick = (memberId: number | undefined) => {
     }
 
     .reaction-emoji {
-      font-size: 24rpx;
+      @include chat-font;
       line-height: 1;
     }
 
     .reaction-count {
       // font-size: 22rpx;
-      font-size: 24rpx;
+      @include chat-font;
       line-height: 1;
     }
 
     .message-status {
       margin-top: 10rpx;
       // font-size: 22rpx;
-      font-size: 24rpx;
+      @include chat-font;
       color: #999;
 
       &.failed {
@@ -666,7 +680,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
     }
 
     .message-resend-icon {
-      font-size: 24rpx;
+      @include chat-font;
       line-height: 1;
       font-weight: 600;
     }

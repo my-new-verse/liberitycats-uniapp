@@ -74,7 +74,7 @@
             <template #prefix>
               <wd-img src="/static/images/notice_outlined.png" size="22px"></wd-img>
             </template>
-            <view style="margin-left: 24rpx; font-size: 24rpx">{{ currentAnnouncementText }}</view>
+            <view class="current-announcement-text">{{ currentAnnouncementText }}</view>
             <template #suffix>
               <wd-icon
                 @click.stop="goToCurrentAnnouncementDetail"
@@ -2203,7 +2203,10 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
     font-family: Alibaba PuHuiTi2 !important;
   }
 }
-
+// 覆盖全局 .zh-Hans * 的 Alimama FangYuanTi VF
+:deep(*) {
+  font-family: Alibaba PuHuiTi2 !important;
+}
 .page {
   height: 100vh;
   overflow: hidden;
@@ -2304,7 +2307,7 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
             }
 
             .sub-title {
-              font-size: 22rpx;
+              font-size: 28rpx;
               color: #1a1a1a;
               color: #fff;
             }
@@ -3303,5 +3306,10 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
 }
 ::v-deep .z-paging-content {
   padding-top: inherit !important;
+}
+.current-announcement-text {
+  margin-left: 24rpx;
+  font-size: 28rpx !important;
+  font-family: Alibaba PuHuiTi2 !important;
 }
 </style>
