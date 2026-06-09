@@ -1760,17 +1760,17 @@ const handleOpenShare = (item: any) => {
           .likeBox {
             display: flex;
             align-items: center;
-            // justify-content: center;
+            position: relative;
             .zanWrapper {
               width: 70rpx !important;
               height: 70rpx !important;
-              position: relative !important;
+              position: absolute !important;
+              left: 50%;
+              top: 50%;
+              transform: translate(-50%, -50%);
               display: inline-flex !important;
               align-items: center;
               justify-content: center;
-              flex-shrink: 0 !important;
-              vertical-align: middle;
-              margin: 0 -22rpx !important;
               overflow: visible !important;
             }
             .Icon {
