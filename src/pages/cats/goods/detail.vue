@@ -30,7 +30,8 @@
       </view>
       <view class="info">
         <view class="title">{{ goodsDetail.i18n.title }}</view>
-        <view class="priceBox">
+        <!-- 普通价格 -->
+        <view class="priceBox" v-if="!nftDiscountEnabled">
           <view class="icon">
             <image :src="getImageUrl(goodsDetail.currency.icon)" alt="" />
           </view>
@@ -38,6 +39,42 @@
             {{ goodsDetail.sku_maps[goodsDetail.default_selected_sku_key.join(',')].price }}
           </view>
           <view class="unit">{{ goodsDetail.currency.unit }}</view>
+        </view>
+
+        <!-- NFT 折扣价格 -->
+        <view class="priceBox isSupporter" v-else>
+          <view class="discountLeft">
+            <view class="price">
+              <text class="symbol">{{ currentSku.currency.symbol }}</text>
+              <text class="num">{{ currentSku.final_price || currentSku.price }}</text>
+              <text class="unit">{{ currentSku.currency.unit }}</text>
+            </view>
+            <view class="discountBottom">
+              <view class="originalPrice">
+                {{ currentSku.currency.symbol }}{{ currentSku.original_price }}
+              </view>
+              <view class="saveTag" v-if="currentSku.saved_amount">
+                {{ t('goods.detail.save') }} {{ currentSku.currency.symbol
+                }}{{ currentSku.saved_amount }}
+              </view>
+            </view>
+          </view>
+          <view class="discountRight">
+            <view
+              v-if="goodsDetail.nft_discount.level.level > 0"
+              class="level"
+              :class="{
+                ['level' + goodsDetail.nft_discount.level.level]:
+                  goodsDetail.nft_discount.level.level > 0,
+              }"
+              @click="showMemberLevelPopup"
+            >
+              <image :src="getImageUrl(goodsDetail.nft_discount?.level?.icon)" mode="widthFix" />
+            </view>
+            <view class="supporterTag">
+              {{ goodsDetail.nft_discount.tag.text }}
+            </view>
+          </view>
         </view>
       </view>
 
@@ -124,6 +161,7 @@ import {
   checkSkuQuantityApi,
   getGoodsDetailApi,
   NewGoodsDetailResponse,
+  SkuItemResponse,
   CheckSkuQuantityRequest,
   addFavoriteApi,
 } from '@/service/api/goods'
@@ -190,6 +228,15 @@ const goodsDetail = ref<NewGoodsDetailResponse>({
     goods_id: 0,
   },
 })
+
+const currentSku = computed(() => {
+  const key = goodsDetail.value.default_selected_sku_key.join(',')
+  return goodsDetail.value.sku_maps[key] || ({} as SkuItemResponse)
+})
+
+const nftDiscountEnabled = computed(
+  () => goodsDetail.value.nft_discount?.enabled && goodsDetail.value.nft_discount?.discount_applied,
+)
 
 onLoad((options) => {
   if ('goods_id' in options) {
@@ -428,6 +475,112 @@ const commonSoon = () => {
       font-style: normal;
       font-weight: 400;
       line-height: 33rpx;
+    }
+
+    &.isSupporter {
+      display: flex;
+      align-items: center;
+      padding: 20rpx 24rpx;
+      background: #fafafa;
+      border: 2rpx solid #e8e8e8;
+      border-radius: 16rpx;
+      .discountLeft {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        flex-shrink: 0;
+        gap: 8rpx;
+        padding-right: 20rpx;
+        margin: 0 30rpx;
+        .price {
+          display: flex;
+          align-items: baseline;
+          line-height: 1;
+          .symbol {
+            font-size: 45rpx;
+            font-weight: 800;
+          }
+          .num {
+            font-size: 70rpx;
+            font-weight: 800;
+            margin-left: 5rpx;
+          }
+          .unit {
+            font-size: 28rpx;
+            font-weight: 600;
+            margin-left: 8rpx;
+          }
+        }
+        .discountBottom {
+          display: flex;
+          align-items: center;
+          gap: 8rpx;
+          .originalPrice {
+            font-size: 24rpx;
+            font-weight: 500;
+            line-height: 1;
+            color: #999;
+            text-decoration: line-through;
+            white-space: nowrap;
+          }
+          .saveTag {
+            padding: 4rpx 8rpx;
+            font-size: 24rpx;
+            font-weight: 700;
+            line-height: 1;
+            color: #ff6b03;
+            background: #fff1e5;
+            border-radius: 8rpx;
+            white-space: nowrap;
+          }
+        }
+      }
+      .discountRight {
+        border-left: 2rpx solid #e5e5e5;
+        flex: 1;
+        min-width: 0;
+        padding-left: 20rpx;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8rpx;
+        // margin: 0 30rpx;
+        .level {
+          height: 56rpx;
+          margin: 8rpx 0;
+          image {
+            width: 100%;
+            height: 100%;
+          }
+        }
+        .level1 {
+          width: 112rpx;
+        }
+        .level2 {
+          width: 202rpx;
+        }
+        .level3 {
+          width: 182rpx;
+        }
+        .level4 {
+          width: 248rpx;
+        }
+        .supporterTag {
+          padding: 8rpx 16rpx;
+          font-size: 24rpx;
+          font-weight: 500;
+          line-height: 1.2;
+          color: #999;
+          font-family:
+            Alimama FangYuanTi VF,
+            sans-serif;
+          //   border-radius: 8rpx;
+          white-space: nowrap;
+          text-align: center;
+        }
+      }
     }
   }
 }

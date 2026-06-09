@@ -143,7 +143,13 @@
                   </view>
                 </view>
                 <view class="commentCntBox">
-                  <view class="nickname">{{ item._nickname }}</view>
+                  <view class="nickname">
+                    <text class="nickname">{{ item._nickname }}</text>
+
+                    <text class="authorTag" v-if="item.member_id === postDetail.member_id">
+                      {{ t('social.detail.authorTag') }}
+                    </text>
+                  </view>
                   <view class="commentCnt">
                     <view class="socialTips" v-if="item.is_approved === 0">
                       {{ t('social.detail.content.not_audit_seed_myself') }}
@@ -224,6 +230,9 @@
                             @click.stop="debouncedToUserHomeRef(reply.member.id)"
                           >
                             <text class="nickname">{{ reply.member.nickname }}</text>
+                            <text class="authorTag" v-if="reply.member_id === postDetail.member_id">
+                              {{ t('social.detail.authorTag') }}
+                            </text>
                           </view>
                         </view>
 
@@ -1709,6 +1718,7 @@ const handleOpenShare = (item: any) => {
         font-weight: 400;
         line-height: 36rpx;
         color: #999999;
+        margin-bottom: 6rpx;
       }
       .commentCnt {
         font-size: 28rpx;
@@ -1826,6 +1836,17 @@ const handleOpenShare = (item: any) => {
 }
 .replyListCnt {
   margin-top: 12rpx;
+}
+.authorTag {
+  padding: 6rpx 10rpx;
+  font-size: 16rpx;
+  margin-left: 8rpx;
+  font-weight: 400;
+  line-height: 1;
+  color: #ff6b03;
+  background: #fff1e5;
+  border-radius: 32rpx;
+  vertical-align: middle;
 }
 .replyItem {
   margin-bottom: 16rpx;

@@ -159,6 +159,7 @@
 
   "social.detail.page_title": "社交詳情",
   "social.detail.add_custom_emoji_max5": "新增自訂表情（最多5個）",
+  "social.detail.authorTag": "作者",
   "social.detail.comment_title": "評論列表",
   "social.detail.comment.filter.latest": "最新",
   "social.detail.comment.filter.hot": "熱門",
@@ -274,6 +275,7 @@
   "goods.detail.add_cart": "加入購物車",
   "goods.detail.quantity": "數量",
   "goods.detail.sell_out": "即將開售",
+  "goods.detail.save": "省",
   "goods.detail.sell_out.click_msg": "快來了，敬請期待喵～",
 
   "pay.index.page_title": "付款",

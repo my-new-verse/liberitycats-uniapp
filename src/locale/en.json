@@ -156,6 +156,7 @@
 
   "social.detail.page_title": "Social Detail",
   "social.detail.add_custom_emoji_max5": "Add Custom Emoji (Max 5)",
+  "social.detail.authorTag": "Author",
   "social.detail.comment_title": "Comments",
   "social.detail.comment.filter.latest": "Latest",
   "social.detail.comment.filter.hot": "Hot",
@@ -264,6 +265,7 @@
   "goods.detail.add_cart": "Add to Cart",
   "goods.detail.quantity": "Quantity",
   "goods.detail.sell_out": "Coming for sale soon",
+  "goods.detail.save": "Save",
   "goods.detail.sell_out.click_msg": "Coming soon, please stay tuned meow~",
 
   "pay.index.page_title": "Pay",

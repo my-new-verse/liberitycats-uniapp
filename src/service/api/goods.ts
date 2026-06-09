@@ -11,6 +11,9 @@ type GoodsI18n = {
 export interface SkuItemResponse {
   id: number
   price: string
+  original_price: string
+  final_price: string
+  saved_amount: string
   inventory: number
   sku_cover: string
   goods_id: number
@@ -36,6 +39,22 @@ type SkuAttributeItem = {
   selectedKey: string
 }
 
+export interface NftDiscountTag {
+  text: string
+  color: string
+}
+
+export interface NftDiscount {
+  enabled: boolean
+  mode: 'uniform' | 'level'
+  discount_applied: boolean
+  discount_rate: number
+  member_has_nft: boolean
+  member_level?: string
+  level?: number
+  tag: NftDiscountTag
+}
+
 export interface NewGoodsDetailResponse {
   id: number
   category_id: number
@@ -55,6 +74,7 @@ export interface NewGoodsDetailResponse {
   default_selected_sku_key: string[]
   total_inventory: number
   is_favorite: number
+  nft_discount: NftDiscount
 }
 
 // 获取商品详情 API 的功能。
