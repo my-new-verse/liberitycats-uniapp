@@ -39,6 +39,7 @@
   "common.no_data": "沒有數據",
   "common.request.error": "請求錯誤",
   "common.request.network.error": "網絡錯誤,請切換網絡再試",
+  "common.request.network.disconnected": "似乎已斷開與互聯網的連接",
   "common.network.error.title": "網絡不太順暢",
   "common.network.error.description": "請檢查網絡連接",
   "common.network.error.refresh": "刷新",

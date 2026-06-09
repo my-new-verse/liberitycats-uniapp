@@ -39,6 +39,7 @@
   "common.no_data": "无数据",
   "common.request.error": "请求错误",
   "common.request.network.error": "网络错误,请切换网络再试",
+  "common.request.network.disconnected": "似乎已断开与互联网的连接",
   "common.network.error.title": "网络不太顺畅",
   "common.network.error.description": "请检查网络连接",
   "common.network.error.refresh": "刷新",

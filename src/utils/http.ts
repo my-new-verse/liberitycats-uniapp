@@ -44,9 +44,24 @@ export const http = <T>(options: CustomRequestOptions) => {
       // 响应失败
       fail(err) {
         console.error('uni.request fail->', err, 'options==========', options)
-        uni.showToast({
-          icon: 'none',
-          title: t('common.request.network.error'),
+        // 通过 uni.getNetworkType 判断是否为断网
+        uni.getNetworkType({
+          success: (res) => {
+            const isDisconnected = res.networkType === 'none'
+            uni.showToast({
+              icon: 'none',
+              title: isDisconnected
+                ? t('common.request.network.disconnected')
+                : t('common.request.network.error'),
+            })
+          },
+          fail: () => {
+            // getNetworkType 失败时回退到原提示
+            uni.showToast({
+              icon: 'none',
+              title: t('common.request.network.error'),
+            })
+          },
         })
         reject(err)
       },

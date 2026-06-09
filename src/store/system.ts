@@ -14,7 +14,7 @@ export const useSystemStore = defineStore('system', {
 
   getters: {
     // 是否已就绪（兼容旧 .ready 引用）
-    ready: (state) => state.configReady,
+    // ready: (state) => state.configReady,
   },
 
   actions: {

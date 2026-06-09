@@ -961,7 +961,7 @@ export const getServerOnOff = (key: string, platformKey?: string, getValue?: boo
   // console.log('platformKey:', platformKey2, systemInfo)
   return getValue
     ? systemConfig?.[platformKey2]?.[key]
-    : systemConfig?.[platformKey2]?.[key] !== '0'
+    : (systemConfig?.[platformKey2]?.[key] ?? '0') !== '0'
 }
 export const getChatImageUrl = (
   path: string,
