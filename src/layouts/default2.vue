@@ -30,8 +30,10 @@ import AppUpdatePopup from '@/components/AppUpdatePopup.vue'
 import { openUrl } from '@/utils'
 import buildInfo from '@/../build-info.json'
 import { getSystemConfigApiV2 } from '@/service/api/user'
+import { useSystemStore } from '@/store/system'
 import { t } from '@/locale'
 const version = `${buildInfo.version}`
+const systemStore = useSystemStore()
 
 const themeVars: ConfigProviderThemeVars = {
   // 主题变量配置
@@ -65,8 +67,8 @@ watch(
   { immediate: true },
 )
 
-// 更新提示相关逻辑
-const systemConfig = ref(uni.getStorageSync('systemConfigV2'))
+// 更新提示相关逻辑：从 systemStore 响应式读取
+const systemConfig = computed(() => systemStore.config)
 
 onShow(() => {
   const systemInfo = uni.getSystemInfoSync()
@@ -78,6 +80,7 @@ onShow(() => {
     // update 为空表示已是最新版本，不再展示弹窗
     systemConfig.value = { ...systemConfig.value, update: newUpdate ?? null }
     uni.setStorageSync('systemConfigV2', systemConfig.value)
+    systemStore.setConfig(systemConfig.value)
   })
 })
 

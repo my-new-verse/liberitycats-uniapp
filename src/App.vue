@@ -75,6 +75,7 @@ onLaunch(() => {
       'user_login_agreement,user_privacy_policy,user_pledge_nft_agreement,user_pledge_nft_guide,user_pledge_nft_popup_content,user_redeem_nft_popup_content,virtual_email_intro',
     ).then((res) => {
       uni.setStorageSync('agreements', res.data)
+      systemStore.setAgreements(res.data)
     })
   })
 

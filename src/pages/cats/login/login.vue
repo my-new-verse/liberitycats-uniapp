@@ -82,7 +82,14 @@
 
 <script lang="ts" setup>
 import i18n, { t } from '@/locale/index'
-import { toUrl, todoMsg, navigateBack, getServerOnOff } from '@/utils'
+import {
+  toUrl,
+  todoMsg,
+  navigateBack,
+  getServerOnOff,
+  waitSystemConfig,
+  waitAgreements,
+} from '@/utils'
 import { useToast } from 'wot-design-uni'
 import { getAgreementsByKeys, QuoteKeyAgreementList } from '@/service/api/agreement'
 import { getDiscordOauthUriApi } from '@/service/api/discord'
@@ -106,7 +113,7 @@ const { safeAreaInsets } = uni.getSystemInfoSync()
 const cntTop = ref<string>('')
 const navTop = ref<string>('')
 
-onMounted(() => {
+onMounted(async () => {
   // #ifdef H5
   cntTop.value = (safeAreaInsets?.top || 0) / uni.rpx2px(1) + 'rpx'
   navTop.value = (safeAreaInsets?.top || 0) / uni.rpx2px(1) + 28 + 'rpx'
@@ -124,8 +131,9 @@ onMounted(() => {
   console.log('是否iOS:', isIOS.value)
   // #endif
 
-  // 加载用户协议
-  agreementsMap.value = uni.getStorageSync('agreements')
+  // 确保 systemConfig 和 agreements 就绪（未就绪时自动补偿获取）
+  const [, agreementsData] = await Promise.all([waitSystemConfig(), waitAgreements()])
+  agreementsMap.value = agreementsData
 
   inputEmail.value = uni.getStorageSync('login_email') || ''
 })

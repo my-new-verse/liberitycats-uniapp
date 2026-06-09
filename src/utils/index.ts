@@ -2,6 +2,52 @@ import { pages, subPackages, tabBar } from '@/pages.json'
 import { isMp } from './platform'
 import { t } from '@/locale'
 import CryptoJS from 'crypto-js'
+import { useSystemStore } from '@/store/system'
+
+/**
+ * 获取 systemConfigV2.config
+ * 优先从 Pinia store 读取（响应式，App.vue setConfig 后立即可用），
+ * 回退到 uni.getStorageSync（兼容 store 未初始化的场景）
+ */
+const getSystemConfig = () => {
+  try {
+    const systemStore = useSystemStore()
+    if (systemStore.configReady && systemStore.config) {
+      return systemStore.config.config || {}
+    }
+  } catch {
+    // store 未初始化（如 pinia 还没装好），回退 storage
+  }
+  return uni.getStorageSync('systemConfigV2')?.config || {}
+}
+
+/**
+ * 确保 systemConfig 就绪，如果未就绪则补偿获取
+ * 底层调用 systemStore.ensureConfig()
+ */
+export const waitSystemConfig = (): Promise<any> => {
+  try {
+    const systemStore = useSystemStore()
+    return systemStore.ensureConfig()
+  } catch {
+    // pinia 未就绪，回退等待 storage
+    return Promise.resolve(uni.getStorageSync('systemConfigV2'))
+  }
+}
+
+/**
+ * 确保 agreements 就绪，如果未就绪则补偿获取
+ * 底层调用 systemStore.ensureAgreements()
+ */
+export const waitAgreements = (): Promise<any> => {
+  try {
+    const systemStore = useSystemStore()
+    return systemStore.ensureAgreements()
+  } catch {
+    // pinia 未就绪，回退等待 storage
+    return Promise.resolve(uni.getStorageSync('agreements'))
+  }
+}
 
 let navigationLocked = false
 let navigationUnlockTimer: ReturnType<typeof setTimeout> | null = null
@@ -907,7 +953,7 @@ export const formatNumber = (num: number | string, digits = 2) => {
  * @returns
  */
 export const getServerOnOff = (key: string, platformKey?: string, getValue?: boolean) => {
-  const systemConfig = uni.getStorageSync('systemConfigV2')?.config || {}
+  const systemConfig = getSystemConfig()
   const systemInfo = uni.getSystemInfoSync()
   const isIOS =
     systemInfo.platform?.toLowerCase() === 'ios' || systemInfo.osName?.toLowerCase() === 'ios'
