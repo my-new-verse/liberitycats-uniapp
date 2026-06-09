@@ -512,7 +512,8 @@ const loadAdminMembers = async () => {
   const roomId = routeRoomId.value
   if (!roomId) return
 
-  const adminRes = await getChatRoomMembersApi(roomId, 'moderator', 1, MEMBER_PAGE_LIMIT)
+  const keyword = getMemberSearchKeyword()
+  const adminRes = await getChatRoomMembersApi(roomId, 'moderator', 1, MEMBER_PAGE_LIMIT, keyword)
   if (adminRes.code === 1 && adminRes.data.data) {
     adminList.value = normalizeMemberList(adminRes.data.data)
     if (!isSearching.value) {
@@ -552,7 +553,8 @@ const loadMemberPage = async (reset = false) => {
 
   const nextPage = reset ? 1 : memberCurrentPage.value + 1
   const keyword = getMemberSearchKeyword()
-  const roleFilter = 'member'
+  // 搜索时不传 role_filter，让 API 返回所有角色（member + moderator）；非搜索时只查 member
+  const roleFilter = keyword ? undefined : 'member'
   const requestLimit = keyword ? MEMBER_SEARCH_LIMIT : MEMBER_PAGE_LIMIT
   if (!reset && !memberHasMore.value) return
   const currentRequestId = ++memberLoadRequestId.value
@@ -596,7 +598,9 @@ const loadMemberPage = async (reset = false) => {
 }
 
 const reloadCurrentMemberLists = async () => {
-  if (!searchKeyword.value.trim()) {
+  // 非搜索时：分别加载管理员和普通成员，分组展示
+  // 搜索时：loadMemberPage 不传 role_filter，已包含所有角色，无需再合并
+  if (!isSearching.value) {
     await loadAdminMembers()
   }
   await loadMemberPage(true)
