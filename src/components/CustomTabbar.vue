@@ -104,6 +104,7 @@ const updateCurrentTab = () => {
 watch(
   () => systemStore.ready,
   (ready) => {
+    console.log('------ ready change', ready)
     if (ready) {
       buildTabbar()
       updateCurrentTab()
@@ -112,9 +113,26 @@ watch(
   { immediate: true },
 )
 
+// config 变化时也要重建 tabbar（例如 ready 先以不完整 config 变为 true，后续完整 config 到达）
+watch(
+  () => systemStore.config,
+  () => {
+    buildTabbar()
+    updateCurrentTab()
+  },
+)
+
 onShow(() => {
   updateCurrentTab()
 })
+
+watch(
+  () => tabbarList.value,
+  (value) => {
+    console.log('--------tabbarList', value)
+  },
+  { immediate: true },
+)
 </script>
 
 <style lang="scss" scoped>

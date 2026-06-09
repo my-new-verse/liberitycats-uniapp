@@ -76,11 +76,10 @@ onShow(() => {
   const platform = systemInfo.platform?.toLowerCase() || systemInfo.osName?.toLowerCase()
   getSystemConfigApiV2(version, platform).then((res) => {
     const newUpdate = res.data?.update
-
-    // update 为空表示已是最新版本，不再展示弹窗
-    systemConfig.value = { ...systemConfig.value, update: newUpdate ?? null }
-    uni.setStorageSync('systemConfigV2', systemConfig.value)
-    systemStore.setConfig(systemConfig.value)
+    // 合并 update 字段到现有 config，避免覆盖完整 config
+    const mergedConfig = { ...(systemStore.config || {}), update: newUpdate ?? null }
+    uni.setStorageSync('systemConfigV2', mergedConfig)
+    systemStore.setConfig(mergedConfig)
   })
 })
 
