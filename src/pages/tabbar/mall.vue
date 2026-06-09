@@ -32,6 +32,7 @@
       <image src="/static/images/search.png" mode="widthFix" />
     </view>
     <wd-tabs
+      v-if="tabList.length > 0"
       v-model="currentTabName"
       swipeable
       slidable="always"
