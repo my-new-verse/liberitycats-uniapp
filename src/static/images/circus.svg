@@ -1,1 +1,13 @@
-<?xml version="1.0" encoding="UTF-8"?><svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 26C9 26 8.92429 26.7867 8 31C7.02053 35.4648 4 44 4 44H44C44 44 40.9795 35.4648 40 31C39.0757 26.7867 39 26 39 26" stroke="#333" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 28C21 37 16 44 16 44" stroke="#333" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M28 28C27 37 32 44 32 44" stroke="#333" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 18C6 18 13.5923 17.9452 17 17C19.8659 16.2051 24 14 24 14C24 14 27.8229 16.1944 30.5 17C34.0722 18.075 42 18 42 18L41 25C41 25 37 27 36 27C35 27 33 25 32 25C31 25 28.5 28 28 28C27.5 28 25 25 24 25C23 25 21 28.5 20 28.5C19 28.5 17 25 16 25C15.802 25 15.5257 25.0784 15.2098 25.2041C13.0681 26.0564 10.7214 26.4885 8.58115 25.6325L7 25L6 18Z" fill="#333" stroke="#333" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M24 5V15" stroke="#333" stroke-width="4" stroke-linecap="round"/><path d="M36 10.9998V4.99984C36 4.99984 34.5 7.99984 30 4.99984C25.5 1.99984 24 4.99984 24 4.99984V10.9998C24 10.9998 25.5 7.99984 30 10.9998C34.5 13.9998 36 10.9998 36 10.9998Z" stroke="#333" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+<svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+	<style>
+		.s0 { fill: none;stroke: #333333;stroke-linecap: round;stroke-linejoin: round;stroke-width: 2 } 
+		.s1 { fill: #333333;stroke: #333333;stroke-linecap: round;stroke-linejoin: round;stroke-width: 2 } 
+		.s2 { fill: none;stroke: #333333;stroke-linecap: round;stroke-width: 2 } 
+	</style>
+	<path class="s0" d="m6 12.93c0 0-0.03 0.32-0.4 2.03-0.39 1.82-1.6 5.29-1.6 5.29h16c0 0-1.21-3.47-1.6-5.29-0.37-1.71-0.4-2.03-0.4-2.03"/>
+	<path class="s0" d="m10.4 13.74c0.4 3.66-1.6 6.51-1.6 6.51"/>
+	<path class="s0" d="m13.6 13.74c-0.4 3.66 1.6 6.51 1.6 6.51"/>
+	<path class="s1" d="m4.8 9.67c0 0 3.04-0.02 4.4-0.41 1.15-0.32 2.8-1.22 2.8-1.22 0 0 1.53 0.89 2.6 1.22 1.43 0.44 4.6 0.41 4.6 0.41l-0.4 2.85c0 0-1.6 0.81-2 0.81-0.4 0-1.2-0.81-1.6-0.81-0.4 0-1.4 1.22-1.6 1.22-0.2 0-1.2-1.22-1.6-1.22-0.4 0-1.2 1.42-1.6 1.42-0.4 0-1.2-1.42-1.6-1.42q-0.12 0-0.32 0.08c-0.85 0.35-1.79 0.53-2.65 0.18l-0.63-0.26z"/>
+	<path class="s2" d="m12 4.38v4.07"/>
+	<path class="s0" d="m16.8 6.82v-2.44c0 0-0.6 1.22-2.4 0-1.8-1.23-2.4 0-2.4 0v2.44c0 0 0.6-1.22 2.4 0 1.8 1.22 2.4 0 2.4 0z"/>
+</svg>

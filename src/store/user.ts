@@ -201,40 +201,42 @@ export const useUserStore = defineStore(
         uni.setStorageSync('systemConfigV2', res.data)
         systemStore.setConfig(res.data)
       })
+      // 通知 mall 页刷新数据
+      uni.$emit('mall:refresh')
       // 登录成功后触发 WebView 预加载（仅在App端）
-      setTimeout(async () => {
-        try {
-          const [matchThreeConfig, jumpConfig] = await Promise.all([
-            getGameParamsApi('MATCH_THREE'),
-            getGameParamsApi('JUMP'),
-          ])
-          console.log('matchThreeConfig:', matchThreeConfig)
-          console.log('jumpConfig:', jumpConfig)
+      // setTimeout(async () => {
+      //   try {
+      //     const [matchThreeConfig, jumpConfig] = await Promise.all([
+      //       getGameParamsApi('MATCH_THREE'),
+      //       getGameParamsApi('JUMP'),
+      //     ])
+      //     console.log('matchThreeConfig:', matchThreeConfig)
+      //     console.log('jumpConfig:', jumpConfig)
 
-          const gameConfigs = []
-          if (matchThreeConfig.code === 1) {
-            gameConfigs.push({
-              gameType: 'MATCH_THREE',
-              url: matchThreeConfig.data.jumpUrl,
-              tempToken: matchThreeConfig.data.tempToken,
-            })
-          }
-          if (jumpConfig.code === 1) {
-            gameConfigs.push({
-              gameType: 'JUMP',
-              url: jumpConfig.data.jumpUrl,
-              tempToken: jumpConfig.data.tempToken,
-            })
-          }
+      //     const gameConfigs = []
+      //     if (matchThreeConfig.code === 1) {
+      //       gameConfigs.push({
+      //         gameType: 'MATCH_THREE',
+      //         url: matchThreeConfig.data.jumpUrl,
+      //         tempToken: matchThreeConfig.data.tempToken,
+      //       })
+      //     }
+      //     if (jumpConfig.code === 1) {
+      //       gameConfigs.push({
+      //         gameType: 'JUMP',
+      //         url: jumpConfig.data.jumpUrl,
+      //         tempToken: jumpConfig.data.tempToken,
+      //       })
+      //     }
 
-          if (gameConfigs.length > 0) {
-            scheduleDualGamePreload(gameConfigs as any)
-            console.log('登录成功后WebView预加载已调度')
-          }
-        } catch (error) {
-          console.warn('WebView预加载初始化失败:', error)
-        }
-      }, 500)
+      //     if (gameConfigs.length > 0) {
+      //       scheduleDualGamePreload(gameConfigs as any)
+      //       console.log('登录成功后WebView预加载已调度')
+      //     }
+      //   } catch (error) {
+      //     console.warn('WebView预加载初始化失败:', error)
+      //   }
+      // }, 500)
     }
 
     return {

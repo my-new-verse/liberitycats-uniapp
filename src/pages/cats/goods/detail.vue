@@ -61,11 +61,13 @@
           </view>
           <view class="discountRight">
             <view
-              v-if="goodsDetail.nft_discount.level.level > 0"
+              v-if="
+                goodsDetail.nft_discount.level != null && goodsDetail.nft_discount.level?.level > 0
+              "
               class="level"
               :class="{
-                ['level' + goodsDetail.nft_discount.level.level]:
-                  goodsDetail.nft_discount.level.level > 0,
+                ['level' + goodsDetail.nft_discount.level?.level]:
+                  goodsDetail.nft_discount.level?.level > 0,
               }"
               @click="showMemberLevelPopup"
             >

@@ -270,6 +270,7 @@ onShow(() => {
       unreadCount.value = res.data
     })
   }
+  loadHomeData()
 })
 
 // 广告 start

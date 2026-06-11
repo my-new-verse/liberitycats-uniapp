@@ -229,6 +229,8 @@ onPageScroll((e) => {
 const state = ref<LoadMoreState>('loading')
 const mallCacheMap = ref<Record<string, MallCache>>({})
 
+const MALL_REFRESH_EVENT = 'mall:refresh'
+
 const categoryList = ref<getGoodsCategoryApiResponse[]>([])
 onLoad(() => {
   getGoodsCategoryApi().then((res) => {
@@ -245,6 +247,19 @@ onLoad(() => {
       loadMore()
     }
   })
+  uni.$on(MALL_REFRESH_EVENT, handleMallRefresh)
+})
+
+const handleMallRefresh = () => {
+  const currentCategory = getActiveCategory()
+  if (!currentCategory) return
+  const cache = activeMallCache.value
+  if (cache.isLoading) return
+  loadMore(true)
+}
+
+onUnmounted(() => {
+  uni.$off(MALL_REFRESH_EVENT, handleMallRefresh)
 })
 
 onReachBottom(() => {
