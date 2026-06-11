@@ -3,6 +3,9 @@ import qs from 'qs'
 import { useUserStore } from '@/store'
 import { platform } from '@/utils/platform'
 import { getEnvBaseUrl } from '@/utils'
+import buildInfo from '@/../build-info.json'
+
+const version = `${buildInfo.version}`
 
 /**
  * 自定义请求配置
@@ -71,6 +74,7 @@ const httpInterceptor = {
     }
     options.header['X-App-Environment'] =
       process.env.VITE_MODE === 'production' ? 'production' : 'test'
+    if (version != null) options.header['X-App-Version'] = version
   },
 }
 
