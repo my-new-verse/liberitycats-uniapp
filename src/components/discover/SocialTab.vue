@@ -552,8 +552,14 @@ onMounted(() => {
     }
   })
   uni.$on('switchToChatGroup', () => {
-    socialFilter.value = 'groupChat'
+    handleFilterChange('groupChat')
   })
+  // 检查待切换标记（覆盖 SocialTab 首次挂载时事件已 emit 的场景）
+  const pendingSwitch = uni.getStorageSync('pendingSwitchToChatGroup')
+  if (pendingSwitch) {
+    uni.removeStorageSync('pendingSwitchToChatGroup')
+    handleFilterChange('groupChat')
+  }
 })
 
 // 组件卸载时移除事件监听

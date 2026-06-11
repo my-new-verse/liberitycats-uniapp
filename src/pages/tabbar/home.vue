@@ -117,6 +117,7 @@
               width="100%"
               height="100%"
               custom-class="chatGroupImg"
+              @click="toChatGroup"
             ></wd-img>
           </view>
           <view class="commonTitleBox">
@@ -341,10 +342,13 @@ const onRefresh = async () => {
 }
 // 跳转群聊tab
 const toChatGroup = () => {
-  uni.$emit('switchToChatGroup')
+  // 标记待切换群聊（SocialTab 可能还未挂载，无法接收事件）
+  uni.setStorageSync('pendingSwitchToChatGroup', true)
   uni.switchTab({
     url: '/pages/tabbar/discover',
   })
+  // 同时 emit 事件，覆盖 SocialTab 已挂载的场景
+  uni.$emit('switchToChatGroup')
 }
 </script>
 
