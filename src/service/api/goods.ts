@@ -44,6 +44,11 @@ export interface NftDiscountTag {
   color: string
 }
 
+export interface NftDiscountLevel {
+  level: number
+  icon: string
+}
+
 export interface NftDiscount {
   enabled: boolean
   mode: 'uniform' | 'level'
@@ -51,8 +56,30 @@ export interface NftDiscount {
   discount_rate: number
   member_has_nft: boolean
   member_level?: string
-  level?: number
+  level?: NftDiscountLevel | null
   tag: NftDiscountTag
+}
+
+export interface PresaleInfo {
+  enabled: boolean
+  sale_start_time: number
+  sale_end_time: number
+  estimated_ship_time: number
+  level_purchase_limit_enabled: boolean
+}
+
+export interface LevelPurchaseLimit {
+  purchase_limit: number | null
+  purchase_enabled: boolean
+}
+
+export interface UserPurchaseInfo {
+  bought_quantity: number
+  max_can_buy: number
+  remaining_quantity: number
+  level_id: number
+  level_name: string
+  purchase_enabled: boolean
 }
 
 export interface NewGoodsDetailResponse {
@@ -75,6 +102,12 @@ export interface NewGoodsDetailResponse {
   total_inventory: number
   is_favorite: number
   nft_discount: NftDiscount
+  presale_info?: PresaleInfo
+  level_purchase_limits?: Record<string, LevelPurchaseLimit>
+  sale_status?: 'coming_soon' | 'on_sale' | 'sold_out'
+  can_buy?: boolean
+  user_purchase_info?: UserPurchaseInfo
+  reason?: string
 }
 
 // 获取商品详情 API 的功能。

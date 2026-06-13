@@ -56,7 +56,7 @@
                     <wd-input-number
                       v-model="item.quantity"
                       :min="1"
-                      :max="item.available_inventory"
+                      :max="Math.min(item.available_inventory, item.remaining_quantity)"
                       @change="updateCartQuantity(item.id, item.quantity)"
                     />
                   </view>

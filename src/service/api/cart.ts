@@ -22,6 +22,7 @@ export interface CartInfo {
   sku_cover: string
   buy_enable: number
   available_inventory: number
+  remaining_quantity: number
   currency: currency
   sku_attributes: Sku_attributes[]
   name: string

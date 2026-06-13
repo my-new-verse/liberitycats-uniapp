@@ -81,6 +81,38 @@
       </view>
 
       <view class="attrBox">
+        <template v-if="goodsDetail.presale_info?.estimated_ship_time">
+          <view class="shippingBox">
+            <view class="shippingTime">
+              <image class="shippingIcon" src="/static/images/deliver.png" mode="aspectFit" />
+              {{ t('goods.detail.estimated_ship_time') }}:
+              {{ formatDateTime(goodsDetail.presale_info.estimated_ship_time) }}
+            </view>
+            <template v-if="saleStatus.status === 'coming_soon'">
+              <view class="shippingDivider" />
+              <view class="saleInfoBox">
+                <image class="saleInfoIcon" src="/static/images/tips.png" mode="aspectFit" />
+                <view class="saleInfoText">
+                  <view class="saleInfoReason">{{ goodsDetail.reason }}</view>
+                  <view class="saleInfoSub">
+                    {{
+                      t('goods.detail.sale_starts_at', {
+                        time: formatDateTime(goodsDetail.presale_info?.sale_start_time || 0),
+                      })
+                    }}
+                  </view>
+                </view>
+              </view>
+            </template>
+            <template v-if="saleStatus.status === 'sold_out'">
+              <view class="shippingDivider" />
+              <view class="soldOutInfo">
+                <image class="soldOutIcon" src="/static/images/tips.png" mode="aspectFit" />
+                <text class="soldOutText">{{ goodsDetail.reason }}</text>
+              </view>
+            </template>
+          </view>
+        </template>
         <view class="attrItem" v-for="(item, index) in goodsDetail.sku_attributes" :key="index">
           <view class="attrTitle">{{ item.attrName }}</view>
           <view class="attrValueBox">
@@ -98,15 +130,27 @@
           </view>
         </view>
         <view class="quantityBox">
-          <view class="quantityTitle">{{ t('goods.detail.quantity') }}</view>
+          <view class="quantityTitle">
+            {{ t('goods.detail.quantity') }}
+            <view v-if="maxCanBuy" class="levelLimitTip">
+              {{ t('goods.detail.per_person_limit', { count: maxCanBuy }) }}
+            </view>
+          </view>
           <view class="quantityValue">
             <wd-input-number
               v-model="buyerQuantity"
               input-width="192rpx"
               :min="1"
-              :max="goodsDetail.sku_maps[goodsDetail.default_selected_sku_key.join(',')].inventory"
+              :max="maxPurchaseQuantity"
             />
           </view>
+        </view>
+        <view
+          v-if="goodsDetail.user_purchase_info?.remaining_quantity >= 0"
+          class="purchaseLimitTip"
+        >
+          {{ t('goods.detail.remaining_quantity') }}:
+          {{ displayRemaining }}
         </view>
       </view>
 
@@ -129,10 +173,11 @@
         ></view>
       </view>
       <view class="btnBox">
-        <template v-if="goodsDetail.status === 1 && goodsDetail.total_inventory > 0">
+        <!-- 在售模式 -->
+        <template v-if="saleStatus.status === 'on_sale'">
           <wd-button
             type="primary"
-            :disabled="addCartLoading"
+            :disabled="addCartLoading || displayRemaining === 0"
             custom-class="buyBtn active addCart"
             @click="addCart"
           >
@@ -142,14 +187,36 @@
             type="primary"
             custom-class="buyBtn quickBuy"
             @click="buyNow"
-            :disabled="buyNowLoading"
+            :disabled="buyNowLoading || displayRemaining === 0"
           >
             {{ t('goods.detail.buy_now') }}
           </wd-button>
         </template>
+        <!-- 预售模式 -->
+        <template v-else-if="saleStatus.status === 'coming_soon'">
+          <view class="presaleBtns">
+            <wd-button
+              type="primary"
+              disabled
+              custom-class="buyBtn presaleTop"
+              @click="handleDisabledClick"
+            >
+              <view class="presaleBtnInner">
+                <view class="presaleBtnTitle">{{ t('goods.detail.coming_soon') }}</view>
+                <view class="presaleBtnCountdown">{{ formatCountdown(saleStatus.countdown) }}</view>
+              </view>
+            </wd-button>
+          </view>
+        </template>
+        <!-- 售罄模式 -->
         <template v-else>
-          <wd-button type="primary" custom-class="buyBtn sellOut" @click="commonSoon">
-            {{ t('goods.detail.sell_out') }}
+          <wd-button
+            type="primary"
+            disabled
+            custom-class="buyBtn soldBtn"
+            @click="handleDisabledClick"
+          >
+            {{ goodsDetail.reason || t('goods.detail.sold_out') }}
           </wd-button>
         </template>
       </view>
@@ -197,7 +264,9 @@ const navigateBack = () => {
   uni.navigateBack({ delta: 1 })
 }
 
-const buyerQuantity = ref<number>(0)
+const buyerQuantity = ref<number>(1)
+const nowTimestamp = ref<number>(Math.floor(Date.now() / 1000))
+let countdownTimer: ReturnType<typeof setInterval> | undefined
 
 const goodsDetail = ref<NewGoodsDetailResponse>({
   id: 0,
@@ -222,6 +291,23 @@ const goodsDetail = ref<NewGoodsDetailResponse>({
   default_selected_sku_key: [],
   total_inventory: 0,
   is_favorite: 0,
+  nft_discount: {
+    enabled: false,
+    mode: 'uniform',
+    discount_applied: false,
+    discount_rate: 1,
+    member_has_nft: false,
+    level: null,
+    tag: { text: '', color: '' },
+  },
+  presale_info: {
+    enabled: false,
+    sale_start_time: 0,
+    sale_end_time: 0,
+    estimated_ship_time: 0,
+    level_purchase_limit_enabled: false,
+  },
+  level_purchase_limits: {},
   i18n: {
     id: 0,
     lang: '',
@@ -236,9 +322,108 @@ const currentSku = computed(() => {
   return goodsDetail.value.sku_maps[key] || ({} as SkuItemResponse)
 })
 
+const maxPurchaseQuantity = computed(() => {
+  const inventory = Number(currentSku.value.inventory || 1)
+  const remaining = goodsDetail.value.user_purchase_info?.remaining_quantity
+
+  // remaining_quantity = -1 表示无限制
+  if (remaining === -1) {
+    return inventory
+  }
+
+  // 取库存和剩余可购数量的最小值
+  if (typeof remaining === 'number' && remaining >= 0) {
+    return Math.max(1, Math.min(inventory, remaining))
+  }
+
+  return Math.max(1, inventory)
+})
+
 const nftDiscountEnabled = computed(
   () => goodsDetail.value.nft_discount?.enabled && goodsDetail.value.nft_discount?.discount_applied,
 )
+
+const maxCanBuy = computed(() => {
+  const v = goodsDetail.value.user_purchase_info?.max_can_buy
+  if (typeof v === 'number' && v > 0) return v
+  return null
+})
+
+const displayRemaining = computed(() => {
+  const inventory = Number(currentSku.value.inventory || 0)
+  const remaining = goodsDetail.value.user_purchase_info?.remaining_quantity
+  if (remaining === -1) return inventory
+  if (typeof remaining === 'number' && remaining >= 0) return Math.min(inventory, remaining)
+  return inventory
+})
+
+const saleStatus = computed(() => {
+  const inventory = goodsDetail.value.total_inventory
+  const startTime = goodsDetail.value.presale_info?.sale_start_time || 0
+  const endTime = goodsDetail.value.presale_info?.sale_end_time || 0
+  const backendStatus = goodsDetail.value.sale_status
+  const backendCanBuy = goodsDetail.value.can_buy
+
+  if (backendStatus === 'coming_soon' || (startTime > 0 && nowTimestamp.value < startTime)) {
+    return {
+      status: 'coming_soon',
+      can_buy: false,
+      countdown: Math.max(0, startTime - nowTimestamp.value),
+      text: t('goods.detail.coming_soon'),
+      tip: goodsDetail.value.reason || t('goods.detail.coming_soon.tip'),
+    }
+  }
+
+  if (inventory <= 0 || backendStatus === 'sold_out') {
+    return {
+      status: 'sold_out',
+      can_buy: false,
+      text: t('goods.detail.sold_out'),
+      tip: goodsDetail.value.reason || t('goods.detail.sold_out.tip'),
+    }
+  }
+
+  if (endTime > 0 && nowTimestamp.value >= endTime) {
+    return {
+      status: 'sold_out',
+      can_buy: false,
+      text: t('goods.detail.sold_out'),
+      tip: goodsDetail.value.reason || t('goods.detail.sale_ended'),
+    }
+  }
+
+  if (backendCanBuy === false) {
+    return {
+      status: 'sold_out',
+      can_buy: false,
+      text: t('goods.detail.sold_out'),
+      tip: goodsDetail.value.reason || t('goods.detail.purchase_unavailable'),
+    }
+  }
+
+  return { status: 'on_sale', can_buy: true, text: t('goods.detail.buy_now'), tip: '' }
+})
+
+const formatCountdown = (seconds: number): string => {
+  const days = Math.floor(seconds / 86400)
+  const hours = Math.floor((seconds % 86400) / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const secs = seconds % 60
+
+  if (days > 0)
+    return `${days}${t('goods.detail.days')} ${hours}${t('goods.detail.hours')} ${minutes}${t('goods.detail.minutes')}`
+  if (hours > 0)
+    return `${hours}${t('goods.detail.hours')} ${minutes}${t('goods.detail.minutes')} ${secs}${t('goods.detail.seconds')}`
+  return `${minutes}${t('goods.detail.minutes')} ${secs}${t('goods.detail.seconds')}`
+}
+
+const formatDateTime = (timestamp: number): string => {
+  return new Date(timestamp * 1000).toLocaleString()
+}
+
+const handleDisabledClick = () => {
+  toast.show(saleStatus.value.tip || '暂不可购买')
+}
 
 onLoad((options) => {
   if ('goods_id' in options) {
@@ -252,11 +437,24 @@ onLoad((options) => {
           })
         }
         goodsDetail.value = data
+        buyerQuantity.value = 1
         console.log('goodsDetail->', goodsDetail.value)
       })
       .finally(() => {
         uni.hideLoading()
       })
+  }
+})
+
+onMounted(() => {
+  countdownTimer = setInterval(() => {
+    nowTimestamp.value = Math.floor(Date.now() / 1000)
+  }, 1000)
+})
+
+onUnmounted(() => {
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
   }
 })
 
@@ -390,10 +588,6 @@ const addCart = () => {
     }
   }
 }
-
-const commonSoon = () => {
-  toast.show(t('goods.detail.sell_out.click_msg'))
-}
 </script>
 
 <style lang="scss" scoped>
@@ -483,7 +677,7 @@ const commonSoon = () => {
       display: flex;
       align-items: center;
       padding: 20rpx 24rpx;
-      background: #fafafa;
+      //   background: #fafafa;
       border: 2rpx solid #e8e8e8;
       border-radius: 16rpx;
       .discountLeft {
@@ -591,6 +785,78 @@ const commonSoon = () => {
   padding: 40rpx;
   margin-top: 20rpx;
   background-color: #ffffff;
+  .shippingBox {
+    padding: 24rpx 0;
+    margin-bottom: 30rpx;
+    background: #ffffff;
+    border: 2rpx solid #e8e8e8;
+    border-radius: 16rpx;
+  }
+  .shippingTime,
+  .spotDelivery,
+  .soldOutInfo,
+  .saleInfoBox {
+    padding: 0 24rpx;
+  }
+  .shippingDivider {
+    height: 1rpx;
+    background: #e9e9e9;
+    margin: 24rpx 0;
+  }
+  .shippingTime {
+    font-size: 26rpx;
+    color: #261000;
+    display: flex;
+    align-items: center;
+    gap: 16rpx;
+  }
+  .spotDelivery {
+    margin-top: 12rpx;
+    font-size: 26rpx;
+    color: #261000;
+    display: flex;
+    align-items: center;
+    gap: 16rpx;
+  }
+  .shippingIcon {
+    width: 32rpx;
+    height: 32rpx;
+  }
+  .saleInfoBox {
+    display: flex;
+    align-items: flex-start;
+    gap: 16rpx;
+    .saleInfoIcon {
+      width: 32rpx;
+      height: 32rpx;
+      flex-shrink: 0;
+    }
+    .saleInfoText {
+      flex: 1;
+      .saleInfoReason {
+        font-size: 26rpx;
+        color: #ff6b03;
+        line-height: 1.4;
+      }
+      .saleInfoSub {
+        margin-top: 8rpx;
+        font-size: 22rpx;
+        color: #999;
+      }
+    }
+  }
+  .soldOutInfo {
+    display: flex;
+    align-items: center;
+    gap: 16rpx;
+    font-size: 26rpx;
+    // color: #999;
+  }
+  .soldOutIcon {
+    width: 32rpx;
+    height: 32rpx;
+    filter: grayscale(1);
+  }
   .attrItem {
     margin-bottom: 48rpx;
     .attrTitle {
@@ -627,18 +893,31 @@ const commonSoon = () => {
   .attrItem:last-child {
     margin-bottom: 0;
   }
+  .purchaseLimitTip {
+    margin-top: 10rpx;
+    font-size: 24rpx;
+    color: #999;
+    text-align: right;
+  }
   .quantityBox {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding-top: 48rpx;
     border-top: 1rpx solid #e9e9e9;
+    .quantityTitle {
+      .levelLimitTip {
+        margin-top: 8rpx;
+        font-size: 22rpx;
+        color: #999;
+      }
+    }
   }
 }
 
 .desc {
   padding: 20rpx;
-  padding-bottom: 150rpx;
+  padding-bottom: 200rpx;
   margin-top: 20rpx;
   background-color: #ffffff;
 }
@@ -684,12 +963,12 @@ const commonSoon = () => {
   .btnBox {
     display: flex;
     align-items: center;
+
     .buyBtn {
       width: 250rpx;
       height: 84rpx;
       font-size: 32rpx;
       font-style: normal;
-
       font-weight: 600;
       line-height: 48rpx;
       color: #ff6b03;
@@ -710,16 +989,42 @@ const commonSoon = () => {
       background: #ff6b03;
     }
 
-    .sellOut {
+    .presaleBtns {
+      display: flex;
+      align-items: center;
+      width: 100%;
+    }
+    .buyBtn.presaleTop {
       width: 500rpx;
-      height: 84rpx;
+      height: auto;
+      min-height: 84rpx;
+      padding: 16rpx 0;
+      color: #ffffff;
+      background: #ff6b03;
+      border-radius: 44rpx;
+      border: none;
+    }
+    .presaleBtnInner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .presaleBtnTitle {
       font-size: 32rpx;
-      font-style: normal;
       font-weight: 600;
-      line-height: 48rpx;
-      color: #999;
-      background: #ffffff;
-      border: 2rpx solid #999;
+      line-height: 1.2;
+    }
+    .presaleBtnCountdown {
+      font-size: 18rpx;
+      font-weight: 400;
+      line-height: 1.2;
+      opacity: 0.8;
+    }
+    .buyBtn.soldBtn {
+      width: 500rpx;
+      color: #ffffff;
+      background: #999;
+      border: none;
       border-radius: 44rpx;
     }
   }
