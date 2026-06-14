@@ -11,11 +11,11 @@
       </view>
       <view
         class="opItem"
-        :class="{ active: tabType === 'zhuange' }"
-        @click="changeTab('zhuange')"
-        v-if="getServerOnOff('enable_quote')"
+        :class="{ active: tabType === 'portfolio' }"
+        @click="changeTab('portfolio')"
+        v-if="getServerOnOff('portfolio_chart_enable', 'common')"
       >
-        {{ t('discover.quotes.tag.zhuange') }}
+        {{ t('discover.quotes.tag.portfolio') }}
       </view>
       <view class="opItem" :class="{ active: tabType === 'hot' }" @click="changeTab('hot')">
         {{ t('discover.quotes.tag.hot') }}
@@ -109,14 +109,18 @@
         type="liberty"
         :url="getWebviewUrl('liberty')"
         :heightPx="webHeightPx"
-        :active="tabType === 'liberty' && getServerOnOff('enable_quote')"
+        :active="tabType === 'liberty' && isQuotesParentTabActive && getServerOnOff('enable_quote')"
       />
       <QuoteWebview
         ref="zhuangeWVRef"
-        type="zhuange"
-        :url="getWebviewUrl('zhuange')"
+        type="portfolio"
+        :url="getWebviewUrl('portfolio')"
         :heightPx="webHeightPx"
-        :active="tabType === 'zhuange' && getServerOnOff('enable_quote')"
+        :active="
+          tabType === 'portfolio' &&
+          isQuotesParentTabActive &&
+          getServerOnOff('portfolio_chart_enable', 'common')
+        "
       />
     </view>
   </view>
@@ -166,25 +170,28 @@ const collectionDetail = ref<getCollectionDetailApiResponse>({
     floorPrice: '',
   },
 })
-type QuotesTabType = 'liberty' | 'zhuange' | 'hot'
-type WebviewTabType = 'liberty' | 'zhuange'
+type QuotesTabType = 'liberty' | 'portfolio' | 'hot'
+type WebviewTabType = 'liberty' | 'portfolio'
 
 // ========== WebView 子组件协调 ==========
 const libertyWVRef = ref<InstanceType<typeof QuoteWebview>>()
 const zhuangeWVRef = ref<InstanceType<typeof QuoteWebview>>()
 
 const LIBERTY_WEBVIEW_URL = 'https://lcat8.com'
-const ZHUANGE_WEBVIEW_URL = 'https://www.example.com/'
+const PORTFOLIO_WEBVIEW_URL = 'http://47.236.146.191:3000/#analysis-section'
 
 const getWebviewUrl = (type: WebviewTabType): string => {
-  if (type === 'zhuange') return ZHUANGE_WEBVIEW_URL
+  if (type === 'portfolio')
+    return (
+      (getServerOnOff('portfolio_chart_url ', 'common', true) as string) || PORTFOLIO_WEBVIEW_URL
+    )
   return (getServerOnOff('quote_chart_url', 'common', true) as string) || LIBERTY_WEBVIEW_URL
 }
 
 /** 获取当前活跃 WebView 的组件 ref */
 const getActiveWebviewRef = () => {
   if (tabType.value === 'liberty') return libertyWVRef.value
-  if (tabType.value === 'zhuange') return zhuangeWVRef.value
+  if (tabType.value === 'portfolio') return zhuangeWVRef.value
   return null
 }
 
@@ -241,7 +248,7 @@ const quotesCacheMap = ref<Record<QuotesTabType, QuotesCache>>({
     state: 'finished',
     hasInitialized: true,
   },
-  zhuange: {
+  portfolio: {
     ...createQuotesCache(),
     state: 'finished',
     hasInitialized: true,
@@ -415,12 +422,15 @@ const changeTab = async (type: QuotesTabType) => {
   syncActiveCache()
   restoreScrollTop(type)
 
-  if (type === 'liberty' || type === 'zhuange') {
+  if (type === 'liberty' || type === 'portfolio') {
     await updateWebHeight(type as WebviewTabType)
   }
   await nextTick()
 
-  if ((type === 'liberty' || type === 'zhuange') && getServerOnOff('enable_quote')) {
+  if (
+    (type === 'liberty' && getServerOnOff('enable_quote')) ||
+    (type === 'portfolio' && getServerOnOff('portfolio_chart_enable', 'common'))
+  ) {
     const wvRef = getActiveWebviewRef()
     if (wvRef) {
       await wvRef.create()
@@ -488,7 +498,7 @@ onMounted(async () => {
   })
 
   // 初始就绪检查：先测量高度，再创建 WebView
-  if (tabType.value === 'liberty' || tabType.value === 'zhuange') {
+  if (tabType.value === 'liberty' || tabType.value === 'portfolio') {
     await updateWebHeight(tabType.value as WebviewTabType)
   }
   const wvRef = getActiveWebviewRef()
