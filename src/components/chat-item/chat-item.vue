@@ -379,6 +379,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
 .chat-text-container-me {
   background-color: var(--liberty-cats-primary-color);
   // background-color: #007aff;
+  border-radius: 30rpx 8rpx 30rpx 30rpx !important;
 }
 .chat-text-container-super {
   display: flex;
