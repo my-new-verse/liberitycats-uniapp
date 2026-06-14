@@ -82,7 +82,7 @@ const handleError = (err?: any) => {
   // #ifdef APP-PLUS
   if (webviewInstance.value) {
     try {
-      webviewInstance.value.hide?.()
+      webviewInstance.value.setVisible(false)
     } catch (e) {}
   }
   // #endif
@@ -173,7 +173,6 @@ const create = async (): Promise<void> => {
     } else {
       console.log(`[QuoteWebview:${props.type}] 无法获取当前页面 webview`)
       hasError.value = true
-      return
     }
   } catch (e) {
     console.log(`[QuoteWebview:${props.type}] 创建 webview 失败`, e)
@@ -185,9 +184,9 @@ const create = async (): Promise<void> => {
 /** 显示当前 WebView */
 const show = (): void => {
   // #ifdef APP-PLUS
-  if (!hasError.value && webviewInstance.value) {
+  if (webviewInstance.value) {
     try {
-      webviewInstance.value.show?.()
+      webviewInstance.value.setVisible(true)
     } catch (e) {}
   }
   // #endif
@@ -198,7 +197,7 @@ const hide = (): void => {
   // #ifdef APP-PLUS
   if (webviewInstance.value) {
     try {
-      webviewInstance.value.hide?.()
+      webviewInstance.value.setVisible(false)
     } catch (e) {}
   }
   // #endif
