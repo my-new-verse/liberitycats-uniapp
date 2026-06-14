@@ -13,12 +13,12 @@ const getSystemConfig = () => {
   try {
     const systemStore = useSystemStore()
     if (systemStore.configReady && systemStore.config) {
-      return systemStore.config1.config || {}
+      return systemStore.config.config || {}
     }
   } catch {
     // store 未初始化（如 pinia 还没装好），回退 storage
   }
-  return uni.getStorageSync('systemConfigV')?.config || {}
+  return uni.getStorageSync('systemConfigV2')?.config || {}
 }
 
 /**
@@ -955,11 +955,9 @@ export const formatNumber = (num: number | string, digits = 2) => {
 export const getServerOnOff = (key: string, platformKey?: string, getValue?: boolean) => {
   const systemConfig = getSystemConfig()
   console.log(systemConfig)
-  // const systemConfig = getSystemConfig()
   // systemConfig 未就绪（网络不稳定 / store 未初始化）时，
   // 布尔开关保守返回 false，避免误显示入口；getValue 模式返回 undefined
   if (!systemConfig || Object.keys(systemConfig).length === 0) {
-    console.log(111111, getValue ? undefined : false)
     return getValue ? undefined : false
   }
   const systemInfo = uni.getSystemInfoSync()
