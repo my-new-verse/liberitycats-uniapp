@@ -67,6 +67,12 @@ export interface InFocusMedia {
   }
 }
 
+export interface InFocusArticle {
+  title?: string
+  preview_text?: string
+  cover_media_img_url?: string
+}
+
 export interface InFocusItem {
   id: number
   twitterTweetId: string
@@ -78,6 +84,7 @@ export interface InFocusItem {
   twitterUrl: string | null
   author: InFocusAuthor
   media: InFocusMedia[]
+  article?: InFocusArticle
   metrics: Record<string, number | undefined>
   publishedAt: string | null
   createdAt: string | null
