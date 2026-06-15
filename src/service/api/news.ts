@@ -33,3 +33,69 @@ export const getNewsDetailApi = (id: number) => {
     id,
   })
 }
+
+export interface InFocusListParams {
+  page?: number
+  limit?: number
+  locale?: 'en-US' | 'zh-CN' | 'zh-TW'
+  tweet_lang?: string
+}
+
+export interface InFocusAuthor {
+  id: string | null
+  username: string | null
+  name: string | null
+  avatar: string | null
+}
+
+export interface InFocusMedia {
+  type?: string
+  url?: string
+  media_url_https?: string
+  expanded_url?: string
+  display_url?: string
+  original_info?: {
+    width?: number
+    height?: number
+  }
+  video_info?: {
+    variants?: Array<{
+      content_type?: string
+      url?: string
+      bitrate?: number
+    }>
+  }
+}
+
+export interface InFocusItem {
+  id: number
+  twitterTweetId: string
+  sourceListId: string
+  locales: string[]
+  tweetLang: string | null
+  text: string | null
+  url: string | null
+  twitterUrl: string | null
+  author: InFocusAuthor
+  media: InFocusMedia[]
+  metrics: Record<string, number | undefined>
+  publishedAt: string | null
+  createdAt: string | null
+}
+
+export interface InFocusListApiResponse {
+  current_page: number
+  data: InFocusItem[]
+  last_page: number
+  per_page: number
+  total: number
+}
+
+export const getInFocusListApi = (params: InFocusListParams = {}) => {
+  return http.get<InFocusListApiResponse>('/v1/news/in-focus/list', {
+    page: params.page ?? 1,
+    limit: params.limit ?? 20,
+    locale: params.locale,
+    tweet_lang: params.tweet_lang,
+  })
+}

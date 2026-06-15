@@ -29,8 +29,47 @@
       >
         {{ t('discover.social.filter.groupChat') }}
       </view>
+      <view
+        class="opItem"
+        :class="{ active: socialFilter === 'message' }"
+        @click="handleFilterChange('message')"
+      >
+        {{ t('discover.social.filter.message') }}
+      </view>
+      <view
+        class="opItem"
+        :class="{ active: socialFilter === 'inFocus' }"
+        @click="handleFilterChange('inFocus')"
+      >
+        {{ t('discover.social.filter.inFocus') }}
+      </view>
     </view>
-    <template v-if="socialFilter !== 'groupChat'">
+    <!-- 消息 Tab -->
+    <MessageTab
+      v-show="socialFilter === 'message'"
+      ref="messageTabRef"
+      :cntPaddingTop="cntPaddingTop"
+      :active="socialFilter === 'message'"
+      @update:state="emit('update:state', $event)"
+      @refresh-complete="emit('refresh-complete')"
+      @refresh-error="emit('refresh-error')"
+    />
+    <!-- In Focus Tab -->
+    <InFocusTab
+      v-show="socialFilter === 'inFocus'"
+      ref="inFocusTabRef"
+      :cntPaddingTop="cntPaddingTop"
+      :active="socialFilter === 'inFocus'"
+      @update:state="emit('update:state', $event)"
+      @refresh-complete="emit('refresh-complete')"
+      @refresh-error="emit('refresh-error')"
+    />
+    <!-- 社区帖子列表（非群聊、非 message、非 inFocus） -->
+    <template
+      v-if="
+        socialFilter !== 'groupChat' && socialFilter !== 'message' && socialFilter !== 'inFocus'
+      "
+    >
       <view
         v-if="socialList.data.length > 0"
         :style="{ paddingTop: cntPaddingTop + 36 + 20 + 'rpx' }"
@@ -153,7 +192,8 @@
         <view class="pubImg"></view>
       </view>
     </template>
-    <template v-else>
+    <!-- 群聊 Tab -->
+    <template v-if="socialFilter === 'groupChat'">
       <view :style="{ paddingTop: cntPaddingTop + 36 + 20 + 'rpx' }">
         <group-chat v-if="groupChatReady" :key="groupChatRenderKey"></group-chat>
       </view>
@@ -201,6 +241,8 @@ import { useMessage, useToast } from 'wot-design-uni'
 
 import { useUserStore } from '@/store'
 import GroupChat from '@/components/GroupChat.vue'
+import MessageTab from './MessageTab.vue'
+import InFocusTab from './InFocusTab.vue'
 
 const userStore = useUserStore()
 const message = useMessage('wd-message-box-slot')
@@ -229,7 +271,7 @@ const socialList = ref<getCommunityPostListApiResponse>({
 })
 
 let isRefreshing = false
-type SocialFilter = 'hot' | 'latest' | 'following'
+type SocialFilter = 'hot' | 'latest' | 'following' | 'inFocus' | 'message' | 'groupChat'
 type LoadMoreState = 'loading' | 'finished' | 'error' | 'success'
 type SocialCache = {
   list: getCommunityPostListApiResponse
@@ -253,18 +295,29 @@ const createSocialCache = (): SocialCache => ({
   isLoading: false,
 })
 
+type SocialCacheKey = 'hot' | 'latest' | 'following' | 'groupChat'
+
 const socialCacheMap = ref<Record<SocialFilter, SocialCache>>({
   hot: createSocialCache(),
   latest: createSocialCache(),
   following: createSocialCache(),
   groupChat: createSocialCache(), // 群聊模式也需要缓存结构（虽然不使用）
 })
+
+// ========== 子组件 refs ==========
+const messageTabRef = ref<InstanceType<typeof MessageTab> | null>(null)
+const inFocusTabRef = ref<InstanceType<typeof InFocusTab> | null>(null)
 const socialFilter = ref<SocialFilter>('latest')
 const groupChatRenderKey = ref(0)
 const groupChatReady = ref(false)
 let groupChatReadyTimer: ReturnType<typeof setTimeout> | null = null
 const GROUP_CHAT_ROOMS_REFRESH_EVENT = 'refreshGroupChatRooms'
-const activeSocialCache = computed(() => socialCacheMap.value[socialFilter.value])
+const activeSocialCache = computed(() => {
+  if (socialFilter.value === 'inFocus' || socialFilter.value === 'message') {
+    return socialCacheMap.value.hot // 不会被用到，仅满足类型
+  }
+  return socialCacheMap.value[socialFilter.value as SocialCacheKey]
+})
 const ensureGroupChatReady = () => {
   if (groupChatReady.value || groupChatReadyTimer) return
   groupChatReadyTimer = setTimeout(() => {
@@ -285,7 +338,11 @@ const refreshGroupChatRooms = (forceRefresh = false) => {
 
 // 更新加载状态
 const updateState = (state: LoadMoreState, filter = socialFilter.value) => {
-  socialCacheMap.value[filter].state = state
+  if (filter === 'groupChat' || filter === 'message' || filter === 'inFocus') {
+    // 群聊/消息/inFocus 不写入 socialCacheMap
+  } else {
+    socialCacheMap.value[filter as SocialCacheKey].state = state
+  }
   emit('update:state', state)
 }
 
@@ -303,20 +360,36 @@ const getPageScrollTop = () => {
 
 const saveCurrentScrollTop = async () => {
   if (socialFilter.value === 'groupChat') return
-  socialCacheMap.value[socialFilter.value].scrollTop = await getPageScrollTop()
+  const scrollTop = await getPageScrollTop()
+  if (socialFilter.value === 'message') {
+    messageTabRef.value?.saveScrollTop(scrollTop)
+  } else if (socialFilter.value === 'inFocus') {
+    inFocusTabRef.value?.saveScrollTop(scrollTop)
+  } else {
+    socialCacheMap.value[socialFilter.value].scrollTop = scrollTop
+  }
 }
 
 const restoreScrollTop = (filter: SocialFilter) => {
-  const cache = socialCacheMap.value[filter]
+  let scrollTop = 0
+  if (filter === 'message') {
+    scrollTop = messageTabRef.value?.getScrollTop() ?? 0
+  } else if (filter === 'inFocus') {
+    scrollTop = inFocusTabRef.value?.getScrollTop() ?? 0
+  } else if (filter !== 'groupChat') {
+    const cache = socialCacheMap.value[filter]
+    scrollTop = cache.hasInitialized ? cache.scrollTop || 0 : 0
+  }
   nextTick(() => {
-    uni.pageScrollTo({
-      scrollTop: cache.hasInitialized ? cache.scrollTop || 0 : 0,
-      duration: 0,
-    })
+    uni.pageScrollTo({ scrollTop, duration: 0 })
   })
 }
 
 const syncActiveCache = () => {
+  if (socialFilter.value === 'message' || socialFilter.value === 'inFocus') {
+    // 由子组件自行管理状态，待 onActivate 回调后更新
+    return
+  }
   const cache = socialCacheMap.value[socialFilter.value]
   socialList.value = cache.list
   emit('update:state', cache.state)
@@ -330,6 +403,24 @@ const handleFilterChange = async (filter: SocialFilter) => {
   if (filter === 'groupChat') {
     refreshGroupChatRooms(true)
     if (socialFilter.value === filter) return
+  } else if (filter === 'message') {
+    if (socialFilter.value === filter) return
+    await saveCurrentScrollTop()
+    socialFilter.value = filter
+    messageTabRef.value?.onActivate()
+    nextTick(() => {
+      uni.pageScrollTo({ scrollTop: messageTabRef.value?.getScrollTop() ?? 0, duration: 0 })
+    })
+    return
+  } else if (filter === 'inFocus') {
+    if (socialFilter.value === filter) return
+    await saveCurrentScrollTop()
+    socialFilter.value = filter
+    inFocusTabRef.value?.onActivate()
+    nextTick(() => {
+      uni.pageScrollTo({ scrollTop: inFocusTabRef.value?.getScrollTop() ?? 0, duration: 0 })
+    })
+    return
   } else if (socialFilter.value === filter) {
     return
   }
@@ -341,14 +432,18 @@ const handleFilterChange = async (filter: SocialFilter) => {
     updateState('finished', filter)
   }
   restoreScrollTop(filter)
-  if (socialFilter.value !== 'groupChat' && !socialCacheMap.value[filter].hasInitialized) {
+  if (
+    socialFilter.value !== 'groupChat' &&
+    !socialCacheMap.value[filter as SocialCacheKey].hasInitialized
+  ) {
     loadSocial(1, filter)
   }
 }
 
 // 加载社交数据
 const loadSocial = async (page = 1, filter = socialFilter.value) => {
-  const cache = socialCacheMap.value[filter]
+  if (filter === 'message' || filter === 'inFocus' || filter === 'groupChat') return
+  const cache = socialCacheMap.value[filter as SocialCacheKey]
   if (cache.isLoading) return
 
   try {
@@ -445,6 +540,19 @@ watch(
       if (newVal === 'loading') updateState('finished')
       return
     }
+    // 消息 Tab / inFocus 由子组件自行处理
+    if (socialFilter.value === 'message') {
+      if (newVal === 'loading') messageTabRef.value?.loadMore()
+      else if (newVal === 'refreshing') messageTabRef.value?.refresh()
+      return
+    }
+    if (socialFilter.value === 'inFocus') {
+      console.log('-----------')
+
+      if (newVal === 'loading') inFocusTabRef.value?.loadMore()
+      else if (newVal === 'refreshing') inFocusTabRef.value?.refresh()
+      return
+    }
     if (newVal === 'loading') {
       // 检查是否还有更多数据可以加载
       if (socialList.value.current_page < socialList.value.last_page) {
@@ -529,18 +637,27 @@ onMounted(() => {
   void preloadChatRoomsApi(1)
   if (socialFilter.value !== 'groupChat') {
     syncActiveCache()
-    if (!socialCacheMap.value[socialFilter.value].hasInitialized) {
+    if (!socialCacheMap.value[socialFilter.value as SocialCacheKey].hasInitialized) {
       loadSocial(1, socialFilter.value)
     }
   } else {
     ensureGroupChatReady()
     updateState('finished', 'groupChat')
   }
+
   // 监听刷新事件
   uni.$on('refreshSocialTab', () => {
     if (socialFilter.value === 'groupChat') {
       refreshGroupChatRooms(true)
       emit('refresh-complete')
+      return
+    }
+    if (socialFilter.value === 'message') {
+      messageTabRef.value?.refresh()
+      return
+    }
+    if (socialFilter.value === 'inFocus') {
+      inFocusTabRef.value?.refresh()
       return
     }
     isRefreshing = true
@@ -688,6 +805,11 @@ const toUserHome = (memberId: number) => {
   uni.navigateTo({
     url: `/pages/cats/user/home?member_id=${memberId}`,
   })
+}
+
+// 跳转社交详情页
+const toSocialDetail = (id: number) => {
+  toUrl('/pages/cats/social/detail?id=' + id, false)
 }
 
 const shareRef = ref<any>(null)

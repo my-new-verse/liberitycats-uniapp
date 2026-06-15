@@ -612,6 +612,14 @@
       }
     },
     {
+      "path": "pages/cats/social/inFocus-detail",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f7f6f4"
+      }
+    },
+    {
       "path": "pages/cats/social/publish",
       "type": "page",
       "layout": "default",

@@ -63,6 +63,7 @@ interface NavigateToOptions {
        "/pages/cats/social/group_chat" |
        "/pages/cats/social/group_chat_new" |
        "/pages/cats/social/group_members" |
+       "/pages/cats/social/inFocus-detail" |
        "/pages/cats/social/publish" |
        "/pages/cats/upload/upload" |
        "/pages/cats/user/home" |
