@@ -43,8 +43,14 @@
             >
               <view v-for="(media, index) in item.media" :key="index" style="width: 100%">
                 <!-- 视频：使用 DomVideoPlayer（renderjs + HTML5 video），无原生层级问题 -->
-                <view v-if="isVideoMedia(media)" class="videoCoverWrap">
+                <view
+                  v-if="isVideoMedia(media)"
+                  :id="'vc_' + item.id + '_' + index"
+                  class="videoCoverWrap"
+                  @click.stop
+                >
                   <DomVideoPlayer
+                    :ref="(el) => setVideoRef(item.id, index, el)"
                     :src="getPlayableVideoUrl(media)"
                     controls
                     :poster="media.media_url_https || media.url || ''"
@@ -52,15 +58,19 @@
                   />
                 </view>
                 <!-- 图片 -->
-                <wd-img
+                <view
                   v-else
+                  class="imgItemWrap"
                   @click.stop="handlePreviewMedia(item.media, index)"
-                  custom-class="mediaImgItem"
-                  mode="widthFix"
-                  :src="media.media_url_https || media.url || ''"
-                  :enable-preview="false"
-                  custom-style="height: auto !important;width: 100% !important;"
-                />
+                >
+                  <wd-img
+                    custom-class="mediaImgItem"
+                    mode="widthFix"
+                    :src="media.media_url_https || media.url || ''"
+                    :enable-preview="false"
+                    custom-style="height: auto !important;width: 100% !important;"
+                  />
+                </view>
               </view>
             </view>
             <view class="socialTime">
@@ -79,7 +89,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, nextTick, getCurrentInstance, onUnmounted } from 'vue'
 import { getImageUrl, formatRelativeTime, toUrl, handlePreview } from '@/utils'
 import {
   getInFocusListApi,
@@ -136,6 +146,60 @@ const getPlayableVideoUrl = (media: InFocusMedia): string => {
   return fallback?.url || ''
 }
 
+// ========== 视频播放控制（离开可视区域自动暂停）==========
+const videoRefs = new Map<string, any>()
+const videoObservers: any[] = []
+const componentInstance = getCurrentInstance()?.proxy
+
+const setVideoRef = (itemId: number, mediaIndex: number, el: any) => {
+  const key = `${itemId}_${mediaIndex}`
+  if (el) {
+    videoRefs.set(key, el)
+  } else {
+    videoRefs.delete(key)
+  }
+}
+
+const disconnectAllObservers = () => {
+  videoObservers.forEach((o) => {
+    try {
+      o.disconnect()
+    } catch (_) {}
+  })
+  videoObservers.length = 0
+}
+
+const setupVideoObservers = () => {
+  disconnectAllObservers()
+  if (!componentInstance) return
+
+  inFocusList.value.data.forEach((item) => {
+    if (!item.media) return
+    item.media.forEach((media, mediaIndex) => {
+      if (!isVideoMedia(media)) return
+      const key = `${item.id}_${mediaIndex}`
+      const selector = `#vc_${item.id}_${mediaIndex}`
+      try {
+        const observer = uni.createIntersectionObserver(componentInstance, { thresholds: [0] })
+        observer.relativeToViewport().observe(selector, (res) => {
+          if (res.intersectionRatio <= 0) {
+            const player = videoRefs.get(key)
+            if (player) player.pause()
+          }
+        })
+        videoObservers.push(observer)
+      } catch (_) {
+        // H5 等环境不支持 createIntersectionObserver，静默忽略
+      }
+    })
+  })
+}
+
+onUnmounted(() => {
+  disconnectAllObservers()
+  videoRefs.clear()
+})
+
 // ========== 媒体点击 ==========
 const handleMediaTap = (media: InFocusMedia[], index: number) => {
   const m = media[index]
@@ -185,6 +249,9 @@ const loadInFocus = async (page = 1, isRefresh = false) => {
     cache.state = noMore ? 'finished' : 'success'
     if (props.active) emit('update:state', noMore ? 'finished' : 'success')
     if (isRefresh && page === 1) emit('refresh-complete')
+    // 数据加载成功后 nextTick 设置视频可见性观察（离开视口自动暂停）
+    await nextTick()
+    setupVideoObservers()
   } catch (error) {
     cache.state = 'error'
     if (props.active) emit('update:state', 'error')
@@ -256,6 +323,14 @@ const toInFocusDetail = (item: any) => {
   position: relative;
   width: 100%;
   // min-height: 400rpx;
+  background-color: #f3f3f4;
+  border-radius: 12rpx;
+  overflow: hidden;
+}
+
+.imgItemWrap {
+  width: 100%;
+  min-height: 180rpx;
   background-color: #f3f3f4;
   border-radius: 12rpx;
   overflow: hidden;
