@@ -351,6 +351,28 @@
                 <view class="arrow"></view>
               </view>
             </view>
+            <view class="menuItem" @click="checkForUpdate">
+              <view class="menuItemTitle">
+                <view class="icon2">
+                  <image class="iconImg" src="@/static/images/update.png" mode="widthFix" />
+                </view>
+                <view class="title">{{ t('my.menu.update') }}</view>
+              </view>
+              <view class="menuItemRight">
+                <view class="arrow"></view>
+              </view>
+            </view>
+
+            <!-- 版本更新弹窗 -->
+            <AppUpdatePopup
+              :model-value="manualUpdatePopupShow"
+              :title="t('my.menu.update.popup.title')"
+              :content="manualUpdateContent"
+              :clos-able="manualUpdateClosable"
+              @close="manualUpdatePopupShow = false"
+              @btn-click="handleManualUpdateBtnClick"
+              :main-btn-text="t('common.btn.update_btn_txt')"
+            />
 
             <!-- <view class="menuItem" @click="toGame">
               <view class="menuItemTitle">
@@ -430,6 +452,7 @@ import {
   toUrl,
   getServerOnOff,
   formatNumber,
+  openUrl,
 } from '@/utils'
 
 import { useMessage, useToast } from 'wot-design-uni'
@@ -454,11 +477,14 @@ import {
   getAssetTotalBalanceApi,
   refreshLevelApi,
   bindArGameApi,
+  getSystemConfigApiV2,
 } from '@/service/api/user'
 import { getServerI18nKey } from '@/utils/i18n'
 import pointIcon from '@/static/images/game1.png'
 import ccIcon from '@/static/images/cc@2x.png'
 import FloatingCat from '@/components/FloatingCat.vue'
+import AppUpdatePopup from '@/components/AppUpdatePopup.vue'
+import { useSystemStore } from '@/store/system'
 
 uni.hideTabBar()
 
@@ -740,6 +766,49 @@ const onRefreshAbort = () => {
 
 const toGame = () => {
   toUrl('/pages/game/index', true)
+}
+
+// 版本更新相关
+const systemStore = useSystemStore()
+const manualUpdatePopupShow = ref(false)
+const manualUpdateContent = ref('')
+const manualUpdateClosable = ref(true)
+const manualUpdateUrl = ref('')
+
+const checkForUpdate = async () => {
+  // toast.show(t('my.menu.update.checking'))
+  try {
+    const systemInfo = uni.getSystemInfoSync()
+    const platform = systemInfo.platform?.toLowerCase() || systemInfo.osName?.toLowerCase()
+    const currentVersion = `${buildInfo.version}`
+    const res = await getSystemConfigApiV2(currentVersion, platform)
+    const updateInfo = res.data?.update
+    // 同步最新 config
+    if (res.data) {
+      systemStore.setConfig(res.data)
+    }
+    if (updateInfo?.version) {
+      // 有新版本
+      manualUpdateContent.value =
+        t('my.menu.update.popup.content_prefix') +
+        updateInfo.version +
+        (updateInfo.update_log?.title ? '\n\n' + updateInfo.update_log.title : '')
+      manualUpdateClosable.value = updateInfo.is_force_update !== 1
+      manualUpdateUrl.value = updateInfo.url || ''
+      manualUpdatePopupShow.value = true
+    } else {
+      toast.show(t('my.menu.update.latest'))
+    }
+  } catch (e) {
+    toast.show(t('my.menu.update.latest'))
+  }
+}
+
+const handleManualUpdateBtnClick = () => {
+  manualUpdatePopupShow.value = false
+  if (manualUpdateUrl.value) {
+    openUrl(manualUpdateUrl.value)
+  }
 }
 
 // 绑定/换绑的公共请求逻辑
