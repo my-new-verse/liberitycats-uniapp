@@ -104,7 +104,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, reactive, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, reactive, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { debounce } from 'lodash-es'
 import { t } from '@/locale/index'
 import { formatRelativeTime, toUrl, toUrlOnce } from '@/utils'
@@ -171,7 +171,8 @@ const getSubtypeCache = (subtype: NotifSubtype): SubtypeCacheEntry => {
 
 const saveCurrentSubtypeCache = () => {
   const entry = getSubtypeCache(activeNotifSubtype.value)
-  entry.listData = notificationList.value
+  // 深拷贝，确保缓存与 notificationList 完全独立
+  entry.listData = JSON.parse(JSON.stringify(notificationList.value))
   entry.initialized = cache.initialized
   entry.loading = cache.loading
   entry.state = cache.state
@@ -180,7 +181,8 @@ const saveCurrentSubtypeCache = () => {
 
 const restoreSubtypeCache = (subtype: NotifSubtype) => {
   const entry = getSubtypeCache(subtype)
-  notificationList.value = entry.listData
+  // 深拷贝，确保恢复后 notificationList 与缓存条目完全独立
+  notificationList.value = JSON.parse(JSON.stringify(entry.listData))
   cache.initialized = entry.initialized
   cache.loading = entry.loading
   cache.state = entry.state
@@ -239,18 +241,34 @@ const getNotificationUnreadCount = () => {
 }
 
 // ========== subtype 切换（watch 驱动，v-model 先更新值，watch 回调拿到 oldVal/newVal）==========
-watch(activeNotifSubtype, (newVal, oldVal) => {
-  // 保存旧 subtype 缓存
+watch(activeNotifSubtype, async (newVal, oldVal) => {
+  // 获取当前实际滚动位置（异步，确保准确）
+  const currentScrollTop = await new Promise<number>((resolve) => {
+    uni
+      .createSelectorQuery()
+      .selectViewport()
+      .scrollOffset((res: any) => {
+        resolve(res?.scrollTop || 0)
+      })
+      .exec()
+  })
+
+  // 保存旧 subtype 缓存（深拷贝，确保独立）
   const oldEntry = getSubtypeCache(oldVal)
-  oldEntry.listData = notificationList.value
+  oldEntry.listData = JSON.parse(JSON.stringify(notificationList.value))
   oldEntry.initialized = cache.initialized
   oldEntry.loading = cache.loading
   oldEntry.state = cache.state
-  oldEntry.scrollTop = cache.scrollTop
+  oldEntry.scrollTop = currentScrollTop
 
-  // 恢复新 subtype 缓存
+  // 恢复新 subtype 缓存（深拷贝，确保独立）
   restoreSubtypeCache(newVal)
   if (props.active) emit('update:state', cache.state)
+
+  // 恢复新 subtype 的滚动位置
+  nextTick(() => {
+    uni.pageScrollTo({ scrollTop: cache.scrollTop, duration: 0 })
+  })
 
   // 未加载过则请求
   if (!cache.initialized) loadNotifications(1)
@@ -317,11 +335,13 @@ const refresh = () => {
   loadNotifications(1, true)
 }
 
-/** 获取当前缓存滚动位置 */
-const getScrollTop = () => cache.scrollTop
+/** 获取当前活跃 subtype 的缓存滚动位置 */
+const getScrollTop = () => getSubtypeCache(activeNotifSubtype.value).scrollTop
 
-/** 保存滚动位置 */
+/** 保存滚动位置（同步更新 subtype 缓存和共享 cache） */
 const saveScrollTop = (top: number) => {
+  const entry = getSubtypeCache(activeNotifSubtype.value)
+  entry.scrollTop = top
   cache.scrollTop = top
 }
 
