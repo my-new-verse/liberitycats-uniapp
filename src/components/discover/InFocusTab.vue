@@ -41,35 +41,15 @@
               v-if="item.media && item.media.length > 0"
               :class="{ mediaImg4: item.media.length === 4 }"
             >
-              <view v-for="(media, index) in item.media" :key="index">
-                <!-- 视频：显示封面 + 播放按钮 -->
-                <!-- <view v-if="isVideoMedia(media)" class="videoCoverWrap">
-                  <wd-img
-                    custom-class="mediaImgItem"
-                    mode="widthFix"
-                    :src="media.media_url_https || media.url || ''"
-                    :enable-preview="false"
-                    custom-style="height: auto !important"
-                  />
-                  <view class="videoPlayBtn">
-                    <view class="playIcon"></view>
-                  </view>
-                </view>
-                <wd-img
-                  v-else
-                  custom-class="mediaImgItem"
-                  mode="widthFix"
-                  :src="media.media_url_https || media.url || ''"
-                  :enable-preview="false"
-                  custom-style="height: auto !important"
-                /> -->
-                <view v-if="isVideoMedia(media)" class="videoItem">
-                  <video
-                    id="myVideo"
+              <view v-for="(media, index) in item.media" :key="index" style="width: 100%">
+                <!-- 视频：使用 DomVideoPlayer（renderjs + HTML5 video），无原生层级问题 -->
+                <view v-if="isVideoMedia(media)" class="videoCoverWrap">
+                  <DomVideoPlayer
                     :src="getPlayableVideoUrl(media)"
-                    @error="videoErrorCallback"
                     controls
-                  ></video>
+                    :poster="media.media_url_https || media.url || ''"
+                    objectFit="contain"
+                  />
                 </view>
                 <!-- 图片 -->
                 <wd-img
@@ -79,7 +59,7 @@
                   mode="widthFix"
                   :src="media.media_url_https || media.url || ''"
                   :enable-preview="false"
-                  custom-style="height: auto !important"
+                  custom-style="height: auto !important;width: 100% !important;"
                 />
               </view>
             </view>
@@ -107,6 +87,7 @@ import {
   InFocusMedia,
   InFocusArticle,
 } from '@/service/api/news'
+import DomVideoPlayer from 'uniapp-video-player'
 
 type LoadMoreState = 'loading' | 'finished' | 'error' | 'success'
 
@@ -257,34 +238,27 @@ const toInFocusDetail = (item: any) => {
 @import '/src/style/social';
 
 ::v-deep .mediaImgItem {
+  width: 100% !important;
   height: auto !important;
+  min-height: 120rpx;
+}
+
+:deep(.socialMedia) {
+  display: flex !important;
+  grid-template-columns: repeat(3, 1fr);
+
+  &.mediaImg4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 .videoCoverWrap {
   position: relative;
-
-  .videoPlayBtn {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 80rpx;
-    height: 80rpx;
-    background-color: rgba(0, 0, 0, 0.5);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    .playIcon {
-      width: 0;
-      height: 0;
-      margin-left: 6rpx;
-      border-style: solid;
-      border-width: 14rpx 0 14rpx 24rpx;
-      border-color: transparent transparent transparent #ffffff;
-    }
-  }
+  width: 100%;
+  // min-height: 400rpx;
+  background-color: #f3f3f4;
+  border-radius: 12rpx;
+  overflow: hidden;
 }
 
 .articleCard {

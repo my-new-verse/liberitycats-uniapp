@@ -954,7 +954,6 @@ export const formatNumber = (num: number | string, digits = 2) => {
  */
 export const getServerOnOff = (key: string, platformKey?: string, getValue?: boolean) => {
   const systemConfig = getSystemConfig()
-  console.log(systemConfig)
   // systemConfig 未就绪（网络不稳定 / store 未初始化）时，
   // 布尔开关保守返回 false，避免误显示入口；getValue 模式返回 undefined
   if (!systemConfig || Object.keys(systemConfig).length === 0) {

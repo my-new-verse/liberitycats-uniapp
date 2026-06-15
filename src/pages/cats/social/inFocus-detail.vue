@@ -46,15 +46,14 @@
                   </view>
                 </view>
                 <view class="socialMedia" v-if="detailData.media && detailData.media.length > 0">
-                  <view v-for="(media, index) in detailData.media" :key="index">
+                  <view v-for="(media, index) in detailData.media" :key="index" style="width: 100%">
                     <!-- 视频 -->
                     <view v-if="isVideoMedia(media)" class="videoItem">
-                      <video
-                        id="myVideo"
+                      <DomVideoPlayer
+                        ref="domVideoPlayer"
                         :src="getPlayableVideoUrl(media)"
-                        @error="videoErrorCallback"
                         controls
-                      ></video>
+                      ></DomVideoPlayer>
                     </view>
                     <!-- 图片 -->
                     <wd-img
@@ -64,7 +63,7 @@
                       mode="widthFix"
                       :src="media.media_url_https || media.url || ''"
                       :enable-preview="false"
-                      custom-style="height: auto !important"
+                      custom-style="height: auto !important;width:100% !important;"
                     />
                   </view>
                 </view>
@@ -100,11 +99,12 @@
         <view class="installPopupTitle">{{ t('social.inFocus.install_x_title') }}</view>
         <view class="installPopupContent">{{ t('social.inFocus.install_x_content') }}</view>
         <view class="installPopupBtns">
-          <view class="installPopupCancel" @click="showInstallPopup = false">
+          <!-- <view class="installPopupCancel" @click="showInstallPopup = false">
             {{ t('common.cancel') || '取消' }}
-          </view>
+          </view> -->
           <view class="installPopupConfirm" @click="handleGoDownload">
-            {{ t('social.inFocus.install_x_confirm') }}
+            <!-- {{ t('social.inFocus.install_x_confirm') }} -->
+            {{ t('common.confirm') }}
           </view>
         </view>
       </view>
@@ -132,6 +132,7 @@ import { ref } from 'vue'
 import { t } from '@/locale'
 import { InFocusItem, InFocusMedia, InFocusArticle } from '@/service/api/news'
 import { handlePreview } from '@/utils'
+import DomVideoPlayer from 'uniapp-video-player'
 
 import CustomNav2 from '@/components/CustomNav/CustomNav2.vue'
 
@@ -159,7 +160,7 @@ const showTip = ref(false)
 const handleGoDownload = () => {
   showInstallPopup.value = false
   // #ifdef APP-PLUS
-  plus.runtime.openURL(twitterConfig.downloadUrl)
+  // plus.runtime.openURL(twitterConfig.downloadUrl)
   // #endif
 }
 
@@ -238,6 +239,7 @@ const openXApp = () => {
 
 ::v-deep .mediaImgItem {
   height: auto !important;
+  width: 100% !important;
 }
 
 .videoItem {
@@ -301,6 +303,7 @@ const openXApp = () => {
 }
 
 :deep(.socialMedia) {
+  display: flex !important;
   .mediaImg {
     width: 200rpx !important;
     height: 200rpx !important;
