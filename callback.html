@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>正在跳转到 Liberty Cats...</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+      }
+
+      .container {
+        text-align: center;
+        padding: 40px 20px;
+        max-width: 400px;
+      }
+
+      .loading {
+        width: 60px;
+        height: 60px;
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 30px;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      h1 {
+        font-size: 22px;
+        font-weight: 600;
+        margin-bottom: 15px;
+      }
+
+      .desc {
+        font-size: 15px;
+        opacity: 0.9;
+        margin-bottom: 40px;
+        line-height: 1.6;
+      }
+
+      .btn {
+        display: inline-block;
+        background: white;
+        color: #667eea;
+        padding: 14px 32px;
+        border-radius: 25px;
+        text-decoration: none;
+        font-size: 16px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      }
+
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+      }
+
+      .btn-container {
+        display: none;
+      }
+
+      .tip {
+        margin-top: 25px;
+        font-size: 13px;
+        opacity: 0.8;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="loading"></div>
+      <h1>正在跳转到 Liberty Cats</h1>
+      <p class="desc">授权成功，正在返回应用...</p>
+
+      <div class="btn-container">
+        <a href="" id="jumpBtn" class="btn">点击手动跳转</a>
+        <p class="tip">如果没有自动跳转，请点击上方按钮</p>
+      </div>
+    </div>
+
+    <script>
+      // 你的 App URL Scheme
+      const APP_SCHEME = 'libertycats'
+      // 跳转路径（uni-app 中对应 pages 下的页面路径）
+      const CALLBACK_PATH = 'callback'
+
+      // 获取 URL 中的所有查询参数
+      function getQueryParams() {
+        const params = {}
+        const search = window.location.search.substring(1)
+        if (!search) return params
+
+        const pairs = search.split('&')
+        for (const pair of pairs) {
+          const [key, value] = pair.split('=')
+          params[decodeURIComponent(key)] = decodeURIComponent(value || '')
+        }
+        return params
+      }
+
+      // 构建跳转 URL
+      function buildAppUrl(params) {
+        let url = `${APP_SCHEME}://${CALLBACK_PATH}`
+        const paramStr = Object.keys(params)
+          .map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
+          .join('&')
+
+        if (paramStr) {
+          url += `?${paramStr}`
+        }
+        return url
+      }
+
+      // 执行跳转
+      function jumpToApp() {
+        const params = getQueryParams()
+        const appUrl = buildAppUrl(params)
+
+        // 设置手动跳转按钮的链接
+        document.getElementById('jumpBtn').href = appUrl
+
+        // 尝试自动跳转
+        window.location.href = appUrl
+
+        // 3秒后如果还在页面，显示手动跳转按钮
+        setTimeout(() => {
+          document.querySelector('.loading').style.display = 'none'
+          document.querySelector('.desc').textContent = '浏览器阻止了自动跳转'
+          document.querySelector('.btn-container').style.display = 'block'
+        }, 3000)
+      }
+
+      // 页面加载完成后立即执行跳转
+      window.addEventListener('load', jumpToApp)
+    </script>
+  </body>
+</html>
