@@ -118,7 +118,7 @@ onMounted(() => {
     activeTab.value = t('discover.tabs.social')
   })
   uni.$on('switchToChildTab', (tab: string | number) => {
-    if (tab === 'liberty') isFixed.value = true
+    if (tab === 'liberty' || tab === 'portfolio') isFixed.value = true
     else isFixed.value = false
   })
 })

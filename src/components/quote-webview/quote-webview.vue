@@ -6,7 +6,19 @@
     >
       <!-- #ifdef APP-PLUS -->
       <!-- Native WebView 占位区域，由 plus.webview.create 在 create() 中填充 -->
-      <view v-show="hasError" style="height: 60%; margin-top: 128rpx; border-radius: 32rpx">
+      <view
+        v-show="hasError"
+        style="
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          border-radius: 32rpx;
+          background-color: #ffffff;
+          z-index: 999;
+        "
+      >
         <NetworkError @refresh="handleReload" />
       </view>
       <view></view>
@@ -14,7 +26,19 @@
 
       <!-- #ifdef H5 -->
       <web-view v-if="active && !hasError" :src="url" @load="handleLoaded" @error="handleError" />
-      <view v-show="hasError" style="height: 60%; margin-top: 128rpx; border-radius: 32rpx">
+      <view
+        v-show="hasError"
+        style="
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          border-radius: 32rpx;
+          background-color: #ffffff;
+          z-index: 999;
+        "
+      >
         <NetworkError @refresh="handleReload" />
       </view>
       <!-- #endif -->
@@ -43,6 +67,7 @@ const instance = getCurrentInstance()
 const webviewInstance = ref<any>(null)
 const hasError = ref(false)
 let isUnmounted = false
+let _lastPosition = { top: 0, left: 0 }
 
 // ========== 工具方法 ==========
 const getCurrentPageWebview = () => {
@@ -78,13 +103,9 @@ const handleError = (err?: any) => {
   console.log(`[QuoteWebview:${props.type}] webview load error`, err)
   if (hasError.value) return
   hasError.value = true
-  // 隐藏 native WebView，露出错误覆盖层
+  // 隐藏 native WebView，露出错误覆盖层（双重保障：setVisible + setStyle）
   // #ifdef APP-PLUS
-  if (webviewInstance.value) {
-    try {
-      webviewInstance.value.setVisible(false)
-    } catch (e) {}
-  }
+  hide()
   // #endif
   emit('error')
 }
@@ -104,16 +125,22 @@ const handleReload = async () => {
 const create = async (): Promise<void> => {
   // #ifdef APP-PLUS
   if (isUnmounted) return
-  hasError.value = false
 
   try {
     await nextTick()
 
-    // 如果已存在实例，直接显示
+    // 如果已存在实例
     if (webviewInstance.value) {
+      if (hasError.value) {
+        // 上次加载出错：保持 WebView 隐藏，由 NetworkError 覆盖层展示，等待用户点击刷新
+        return
+      }
       show()
       return
     }
+
+    // 创建全新实例前重置错误状态
+    hasError.value = false
 
     // 测量自身 DOM 位置（使用 .in(instance) 确保在组件上下文中查询）
     const rect = await new Promise<any>((resolve) => {
@@ -132,6 +159,8 @@ const create = async (): Promise<void> => {
       hasError.value = true
       return
     }
+
+    _lastPosition = { top: rect.top || 0, left: rect.left || 0 }
 
     const pages = getCurrentPages()
     const page = pages[pages.length - 1]
@@ -184,7 +213,15 @@ const create = async (): Promise<void> => {
 /** 显示当前 WebView */
 const show = (): void => {
   // #ifdef APP-PLUS
+  if (hasError.value) return // 有错误时禁止显示，避免原生错误页露出
   if (webviewInstance.value) {
+    try {
+      // 先恢复位置（hide 时可能已移出屏幕）
+      webviewInstance.value.setStyle({
+        top: _lastPosition.top,
+        left: _lastPosition.left,
+      })
+    } catch (e) {}
     try {
       webviewInstance.value.setVisible(true)
     } catch (e) {}
@@ -198,6 +235,10 @@ const hide = (): void => {
   if (webviewInstance.value) {
     try {
       webviewInstance.value.setVisible(false)
+    } catch (e) {}
+    try {
+      // 将 WebView 移出屏幕，作为 setVisible(false) 的双重保障
+      webviewInstance.value.setStyle({ top: -99999 })
     } catch (e) {}
   }
   // #endif
@@ -215,6 +256,7 @@ const destroy = (): void => {
   }
   // #endif
   hasError.value = false
+  _lastPosition = { top: 0, left: 0 }
 }
 
 /** 重新加载：先 destroy 再 create */

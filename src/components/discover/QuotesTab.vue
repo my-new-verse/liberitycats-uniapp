@@ -481,6 +481,8 @@ onMounted(async () => {
       forEachWebviewRef((wv) => wv.hide())
       return
     }
+    // 先隐藏所有，确保非活跃 WebView 不会覆盖页面
+    forEachWebviewRef((wv) => wv.hide())
     const wvRef = getActiveWebviewRef()
     if (wvRef) {
       wvRef.create().then(() => wvRef.show())
@@ -489,12 +491,15 @@ onMounted(async () => {
   uni.$on('discoverPageVisibilityChange', (visible: boolean) => {
     if (visible) {
       if (isQuotesParentTabActive.value) {
+        // 先隐藏所有，确保非活跃 WebView 不会覆盖页面
+        forEachWebviewRef((wv) => wv.hide())
         const wvRef = getActiveWebviewRef()
         if (wvRef) wvRef.create().then(() => wvRef.show())
       }
       return
     }
-    forEachWebviewRef((wv) => wv.destroy())
+    // 切换底部 tabbar 时隐藏而非销毁，回来后 create() 检测到已有实例只会 show()
+    forEachWebviewRef((wv) => wv.hide())
   })
 
   // 初始就绪检查：先测量高度，再创建 WebView
@@ -525,6 +530,8 @@ onShow(() => {
     forEachWebviewRef((wv) => wv.hide())
     return
   }
+  // 先隐藏所有，确保非活跃 WebView 不会覆盖页面
+  forEachWebviewRef((wv) => wv.hide())
   const wvRef = getActiveWebviewRef()
   if (wvRef) {
     wvRef.create().then(() => wvRef.show())
