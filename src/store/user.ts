@@ -203,6 +203,7 @@ export const useUserStore = defineStore(
       })
       // 通知 mall 页刷新数据
       uni.$emit('mall:refresh')
+      uni.$emit('socialMessage:refresh')
       // 登录成功后触发 WebView 预加载（仅在App端）
       // setTimeout(async () => {
       //   try {

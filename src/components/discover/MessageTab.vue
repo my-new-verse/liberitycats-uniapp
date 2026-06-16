@@ -174,7 +174,7 @@ const saveCurrentSubtypeCache = () => {
   // 深拷贝，确保缓存与 notificationList 完全独立
   entry.listData = JSON.parse(JSON.stringify(notificationList.value))
   entry.initialized = cache.initialized
-  entry.loading = cache.loading
+  entry.loading = false // loading 是瞬态，不持久化
   entry.state = cache.state
   entry.scrollTop = cache.scrollTop
 }
@@ -184,7 +184,7 @@ const restoreSubtypeCache = (subtype: NotifSubtype) => {
   // 深拷贝，确保恢复后 notificationList 与缓存条目完全独立
   notificationList.value = JSON.parse(JSON.stringify(entry.listData))
   cache.initialized = entry.initialized
-  cache.loading = entry.loading
+  cache.loading = false // loading 是瞬态，恢复后必定为 false
   cache.state = entry.state
   cache.scrollTop = entry.scrollTop
 }
@@ -233,50 +233,68 @@ const fetchNotifUnreadCount = () => {
     .then((res: any) => {
       if (res.data) notifUnreadByCategory.value = res.data
     })
-    .catch(() => {})
+    .catch((err: any) => {
+      if (err?.statusCode === 401) handle401AndRedirect()
+    })
 }
 
 const getNotificationUnreadCount = () => {
-  getNotificationUnreadCountApi().catch(() => {})
+  getNotificationUnreadCountApi().catch((err: any) => {
+    if (err?.statusCode === 401) handle401AndRedirect()
+  })
 }
 
 // ========== subtype 切换（watch 驱动，v-model 先更新值，watch 回调拿到 oldVal/newVal）==========
-watch(activeNotifSubtype, async (newVal, oldVal) => {
-  // 获取当前实际滚动位置（异步，确保准确）
-  const currentScrollTop = await new Promise<number>((resolve) => {
-    uni
-      .createSelectorQuery()
-      .selectViewport()
-      .scrollOffset((res: any) => {
-        resolve(res?.scrollTop || 0)
-      })
-      .exec()
-  })
+let skipNotifSubtypeWatch = false
+let displayedSubtype: NotifSubtype = 'like' // 当前实际显示在屏幕上的 subtype
+let currentPageScrollTop = 0 // 由 discoverPageScroll 事件实时维护，始终准确
+const onDiscoverPageScroll = (top: number) => {
+  currentPageScrollTop = top
+}
 
-  // 保存旧 subtype 缓存（深拷贝，确保独立）
-  const oldEntry = getSubtypeCache(oldVal)
-  oldEntry.listData = JSON.parse(JSON.stringify(notificationList.value))
-  oldEntry.initialized = cache.initialized
-  oldEntry.loading = cache.loading
-  oldEntry.state = cache.state
-  oldEntry.scrollTop = currentScrollTop
+watch(
+  activeNotifSubtype,
+  (newVal) => {
+    // 被外部刷新逻辑跳过（如 onSocialMessageRefresh），由调用方自行管理数据加载
+    if (skipNotifSubtypeWatch) return
 
-  // 恢复新 subtype 缓存（深拷贝，确保独立）
-  restoreSubtypeCache(newVal)
-  if (props.active) emit('update:state', cache.state)
+    // 同步保存：把当前屏幕上的数据保存到实际显示的 subtype 缓存
+    const prevEntry = getSubtypeCache(displayedSubtype)
+    prevEntry.listData = JSON.parse(JSON.stringify(notificationList.value))
+    prevEntry.initialized = cache.initialized
+    prevEntry.loading = false // loading 是瞬态，不持久化
+    prevEntry.state = cache.state
+    prevEntry.scrollTop = currentPageScrollTop // 始终准确，无需异步
 
-  // 恢复新 subtype 的滚动位置
-  nextTick(() => {
-    uni.pageScrollTo({ scrollTop: cache.scrollTop, duration: 0 })
-  })
+    // 更新 displayedSubtype
+    displayedSubtype = newVal
 
-  // 未加载过则请求
-  if (!cache.initialized) loadNotifications(1)
-})
+    // 恢复新 subtype 缓存（深拷贝，确保独立）
+    restoreSubtypeCache(newVal)
+    if (props.active) emit('update:state', cache.state)
+
+    // 恢复新 subtype 的滚动位置
+    nextTick(() => {
+      uni.pageScrollTo({ scrollTop: cache.scrollTop, duration: 0 })
+    })
+
+    // 未加载过则请求
+    if (!cache.initialized) loadNotifications(1)
+  },
+  { flush: 'sync' },
+)
+
+// ========== 401 登录过期处理 ==========
+const handle401AndRedirect = () => {
+  toUrl('/pages/cats/login', true, false)
+}
 
 // ========== 加载通知 ==========
+let loadNotificationsVersion = 0 // 版本号：新请求自动作废旧请求
+
 const loadNotifications = async (page = 1, refresh = false) => {
-  if (cache.loading) return
+  // 每次调用递增版本号，旧请求完成时发现版本不匹配则丢弃结果
+  const version = ++loadNotificationsVersion
   if (refresh) {
     notificationList.value = { current_page: 0, data: [], last_page: 1, per_page: 15 }
     cache.initialized = false
@@ -285,6 +303,8 @@ const loadNotifications = async (page = 1, refresh = false) => {
   if (props.active) emit('update:state', 'loading')
   try {
     const res = await getNotificationListApi(page, 15, 'community', activeNotifSubtype.value)
+    // 期间发起了更新的请求，丢弃本次结果
+    if (version !== loadNotificationsVersion) return
     if (page === 1) {
       notificationList.value = res.data
     } else {
@@ -302,13 +322,23 @@ const loadNotifications = async (page = 1, refresh = false) => {
     cache.state = newState
     if (props.active) emit('update:state', newState)
     if (refresh && page === 1) emit('refresh-complete')
-  } catch (error) {
+  } catch (error: any) {
+    // 期间发起了更新的请求，丢弃本次错误
+    if (version !== loadNotificationsVersion) return
+    // 401：登录过期，跳转登录页，登录后重新加载数据
+    if (error?.statusCode === 401) {
+      handle401AndRedirect()
+      return
+    }
     cache.state = 'error'
     if (props.active) emit('update:state', 'error')
     if (refresh) emit('refresh-error')
     console.error('Failed to load notifications:', error)
   } finally {
-    cache.loading = false
+    // 仅当仍是最新请求时才重置 loading 状态
+    if (version === loadNotificationsVersion) {
+      cache.loading = false
+    }
   }
 }
 
@@ -332,6 +362,7 @@ const loadMore = () => {
 /** 下拉刷新 */
 const refresh = () => {
   fetchNotifUnreadCount()
+  getNotificationUnreadCount()
   loadNotifications(1, true)
 }
 
@@ -496,17 +527,21 @@ const handleMarkNotifAsRead = (item: any) => {
     closeNotifSwipe(item)
     return
   }
-  handleMarkReadApi(item?.id).then((res: any) => {
-    if (res.code === 1) {
-      markNotificationReadInCache(item?.id)
-      fetchNotifUnreadCount()
-      getNotificationUnreadCount()
-      closeNotifSwipe(item)
-    } else {
-      toast.show(res.msg || t('common.error'))
-      closeNotifSwipe(item)
-    }
-  })
+  handleMarkReadApi(item?.id)
+    .then((res: any) => {
+      if (res.code === 1) {
+        markNotificationReadInCache(item?.id)
+        fetchNotifUnreadCount()
+        getNotificationUnreadCount()
+        closeNotifSwipe(item)
+      } else {
+        toast.show(res.msg || t('common.error'))
+        closeNotifSwipe(item)
+      }
+    })
+    .catch((err: any) => {
+      if (err?.statusCode === 401) handle401AndRedirect()
+    })
 }
 
 // ========== 通知点击跳转 ==========
@@ -589,6 +624,46 @@ const handleNotifUserHomeClick = (item: any) => {
   debouncedNotifUserHomeRef.value?.(item)
 }
 
+// ========== socialMessage:refresh 事件处理 ==========
+const onSocialMessageRefresh = async () => {
+  // 清空所有 subtype 缓存
+  Object.keys(subtypeCacheMap).forEach((key) => {
+    const entry = subtypeCacheMap[key]
+    entry.initialized = false
+    entry.listData = { current_page: 0, data: [], last_page: 1, per_page: 15 }
+    entry.scrollTop = 0
+    entry.state = 'loading'
+  })
+  // 跳过 watch，避免 restoreSubtypeCache 用空缓存覆盖正在加载的数据
+  skipNotifSubtypeWatch = true
+  // 重置为 like tab
+  activeNotifSubtype.value = 'like'
+  displayedSubtype = 'like' // 同步重置 displayedSubtype
+  skipNotifSubtypeWatch = false
+  cache.initialized = false
+  cache.loading = false
+  notificationList.value = { current_page: 0, data: [], last_page: 1, per_page: 15 }
+  fetchNotifUnreadCount()
+  getNotificationUnreadCount()
+  // 加载 like 数据
+  await loadNotifications(1)
+  // 预加载 follow 和 comment 数据到各自缓存
+  for (const subtype of ['follow', 'comment'] as NotifSubtype[]) {
+    try {
+      const res = await getNotificationListApi(1, 15, 'community', subtype)
+      const entry = getSubtypeCache(subtype)
+      entry.listData = res.data
+      entry.initialized = true
+      entry.state = res.data.current_page >= res.data.last_page ? 'finished' : 'success'
+    } catch (err: any) {
+      if (err?.statusCode === 401) {
+        handle401AndRedirect()
+        return
+      }
+    }
+  }
+}
+
 // ========== 生命周期 ==========
 onMounted(() => {
   debouncedNotifClickRef.value = debounce(toNotifDetail, 300, { leading: true, trailing: false })
@@ -596,11 +671,15 @@ onMounted(() => {
     leading: true,
     trailing: false,
   })
+  uni.$on('socialMessage:refresh', onSocialMessageRefresh)
+  uni.$on('discoverPageScroll', onDiscoverPageScroll)
 })
 
 onUnmounted(() => {
   ;(debouncedNotifClickRef.value as any)?.cancel?.()
   ;(debouncedNotifUserHomeRef.value as any)?.cancel?.()
+  uni.$off('socialMessage:refresh', onSocialMessageRefresh)
+  uni.$off('discoverPageScroll', onDiscoverPageScroll)
 })
 </script>
 

@@ -140,6 +140,7 @@ const handleOpenShare = (item: any) => {
 const scrollTop = ref(0)
 onPageScroll((e) => {
   scrollTop.value = e.scrollTop
+  uni.$emit('discoverPageScroll', e.scrollTop)
 })
 
 const { t, locale } = useI18n()
