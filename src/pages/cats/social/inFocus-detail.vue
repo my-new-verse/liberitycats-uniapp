@@ -219,16 +219,36 @@ const twitterConfig = {
   pname: 'com.twitter.android',
   downloadUrl: 'https://twitter.com/download',
 }
+// 建议运行在 App 环境下，用条件编译包裹
+// #ifdef APP-PLUS
+const checkTwitterInstalled = () => {
+  let installed = false
+  const platform = uni.getSystemInfoSync().platform // 'ios' 或 'android'
+
+  if (platform === 'android') {
+    // Android：通过包名判断
+    installed = plus.runtime.isApplicationExist({
+      pname: 'com.twitter.android',
+    })
+  } else if (platform === 'ios') {
+    // iOS：通过 URL Scheme 判断
+    installed = plus.runtime.isApplicationExist({
+      action: 'twitter://',
+    })
+    console.log('iOS:', installed)
+  }
+
+  return installed
+}
+// #endif
 
 const openXApp = () => {
+  uni.navigateTo({
+    url:
+      '/pages/cats/webview/webview?url=' +
+      encodeURIComponent(detailData.value.url || detailData.value.twitterUrl),
+  })
   // #ifdef APP-PLUS
-  if (
-    plus.runtime.isApplicationExist({ action: twitterConfig.scheme, pname: twitterConfig.pname })
-  ) {
-    plus.runtime.openURL(detailData.value.twitterUrl || twitterConfig.scheme)
-  } else {
-    showInstallPopup.value = true
-  }
   // #endif
 }
 </script>
