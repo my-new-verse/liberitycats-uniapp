@@ -363,17 +363,6 @@
               </view>
             </view>
 
-            <!-- 版本更新弹窗 -->
-            <AppUpdatePopup
-              :model-value="manualUpdatePopupShow"
-              :title="t('my.menu.update.popup.title')"
-              :content="manualUpdateContent"
-              :clos-able="manualUpdateClosable"
-              @close="manualUpdatePopupShow = false"
-              @btn-click="handleManualUpdateBtnClick"
-              :main-btn-text="t('common.btn.update_btn_txt')"
-            />
-
             <!-- <view class="menuItem" @click="toGame">
               <view class="menuItemTitle">
                 <view class="icon2">
@@ -438,6 +427,17 @@
       <wd-message-box selector="wd-message-box-slot2"></wd-message-box>
     </view>
     <FloatingCat />
+    <!-- 版本更新弹窗 -->
+    <AppUpdatePopup
+      :model-value="manualUpdatePopupShow"
+      :title="t('my.menu.update.popup.title')"
+      :content="manualUpdateContent"
+      :clos-able="manualUpdateClosable"
+      @close="manualUpdatePopupShow = false"
+      @btn-click="handleManualUpdateBtnClick"
+      :main-btn-text="t('common.btn.update_btn_txt')"
+      :modalZIndex="9999"
+    />
   </view>
 </template>
 
