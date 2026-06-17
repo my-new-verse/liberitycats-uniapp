@@ -19,6 +19,34 @@
     }
   }
 
+  .msgEntry {
+    position: fixed;
+    right: 40rpx;
+    /* #ifdef APP */
+    bottom: calc(120rpx + env(safe-area-inset-bottom) + 200rpx);
+    /* #endif */
+    /* #ifdef H5 */
+    bottom: 210rpx;
+    /* #endif */
+    z-index: 11;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 80rpx;
+    height: 80rpx;
+    background-color: #fff;
+    border-radius: 50%;
+    box-shadow: 0 6rpx 28rpx 4rpx rgba(0, 0, 0, 0.1);
+    .msgImg {
+      width: 52rpx;
+      height: 52rpx;
+      background-color: transparent;
+      background-image: url('@/static/images/message@2x.png');
+      background-repeat: no-repeat;
+      background-size: 100% 100%;
+    }
+  }
+
   .pubSocial {
     position: fixed;
     right: 40rpx;

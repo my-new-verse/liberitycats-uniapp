@@ -24,25 +24,25 @@
       </view>
       <view
         class="opItem"
-        :class="{ active: socialFilter === 'groupChat' }"
-        @click="handleFilterChange('groupChat')"
-      >
-        {{ t('discover.social.filter.groupChat') }}
-      </view>
-      <view
-        class="opItem"
-        :class="{ active: socialFilter === 'message' }"
-        @click="handleFilterChange('message')"
-      >
-        {{ t('discover.social.filter.message') }}
-      </view>
-      <view
-        class="opItem"
         :class="{ active: socialFilter === 'inFocus' }"
         @click="handleFilterChange('inFocus')"
       >
         {{ t('discover.social.filter.inFocus') }}
       </view>
+      <view
+        class="opItem"
+        :class="{ active: socialFilter === 'groupChat' }"
+        @click="handleFilterChange('groupChat')"
+      >
+        {{ t('discover.social.filter.groupChat') }}
+      </view>
+      <!-- <view
+        class="opItem"
+        :class="{ active: socialFilter === 'message' }"
+        @click="handleFilterChange('message')"
+      >
+        {{ t('discover.social.filter.message') }}
+      </view> -->
     </view>
     <!-- 消息 Tab -->
     <MessageTab
@@ -188,6 +188,9 @@
           <view class="emptyImg"></view>
         </view>
       </template>
+      <view class="msgEntry" @click="toUrl('/pages/cats/message/index?category=community', true)">
+        <view class="msgImg"></view>
+      </view>
       <view class="pubSocial" @click="toUrl('/pages/cats/social/publish', true)">
         <view class="pubImg"></view>
       </view>
