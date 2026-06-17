@@ -368,9 +368,11 @@ const subtypeList = computed(() => [
   },
 ])
 // 页面加载
-// onLoad(() => {
-//   loadMore()
-// })
+onLoad((options) => {
+  if (options.category) {
+    activeCategory.value = options.category
+  }
+})
 
 // 滚动到底部加载更多
 onReachBottom(() => {
