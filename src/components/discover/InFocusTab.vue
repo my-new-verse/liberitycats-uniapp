@@ -135,6 +135,8 @@ const isVideoMedia = (media: InFocusMedia) => {
 }
 
 const getPlayableVideoUrl = (media: InFocusMedia): string => {
+  const bestMp4Url = media.video_info?.best_mp4_url || ''
+  if (bestMp4Url) return bestMp4Url
   const variants = media.video_info?.variants || []
   // 优先选 mp4（最高 bitrate）
   const mp4Variants = variants
@@ -313,7 +315,7 @@ const toInFocusDetail = (item: any) => {
 :deep(.socialMedia) {
   display: flex !important;
   grid-template-columns: repeat(3, 1fr);
-
+  flex-wrap: wrap;
   &.mediaImg4 {
     grid-template-columns: repeat(2, 1fr);
   }

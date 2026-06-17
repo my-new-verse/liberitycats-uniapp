@@ -178,6 +178,8 @@ const isVideoMedia = (media: InFocusMedia) => {
 }
 
 const getPlayableVideoUrl = (media: InFocusMedia): string => {
+  const bestMp4Url = media.video_info?.best_mp4_url || ''
+  if (bestMp4Url) return bestMp4Url
   const variants = media.video_info?.variants || []
   // 优先选 mp4（最高 bitrate）
   const mp4Variants = variants
@@ -246,7 +248,9 @@ const openXApp = () => {
   uni.navigateTo({
     url:
       '/pages/cats/webview/webview?url=' +
-      encodeURIComponent(detailData.value.url || detailData.value.twitterUrl),
+      encodeURIComponent(detailData.value.url || detailData.value.twitterUrl) +
+      '&isNeedBack=' +
+      true,
   })
   // #ifdef APP-PLUS
   // #endif
