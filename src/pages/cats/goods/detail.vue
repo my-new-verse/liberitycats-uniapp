@@ -3,6 +3,7 @@
   style: {
     navigationStyle: 'custom',
     navigationBarTitleText: '%goods.detail.page_title%',
+    softinputMode: 'adjustPan',
   },
 }
 </route>

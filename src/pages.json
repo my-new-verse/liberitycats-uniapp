@@ -336,7 +336,8 @@
       "type": "page",
       "style": {
         "navigationStyle": "custom",
-        "navigationBarTitleText": "%goods.detail.page_title%"
+        "navigationBarTitleText": "%goods.detail.page_title%",
+        "softinputMode": "adjustPan"
       }
     },
     {
