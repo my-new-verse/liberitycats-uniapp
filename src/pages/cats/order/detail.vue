@@ -69,7 +69,9 @@
                 </view>
                 <view class="item">
                   <view class="label">{{ t('order.detail.logistics.no') }}</view>
-                  <view class="value">{{ orderDetail.logistics.logistic_no }}</view>
+                  <view class="value copyable" @click="copyLogisticNo">
+                    {{ orderDetail.logistics.logistic_no }}
+                  </view>
                 </view>
               </template>
               <view class="item">
@@ -124,6 +126,16 @@ onLoad((options) => {
       })
   }
 })
+
+const copyLogisticNo = () => {
+  if (!orderDetail.value?.logistics?.logistic_no) return
+  uni.setClipboardData({
+    data: orderDetail.value.logistics.logistic_no,
+    success: () => {
+      uni.showToast({ title: t('common.copy_success'), icon: 'none' })
+    },
+  })
+}
 </script>
 
 <style lang="scss" scoped>
@@ -148,6 +160,10 @@ onLoad((options) => {
       font-weight: 400;
       line-height: 28rpx;
       color: #261000;
+
+      &.copyable {
+        color: #ff6b03;
+      }
     }
   }
 

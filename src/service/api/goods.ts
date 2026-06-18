@@ -73,6 +73,14 @@ export interface LevelPurchaseLimit {
   purchase_enabled: boolean
 }
 
+export interface DynamicDisplay {
+  type: 'presale_end_time' | 'estimated_ship_time' | 'production_cycle' | 'custom'
+  label: string
+  value: string
+  display_text: string
+  raw_value: number | null
+}
+
 export interface UserPurchaseInfo {
   bought_quantity: number
   max_can_buy: number
@@ -103,6 +111,7 @@ export interface NewGoodsDetailResponse {
   is_favorite: number
   nft_discount: NftDiscount
   presale_info?: PresaleInfo
+  dynamic_display?: DynamicDisplay
   level_purchase_limits?: Record<string, LevelPurchaseLimit>
   sale_status?: 'coming_soon' | 'on_sale' | 'sold_out'
   can_buy?: boolean

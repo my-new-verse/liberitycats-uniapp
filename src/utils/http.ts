@@ -3,8 +3,53 @@ import { getServerI18nKey } from './i18n'
 import { useUserStore } from '@/store/user'
 import { t } from '@/locale/index'
 
-export const http = <T>(options: CustomRequestOptions) => {
-  // 1. 返回 Promise 对象
+/**
+ * 异步并发控制队列
+ * - 限制同时进行的请求数量，避免瞬时大量请求导致移动端网络拥塞
+ * - 支持 priority 分级：high 优先级插队执行
+ */
+class AsyncQueue {
+  private running = 0
+  private concurrency = 6
+  private highQueue: Array<() => void> = []
+  private normalQueue: Array<() => void> = []
+
+  enqueue<T>(fn: () => Promise<T>, priority: 'high' | 'normal' = 'normal'): Promise<T> {
+    return new Promise((resolve, reject) => {
+      const task = async () => {
+        this.running++
+        try {
+          resolve(await fn())
+        } catch (e) {
+          reject(e)
+        } finally {
+          this.running--
+          this.next()
+        }
+      }
+
+      if (priority === 'high') {
+        this.highQueue.push(task)
+      } else {
+        this.normalQueue.push(task)
+      }
+      this.next()
+    })
+  }
+
+  /** 高优队列优先，然后普通队列 */
+  private next() {
+    if (this.running >= this.concurrency) return
+    const task = this.highQueue.shift() || this.normalQueue.shift()
+    if (task) task()
+  }
+}
+
+/** 全局请求队列，限制最大并发 6 个 */
+const requestQueue = new AsyncQueue()
+
+/** 核心请求方法：直接发起 uni.request，不进队列 */
+const rawRequest = <T>(options: CustomRequestOptions): Promise<IResData<T>> => {
   return new Promise<IResData<T>>((resolve, reject) => {
     uni.request({
       ...options,
@@ -69,17 +114,32 @@ export const http = <T>(options: CustomRequestOptions) => {
   })
 }
 
+export const http = <T>(options: CustomRequestOptions) => {
+  // 跳过排队：直接发起请求（适用于需要立即响应的场景，如埋点上报）
+  if (options.skipQueue) {
+    return rawRequest<T>(options)
+  }
+
+  // 进入并发队列
+  return requestQueue.enqueue(() => rawRequest<T>(options), options.priority || 'normal')
+}
+
 /**
  * GET 请求
  * @param url 后台地址
  * @param query 请求query参数
  * @returns
  */
-export const httpGet = <T>(url: string, query?: Record<string, any>) => {
+export const httpGet = <T>(
+  url: string,
+  query?: Record<string, any>,
+  options?: Partial<CustomRequestOptions>,
+) => {
   return http<T>({
     url,
     query,
     method: 'GET',
+    ...options,
   })
 }
 
@@ -94,12 +154,14 @@ export const httpPost = <T>(
   url: string,
   data?: Record<string, any>,
   query?: Record<string, any>,
+  options?: Partial<CustomRequestOptions>,
 ) => {
   return http<T>({
     url,
     query,
     data,
     method: 'POST',
+    ...options,
   })
 }
 
