@@ -70,9 +70,14 @@ watch(
 // 更新提示相关逻辑：从 systemStore 响应式读取
 const systemConfig = computed(() => systemStore.config)
 
+let lastConfigFetchTime = 0
+
 onShow(() => {
+  const now = Date.now()
+  if (now - lastConfigFetchTime < 5000) return
+  lastConfigFetchTime = now
+
   const systemInfo = uni.getSystemInfoSync()
-  // const platform = systemInfo.platform?.toLowerCase() || systemInfo.osName?.toLowerCase()
   const platform = systemInfo.platform?.toLowerCase() || systemInfo.osName?.toLowerCase()
   getSystemConfigApiV2(version, platform).then((res) => {
     const newUpdate = res.data?.update

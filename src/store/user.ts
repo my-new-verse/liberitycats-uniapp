@@ -179,7 +179,13 @@ export const useUserStore = defineStore(
       })
     }
 
+    let lastNavigateTime = 0
+
     const navigateToAfterLogin = (url?: string) => {
+      const now = Date.now()
+      if (now - lastNavigateTime < 5000) return
+      lastNavigateTime = now
+
       const loginUrl = url || uni.getStorageSync('loginUrl')
       if (loginUrl) {
         uni.removeStorageSync('loginUrl')

@@ -39,7 +39,7 @@ export const updateBaseInfoApi = (params: updateBaseInfoParams) => {
  * 检查token
  */
 export const checkTokenApi = () => {
-  return http.get<any>('/v1/member/user/check-token', {})
+  return http.get<any>('/v1/member/user/check-token', {}, { priority: 'high' })
 }
 
 export interface getNotificationDetailResponse {
@@ -97,7 +97,11 @@ export const getSystemConfigApi = () => {
 }
 
 export const getSystemConfigApiV2 = (version: string, platform: string) => {
-  return http.get<any>('/v1/system/app-update/get-default-config', { version, platform })
+  return http.get<any>(
+    '/v1/system/app-update/get-default-config',
+    { version, platform },
+    { priority: 'high' },
+  )
 }
 
 // 刷新等级

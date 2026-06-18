@@ -15,6 +15,10 @@ export type CustomRequestOptions = UniApp.RequestOptions & {
   query?: Record<string, any>
   /** 出错时是否隐藏错误提示 */
   hideErrorToast?: boolean
+  /** 跳过并发队列，直接发起请求（适用于埋点上报等无需排队的场景） */
+  skipQueue?: boolean
+  /** 请求优先级：high 高优插队，normal 正常排队，默认 normal */
+  priority?: 'high' | 'normal'
   /** 自定义配置 */
   custom?: {
     /** 是否是外部请求，如果是则跳过内部请求拦截器 */
