@@ -81,12 +81,12 @@
       </view>
 
       <view class="attrBox">
-        <template v-if="goodsDetail.presale_info?.estimated_ship_time">
+        <template v-if="goodsDetail.dynamic_display">
           <view class="shippingBox">
             <view class="shippingTime">
               <image class="shippingIcon" src="/static/images/deliver.png" mode="aspectFit" />
-              {{ t('goods.detail.estimated_ship_time') }}:
-              {{ formatDateTime(goodsDetail.presale_info.estimated_ship_time) }}
+              {{ goodsDetail.dynamic_display.label }}
+              {{ goodsDetail.dynamic_display.value }}
             </view>
             <template v-if="saleStatus.status === 'coming_soon'">
               <view class="shippingDivider" />
@@ -307,6 +307,7 @@ const goodsDetail = ref<NewGoodsDetailResponse>({
     estimated_ship_time: 0,
     level_purchase_limit_enabled: false,
   },
+  dynamic_display: undefined,
   level_purchase_limits: {},
   i18n: {
     id: 0,

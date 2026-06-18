@@ -9,6 +9,7 @@
   "common.title.more": "更多",
   "common.toast.pleaseLogin": "请登录",
   "common.save_success": "保存成功",
+  "common.copy_success": "已复制",
   "common.save_failed": "保存失败",
   "common.nickname_placeholder": "请输入昵称(3-30个字符)",
   "common.save_btn_txt": "保存",

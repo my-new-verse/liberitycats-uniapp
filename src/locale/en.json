@@ -8,6 +8,7 @@
   "common.title.more": "More",
   "common.toast.pleaseLogin": "Please log in",
   "common.save_success": "Save successfully",
+  "common.copy_success": "Copied",
   "common.save_failed": "Save Failed",
   "common.nickname_placeholder": "Please enter your nickname(3-30 characters)",
   "common.save_btn_txt": "Save",
