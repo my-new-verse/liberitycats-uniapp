@@ -141,8 +141,9 @@
             <wd-input-number
               v-model="buyerQuantity"
               input-width="192rpx"
-              :min="1"
               :max="maxPurchaseQuantity"
+              allow-null
+              @blur="handleQuantityBlur"
             />
           </view>
         </view>
@@ -425,6 +426,12 @@ const formatDateTime = (timestamp: number): string => {
 
 const handleDisabledClick = () => {
   toast.show(saleStatus.value.tip || '暂不可购买')
+}
+
+const handleQuantityBlur = () => {
+  if (!buyerQuantity.value || buyerQuantity.value < 1) {
+    buyerQuantity.value = 1
+  }
 }
 
 onLoad((options) => {
