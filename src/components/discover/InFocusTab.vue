@@ -17,7 +17,23 @@
             </view>
           </view>
           <view class="socialCntBox">
-            <view class="socialCnt">{{ item.text }}</view>
+            <!-- 翻译提示条：有原文时展示 -->
+            <view v-if="item.original && getOriginalText(item)" class="translateBar">
+              <!-- <text class="translateIcon">&#xe0b0;</text> -->
+              <text class="translateLabel">
+                {{ t('social.inFocus.translated_from') }} {{ getOriginalLang(item) }}
+              </text>
+              <text class="translateToggle" @click.stop="toggleOriginal(item.id)">
+                {{
+                  showOriginalMap[item.id]
+                    ? t('social.inFocus.show_translated')
+                    : t('social.inFocus.show_original')
+                }}
+              </text>
+            </view>
+            <view class="socialCnt">
+              {{ showOriginalMap[item.id] ? getOriginalText(item) : item.text }}
+            </view>
             <!-- article -->
             <view
               v-if="item.article && (item.article.title || item.article.preview_text)"
@@ -91,9 +107,11 @@
 <script lang="ts" setup>
 import { ref, reactive, nextTick, getCurrentInstance, onUnmounted } from 'vue'
 import { getImageUrl, formatRelativeTime, toUrl, handlePreview } from '@/utils'
+import { t } from '@/locale'
 import {
   getInFocusListApi,
   InFocusListApiResponse,
+  InFocusItem,
   InFocusMedia,
   InFocusArticle,
 } from '@/service/api/news'
@@ -201,6 +219,24 @@ onUnmounted(() => {
   disconnectAllObservers()
   videoRefs.clear()
 })
+
+// ========== 翻译切换：记录哪些 item 正在显示原文 ==========
+// key: item.id, value: true 表示展示原文
+const showOriginalMap = reactive<Record<number, boolean>>({})
+
+const toggleOriginal = (id: number) => {
+  showOriginalMap[id] = !showOriginalMap[id]
+}
+
+/** 获取原文（后端字段优先，否则返回 mock） */
+const ORIGINAL_LANG = ''
+
+const getOriginalText = (item: InFocusItem): string | null => {
+  return item.original.text || ''
+}
+const getOriginalLang = (item: InFocusItem): string => {
+  return item.original.sourceLanguageName || ORIGINAL_LANG
+}
 
 // ========== 媒体点击 ==========
 const handleMediaTap = (media: InFocusMedia[], index: number) => {
@@ -336,6 +372,29 @@ const toInFocusDetail = (item: any) => {
   background-color: #f3f3f4;
   border-radius: 12rpx;
   overflow: hidden;
+}
+
+.translateBar {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-bottom: 12rpx;
+
+  .translateIcon {
+    font-size: 24rpx;
+    color: #1d9bf0;
+  }
+
+  .translateLabel {
+    font-size: 24rpx;
+    color: #536471;
+  }
+
+  .translateToggle {
+    font-size: 24rpx;
+    color: #1d9bf0;
+    margin-left: 4rpx;
+  }
 }
 
 .articleCard {

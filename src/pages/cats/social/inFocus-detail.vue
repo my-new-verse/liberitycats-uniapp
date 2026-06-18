@@ -23,7 +23,27 @@
                 </view>
               </view>
               <view class="socialCntBox">
-                <view class="socialCnt">{{ detailData.text }}</view>
+                <!-- 翻译提示条 -->
+                <view v-if="detailData.original?.text" class="translateBar">
+                  <text class="translateLabel">
+                    {{ t('social.inFocus.translated_from') }}
+                    {{ detailData.original.sourceLanguageName }}
+                  </text>
+                  <text class="translateToggle" @click="showOriginal = !showOriginal">
+                    {{
+                      showOriginal
+                        ? t('social.inFocus.show_translated')
+                        : t('social.inFocus.show_original')
+                    }}
+                  </text>
+                </view>
+                <view class="socialCnt">
+                  {{
+                    showOriginal && detailData.original?.text
+                      ? detailData.original.text
+                      : detailData.text
+                  }}
+                </view>
                 <!-- article -->
                 <view
                   v-if="
@@ -144,6 +164,9 @@ onPageScroll((e) => {
 
 // 详情数据
 const detailData = ref<InFocusItem>({} as InFocusItem)
+
+// ========== 翻译切换 ==========
+const showOriginal = ref(false)
 
 onLoad((options: any) => {
   if (options?.data) {
@@ -324,6 +347,24 @@ const openXApp = () => {
   padding: 40rpx;
   padding-bottom: 20rpx;
   background-color: #ffffff;
+}
+
+.translateBar {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-bottom: 12rpx;
+
+  .translateLabel {
+    font-size: 24rpx;
+    color: #536471;
+  }
+
+  .translateToggle {
+    font-size: 24rpx;
+    color: #1d9bf0;
+    margin-left: 4rpx;
+  }
 }
 
 :deep(.socialMedia) {
