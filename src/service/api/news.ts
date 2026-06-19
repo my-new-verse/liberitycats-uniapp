@@ -88,6 +88,11 @@ export interface InFocusItem {
   metrics: Record<string, number | undefined>
   publishedAt: string | null
   createdAt: string | null
+  /** 原文信息，后端返回时包含 text 和 lang */
+  original?: {
+    text: string
+    lang?: string | null
+  } | null
 }
 
 export interface InFocusListApiResponse {
@@ -104,5 +109,6 @@ export const getInFocusListApi = (params: InFocusListParams = {}) => {
     limit: params.limit ?? 20,
     locale: params.locale,
     tweet_lang: params.tweet_lang,
+    include_original: true,
   })
 }

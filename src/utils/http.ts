@@ -81,7 +81,10 @@ const rawRequest = <T>(options: CustomRequestOptions): Promise<IResData<T>> => {
           !options.hideErrorToast &&
             uni.showToast({
               icon: 'none',
-              title: (res.data as IResData<T>).msg || t('common.request.error'),
+              title:
+                (res.data as IResData<T>).msg ||
+                (res.data as IResData<T>).message ||
+                t('common.request.error'),
             })
           reject(res)
         }
