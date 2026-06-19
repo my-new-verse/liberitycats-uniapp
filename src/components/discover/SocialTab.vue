@@ -189,6 +189,10 @@
         </view>
       </template>
       <view class="msgEntry" @click="toUrl('/pages/cats/message/index?category=community', true)">
+        <view class="msgDot" v-if="msgUnreadCount > 0">
+          <view>{{ msgUnreadCount > 99 ? 99 : msgUnreadCount }}</view>
+          <view v-if="msgUnreadCount > 99">+</view>
+        </view>
         <view class="msgImg"></view>
       </view>
       <view class="pubSocial" @click="toUrl('/pages/cats/social/publish', true)">
@@ -238,6 +242,7 @@ import {
   adminRemovalApi,
 } from '@/service/api/community'
 import { preloadChatRoomsApi } from '@/service/api/groupChat'
+import { getUnReadNotificationCountApi } from '@/service/api/user'
 import SharePopup from '@/components/SharePopup/SharePopup.vue'
 
 import { useMessage, useToast } from 'wot-design-uni'
@@ -313,6 +318,7 @@ const inFocusTabRef = ref<InstanceType<typeof InFocusTab> | null>(null)
 const socialFilter = ref<SocialFilter>('latest')
 const groupChatRenderKey = ref(0)
 const groupChatReady = ref(false)
+const msgUnreadCount = ref(0)
 let groupChatReadyTimer: ReturnType<typeof setTimeout> | null = null
 const GROUP_CHAT_ROOMS_REFRESH_EVENT = 'refreshGroupChatRooms'
 const activeSocialCache = computed(() => {
@@ -635,9 +641,22 @@ const handleDelPost = (id: number) => {
     .catch(() => {})
 }
 
+/** 拉取未读消息数 */
+function fetchUnreadCount() {
+  if (!userStore.isLogin) return
+  getUnReadNotificationCountApi()
+    .then((res) => {
+      msgUnreadCount.value = res.data ?? 0
+    })
+    .catch(() => {})
+}
+onShow(() => {
+  fetchUnreadCount()
+})
 // 初始加载
 onMounted(() => {
   void preloadChatRoomsApi(1)
+  fetchUnreadCount()
   if (socialFilter.value !== 'groupChat') {
     syncActiveCache()
     if (!socialCacheMap.value[socialFilter.value as SocialCacheKey].hasInitialized) {
