@@ -14,7 +14,9 @@
       :model-value="appUpdatePopupShow"
       :title="appUpdatePopupTitle"
       :content="appUpdatePopupContent"
+      :version="appUpdatePopupVersion"
       :clos-able="appUpdatePopupClosAble"
+      :url="appUpdateUrl"
       @close="closeAppUpdatePopup"
       @btn-click="appBtnClick"
       :main-btn-text="t('common.btn.update_btn_txt')"
@@ -103,7 +105,8 @@ const appUpdatePopupShow = computed(() => {
   return !!systemConfig.value?.update?.version && !isClose.value
 })
 const appUpdatePopupTitle = computed(() => systemConfig.value?.update?.update_log?.title || '')
-const appUpdatePopupContent = computed(() => systemConfig.value?.update?.version || '')
+const appUpdatePopupContent = computed(() => systemConfig.value?.update?.update_log?.content || '')
+const appUpdatePopupVersion = computed(() => systemConfig.value?.update?.version || '')
 const appUpdatePopupClosAble = computed(() => systemConfig.value?.update?.is_force_update !== 1)
 const appUpdateUrl = computed(() => systemConfig.value?.update?.url || '')
 

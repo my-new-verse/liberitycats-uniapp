@@ -436,6 +436,8 @@
       @close="manualUpdatePopupShow = false"
       @btn-click="handleManualUpdateBtnClick"
       :main-btn-text="t('common.btn.update_btn_txt')"
+      :version="manualUpdateVersion"
+      :url="manualUpdateUrl"
       :modalZIndex="9999"
     />
   </view>
@@ -774,6 +776,7 @@ const manualUpdatePopupShow = ref(false)
 const manualUpdateContent = ref('')
 const manualUpdateClosable = ref(true)
 const manualUpdateUrl = ref('')
+const manualUpdateVersion = ref('')
 
 const checkForUpdate = async () => {
   // toast.show(t('my.menu.update.checking'))
@@ -794,6 +797,7 @@ const checkForUpdate = async () => {
         updateInfo.version +
         (updateInfo.update_log?.title ? '\n\n' + updateInfo.update_log.title : '')
       manualUpdateClosable.value = updateInfo.is_force_update !== 1
+      manualUpdateVersion.value = updateInfo.version || ''
       manualUpdateUrl.value = updateInfo.url || ''
       manualUpdatePopupShow.value = true
     } else {
