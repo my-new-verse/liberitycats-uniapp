@@ -55,8 +55,9 @@
                   <view class="numBox">
                     <wd-input-number
                       v-model="item.quantity"
-                      :min="1"
                       :max="Math.min(item.available_inventory, item.remaining_quantity)"
+                      allow-null
+                      @blur="handleCartQuantityBlur(item)"
                       @change="updateCartQuantity(item.id, item.quantity)"
                     />
                   </view>
@@ -291,6 +292,12 @@ const updateCartQuantity = (cartId: number, quantity: number) => {
       updateNumberLock.value = false
     }, 1000)
   })
+}
+
+const handleCartQuantityBlur = (item: any) => {
+  if (!item.quantity || item.quantity < 1) {
+    item.quantity = 1
+  }
 }
 
 // 使用 ref 来存储防抖函数的引用
