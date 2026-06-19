@@ -429,8 +429,11 @@ const handleDisabledClick = () => {
 }
 
 const handleQuantityBlur = () => {
-  if (!buyerQuantity.value || buyerQuantity.value < 1) {
-    buyerQuantity.value = 1
+  const val = Number(buyerQuantity.value)
+  if (!val || val < 1) {
+    nextTick(() => {
+      buyerQuantity.value = 1
+    })
   }
 }
 
