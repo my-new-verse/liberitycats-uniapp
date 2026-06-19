@@ -55,7 +55,12 @@
                   <view class="numBox">
                     <wd-input-number
                       v-model="item.quantity"
-                      :max="Math.min(item.available_inventory, item.remaining_quantity)"
+                      :max="
+                        Math.min(
+                          item.available_inventory,
+                          Math.max(item.remaining_quantity, item.quantity),
+                        )
+                      "
                       allow-null
                       @blur="handleCartQuantityBlur(item)"
                       @change="updateCartQuantity(item.id, item.quantity)"
