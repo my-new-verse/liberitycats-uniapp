@@ -26,7 +26,7 @@
                     >
                       <view
                         class="radioBox"
-                        :class="{ checked: selectedSkuItems.map((i) => i.id).includes(item.id) }"
+                        :class="{ checked: selectedSkuItemIds.includes(item.id) }"
                       ></view>
                     </view>
                     <view class="goodsImg">
@@ -55,15 +55,9 @@
                   <view class="numBox">
                     <wd-input-number
                       v-model="item.quantity"
-                      :max="
-                        Math.min(
-                          item.available_inventory,
-                          Math.max(item.remaining_quantity, item.quantity),
-                        )
-                      "
+                      :max="getItemMax(item)"
                       allow-null
                       @blur="handleCartQuantityBlur(item)"
-                      @change="updateCartQuantity(item.id, item.quantity)"
                     />
                   </view>
                 </view>
@@ -135,14 +129,13 @@ import {
   getMyCartListApi,
   getMyCartListApiResponse,
   deleteCartApi,
-  updateCartQuantityApi,
+  CartInfo,
 } from '@/service/api/cart'
 
 // 滚动到底部加载更多
 import { LoadMoreState } from 'wot-design-uni/components/wd-loadmore/types'
 import { SkuItemResponse } from '@/service/api/goods'
-// 语言
-const locale = uni.getLocale()
+
 const toast = useToast()
 
 const calcResultPrice = ref('-')
@@ -162,14 +155,14 @@ onReachBottom(() => {
 
 // 选中商品
 const selectedSkuItems = ref<SkuItemResponse[]>([])
+const selectedSkuItemIds = computed(() => selectedSkuItems.value.map((i) => i.id))
+
 const selectSkuItem = (item: SkuItemResponse) => {
-  if (selectedSkuItems.value.map((i) => i.id).includes(item.id)) {
+  if (selectedSkuItemIds.value.includes(item.id)) {
     selectedSkuItems.value = selectedSkuItems.value.filter((i) => i.id !== item.id)
   } else {
     selectedSkuItems.value.push(item)
   }
-
-  // 计算总价
   calcTotalPrice()
 }
 
@@ -269,39 +262,22 @@ const deleteCart = (cartId: number) => {
   })
 }
 
-const updateNumberLock = ref(false)
-// 更新购物车数量
-const updateCartQuantity = (cartId: number, quantity: number) => {
-  if (updateNumberLock.value) {
-    toast.show(t('cart.update_cart_quantity.toast.updating'))
-    return
+const getItemMax = (item: CartInfo) => {
+  if (item.remaining_quantity === -1) {
+    return item.available_inventory
   }
-  updateNumberLock.value = true
-  uni.showLoading()
-  updateCartQuantityApi(cartId, quantity).then(() => {
-    toast.show(t('common.save_success'))
-    // 找到对应的购物车项并更新数量
-    const cartItem = cartList.value.data.find((item) => item.id === cartId)
-    if (cartItem) {
-      cartItem.quantity = quantity
-    }
-    // 如果该商品被选中，更新选中状态
-    const selectedCartItem = selectedSkuItems.value.find((item) => item.id === cartId)
-    if (selectedCartItem) {
-      selectedCartItem.quantity = quantity
-    }
-    // 重新计算总价
-    calcTotalPrice()
-    uni.hideLoading()
-    setTimeout(() => {
-      updateNumberLock.value = false
-    }, 1000)
-  })
+  return Math.min(item.available_inventory, Math.max(item.remaining_quantity, item.quantity))
 }
 
 const handleCartQuantityBlur = (item: any) => {
-  if (!item.quantity || item.quantity < 1) {
-    item.quantity = 1
+  const val = Number(item.quantity)
+  if (!val || val < 1) {
+    nextTick(() => {
+      item.quantity = 1
+      calcTotalPrice()
+    })
+  } else {
+    calcTotalPrice()
   }
 }
 

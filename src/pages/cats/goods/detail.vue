@@ -16,8 +16,6 @@
       <view class="left" @click="navigateBack()">
         <image src="/static/images/nav_left_back.png" mode="widthFix" />
       </view>
-      <!-- <view>222</view>
-      <view>333</view> -->
     </view>
 
     <template v-if="Object.keys(goodsDetail.sku_attributes).length > 0">
@@ -260,7 +258,6 @@ const navBgOpacity = computed(() => {
 
 // 获取屏幕边界到安全区域距离
 const { safeAreaInsets } = uni.getSystemInfoSync()
-console.log('safeAreaInsets->', safeAreaInsets)
 
 const navigateBack = () => {
   uni.navigateBack({ delta: 1 })
