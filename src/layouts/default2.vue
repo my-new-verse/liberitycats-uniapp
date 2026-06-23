@@ -118,10 +118,14 @@ const dismissUpdate = () => {
   updateDismissed.value = true // 触发响应式更新
 }
 
-const appBtnClick = () => {
-  if (appUpdateUrl.value) {
+const appBtnClick = (isOpenUrl: boolean) => {
+  if (isOpenUrl) {
+    if (appUpdateUrl.value) {
+      dismissUpdate()
+      openUrl(appUpdateUrl.value)
+    }
+  } else {
     dismissUpdate()
-    openUrl(appUpdateUrl.value)
   }
 }
 

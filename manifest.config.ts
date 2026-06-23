@@ -84,6 +84,10 @@ export default defineManifestConfig({
           '<uses-permission android:name="android.permission.FLASHLIGHT"/>',
           '<uses-feature android:name="android.hardware.camera"/>',
           '<uses-permission android:name="android.permission.WRITE_SETTINGS"/>',
+          '<uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>',
+          '<uses-permission android:name="android.permission.INTERNET"/>',
+          '<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>',
+          '<uses-permission android:name="android.permission.INSTALL_PACKAGES"/>',
         ],
       },
 

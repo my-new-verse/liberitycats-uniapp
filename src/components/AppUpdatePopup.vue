@@ -14,6 +14,7 @@
       <view class="version" v-if="version">{{ version }}</view>
     </view>
     <view class="contentBox">
+      <view class="content-title">{{ t('my.menu.update.popup.content_title') }}</view>
       <scroll-view class="scrollBox" :scroll-y="true">
         <rich-text :nodes="content"></rich-text>
       </scroll-view>
@@ -110,7 +111,7 @@ const platform = ref(uni.getSystemInfoSync().platform?.toLowerCase() || '')
 const btnClick = (isDownload: false) => {
   console.log('isDownload', isDownload)
   if (!isDownload || !props.url) {
-    emits('btnClick')
+    emits('btnClick', true)
     return
   }
 
@@ -118,7 +119,7 @@ const btnClick = (isDownload: false) => {
   // #ifdef APP-PLUS
   console.log(platform.value)
   if (platform.value === 'ios') {
-    emits('btnClick')
+    emits('btnClick', true)
     return
   }
   // #endif
@@ -136,11 +137,11 @@ const btnClick = (isDownload: false) => {
       if (res.statusCode === 200) {
         // #ifdef APP-PLUS
         plus.runtime.install(
-          res.tempFilePath,
-          { force: true },
+          'file://' + plus.io.convertLocalFileSystemURL(res.tempFilePath),
           () => {
             console.log('[AppUpdate] APK 安装成功')
             emits('btnClick')
+            plus.runtime.restart()
           },
           (err: any) => {
             console.warn('[AppUpdate] APK 安装失败:', err)
@@ -174,6 +175,9 @@ const closePopup = () => {
 
 <style lang="scss" scoped>
 @import '/src/style/base';
+:deep(.globalPopupBox) :not(.wd-popup__close):not(.wd-icon-add) {
+  font-family: 'Alimama FangYuanTi VF' !important;
+}
 :deep(.globalPopupBox) {
   position: relative;
   z-index: 10000 !important;
@@ -182,6 +186,8 @@ const closePopup = () => {
   padding-bottom: 48rpx !important;
   background-color: #ffffff;
   border-radius: 24rpx;
+  font-family: 'Alimama FangYuanTi VF' !important;
+
   .wd-popup__close {
     color: #ffffff;
   }
@@ -216,6 +222,14 @@ const closePopup = () => {
     max-height: 560rpx;
     overflow-y: scroll;
     margin: 24rpx 48rpx;
+    .content-title {
+      color: var(--liberty-cats-primary-color);
+      font-weight: 500;
+    }
+
+    * {
+      line-height: 1.4;
+    }
   }
   .progress {
     background: #f5f6fa;

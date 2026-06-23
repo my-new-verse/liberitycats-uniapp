@@ -430,7 +430,7 @@
     <!-- 版本更新弹窗 -->
     <AppUpdatePopup
       :model-value="manualUpdatePopupShow"
-      :title="t('my.menu.update.popup.title')"
+      :title="manualUpdateTitle"
       :content="manualUpdateContent"
       :clos-able="manualUpdateClosable"
       @close="manualUpdatePopupShow = false"
@@ -774,6 +774,7 @@ const toGame = () => {
 const systemStore = useSystemStore()
 const manualUpdatePopupShow = ref(false)
 const manualUpdateContent = ref('')
+const manualUpdateTitle = ref('')
 const manualUpdateClosable = ref(true)
 const manualUpdateUrl = ref('')
 const manualUpdateVersion = ref('')
@@ -792,10 +793,8 @@ const checkForUpdate = async () => {
     }
     if (updateInfo?.version) {
       // 有新版本
-      manualUpdateContent.value =
-        t('my.menu.update.popup.content_prefix') +
-        updateInfo.version +
-        (updateInfo.update_log?.title ? '\n\n' + updateInfo.update_log.title : '')
+      manualUpdateContent.value = updateInfo.update_log?.content || ''
+      manualUpdateTitle.value = updateInfo.update_log?.title || ''
       manualUpdateClosable.value = updateInfo.is_force_update !== 1
       manualUpdateVersion.value = updateInfo.version || ''
       manualUpdateUrl.value = updateInfo.url || ''
@@ -808,10 +807,14 @@ const checkForUpdate = async () => {
   }
 }
 
-const handleManualUpdateBtnClick = () => {
-  manualUpdatePopupShow.value = false
-  if (manualUpdateUrl.value) {
-    openUrl(manualUpdateUrl.value)
+const handleManualUpdateBtnClick = (isOpenUrl: boolean) => {
+  if (isOpenUrl) {
+    manualUpdatePopupShow.value = false
+    if (manualUpdateUrl.value) {
+      openUrl(manualUpdateUrl.value)
+    }
+  } else {
+    manualUpdatePopupShow.value = false
   }
 }
 

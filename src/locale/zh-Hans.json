@@ -88,6 +88,7 @@
   "my.menu.update.latest": "当前已是最新版本",
   "my.menu.update.popup.title": "发现新版本",
   "my.menu.update.popup.content_prefix": "新版本：",
+  "my.menu.update.popup.content_title": "更新内容：",
   "my.menu.update.popup.download_progress": "下载进度",
   "my.menu.update.popup.downloading": "下载中...",
   "my.menu.update.popup.download_failed": "下载失败，请重试",
