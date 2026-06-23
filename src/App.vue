@@ -11,6 +11,7 @@ import { useSystemStore } from '@/store/system'
 import { getGameParamsApi } from '@/service/api/game'
 // import { scheduleDualGamePreload } from '@/utils/plusGameWebViewPool'
 // import { useGameWebViewStore } from '@/store/gameWebview'
+import { downloadGameResources } from '@/utils/webviewResourceCache'
 
 // 扩展 Plus 对象类型，避免 TS 报错
 declare const plus: any
@@ -22,7 +23,7 @@ interface GameConfig {
 }
 
 const systemStore = useSystemStore()
-// const gameWebviewStore = useGameWebViewStore()
+const gameWebviewStore = useGameWebViewStore()
 const version = `${buildInfo.version}`
 const userStore = useUserStore()
 const systemReady = ref(false)
@@ -77,6 +78,7 @@ onLaunch(() => {
       uni.setStorageSync('agreements', res.data)
       systemStore.setAgreements(res.data)
     })
+    downloadGameResources()
   })
 
   // 请求并缓存广告
@@ -126,49 +128,6 @@ onShow(() => {
 onHide(() => {
   console.log('App Hide')
 })
-
-// 初始化游戏WebView预加载
-// const initializeGameWebviewPreload = async () => {
-//   try {
-//     // 只在App端执行预加载
-//     // if (typeof plus === 'undefined') {
-//     //   return
-//     // }
-//     const gameConfigs = []
-//     // 获取两个游戏的配置
-//     const matchThreeConfig = await getGameParamsApi('MATCH_THREE')
-//     if (matchThreeConfig.code && matchThreeConfig.code === 1) {
-//       gameConfigs.push({
-//         gameType: 'MATCH_THREE',
-//         url: matchThreeConfig.data.jumpUrl,
-//         tempToken: matchThreeConfig.data.tempToken,
-//       })
-//     }
-//     const jumpConfig = await getGameParamsApi('JUMP')
-//     if (jumpConfig.code && jumpConfig.code === 1) {
-//       gameConfigs.push({
-//         gameType: 'JUMP',
-//         url: jumpConfig.data.jumpUrl,
-//         tempToken: jumpConfig.data.tempToken,
-//       })
-//     }
-//     // 验证配置有效性
-//     const validConfigs = gameConfigs.filter((config) => config.tempToken && config.url)
-
-//     if (validConfigs.length) {
-//       // 存储到Pinia store
-//       validConfigs.forEach((config) => {
-//         gameWebviewStore.setGameConfig(config.gameType as any, config)
-//       })
-
-//       // 调度预加载
-//       scheduleDualGamePreload(validConfigs as [GameConfig, GameConfig])
-//       console.log('游戏WebView预加载已调度')
-//     } else {
-//       console.warn('游戏配置不完整，跳过预加载')
-//     }
-//   } catch (error) {}
-// }
 
 const handleSchemaArgs = (args) => {
   console.log('handleSchemaArgs', args)

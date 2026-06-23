@@ -12,6 +12,7 @@ import { getUserInfoApi, getSystemConfigApiV2 } from '@/service/api/user'
 import { disconnectWalletApi } from '@/service/api/web3'
 import { getGameParamsApi } from '@/service/api/game'
 import { scheduleDualGamePreload } from '@/utils/plusGameWebViewPool'
+import { downloadGameResources } from '@/utils/webviewResourceCache'
 import { useSystemStore } from '@/store/system'
 import buildInfo from '@/../build-info.json'
 
@@ -210,40 +211,8 @@ export const useUserStore = defineStore(
       // 通知 mall 页刷新数据
       uni.$emit('mall:refresh')
       uni.$emit('socialMessage:refresh')
-      // 登录成功后触发 WebView 预加载（仅在App端）
-      // setTimeout(async () => {
-      //   try {
-      //     const [matchThreeConfig, jumpConfig] = await Promise.all([
-      //       getGameParamsApi('MATCH_THREE'),
-      //       getGameParamsApi('JUMP'),
-      //     ])
-      //     console.log('matchThreeConfig:', matchThreeConfig)
-      //     console.log('jumpConfig:', jumpConfig)
-
-      //     const gameConfigs = []
-      //     if (matchThreeConfig.code === 1) {
-      //       gameConfigs.push({
-      //         gameType: 'MATCH_THREE',
-      //         url: matchThreeConfig.data.jumpUrl,
-      //         tempToken: matchThreeConfig.data.tempToken,
-      //       })
-      //     }
-      //     if (jumpConfig.code === 1) {
-      //       gameConfigs.push({
-      //         gameType: 'JUMP',
-      //         url: jumpConfig.data.jumpUrl,
-      //         tempToken: jumpConfig.data.tempToken,
-      //       })
-      //     }
-
-      //     if (gameConfigs.length > 0) {
-      //       scheduleDualGamePreload(gameConfigs as any)
-      //       console.log('登录成功后WebView预加载已调度')
-      //     }
-      //   } catch (error) {
-      //     console.warn('WebView预加载初始化失败:', error)
-      //   }
-      // }, 500)
+      // 登录成功后触发游戏资源预下载
+      downloadGameResources()
     }
 
     return {

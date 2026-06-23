@@ -1,9 +1,15 @@
 import { http } from '@/utils/http'
 
+export interface PreloadResource {
+  url: string
+  ext?: string
+}
+
 export interface getGameParamsApiResponse {
   tempToken: string
   jumpUrl: string
   gameVersion: string // 新增游戏版本字段
+  preloadResources?: PreloadResource[] // 可选：后端返回预加载资源列表时自动生效
 }
 
 /**
