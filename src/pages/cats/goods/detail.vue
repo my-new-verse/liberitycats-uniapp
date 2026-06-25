@@ -732,7 +732,7 @@ const addCart = () => {
           .saveTag {
             padding: 4rpx 8rpx;
             font-size: 24rpx;
-            font-weight: 700;
+            font-weight: 600;
             line-height: 1;
             color: #ff6b03;
             background: #fff1e5;
@@ -750,11 +750,11 @@ const addCart = () => {
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 8rpx;
+        gap: 4rpx;
         // margin: 0 30rpx;
         .level {
           height: 56rpx;
-          margin: 8rpx 0;
+          margin-top: 12rpx;
           image {
             width: 100%;
             height: 100%;
@@ -888,7 +888,7 @@ const addCart = () => {
         line-height: 33rpx;
         color: #261000;
 
-        border: 2rpx solid #261000;
+        border: 2rpx solid #e8e8e8;
         border-radius: 32rpx;
       }
 
