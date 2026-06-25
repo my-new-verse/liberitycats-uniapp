@@ -57,18 +57,26 @@
                   v-if="item.images.length > 0"
                   :class="{ mediaImg4: item.images.length === 4 }"
                 >
-                  <view
-                    v-for="(image, index) in item.images"
-                    :key="index"
-                    @tap.stop="handlePreview(item.images, index)"
-                  >
+                  <template v-if="item.images.length == 1">
                     <wd-img
                       custom-class="mediaImgItem"
                       mode="widthFix"
-                      :src="getImageUrl(image + '?x-oss-process=style/jzcq')"
+                      :src="getImageUrl(item.images[0] + '?x-oss-process=style/sqdt')"
                       :enable-preview="false"
+                      @tap.stop="handlePreview(item.images, index)"
                     />
-                  </view>
+                  </template>
+                  <template v-else-if="item.images.length > 1">
+                    <template v-for="(image, index) in item.images" :key="index">
+                      <wd-img
+                        custom-class="mediaImgItem"
+                        mode="widthFix"
+                        :src="getImageUrl(image + '?x-oss-process=style/jzcq')"
+                        :enable-preview="false"
+                        @tap.stop="handlePreview(item.images, index)"
+                      />
+                    </template>
+                  </template>
                 </view>
                 <view class="socialTime">
                   {{ formatRelativeTime(item.create_time) }}

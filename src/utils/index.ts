@@ -381,7 +381,7 @@ export const navigateBack = () => {
 }
 
 export const getImageUrl = (path: string, useCache?: boolean) => {
-  if (!path) return ''
+  if (!path || path.includes('undefined')) return ''
   let url = ''
   // 如果是 gif 格式，去掉 ? 及其后参数
   if (path.match(/\.gif($|\?)/i)) {

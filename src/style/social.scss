@@ -198,8 +198,8 @@
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 195rpx !important; // 宽度由网格控制
-          height: 195rpx !important;
+          width: 195rpx; // 宽度由网格控制
+          height: 195rpx;
 
           // 当只有 1 个 item 时，高度为 auto，最小高度为 195rpx
           &:only-child {
