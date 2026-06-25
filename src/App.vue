@@ -10,7 +10,7 @@ import buildInfo from '@/../build-info.json'
 import { useSystemStore } from '@/store/system'
 import { getGameParamsApi } from '@/service/api/game'
 // import { scheduleDualGamePreload } from '@/utils/plusGameWebViewPool'
-// import { useGameWebViewStore } from '@/store/gameWebview'
+import { useGameWebViewStore } from '@/store/gameWebview'
 import { downloadGameResources } from '@/utils/webviewResourceCache'
 
 // 扩展 Plus 对象类型，避免 TS 报错

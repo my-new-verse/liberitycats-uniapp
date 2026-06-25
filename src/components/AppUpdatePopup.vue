@@ -26,6 +26,11 @@
       </view>
       <wd-progress :percentage="downloadProgress" hide-text color="#ff6b03" />
     </view>
+    <!-- 下载失败提示 -->
+    <view v-if="downloadFailed" class="download-error">
+      <view class="error-text">⚠️ {{ t('my.menu.update.popup.download_failed') }}</view>
+      <view class="error-hint">{{ t('my.menu.update.popup.download_failed_hint') }}</view>
+    </view>
     <view class="btnBox" v-if="platform === 'ios'">
       <wd-button type="success" custom-class="mainBtn" @click="btnClick()">
         {{ mainBtnText }}
@@ -40,7 +45,13 @@
         loading-color="#ff6b03"
         @click="btnClick(true)"
       >
-        {{ isDownloading ? t('my.menu.update.popup.downloading') : mainBtnText }}
+        {{
+          isDownloading
+            ? t('my.menu.update.popup.downloading')
+            : downloadFailed
+              ? t('my.menu.update.popup.retry')
+              : mainBtnText
+        }}
       </wd-button>
       <wd-button
         type="success"
@@ -56,7 +67,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { t } from '@/locale'
 
 declare const plus: any
@@ -100,15 +111,100 @@ const props = defineProps({
   },
 })
 
-const emits = defineEmits(['update:modelValue', 'btnClick', 'close'])
+const emits = defineEmits(['update:modelValue', 'btnClick', 'close', 'downloadError'])
 
 const isDownloading = ref(false)
 const downloadProgress = ref(0)
+const downloadFailed = ref(false)
 
 let downloadTask: any = null
+let retryCount = 0 // 已自动重试次数，最多自动重试 1 次
 const platform = ref(uni.getSystemInfoSync().platform?.toLowerCase() || '')
 
-const btnClick = (isDownload: false) => {
+// 后台完成下载时暂存安装路径，等待回到前台再执行安装
+let pendingInstallPath: string | null = null
+let isInBackground = false
+
+// 已下载 APK 的 storage key，格式：app_update_apk_{version}
+function getApkCacheKey(version: string) {
+  return `app_update_apk_${version || 'latest'}`
+}
+
+/** 检查已缓存的 APK 文件是否仍然存在，返回 file:// 路径或 null */
+function getCachedApkPath(version: string): Promise<string | null> {
+  return new Promise((resolve) => {
+    const key = getApkCacheKey(version)
+    const cached = uni.getStorageSync(key)
+    if (!cached) {
+      resolve(null)
+      return
+    }
+    // #ifdef APP-PLUS
+    // 验证文件是否真实存在（安装包可能被系统清理）
+    plus.io.resolveLocalFileSystemURL(
+      cached,
+      () => resolve(cached),
+      () => {
+        uni.removeStorageSync(key)
+        resolve(null)
+      },
+    )
+    // #endif
+    // #ifndef APP-PLUS
+    resolve(null)
+    // #endif
+  })
+}
+
+/** 缓存已下载的 APK 路径 */
+function saveApkCache(version: string, nativePath: string) {
+  uni.setStorageSync(getApkCacheKey(version), nativePath)
+}
+
+// #ifdef APP-PLUS
+function doInstall(nativePath: string) {
+  plus.runtime.install(
+    nativePath,
+    {},
+    () => {
+      console.log('[AppUpdate] APK 安装成功')
+      emits('btnClick')
+      plus.runtime.restart()
+    },
+    (err: any) => {
+      console.warn('[AppUpdate] APK 安装失败:', err)
+    },
+  )
+}
+
+const onPause = () => {
+  isInBackground = true
+  console.log('[AppUpdate] App 切入后台，下载任务继续运行')
+}
+
+const onResume = () => {
+  isInBackground = false
+  console.log('[AppUpdate] App 回到前台')
+  // 后台完成下载的安装任务，回前台后立即执行
+  if (pendingInstallPath) {
+    const path = pendingInstallPath
+    pendingInstallPath = null
+    doInstall(path)
+  }
+}
+
+onMounted(() => {
+  plus.globalEvent.addEventListener('pause', onPause)
+  plus.globalEvent.addEventListener('resume', onResume)
+})
+
+onUnmounted(() => {
+  plus.globalEvent.removeEventListener('pause', onPause)
+  plus.globalEvent.removeEventListener('resume', onResume)
+})
+// #endif
+
+const btnClick = async (isDownload: false) => {
   console.log('isDownload', isDownload)
   if (!isDownload || !props.url) {
     emits('btnClick', true)
@@ -122,10 +218,25 @@ const btnClick = (isDownload: false) => {
     emits('btnClick', true)
     return
   }
+
+  // 先检查是否已有缓存的 APK
+  const cachedPath = await getCachedApkPath(props.version)
+  if (cachedPath) {
+    console.log('[AppUpdate] 使用已缓存 APK，跳过下载:', cachedPath)
+    doInstall(cachedPath)
+    return
+  }
   // #endif
 
   if (isDownloading.value) return
 
+  // 手动重试时重置错误状态和自动重试计数
+  downloadFailed.value = false
+  retryCount = 0
+  startDownload()
+}
+
+function startDownload() {
   isDownloading.value = true
   downloadProgress.value = 0
   downloadTask = uni.downloadFile({
@@ -136,28 +247,30 @@ const btnClick = (isDownload: false) => {
 
       if (res.statusCode === 200) {
         // #ifdef APP-PLUS
-        plus.runtime.install(
-          'file://' + plus.io.convertLocalFileSystemURL(res.tempFilePath),
-          () => {
-            console.log('[AppUpdate] APK 安装成功')
-            emits('btnClick')
-            plus.runtime.restart()
-          },
-          (err: any) => {
-            console.warn('[AppUpdate] APK 安装失败:', err)
-          },
-        )
+        const nativePath = 'file://' + plus.io.convertLocalFileSystemURL(res.tempFilePath)
+        // 保存缓存，下次无需重复下载
+        saveApkCache(props.version, nativePath)
+        if (isInBackground) {
+          // 在后台完成下载，暂存路径，回到前台后再安装
+          console.log('[AppUpdate] 后台下载完成，等待回到前台安装')
+          pendingInstallPath = nativePath
+        } else {
+          doInstall(nativePath)
+        }
         // #endif
       } else {
+        // 非 200 响应（如 400 URL 失效）——尝试自动重试一次
         console.warn('[AppUpdate] 下载失败, statusCode:', res.statusCode)
-        uni.showToast({ title: t('my.menu.update.popup.download_failed'), icon: 'none' })
+        uni.removeStorageSync(getApkCacheKey(props.version))
+        handleDownloadFailure(res.statusCode)
       }
     },
     fail: (err: any) => {
       isDownloading.value = false
       downloadTask = null
+      downloadProgress.value = 0
       console.warn('[AppUpdate] 下载失败:', err)
-      uni.showToast({ title: t('my.menu.update.popup.download_failed'), icon: 'none' })
+      handleDownloadFailure(null)
     },
   })
 
@@ -166,6 +279,19 @@ const btnClick = (isDownload: false) => {
       downloadProgress.value = res.progress
     }
   })
+}
+
+function handleDownloadFailure(statusCode: number | null) {
+  if (retryCount < 1) {
+    retryCount++
+    console.log(`[AppUpdate] 自动重试 (${retryCount}/1)…`)
+    // 延迟 1s 再重试，避免立即再请求败利服务器
+    setTimeout(() => startDownload(), 1000)
+  } else {
+    // 自动重试已用尽，展示错误 UI 由用户手动重试
+    downloadFailed.value = true
+    if (statusCode !== null) emits('downloadError', statusCode)
+  }
 }
 
 const closePopup = () => {
@@ -248,6 +374,24 @@ const closePopup = () => {
       font-size: 28rpx;
       font-weight: 500;
       margin-bottom: 12rpx;
+    }
+  }
+  .download-error {
+    margin: 0 48rpx 24rpx;
+    padding: 20rpx 24rpx;
+    background: #fff3f0;
+    border: 1px solid rgba(255, 77, 54, 0.2);
+    border-radius: 12rpx;
+    .error-text {
+      font-size: 28rpx;
+      color: #e53935;
+      font-weight: 500;
+      margin-bottom: 8rpx;
+    }
+    .error-hint {
+      font-size: 24rpx;
+      color: #999;
+      line-height: 1.5;
     }
   }
   .btnBox {

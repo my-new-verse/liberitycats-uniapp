@@ -91,6 +91,8 @@
   "my.menu.update.popup.download_progress": "Download progress",
   "my.menu.update.popup.downloading": "Downloading...",
   "my.menu.update.popup.download_failed": "Download failed, please retry",
+  "my.menu.update.popup.download_failed_hint": "Please retry or open in browser.",
+  "my.menu.update.popup.retry": "Retry Download",
   "my.menu.update.popup.open_in_browser": "Open in browser",
   "my.menu.messageCenter": "Message Center",
   "my.refreshNftList.confirm": "You can only refresh once a day. Are you sure you want to refresh?",
