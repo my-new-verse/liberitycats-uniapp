@@ -35,9 +35,14 @@
               name="notification"
               size="22px"
               color="#fff"
-              @click="goToAnnouncementList()"
+              @click="debouncedGoToAnnouncementList"
             ></wd-icon>
-            <wd-icon name="usergroup" size="22px" color="#fff" @click="goToMembers()"></wd-icon>
+            <wd-icon
+              name="usergroup"
+              size="22px"
+              color="#fff"
+              @click="debouncedGoToMembers"
+            ></wd-icon>
           </view>
         </view>
       </view>
@@ -634,7 +639,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick, computed, watch } from 'vue'
+import { ref, nextTick, computed, watch, onUnmounted } from 'vue'
+import { debounce } from 'lodash-es'
 import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/store'
 import { getImageUrl, toUrl, formatRelativeTime, getChatImageUrl } from '@/utils'
@@ -930,6 +936,15 @@ const goToMembers = async () => {
     false,
   )
 }
+
+const debouncedGoToAnnouncementList = debounce(goToAnnouncementList, 300, {
+  leading: true,
+  trailing: false,
+})
+const debouncedGoToMembers = debounce(goToMembers, 300, {
+  leading: true,
+  trailing: false,
+})
 
 // ✅ 点击头像查看用户主页
 const handleAvatarClick = (memberId: number | undefined) => {
@@ -2678,6 +2693,8 @@ onUnmounted(() => {
   pendingRealtimeMessages.clear()
   pendingRealtimeScrollToLatest = false
   uni.$off(GROUP_CHAT_REFRESH_SENDERS_EVENT, handleRefreshMessageSendersEvent)
+  debouncedGoToAnnouncementList.cancel()
+  debouncedGoToMembers.cancel()
 })
 
 // 评论内容
