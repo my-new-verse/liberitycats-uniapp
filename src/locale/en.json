@@ -40,6 +40,8 @@
   "common.request.error": "Request Error",
   "common.request.network.error": "Network Error,Change Network and Try Again",
   "common.request.network.disconnected": "Seems to be disconnected from the internet",
+  "common.request.network.slow": "Network slow, please retry later",
+  "common.request.cancelled": "Request cancelled, please retry",
   "common.network.error.title": "Network Connection Unstable",
   "common.network.error.description": "Please check your network connection",
   "common.network.error.refresh": "Refresh",

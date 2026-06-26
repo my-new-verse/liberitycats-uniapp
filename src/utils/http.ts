@@ -66,12 +66,12 @@ const rawRequest = <T>(options: CustomRequestOptions): Promise<IResData<T>> => {
       // #endif
       // 响应成功
       success(res) {
-        console.log(
-          '[Trace] http.ts success:',
-          Date.now(),
-          options.url,
-          res?.header?.['X-Request-Id'],
-        )
+        // console.log(
+        //   '[Trace] http.ts success:',
+        //   Date.now(),
+        //   options.url,
+        //   res?.header?.['X-Request-Id'],
+        // )
         // 状态码 2xx，参考 axios 的设计
         if (res.statusCode >= 200 && res.statusCode < 300) {
           // 2.1 提取核心数据 res.data
@@ -100,22 +100,28 @@ const rawRequest = <T>(options: CustomRequestOptions): Promise<IResData<T>> => {
       fail(err) {
         const duration = Date.now() - start
         console.error(`[Trace][${options.url}]    ${Date.now()}. 接口耗时：${duration}ms`)
+        let errorMsg = ''
+        if (err.errMsg.indexOf('timeout')) {
+          errorMsg = t('common.request.network.slow')
+        } else if (err.errMsg.indexOf('abort') !== -1) {
+          errorMsg = t('common.request.cancelled')
+        } else {
+          errorMsg = t('common.request.network.error')
+        }
         // 通过 uni.getNetworkType 判断是否为断网
         uni.getNetworkType({
           success: (res) => {
             const isDisconnected = res.networkType === 'none'
             uni.showToast({
               icon: 'none',
-              title: isDisconnected
-                ? t('common.request.network.disconnected')
-                : err.errMsg || t('common.request.network.error'),
+              title: isDisconnected ? t('common.request.network.disconnected') : errorMsg,
             })
           },
           fail: () => {
             // getNetworkType 失败时回退到原提示
             uni.showToast({
               icon: 'none',
-              title: err.errMsg || t('common.request.network.error'),
+              title: errorMsg,
             })
           },
         })
