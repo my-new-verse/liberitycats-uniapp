@@ -31,18 +31,12 @@
             </view>
           </view>
           <view class="right-icons">
-            <wd-icon
-              name="notification"
-              size="22px"
-              color="#fff"
-              @click="debouncedGoToAnnouncementList"
-            ></wd-icon>
-            <wd-icon
-              name="usergroup"
-              size="22px"
-              color="#fff"
-              @click="debouncedGoToMembers"
-            ></wd-icon>
+            <view @click="debouncedGoToAnnouncementList">
+              <wd-icon name="notification" size="22px" color="#fff"></wd-icon>
+            </view>
+            <view @click="debouncedGoToMembers">
+              <wd-icon name="usergroup" size="22px" color="#fff"></wd-icon>
+            </view>
           </view>
         </view>
       </view>
@@ -937,11 +931,11 @@ const goToMembers = async () => {
   )
 }
 
-const debouncedGoToAnnouncementList = debounce(goToAnnouncementList, 300, {
+const debouncedGoToAnnouncementList = debounce(goToAnnouncementList, 2000, {
   leading: true,
   trailing: false,
 })
-const debouncedGoToMembers = debounce(goToMembers, 300, {
+const debouncedGoToMembers = debounce(goToMembers, 2000, {
   leading: true,
   trailing: false,
 })
