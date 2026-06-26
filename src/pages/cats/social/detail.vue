@@ -58,7 +58,7 @@
                     <wd-img
                       :radius="5"
                       custom-class="mediaImgItem"
-                      mode="widthFix"
+                      :mode="postDetail.images.length === 1 ? 'widthFix' : 'aspectFill'"
                       :src="getImageUrl(image + '?x-oss-process=style/sqdt')"
                       :enable-preview="false"
                       @click="handlePreview(postDetail.images, index)"
