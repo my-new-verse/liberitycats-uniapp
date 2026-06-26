@@ -479,7 +479,22 @@ onPullDownRefresh(async () => {
 
   try {
     // 执行数据加载
-    await loadMore(true)
+    const categoryRes = await getGoodsCategoryApi()
+    categoryList.value = categoryRes.data
+    tabList.value = categoryRes.data.map((item) => item.name)
+
+    // 如果当前选中的分类已不存在，重置到第一个
+    const currentStillExists = categoryRes.data.some((item) => item.name === currentTabName.value)
+    if (!currentStillExists && categoryRes.data.length > 0) {
+      currentTabIndex.value = 0
+      currentTabName.value = categoryRes.data[0].name
+      syncActiveCache()
+      if (!activeMallCache.value.hasLoaded) {
+        await loadMore()
+      }
+    } else {
+      await loadMore(true)
+    }
 
     // 计算已用时间
     const elapsed = Date.now() - startTime
