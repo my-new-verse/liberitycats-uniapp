@@ -34,7 +34,18 @@
 </route>
 <template>
   <view class="game-container">
-    <!-- 交互提示层：用户点击后才展示 WebView -->
+    <!-- 游戏容器 -->
+    <web-view
+      v-if="gameUrl"
+      v-show="webViewVisible"
+      :src="gameUrl"
+      @message="handleMessage"
+      @onPostMessage="handlePostMessage"
+      @error="handleError"
+      :webview-styles="webviewStyles"
+    ></web-view>
+
+    <!-- 交互提示层 -->
     <view v-if="showInteractionHint" class="interaction-hint" @click="handleUserInteraction">
       <view class="hint-content">
         <text>点击屏幕开始游戏</text>
@@ -42,143 +53,103 @@
     </view>
 
     <!-- 调试信息 -->
-    <view v-if="debugInfo" class="debug-info">
+    <!-- <view v-if="debugInfo" class="debug-info">
       <text>{{ debugInfo }}</text>
-    </view>
+    </view> -->
   </view>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, onMounted } from 'vue'
-import { onLoad, onShow, onUnload, onHide } from '@dcloudio/uni-app'
-import { applyResourceOverride } from '@/utils/webviewResourceCache'
-
-declare const plus: any
+import { onLoad, onShow } from '@dcloudio/uni-app'
 
 const gameUrl = ref('')
+const webViewVisible = ref(false)
 const showInteractionHint = ref(true)
 const debugInfo = ref('')
 
-// 原生 WebView 实例
-let nativeWebview: any = null
-
-/** 获取当前页面 WebView */
-const getCurrentPageWebview = () => {
-  const pages = getCurrentPages()
-  const page = pages[pages.length - 1]
-  return page?.$getAppWebview?.() || null
+const webviewStyles = {
+  progress: {
+    color: '#ff6b03',
+  },
+  // 设置黑色背景，减少原生 WebView 白屏感
+  background: '#000000',
+  backgroundColor: '#000000',
 }
 
-/** 加载成功回调 */
-const handleLoaded = () => {
-  debugInfo.value = ''
-  // WebView 已加载完毕，若用户已点击交互层则立即显示，否则等待用户点击
-  if (!showInteractionHint.value) {
-    // #ifdef APP-PLUS
-    try {
-      nativeWebview?.setVisible(true)
-    } catch (_) {}
-    // #endif
-  }
-}
-
-/** 加载失败回调 */
-const handleError = (err?: any) => {
-  console.warn('[GameIndex] webview load error', err)
-  debugInfo.value = `加载失败: ${JSON.stringify(err)}`
-  uni.showToast({ title: '游戏加载失败，请重试', icon: 'none' })
-}
-const currentWebview = getCurrentPageWebview()
-
-/** 创建原生 WebView，在 loadURL 前注入 overrideResourceRequest */
-async function createNativeWebview(url: string) {
-  if (typeof plus === 'undefined') return
-
-  if (!currentWebview) {
-    console.warn('[GameIndex] 无法获取当前页面 webview')
-    return
+// 构建游戏URL
+const buildGameUrl = () => {
+  const query = {
+    token: uni.getStorageSync('token') || 'test_token',
+    userId: uni.getStorageSync('userId') || 'test_user',
+    timestamp: Date.now(),
+    platform: 'app',
+    lang: uni.getLocale() || 'zh',
+    debug: 1,
+    disableWebGL: 0,
+    disableAudio: 0,
   }
 
-  // 创建时不传 url，初始隐藏，等注入拦截规则后再 loadURL
-  nativeWebview = plus.webview.create('', 'game-native-webview', {
-    top: '0px',
-    bottom: '0px',
-    width: '100%',
-    hardwareAccelerated: true,
-    domStorage: true,
-    database: true,
-    mixedContent: 'compatibility',
-    allowFileAccess: true,
-    allowContentAccess: true,
-    allowFileAccessFromFileURLs: true,
-    allowUniversalAccessFromFileURLs: true,
-    useWideViewPort: true,
-    loadWithOverviewMode: true,
-    cacheMode: 'LOAD_DEFAULT',
-    progress: { color: '#FF6B03', height: '2px' },
-    // 初始隐藏，加载完成后再展示，避免遗挡 Vue 层 loading
-    visible: false,
-  })
+  const queryString = Object.entries(query)
+    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+    .join('&')
 
-  // 绑定事件
-  nativeWebview.onerror = handleError
-  nativeWebview.onloaded = handleLoaded
-  nativeWebview.addEventListener?.('loaded', handleLoaded)
-  nativeWebview.addEventListener?.('error', handleError)
-  nativeWebview.addEventListener?.('loaderror', handleError)
-  nativeWebview.addEventListener?.('receivedError', handleError)
-
-  // 在 loadURL 前注入资源拦截规则（先验证文件存在）
-  currentWebview.append(nativeWebview)
-  await applyResourceOverride(nativeWebview)
-  console.log('[GameIndex] 已注入资源拦截，开始加载 URL:', url)
-
-  // 拦截规则注入后再加载 URL
-  nativeWebview.loadURL(url)
+  return `https://game.libertycats.app/minigame/index.html?${queryString}`
 }
 
-/** 销毁原生 WebView */
-function destroyNativeWebview() {
-  if (!nativeWebview) return
-  nativeWebview.onerror = null
-  nativeWebview.onloaded = null
-  nativeWebview.removeEventListener?.('loaded', handleLoaded)
-  nativeWebview.removeEventListener?.('error', handleError)
-  nativeWebview.removeEventListener?.('loaderror', handleError)
-  nativeWebview.removeEventListener?.('receivedError', handleError)
-  try {
-    nativeWebview.close?.()
-  } catch (_) {}
-  nativeWebview = null
-}
-
-/** 用户点击交互层，展示已预加载的 WebView */
+// 处理用户交互
 const handleUserInteraction = () => {
-  showInteractionHint.value = false
-  // #ifdef APP-PLUS
-  try {
-    nativeWebview?.setVisible(true)
-  } catch (_) {}
-  // #endif
+  if (showInteractionHint.value) {
+    // 保持已预加载的 web-view，仅控制显示，避免因创建时机导致的白屏
+    showInteractionHint.value = false
+    webViewVisible.value = true
+    debugInfo.value = '开始游戏，展示已预加载内容'
+  }
 }
 
-onLoad((options: any) => {
-  gameUrl.value = decodeURIComponent(options?.url || '')
-  console.log('[GameIndex] gameUrl:', gameUrl.value)
-  debugInfo.value = '预加载游戏中，点击屏幕开始...'
+// 处理游戏发送的消息
+const handleMessage = (e) => {
+  console.log('收到游戏消息:', e.detail.data)
+  debugInfo.value = `收到消息: ${JSON.stringify(e.detail.data)}`
+}
 
-  // #ifdef APP-PLUS
-  // 进入页面即 create + loadURL（后台预加载），但不显示，等用户点击交互层
-  if (gameUrl.value) {
-    nextTick(() => {
-      createNativeWebview(gameUrl.value)
-    })
-  }
-  // #endif
+// 处理postMessage事件
+const handlePostMessage = (e) => {
+  console.log('PostMessage事件:', e)
+  debugInfo.value = `PostMessage: ${JSON.stringify(e)}`
+}
+
+// 处理错误
+const handleError = (e) => {
+  console.error('游戏加载错误:', e)
+  debugInfo.value = `加载错误: ${JSON.stringify(e)}`
+  uni.showToast({
+    title: '游戏加载失败，请重试',
+    icon: 'none',
+  })
+}
+
+onLoad((options) => {
+  // 页面加载时即开始预加载游戏 URL，但不显示，用户点击后再展示
+  gameUrl.value = decodeURIComponent(options.url) || ''
+  console.log('gameUrl.value', gameUrl.value)
+  debugInfo.value = '页面加载完成，已开始预加载游戏，等待用户交互...'
 })
 
-onUnload(() => {
-  destroyNativeWebview()
+// 添加全局错误监听
+onMounted(() => {
+  // 这里保留文案，onLoad 已设置一次
+  debugInfo.value = '页面加载完成，已开始预加载游戏，等待用户交互...'
+
+  // 使用uni.onError替代window.onerror
+  uni.onError((err) => {
+    debugInfo.value += `\n捕获到错误: ${JSON.stringify(err)}`
+  })
+
+  // 使用uni.onUnhandledRejection替代window.unhandledrejection
+  uni.onUnhandledRejection((err) => {
+    debugInfo.value += `\n未处理的Promise错误: ${JSON.stringify(err)}`
+  })
 })
 </script>
 
@@ -201,11 +172,10 @@ onUnload(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: rgba(0, 0, 0, 0.85);
+  background-color: rgba(0, 0, 0, 0.8);
 
   .hint-content {
-    font-size: 32rpx;
-    font-weight: 600;
+    font-size: 16px;
     color: #fff;
   }
 }

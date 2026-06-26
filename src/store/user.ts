@@ -41,6 +41,50 @@ const initState = {
   },
 }
 
+const preloadGameWebViews = async () => {
+  // #ifdef APP-PLUS
+  const gameTypes = ['MATCH_THREE', 'JUMP'] as const
+  // 记录第一个游戏类型的 preloadResources，用于去重判断
+  let firstPreloadResourcesKey: string | null = null
+  for (const gameType of gameTypes) {
+    try {
+      console.log(`[Preload] 开始获取 ${gameType} 游戏参数...`)
+      const res = await getGameParamsApi(gameType)
+      const jumpUrl = res.data.jumpUrl || ''
+      const preloadResources = res.data.preloadResources || []
+      const preloadResourcesKey = JSON.stringify(preloadResources)
+
+      // 如果是第二个游戏且 preloadResources 与第一个相同，跳过创建
+      if (firstPreloadResourcesKey !== null && preloadResourcesKey === firstPreloadResourcesKey) {
+        console.log(`[Preload] ${gameType} 的 preloadResources 与前一个游戏相同，跳过 WebView 创建`)
+      } else if (!jumpUrl) {
+        console.warn(`[Preload] ${gameType} jumpUrl 为空，跳过`)
+      } else {
+        console.log(`[Preload] ${gameType} jumpUrl:`, jumpUrl)
+        plus.webview.create(jumpUrl, `preload-webview-${gameType}`, {
+          top: '-9999px',
+          left: '-9999px',
+          width: '1px',
+          height: '1px',
+        })
+        console.log(`[Preload] ${gameType} WebView 已创建`)
+      }
+
+      // 记录第一个游戏类型的 preloadResources
+      if (firstPreloadResourcesKey === null) {
+        firstPreloadResourcesKey = preloadResourcesKey
+      }
+    } catch (error) {
+      console.error(`[Preload] ${gameType} 预加载失败:`, error)
+    }
+    // 两个游戏之间间隔 3s
+    if (gameType === 'MATCH_THREE') {
+      await new Promise((resolve) => setTimeout(resolve, 3000))
+    }
+  }
+  // #endif
+}
+
 export const useUserStore = defineStore(
   'user',
   () => {
@@ -217,7 +261,8 @@ export const useUserStore = defineStore(
       uni.$emit('mall:refresh')
       uni.$emit('socialMessage:refresh')
       // 登录成功后触发游戏资源预下载
-      downloadGameResources()
+      // downloadGameResources()
+      preloadGameWebViews()
     }
 
     return {
