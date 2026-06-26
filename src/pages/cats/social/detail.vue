@@ -19,6 +19,7 @@
               <view class="socialHead">
                 <view class="avatarBox" @click="debouncedToUserHomeRef?.(postDetail?.member_id)">
                   <image
+                    v-if="postDetail?.member?.avatar"
                     class="avatar"
                     :src="getImageUrl(postDetail?.member?.avatar + '?x-oss-process=style/jzcq')"
                   />
@@ -48,17 +49,21 @@
                 <view
                   class="socialMedia"
                   v-if="postDetail?.images?.length > 0"
-                  :class="{ mediaImg4: postDetail.images.length === 4 }"
+                  :class="{
+                    mediaImg4: postDetail.images.length === 4,
+                    singleImg: postDetail.images.length === 1,
+                  }"
                 >
-                  <template v-for="(image, index) in postDetail.images" :key="index">
+                  <view v-for="(image, index) in postDetail.images" :key="index">
                     <wd-img
+                      :radius="5"
                       custom-class="mediaImgItem"
                       mode="widthFix"
-                      :src="getImageUrl(image + '?x-oss-process=style/jzcq')"
+                      :src="getImageUrl(image + '?x-oss-process=style/sqdt')"
                       :enable-preview="false"
                       @click="handlePreview(postDetail.images, index)"
                     />
-                  </template>
+                  </view>
                 </view>
                 <view class="socialTime">
                   {{ formatRelativeTime(postDetail.create_time) }}
@@ -159,6 +164,7 @@
                   <view class="commentMedia" v-if="item?._images?.length > 0">
                     <template v-for="(img, index) in item._images" :key="index">
                       <wd-img
+                        :radius="5"
                         custom-class="mediaImg"
                         :src="img"
                         :enable-preview="false"

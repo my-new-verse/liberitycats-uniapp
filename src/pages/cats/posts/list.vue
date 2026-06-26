@@ -55,28 +55,24 @@
                 <view
                   class="socialMedia"
                   v-if="item.images.length > 0"
-                  :class="{ mediaImg4: item.images.length === 4 }"
+                  :class="{
+                    mediaImg4: item.images.length === 4,
+                    singleImg: item.images.length === 1,
+                  }"
                 >
-                  <template v-if="item.images.length == 1">
+                  <view
+                    v-for="(image, index) in item.images"
+                    :key="index"
+                    @tap.stop="handlePreview(item.images, index)"
+                  >
                     <wd-img
+                      :radius="5"
                       custom-class="mediaImgItem"
                       mode="widthFix"
-                      :src="getImageUrl(item.images[0] + '?x-oss-process=style/sqdt')"
+                      :src="getImageUrl(image + '?x-oss-process=style/sqdt')"
                       :enable-preview="false"
-                      @tap.stop="handlePreview(item.images, index)"
                     />
-                  </template>
-                  <template v-else-if="item.images.length > 1">
-                    <template v-for="(image, index) in item.images" :key="index">
-                      <wd-img
-                        custom-class="mediaImgItem"
-                        mode="widthFix"
-                        :src="getImageUrl(image + '?x-oss-process=style/jzcq')"
-                        :enable-preview="false"
-                        @tap.stop="handlePreview(item.images, index)"
-                      />
-                    </template>
-                  </template>
+                  </view>
                 </view>
                 <view class="socialTime">
                   {{ formatRelativeTime(item.create_time) }}
