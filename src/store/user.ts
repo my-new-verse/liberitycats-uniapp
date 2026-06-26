@@ -13,6 +13,7 @@ import { disconnectWalletApi } from '@/service/api/web3'
 import { getGameParamsApi } from '@/service/api/game'
 import { scheduleDualGamePreload } from '@/utils/plusGameWebViewPool'
 import { downloadGameResources } from '@/utils/webviewResourceCache'
+import traceContext from '@/utils/traceContext'
 import { useSystemStore } from '@/store/system'
 import buildInfo from '@/../build-info.json'
 
@@ -54,6 +55,8 @@ export const useUserStore = defineStore(
       if (res.code === 1) {
         userInfo.value = { ...initState }
         uni.removeStorageSync('hasToken')
+        // 重置链路追踪上下文
+        traceContext.reset()
       }
       return new Promise<any>((resolve, reject) => {
         resolve(res)
@@ -63,6 +66,8 @@ export const useUserStore = defineStore(
     const clearUserInfo = () => {
       userInfo.value = { ...initState }
       uni.removeStorageSync('hasToken')
+      // 重置链路追踪上下文
+      traceContext.reset()
     }
 
     const isLogin = computed(() => !!userInfo.value.token)

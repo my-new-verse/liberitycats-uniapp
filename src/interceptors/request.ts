@@ -4,6 +4,7 @@ import { useUserStore } from '@/store'
 import { platform } from '@/utils/platform'
 import { getEnvBaseUrl } from '@/utils'
 import buildInfo from '@/../build-info.json'
+import traceContext from '@/utils/traceContext'
 
 const version = `${buildInfo.version}`
 
@@ -64,7 +65,7 @@ const httpInterceptor = {
       // TIPS: 如果需要对接多个后端服务，也可以在这里处理，拼接成所需要的地址
     }
     // 1. 请求超时
-    options.timeout = 10000 // 10s
+    options.timeout = 30000 // 10s
     // 2. （可选）添加小程序端请求头标识
     options.header = {
       platform, // 可选，与 uniapp 定义的平台一致，告诉后台来源
@@ -79,6 +80,27 @@ const httpInterceptor = {
     options.header['X-App-Environment'] =
       process.env.VITE_MODE === 'production' ? 'production' : 'test'
     if (version != null) options.header['X-App-Version'] = version
+
+    // 4. 添加链路追踪请求头（W3C Trace Context）
+    options.header.traceparent = traceContext.buildTraceparent()
+    options.header['X-Request-Id'] = traceContext.getNewRequestId()
+  },
+  // 响应成功后从响应头提取 traceparent，更新 trace 上下文
+  success(res: any, options: any) {
+    console.log(
+      '[Trace] response callback:',
+      Date.now(),
+      res?.header?.['X-Request-Id'],
+      '---url:',
+      options.url,
+    )
+    if (res?.header) {
+      // 响应头可能大小写不一致，兼容处理
+      const traceparent = res.header.traceparent || res.header.Traceparent
+      if (traceparent) {
+        traceContext.updateFromResponse(traceparent)
+      }
+    }
   },
 }
 

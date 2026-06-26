@@ -23,6 +23,12 @@ export default defineManifestConfig({
   versionCode: '10197',
   transformPx: false,
   locale: VITE_FALLBACK_LOCALE, // 'zh-Hans'
+  networkTimeout: {
+    request: 30000,
+    connectSocket: 20000,
+    uploadFile: 60000,
+    downloadFile: 60000,
+  },
   h5: {
     router: {
       base: VITE_APP_PUBLIC_BASE,

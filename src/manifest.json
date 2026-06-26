@@ -205,6 +205,12 @@
     "enable": false
   },
   "vueVersion": "3",
+  "networkTimeout": {
+    "request": 30000,
+    "connectSocket": 20000,
+    "uploadFile": 60000,
+    "downloadFile": 60000
+  },
   "h5": {
     "router": {
       "base": "/"

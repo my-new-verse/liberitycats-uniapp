@@ -33,7 +33,7 @@ export const httpOut = <T>(options: {
     data: options.data,
     method: options.method || 'GET',
     header: {}, // 清空请求头
-    timeout: 10000,
+    timeout: 30000,
     custom: {
       isOutRequest: true, // 标记为外部请求，跳过内部请求拦截器
     },

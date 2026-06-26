@@ -74,7 +74,7 @@ const buildTabbar = () => {
 
   // const gameEnable = config?.config?.common?.minigame_enable === '1'
   const gameEnable = getServerOnOff('minigame_enable', 'common')
-  console.log('Game enable:', gameEnable)
+  // console.log('Game enable:', gameEnable)
 
   const baseList = [home, mall, discover, mine]
 
@@ -104,7 +104,7 @@ const updateCurrentTab = () => {
 watch(
   () => systemStore.ready,
   (ready) => {
-    console.log('------ ready change', ready)
+    // console.log('------ ready change', ready)
     if (ready) {
       buildTabbar()
       updateCurrentTab()
@@ -129,7 +129,7 @@ onShow(() => {
 watch(
   () => tabbarList.value,
   (value) => {
-    console.log('--------tabbarList', value)
+    // console.log('--------tabbarList', value)
   },
   { immediate: true },
 )

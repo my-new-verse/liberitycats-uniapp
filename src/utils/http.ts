@@ -50,6 +50,7 @@ const requestQueue = new AsyncQueue()
 
 /** 核心请求方法：直接发起 uni.request，不进队列 */
 const rawRequest = <T>(options: CustomRequestOptions): Promise<IResData<T>> => {
+  const start = Date.now()
   return new Promise<IResData<T>>((resolve, reject) => {
     uni.request({
       ...options,
@@ -65,6 +66,12 @@ const rawRequest = <T>(options: CustomRequestOptions): Promise<IResData<T>> => {
       // #endif
       // 响应成功
       success(res) {
+        console.log(
+          '[Trace] http.ts success:',
+          Date.now(),
+          options.url,
+          res?.header?.['X-Request-Id'],
+        )
         // 状态码 2xx，参考 axios 的设计
         if (res.statusCode >= 200 && res.statusCode < 300) {
           // 2.1 提取核心数据 res.data
@@ -91,7 +98,8 @@ const rawRequest = <T>(options: CustomRequestOptions): Promise<IResData<T>> => {
       },
       // 响应失败
       fail(err) {
-        console.error('uni.request fail->', err, 'options==========', options)
+        const duration = Date.now() - start
+        console.error(`[Trace][${options.url}]    ${Date.now()}. 接口耗时：${duration}ms`)
         // 通过 uni.getNetworkType 判断是否为断网
         uni.getNetworkType({
           success: (res) => {
@@ -100,14 +108,14 @@ const rawRequest = <T>(options: CustomRequestOptions): Promise<IResData<T>> => {
               icon: 'none',
               title: isDisconnected
                 ? t('common.request.network.disconnected')
-                : t('common.request.network.error'),
+                : err.errMsg || t('common.request.network.error'),
             })
           },
           fail: () => {
             // getNetworkType 失败时回退到原提示
             uni.showToast({
               icon: 'none',
-              title: t('common.request.network.error'),
+              title: err.errMsg || t('common.request.network.error'),
             })
           },
         })
