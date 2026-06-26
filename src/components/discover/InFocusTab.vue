@@ -235,7 +235,7 @@ const getOriginalText = (item: InFocusItem): string | null => {
   return item.original.text || ''
 }
 const getOriginalLang = (item: InFocusItem): string => {
-  return item.original.sourceLanguageName || ORIGINAL_LANG
+  return item.sourceLanguageName || item.original.sourceLanguageName || ORIGINAL_LANG
 }
 
 // ========== 媒体点击 ==========

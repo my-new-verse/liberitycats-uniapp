@@ -27,7 +27,7 @@
                 <view v-if="detailData.original?.text" class="translateBar">
                   <text class="translateLabel">
                     {{ t('social.inFocus.translated_from') }}
-                    {{ detailData.original.sourceLanguageName }}
+                    {{ detailData.sourceLanguageName || detailData.original.sourceLanguageName }}
                   </text>
                   <text class="translateToggle" @click="showOriginal = !showOriginal">
                     {{
