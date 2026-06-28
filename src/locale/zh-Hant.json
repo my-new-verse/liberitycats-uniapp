@@ -550,6 +550,11 @@
   "group.chat.sending": "發送中",
   "group.chat.sendFailed": "發送失敗",
   "group.chat.reactionFailed": "互動失敗，請重試",
+  "group.chat.mention.title": "選擇提醒的人",
+  "group.chat.mention.multiSelect": "多選",
+  "group.chat.mention.done": "完成",
+  "group.chat.mention.searchPlaceholder": "搜尋成員",
+  "group.chat.mention.loading": "載入中...",
 
   "report.page_title": "舉報內容",
   "report.submit_title": "提交舉報",

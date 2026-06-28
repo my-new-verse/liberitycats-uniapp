@@ -549,6 +549,11 @@
   "group.chat.sending": "Sending",
   "group.chat.sendFailed": "Send failed",
   "group.chat.reactionFailed": "Reaction failed. Please try again.",
+  "group.chat.mention.title": "Select members to mention",
+  "group.chat.mention.multiSelect": "Multi-select",
+  "group.chat.mention.done": "Done",
+  "group.chat.mention.searchPlaceholder": "Search members",
+  "group.chat.mention.loading": "Loading...",
 
   "report.page_title": "Report Content",
   "report.submit_title": "Submit Report",

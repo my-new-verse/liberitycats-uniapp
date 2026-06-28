@@ -28,6 +28,18 @@
       @close="handleCloseCommentPopup"
     >
       <view class="pubCommentBox">
+        <MentionMemberPopup
+          :visible="mentionVisible"
+          :room-id="roomDetail?.room?.id || 0"
+          :keyword="''"
+          :title-text="t('group.chat.mention.title')"
+          :done-text="t('group.chat.mention.done')"
+          :search-placeholder-text="t('group.chat.mention.searchPlaceholder')"
+          :loading-text="t('group.chat.mention.loading')"
+          @update:visible="mentionVisible = $event"
+          @select="handleSelectMention"
+          @confirm="handleConfirmMention"
+        />
         <view class="commentTextAreaBox">
           <wd-textarea
             v-model="commentContent"
@@ -122,7 +134,8 @@
 import { ref, nextTick, computed, watch, onMounted } from 'vue'
 import { debounce } from 'lodash-es'
 import { getImageUrl, toUrl, formatRelativeTime, getChatImageUrl } from '@/utils'
-import { ChatMessagePayload } from '@/service/api/groupChat'
+import { ChatMessagePayload, ChatMember } from '@/service/api/groupChat'
+import MentionMemberPopup from './MentionMemberPopup.vue'
 import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/store'
 import {
@@ -589,14 +602,61 @@ const doSend = (type, payload, mentioned_member_ids?: number[]) => {
   emit('sendMsg', type, payload, mentioned_member_ids)
 }
 
+// ── @提及弹窗状态 ──
+const mentionVisible = ref(false)
+
+/** 监听输入内容，检测末尾单独 @ 触发提及弹窗（@ 后有其他字符则不展示） */
+watch(commentContent, (text) => {
+  if (/@$/.test(text)) {
+    mentionVisible.value = true
+  } else {
+    mentionVisible.value = false
+  }
+})
+
+/** 选中提及成员：替换末尾 @ 为 @nickname */
+const handleSelectMention = (member: ChatMember) => {
+  const text = commentContent.value
+  // 弹窗打开时末尾只有 @，直接替换
+  commentContent.value = text.replace(/@$/, `@${member.nickname} `)
+  mentionedUsers.value.set(member.member_id, member.nickname)
+  mentionVisible.value = false
+  nextTick(() => {
+    shouldFocus.value = true
+  })
+}
+
+/** 多选确认：批量插入 @nickname */
+const handleConfirmMention = (members: ChatMember[]) => {
+  const text = commentContent.value
+  const atMatch = text.match(/@([^@\s]*)$/)
+  const base = atMatch ? text.slice(0, text.length - atMatch[0].length) : text.trimEnd()
+  const mentions = members.map((m) => {
+    mentionedUsers.value.set(m.member_id, m.nickname)
+    return `@${m.nickname}`
+  })
+  commentContent.value = base ? `${base} ${mentions.join(' ')} ` : `${mentions.join(' ')} `
+  mentionVisible.value = false
+  nextTick(() => {
+    shouldFocus.value = true
+  })
+}
+
 /**
- * 接受外部 @提及调用，将 @nickname 插入到输入框并记录 memberId
+ * 接受外部 @提及调用（如长按头像），将 @nickname 插入到输入框并记录 memberId
  */
 const addMention = (memberId: number, nickname: string) => {
   if (!memberId || !nickname) return
   mentionedUsers.value.set(memberId, nickname)
-  const prefix = commentContent.value.trimEnd()
-  commentContent.value = prefix ? `${prefix} @${nickname} ` : `@${nickname} `
+  // 若当前正处于 @输入状态，替换末尾 @keyword；否则直接追加
+  const atMatch = commentContent.value.match(/@([^@\s]*)$/)
+  if (atMatch) {
+    const beforeAt = commentContent.value.slice(0, commentContent.value.length - atMatch[0].length)
+    commentContent.value = `${beforeAt}@${nickname} `
+  } else {
+    const prefix = commentContent.value.trimEnd()
+    commentContent.value = prefix ? `${prefix} @${nickname} ` : `@${nickname} `
+  }
   showCommentPopup()
 }
 defineExpose({ addMention })
@@ -674,6 +734,10 @@ onLoad(() => {
 </script>
 
 <style scoped lang="scss">
+.pubCommentBox {
+  position: relative;
+}
+
 .fixedCommentBox {
   display: flex;
   align-items: center;
