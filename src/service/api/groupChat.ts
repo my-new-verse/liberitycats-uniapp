@@ -369,12 +369,14 @@ export const sendChatMessageApi = (
   messageType: ChatMessageType,
   clientMessageId: string,
   payload: ChatMessagePayload,
+  mentioned_member_ids?: number[],
 ) => {
   return http.post<SendChatMessageResponse>('/v1/community/chat/message/send', {
     room_id: roomId,
     message_type: messageType,
     client_message_id: clientMessageId,
     payload,
+    mentioned_member_ids,
   })
 }
 

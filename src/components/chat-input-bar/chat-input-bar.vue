@@ -142,6 +142,7 @@ const commentPopupVisible = ref(false)
 const canspeak = ref(1)
 const canSpeakReason = ref('')
 const commentContent = ref('')
+const mentionedUsers = ref<Map<number, string>>(new Map()) // memberId → nickname
 const textareaFocus = ref(true)
 const currentOpBtn = ref('keyboard')
 const shouldFocus = ref(false)
@@ -557,15 +558,19 @@ const uploadImageToOss = async (filePath: string, mimeType: string, fileName: st
 
 let lastSendTriggerAt = 0
 const handleSendButtonClick = () => {
-  if (commentContent.value === '') {
+  if (commentContent.value.trim() === '') {
     toast.show(t('group.chat.empty_message'))
     return
   }
   const now = Date.now()
   if (now - lastSendTriggerAt < 200) return
   lastSendTriggerAt = now
-  commentPopupVisible.value = false
-  doSend('text', { text: commentContent.value.trim() })
+
+  const mentionedIds =
+    mentionedUsers.value.size > 0 ? Array.from(mentionedUsers.value.keys()) : undefined
+  const payload: any = { text: commentContent.value.trim() }
+
+  doSend('text', payload, mentionedIds)
   commentContent.value = ''
 }
 
@@ -575,13 +580,26 @@ const sendExpressionEmoji = async (emotionId?: number, emotionUrl: string) => {
   commentPopupVisible.value = false
   doSend('emotion', payload)
 }
-const doSend = (type, payload) => {
+const doSend = (type, payload, mentioned_member_ids?: number[]) => {
   commentPopupVisible.value = false
   shouldFocus.value = false
   commentContent.value = ''
   customEmojiList.value = []
-  emit('sendMsg', type, payload)
+  mentionedUsers.value.clear()
+  emit('sendMsg', type, payload, mentioned_member_ids)
 }
+
+/**
+ * 接受外部 @提及调用，将 @nickname 插入到输入框并记录 memberId
+ */
+const addMention = (memberId: number, nickname: string) => {
+  if (!memberId || !nickname) return
+  mentionedUsers.value.set(memberId, nickname)
+  const prefix = commentContent.value.trimEnd()
+  commentContent.value = prefix ? `${prefix} @${nickname} ` : `@${nickname} `
+  showCommentPopup()
+}
+defineExpose({ addMention })
 /**
  * 发送消息前的完整校验
  * @returns {boolean} 是否通过校验

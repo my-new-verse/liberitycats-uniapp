@@ -47,7 +47,14 @@
         <!-- <view class="chat-icon-container">
           <image class="chat-icon" :src="item.sender.avatar" mode="aspectFill" />
         </view> -->
-        <view class="avatarBox" @click="!item.is_self && handleAvatarClick(item?.member_id)">
+        <view
+          class="avatarBox"
+          @click="!item.is_self && handleAvatarClick(item?.member_id)"
+          @touchstart="handleAvatarTouchStart($event)"
+          @touchmove="handleAvatarTouchMove($event)"
+          @touchend="handleAvatarTouchEnd"
+          @touchcancel="handleAvatarTouchEnd"
+        >
           <view class="u-avatar" :style="getAvatarStyle(item?.sender?.avatar || '', 'chat')"></view>
           <view class="levelIcon">
             <view v-if="levelBadgeStyle" class="levelBadge" :style="levelBadgeStyle"></view>
@@ -151,7 +158,7 @@ import {
 } from '@/utils/avatarCache'
 import { useI18n } from 'vue-i18n'
 
-const emit = defineEmits(['retry'])
+const emit = defineEmits(['retry', 'mention'])
 const { t } = useI18n()
 
 const props = defineProps({
@@ -264,6 +271,56 @@ const EmotionTool = (() => {
 
 const retryFailedMessage = (msg) => {
   emit('retry', msg)
+}
+
+// 头像长按 @提及
+
+let avatarLongPressTimer: ReturnType<typeof setTimeout> | null = null
+let avatarLongPressStartX = 0
+let avatarLongPressStartY = 0
+let avatarLongPressMoved = false
+const AVATAR_LONG_PRESS_DURATION_MS = 450
+const AVATAR_LONG_PRESS_MOVE_THRESHOLD_PX = 10
+
+const handleAvatarTouchStart = (event: any) => {
+  if (props.item.is_self) return
+  const touch = event?.touches?.[0] || event?.changedTouches?.[0]
+  if (!touch) return
+  avatarLongPressStartX = Number(touch.clientX || touch.pageX || 0)
+  avatarLongPressStartY = Number(touch.clientY || touch.pageY || 0)
+  avatarLongPressMoved = false
+  if (avatarLongPressTimer) clearTimeout(avatarLongPressTimer)
+  avatarLongPressTimer = setTimeout(() => {
+    avatarLongPressTimer = null
+    if (avatarLongPressMoved) return
+    const memberId = props.item.sender?.member_id
+    const nickname = props.item.sender?.nickname || ''
+    if (!memberId) return
+    emit('mention', { member_id: memberId, nickname })
+  }, AVATAR_LONG_PRESS_DURATION_MS)
+}
+
+const handleAvatarTouchMove = (event: any) => {
+  if (!avatarLongPressTimer) return
+  const touch = event?.touches?.[0] || event?.changedTouches?.[0]
+  if (!touch) return
+  const deltaX = Math.abs(Number(touch.clientX || touch.pageX || 0) - avatarLongPressStartX)
+  const deltaY = Math.abs(Number(touch.clientY || touch.pageY || 0) - avatarLongPressStartY)
+  if (
+    deltaX >= AVATAR_LONG_PRESS_MOVE_THRESHOLD_PX ||
+    deltaY >= AVATAR_LONG_PRESS_MOVE_THRESHOLD_PX
+  ) {
+    avatarLongPressMoved = true
+    clearTimeout(avatarLongPressTimer)
+    avatarLongPressTimer = null
+  }
+}
+
+const handleAvatarTouchEnd = () => {
+  if (avatarLongPressTimer) {
+    clearTimeout(avatarLongPressTimer)
+    avatarLongPressTimer = null
+  }
 }
 // ✅ 点击头像查看用户主页
 const handleAvatarClick = (memberId: number | undefined) => {

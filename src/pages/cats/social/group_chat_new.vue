@@ -93,7 +93,11 @@
             @touchend="handleMessageTouchEnd"
             @touchcancel="handleMessageTouchEnd"
           >
-            <chat-item :item="item" @retry="retryFailedMessage"></chat-item>
+            <chat-item
+              :item="item"
+              @retry="retryFailedMessage"
+              @mention="handleMentionUser"
+            ></chat-item>
           </view>
         </template>
         <!-- 顶部提示文字 -->
@@ -310,7 +314,7 @@ const runtimeSystemInfo = uni.getSystemInfoSync()
 const isTouchRuntime = ['ios', 'android'].includes(runtimeSystemInfo.platform)
 const isIosRuntime = runtimeSystemInfo.platform === 'ios'
 
-const inputBar = ref(null)
+const inputBar = ref<{ addMention: (memberId: number, nickname: string) => void } | null>(null)
 // v-model绑定的这个变量不要在分页请求结束中自己赋值！！！
 const messages = ref([])
 const roomDetail = ref<ChatRoomDetail | null>(null)
@@ -388,6 +392,10 @@ onUnmounted(() => {
   pendingRealtimeScrollToLatest = false
   uni.$off(GROUP_CHAT_REFRESH_SENDERS_EVENT, handleRefreshMessageSendersEvent)
 })
+const handleMentionUser = ({ member_id, nickname }: { member_id: number; nickname: string }) => {
+  inputBar.value?.addMention(member_id, nickname)
+}
+
 const navigateBack = () => {
   if (isPageLeaving.value) return
   isPageLeaving.value = true
@@ -1220,8 +1228,15 @@ const sendChatMessageWithClientMessageId = async (
   messageType: ChatMessageType,
   clientMessageId: string,
   payload: ChatMessagePayload,
+  mentioned_member_ids?: number[],
 ) => {
-  const res = await sendChatMessageApi(roomId, messageType, clientMessageId, payload)
+  const res = await sendChatMessageApi(
+    roomId,
+    messageType,
+    clientMessageId,
+    payload,
+    mentioned_member_ids,
+  )
   if (res.code === 1) {
     const nextMessage = {
       ...res.data.message,
@@ -1321,7 +1336,7 @@ const updateChatMessageByClientMessageId = (
   })
   return true
 }
-const doSend = (messageType, payload) => {
+const doSend = (messageType, payload, mentioned_member_ids?) => {
   const clientMessageId = createClientMessageId()
 
   // 先追加暂存的离屏消息（确保时序正确：他人消息在自己消息之前）
@@ -1343,6 +1358,7 @@ const doSend = (messageType, payload) => {
     messageType,
     clientMessageId,
     payload,
+    mentioned_member_ids,
   ).catch((error: any) => {
     markLocalMessageFailed(clientMessageId)
     console.error('sendChatMessageWithClientMessageId error:', error)

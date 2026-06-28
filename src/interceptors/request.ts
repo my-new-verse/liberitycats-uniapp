@@ -87,13 +87,13 @@ const httpInterceptor = {
   },
   // 响应成功后从响应头提取 traceparent，更新 trace 上下文
   success(res: any, options: any) {
-    console.log(
-      '[Trace] response callback:',
-      Date.now(),
-      res?.header?.['X-Request-Id'],
-      '---url:',
-      options.url,
-    )
+    // console.log(
+    //   '[Trace] response callback:',
+    //   Date.now(),
+    //   res?.header?.['X-Request-Id'],
+    //   '---url:',
+    //   options.url,
+    // )
     if (res?.header) {
       // 响应头可能大小写不一致，兼容处理
       const traceparent = res.header.traceparent || res.header.Traceparent

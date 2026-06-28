@@ -38,7 +38,7 @@
           :placeholder="t('publish.index.content.placeholder')"
           custom-textarea-class="pubTextArea"
           auto-height
-          :maxlength="300"
+          :maxlength="1000"
           show-word-limit
           :ignoreCompositionEvent="false"
           :auto-focus="true"
