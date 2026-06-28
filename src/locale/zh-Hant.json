@@ -525,6 +525,8 @@
   "social.detail.comment.btn.send": "發送",
   "social.detail.add_custom_emoji_max5": "最多添加5個自定義表情",
   "common.copy": "複製",
+  "common.reply": "回覆",
+  "group.chat.replyTo": "回覆",
   "common.copied": "複製成功！",
   "common.copyFailed": "複製失敗",
   "common.selectReportReason": "請選擇舉報原因",

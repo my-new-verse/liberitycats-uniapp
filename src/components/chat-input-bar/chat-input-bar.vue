@@ -28,6 +28,17 @@
       @close="handleCloseCommentPopup"
     >
       <view class="pubCommentBox">
+        <!-- 回复预览栏 -->
+        <view v-if="replyInfo" class="reply-bar">
+          <view class="reply-bar-content">
+            <text class="reply-bar-label">{{ t('group.chat.replyTo') }}</text>
+            <text class="reply-bar-name">{{ replyInfo.nickname }}:</text>
+            <text class="reply-bar-text">{{ replyInfo.content }}</text>
+          </view>
+          <view class="reply-bar-close" @click="cancelReply">
+            <wd-icon name="close" size="28rpx" color="#999" />
+          </view>
+        </view>
         <MentionMemberPopup
           :visible="mentionVisible"
           :room-id="roomDetail?.room?.id || 0"
@@ -164,6 +175,13 @@ const ossConfig = ref<getAliyunOssConfigApiResponse | null>(null)
 const customEmojiList = ref<{ id: number; url: string }[]>([])
 const toast = useToast()
 
+// ─ 回复状态 ──
+const replyInfo = ref<{
+  messageId: number
+  nickname: string
+  content: string
+} | null>(null)
+
 const props = defineProps({
   roomDetail: {
     type: [Object, null],
@@ -250,6 +268,7 @@ const handleCloseCommentPopup = () => {
   commentPopupVisible.value = false
   shouldFocus.value = false
   commentContent.value = ''
+  replyInfo.value = null
 }
 
 const keyboardHeight = ref(0)
@@ -599,7 +618,9 @@ const doSend = (type, payload, mentioned_member_ids?: number[]) => {
   commentContent.value = ''
   customEmojiList.value = []
   mentionedUsers.value.clear()
-  emit('sendMsg', type, payload, mentioned_member_ids)
+  const replyToId = replyInfo.value?.messageId || undefined
+  replyInfo.value = null
+  emit('sendMsg', type, payload, mentioned_member_ids, replyToId)
 }
 
 // ── @提及弹窗状态 ──
@@ -659,7 +680,27 @@ const addMention = (memberId: number, nickname: string) => {
   }
   showCommentPopup()
 }
-defineExpose({ addMention })
+
+/**
+ * 设置回复目标：展示回复预览栏并打开输入弹出层，同时将发送人加入提及列表
+ */
+const setReply = (messageId: number, memberId: number, nickname: string, content: string) => {
+  if (!messageId || !nickname) return
+  replyInfo.value = { messageId, nickname, content }
+  if (memberId) {
+    mentionedUsers.value.set(memberId, nickname)
+  }
+  showCommentPopup()
+}
+
+/**
+ * 取消回复
+ */
+const cancelReply = () => {
+  replyInfo.value = null
+}
+
+defineExpose({ addMention, setReply, cancelReply })
 /**
  * 发送消息前的完整校验
  * @returns {boolean} 是否通过校验
@@ -736,6 +777,58 @@ onLoad(() => {
 <style scoped lang="scss">
 .pubCommentBox {
   position: relative;
+}
+
+.reply-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16rpx 24rpx;
+  // margin: 0 24rpx 16rpx;
+  // background-color: #f5f5f5;
+  border-radius: 12rpx;
+  // border-left: 6rpx solid var(--liberty-cats-primary-color, #ff6b03);
+
+  .reply-bar-content {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    min-width: 0;
+  }
+
+  .reply-bar-label {
+    font-size: 24rpx;
+    color: #999;
+    flex-shrink: 0;
+    margin-right: 8rpx;
+  }
+
+  .reply-bar-name {
+    font-size: 24rpx;
+    color: #333;
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+
+  .reply-bar-text {
+    font-size: 24rpx;
+    color: #666;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+
+  .reply-bar-close {
+    flex-shrink: 0;
+    margin-left: 16rpx;
+    padding: 8rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 }
 
 .fixedCommentBox {

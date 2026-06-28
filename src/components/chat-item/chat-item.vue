@@ -438,6 +438,10 @@ const handleAvatarClick = (memberId: number | undefined) => {
   // background-color: #007aff;
   border-radius: 30rpx 8rpx 30rpx 30rpx !important;
 }
+/* 自己的消息气泡往右挪，减小右侧间距 */
+.chat-location-me .chat-content-container {
+  margin-right: 4rpx;
+}
 .chat-text-container-super {
   display: flex;
   flex-direction: row;

@@ -314,7 +314,15 @@ const runtimeSystemInfo = uni.getSystemInfoSync()
 const isTouchRuntime = ['ios', 'android'].includes(runtimeSystemInfo.platform)
 const isIosRuntime = runtimeSystemInfo.platform === 'ios'
 
-const inputBar = ref<{ addMention: (memberId: number, nickname: string) => void } | null>(null)
+const inputBar = ref<{
+  addMention: (memberId: number, nickname: string) => void
+  setReply: (
+    messageId: number,
+    memberId: number,
+    senderNickname: string,
+    messageContent: string,
+  ) => void
+} | null>(null)
 // v-model绑定的这个变量不要在分页请求结束中自己赋值！！！
 const messages = ref([])
 const roomDetail = ref<ChatRoomDetail | null>(null)
@@ -1229,6 +1237,7 @@ const sendChatMessageWithClientMessageId = async (
   clientMessageId: string,
   payload: ChatMessagePayload,
   mentioned_member_ids?: number[],
+  reply_to_message_id?: number,
 ) => {
   const res = await sendChatMessageApi(
     roomId,
@@ -1236,6 +1245,7 @@ const sendChatMessageWithClientMessageId = async (
     clientMessageId,
     payload,
     mentioned_member_ids,
+    reply_to_message_id,
   )
   if (res.code === 1) {
     const nextMessage = {
@@ -1336,7 +1346,7 @@ const updateChatMessageByClientMessageId = (
   })
   return true
 }
-const doSend = (messageType, payload, mentioned_member_ids?) => {
+const doSend = (messageType, payload, mentioned_member_ids?, reply_to_message_id?) => {
   const clientMessageId = createClientMessageId()
 
   // 先追加暂存的离屏消息（确保时序正确：他人消息在自己消息之前）
@@ -1359,6 +1369,7 @@ const doSend = (messageType, payload, mentioned_member_ids?) => {
     clientMessageId,
     payload,
     mentioned_member_ids,
+    reply_to_message_id,
   ).catch((error: any) => {
     markLocalMessageFailed(clientMessageId)
     console.error('sendChatMessageWithClientMessageId error:', error)
@@ -1535,8 +1546,16 @@ const messagePopoverBubbleStyle = computed(() => {
   const screenH = sysInfo.screenHeight
   const x = messagePopoverAnchorX.value
   const y = messagePopoverAnchorY.value
-  const halfW = Math.min(screenW / 2 - 16, 200)
-  const left = Math.max(16, Math.min(x - halfW, screenW - halfW * 2 - 16))
+  const isSelf = selectedMessageActionTarget.value?.is_self === 1
+  const left = isSelf
+    ? screenW / 2 - 16
+    : Math.max(
+        16,
+        Math.min(
+          x - Math.min(screenW / 2 - 16, 200),
+          screenW - Math.min(screenW / 2 - 16, 200) * 2 - 16,
+        ),
+      )
   if (messagePopoverPlacement.value === 'top') {
     return { position: 'fixed', left: `${left}px`, bottom: `${screenH - y + 16}px` }
   }
@@ -1549,7 +1568,8 @@ const messagePopoverArrowStyle = computed(() => {
   const screenH = sysInfo.screenHeight
   const x = messagePopoverAnchorX.value
   const y = messagePopoverAnchorY.value
-  const left = Math.max(16, Math.min(x - 8, screenW - 32))
+  const isSelf = selectedMessageActionTarget.value?.is_self === 1
+  const left = isSelf ? screenW / 2 : Math.max(16, Math.min(x - 8, screenW - 32))
   if (messagePopoverPlacement.value === 'top') {
     return { position: 'fixed', left: `${left}px`, bottom: `${screenH - y + 8}px` }
   }
@@ -1661,6 +1681,23 @@ const handlePopoverItemClick = (item: ActionSheetAction) => {
   messagePopoverVisible.value = false
   handleMessageActionSheetItemClick(item)
 }
+// 回复消息：展示回复栏并打开弹出层
+const handleReplyMessage = (msg: ChatMessage) => {
+  const nickname = msg.sender?.nickname || ''
+  let content = ''
+  if (msg.message_type === 'text') {
+    content = msg.payload?.text || ''
+  } else if (msg.message_type === 'rich' && msg.payload?.parts) {
+    content = msg.payload.parts
+      .filter((part) => part.type === 'text' && !!part.text)
+      .map((part) => part.text || '')
+      .join('')
+  }
+  if (!nickname) return
+  const memberId = getMessageTargetMemberId(msg)
+  inputBar.value?.setReply(msg.id || 0, memberId, nickname, content)
+}
+
 // 复制消息内容
 const handleCopyMessage = (msg: ChatMessage) => {
   if (msg.display_status === 'recalled') {
@@ -1710,6 +1747,9 @@ const canReeditRecalledMessage = (msg: ChatMessage) => {
 // 菜单动作分发（复制、删除、禁言、踢人…）
 const handleMessageMenuClick = ({ item }: { item: MessageMenuItem }, msg: ChatMessage) => {
   switch (item.action) {
+    case 'reply':
+      handleReplyMessage(msg)
+      break
     case 'copy':
       handleCopyMessage(msg)
       break
@@ -1798,6 +1838,14 @@ const getGovernanceMenuOptions = (msg: ChatMessage): MessageMenuItem[] => {
     const menuOptions: MessageMenuItem[] = []
 
     if (!isDeletedMessage) {
+      const isSelfMsg = msg.is_self === 1
+      if (!isSelfMsg) {
+        menuOptions.push({
+          content: t('common.reply'),
+          action: 'reply',
+        })
+      }
+
       if (msg.message_type === 'text') {
         menuOptions.push({
           content: t('common.copy'),
@@ -1827,6 +1875,13 @@ const getGovernanceMenuOptions = (msg: ChatMessage): MessageMenuItem[] => {
   const isMuted = isMessageSenderMuted(msg)
 
   if (!isDeletedMessage) {
+    if (!isSelf) {
+      menuOptions.push({
+        content: t('common.reply'),
+        action: 'reply',
+      })
+    }
+
     if (msg.message_type === 'text') {
       menuOptions.push({
         content: t('common.copy'),
@@ -1864,6 +1919,14 @@ const getMessageMenuOptions = (msg: ChatMessage): MessageMenuItem[] => {
   }
 
   const menuOptions: MessageMenuItem[] = []
+  const isSelf = msg.is_self === 1
+
+  if (!isSelf) {
+    menuOptions.push({
+      content: t('common.reply'),
+      action: 'reply',
+    })
+  }
 
   // 只有 text 类型消息才能复制
   if (msg.message_type === 'text') {
@@ -1947,8 +2010,8 @@ const messageActionSheetActions = computed<ActionSheetAction[]>(() => {
           return 'delete-thin'
         case 'copy':
           return 'file-copy'
-        case 'reply': // 新增
-          return 'chat-reply' // 👈 请替换为你实际的图标名
+        case 'reply':
+          return 'chat'
         default:
           return undefined
       }

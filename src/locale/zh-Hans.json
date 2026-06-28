@@ -544,6 +544,8 @@
   "social.detail.comment.btn.send": "发送",
   "social.detail.add_custom_emoji_max5": "最多添加5个自定义表情",
   "common.copy": "复制",
+  "common.reply": "回复",
+  "group.chat.replyTo": "回复",
   "common.copied": "复制成功！",
   "common.copyFailed": "复制失败",
   "common.selectReportReason": "请选择举报原因",

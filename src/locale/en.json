@@ -524,6 +524,8 @@
   "group.chat.member.action.setAdminSuccess": "Set as admin successfully",
 
   "common.copy": "Copy",
+  "common.reply": "Reply",
+  "group.chat.replyTo": "Reply to",
   "common.copied": "Copied!",
   "common.copyFailed": "Copy failed",
   "common.selectReportReason": "Please select a report reason",
