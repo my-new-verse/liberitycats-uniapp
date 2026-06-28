@@ -124,39 +124,50 @@
           />
         </template>
       </z-paging>
-      <wd-action-sheet
-        custom-class="messageActionSheet"
-        custom-style="margin: 0 10px calc(var(--window-bottom) + 10px) 10px; border-radius: 16px; background: #fff;"
-        v-model="messageActionSheetVisible"
-        :title="t('group.chat.messageActionSheetTitle')"
+      <!-- WeChat 风格气泡菜单 -->
+      <view
+        v-if="messagePopoverVisible"
+        class="msg-popover-overlay"
+        @click.stop="messagePopoverVisible = false"
       >
-        <view class="action-sheet-slot">
-          <view
-            v-for="(item, index) in messageActionSheetActions"
-            :key="`${item.action || 'action'}-${index}`"
-            class="action-sheet-item"
-            :class="{ destructive: item.destructive }"
-            @click="handleMessageActionSheetItemClick(item)"
-          >
-            <view class="action-sheet-item-content">
-              <wd-icon
-                v-if="item.iconName"
-                :name="item.iconName"
-                :size="item.iconSize || '38rpx'"
-                class="action-sheet-item-icon"
-              />
-              <image
-                v-else-if="item.iconSrc"
-                :src="item.iconSrc"
-                mode="aspectFit"
-                class="action-sheet-item-image"
-              />
-              <view v-else class="action-sheet-item-icon-placeholder"></view>
-              <text class="action-sheet-item-text">{{ item.name }}</text>
+        <view class="msg-popover-bubble" :style="messagePopoverBubbleStyle" @click.stop>
+          <scroll-view scroll-x :show-scrollbar="false" class="msg-popover-scroll">
+            <view class="msg-popover-items">
+              <view
+                v-for="(item, index) in messageActionSheetActions"
+                :key="`popover-${item.action || 'action'}-${index}`"
+                class="msg-popover-item"
+                :class="{ destructive: item.destructive }"
+                @click.stop="handlePopoverItemClick(item)"
+              >
+                <view class="msg-popover-item-icon">
+                  <wd-icon
+                    v-if="item.iconName"
+                    :name="item.iconName"
+                    size="42rpx"
+                    :color="item.destructive ? '#ff6b6b' : '#fff'"
+                  />
+                  <image
+                    v-else-if="item.iconSrc"
+                    :src="item.iconSrc"
+                    mode="aspectFit"
+                    class="msg-popover-item-image"
+                  />
+                  <view v-else class="msg-popover-icon-placeholder" />
+                </view>
+                <text class="msg-popover-item-text" :class="{ destructive: item.destructive }">
+                  {{ item.name }}
+                </text>
+              </view>
             </view>
-          </view>
+          </scroll-view>
         </view>
-      </wd-action-sheet>
+        <view
+          class="msg-popover-arrow"
+          :class="[`arrow-${messagePopoverPlacement}`]"
+          :style="messagePopoverArrowStyle"
+        />
+      </view>
       <wd-popup v-model="showUnmuteReasonPopup" position="bottom" :close-on-click-modal="false">
         <view class="mute-popup">
           <view class="popup-header">
@@ -345,7 +356,7 @@ onLoad((options: any) => {
 onHide(() => {
   // console.log('onHide')
   clearPendingMessageLongPress()
-  messageActionSheetVisible.value = false
+  messagePopoverVisible.value = false
   selectedMessageActionTarget.value = null
   clearPendingRealtimeMessageIndicator()
   flushPendingReadOnLeave()
@@ -367,7 +378,7 @@ onShow(() => {
 })
 onUnmounted(() => {
   clearPendingMessageLongPress()
-  messageActionSheetVisible.value = false
+  messagePopoverVisible.value = false
   selectedMessageActionTarget.value = null
   clearPendingRealtimeMessageIndicator()
   flushPendingReadOnLeave()
@@ -1497,7 +1508,37 @@ const kickReason = ref('')
 const MESSAGE_LONG_PRESS_DURATION_MS = 450 // 长按触发时间（毫秒）
 const MESSAGE_LONG_PRESS_MOVE_THRESHOLD_PX = 12 // 移动阈值（像素），超过则取消长按
 const selectedMessageActionTarget = ref<ChatMessage | null>(null) // 被长按的消息对象
-const messageActionSheetVisible = ref(false) // 操作菜单显示状态
+const messagePopoverVisible = ref(false) // 操作菜单显示状态
+const messagePopoverAnchorX = ref(0)
+const messagePopoverAnchorY = ref(0)
+const messagePopoverPlacement = ref<'top' | 'bottom'>('top')
+
+const messagePopoverBubbleStyle = computed(() => {
+  const sysInfo = uni.getSystemInfoSync()
+  const screenW = sysInfo.screenWidth
+  const screenH = sysInfo.screenHeight
+  const x = messagePopoverAnchorX.value
+  const y = messagePopoverAnchorY.value
+  const halfW = Math.min(screenW / 2 - 16, 200)
+  const left = Math.max(16, Math.min(x - halfW, screenW - halfW * 2 - 16))
+  if (messagePopoverPlacement.value === 'top') {
+    return { position: 'fixed', left: `${left}px`, bottom: `${screenH - y + 16}px` }
+  }
+  return { position: 'fixed', left: `${left}px`, top: `${y + 16}px` }
+})
+
+const messagePopoverArrowStyle = computed(() => {
+  const sysInfo = uni.getSystemInfoSync()
+  const screenW = sysInfo.screenWidth
+  const screenH = sysInfo.screenHeight
+  const x = messagePopoverAnchorX.value
+  const y = messagePopoverAnchorY.value
+  const left = Math.max(16, Math.min(x - 8, screenW - 32))
+  if (messagePopoverPlacement.value === 'top') {
+    return { position: 'fixed', left: `${left}px`, bottom: `${screenH - y + 8}px` }
+  }
+  return { position: 'fixed', left: `${left}px`, top: `${y + 8}px` }
+})
 let messageLongPressTimer: ReturnType<typeof setTimeout> | null = null // 长按定时器
 let messageLongPressStartX = 0 // 触摸起始 X 坐标
 let messageLongPressStartY = 0 // 触摸起始 Y 坐标
@@ -1524,7 +1565,7 @@ const handleMessageTouchStart = (event: any, msg: ChatMessage) => {
     messageLongPressTimer = null
     if (messageLongPressMoved) return
     lastTriggeredContextMenuAt = Date.now()
-    showMessageContextMenu(msg)
+    showMessageContextMenu(msg, messageLongPressStartX, messageLongPressStartY)
   }, MESSAGE_LONG_PRESS_DURATION_MS)
 }
 // 触摸移动处理
@@ -1562,22 +1603,29 @@ const handleMessageContextMenu = (event: Event, msg: ChatMessage) => {
     return
   }
 
-  showMessageContextMenu(msg)
+  const x = (event as MouseEvent).clientX || 0
+  const y = (event as MouseEvent).clientY || 0
+  showMessageContextMenu(msg, x, y)
 }
-// 显示上下文菜单（ActionSheet）
-const showMessageContextMenu = async (msg: ChatMessage) => {
+// 显示上下文菜单气泡
+const showMessageContextMenu = async (msg: ChatMessage, touchX = 0, touchY = 0) => {
   console.log(msg)
   if (msg.display_status === 'recalled') return
 
   selectedMessageActionTarget.value = msg
   if (messageActionSheetActions.value.length === 0) return
-  messageActionSheetVisible.value = true
+
+  const sysInfo = uni.getSystemInfoSync()
+  messagePopoverAnchorX.value = Math.max(0, touchX)
+  messagePopoverAnchorY.value = Math.max(0, touchY)
+  messagePopoverPlacement.value = touchY > sysInfo.screenHeight * 0.55 ? 'top' : 'bottom'
+  messagePopoverVisible.value = true
 }
 // 菜单项选择处理
 const handleMessageActionSheetSelect = ({ item }: { item: ActionSheetAction }) => {
   const targetMessage = selectedMessageActionTarget.value
   if (!targetMessage || !item?.action) return
-  messageActionSheetVisible.value = false
+  messagePopoverVisible.value = false
   handleMessageMenuClick(
     {
       item: {
@@ -1591,6 +1639,11 @@ const handleMessageActionSheetSelect = ({ item }: { item: ActionSheetAction }) =
 
 const handleMessageActionSheetItemClick = (item: ActionSheetAction) => {
   handleMessageActionSheetSelect({ item })
+}
+
+const handlePopoverItemClick = (item: ActionSheetAction) => {
+  messagePopoverVisible.value = false
+  handleMessageActionSheetItemClick(item)
 }
 // 复制消息内容
 const handleCopyMessage = (msg: ChatMessage) => {
@@ -1869,16 +1922,21 @@ const messageActionSheetActions = computed<ActionSheetAction[]>(() => {
     name: item.content,
     action: item.action,
     destructive: item.action === 'kick',
-    iconName:
-      item.action === 'kick'
-        ? 'user-clear'
-        : item.action === 'removed'
-          ? 'user-clear'
-          : item.action === 'delete'
-            ? 'delete-thin'
-            : item.action === 'copy'
-              ? 'file-copy'
-              : undefined,
+    iconName: (() => {
+      switch (item.action) {
+        case 'kick':
+        case 'removed':
+          return 'user-clear'
+        case 'delete':
+          return 'delete-thin'
+        case 'copy':
+          return 'file-copy'
+        case 'reply': // 新增
+          return 'chat-reply' // 👈 请替换为你实际的图标名
+        default:
+          return undefined
+      }
+    })(),
     iconSrc:
       item.action === 'mute' || item.action === 'unmute' ? MESSAGE_ACTION_MUTE_ICON : undefined,
   }))
@@ -3238,71 +3296,95 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
   }
 }
 
-.action-sheet-slot {
-  padding-bottom: 8rpx;
+// WeChat 风格气泡菜单
+.msg-popover-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  background: transparent;
 }
 
-.action-sheet-item {
-  position: relative;
-  padding: 28rpx 32rpx;
+.msg-popover-bubble {
+  position: fixed;
+  z-index: 9999;
+  background: rgba(45, 45, 45, 0.96);
+  border-radius: 16rpx;
+  overflow: hidden;
+  max-width: calc(100vw - 32px);
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.35);
+}
 
-  &::before {
-    content: '';
-    position: absolute;
-    left: 32rpx;
-    right: 32rpx;
-    top: 0;
-    height: 1rpx;
-    background: rgba(0, 0, 0, 0.06);
-  }
+.msg-popover-scroll {
+  max-width: calc(100vw - 32px);
+}
 
-  &:first-child::before {
-    display: none;
-  }
+.msg-popover-items {
+  display: flex;
+  flex-direction: row;
+  padding: 20rpx 8rpx;
+  align-items: flex-start;
+}
 
-  &.destructive .action-sheet-item-icon,
-  &.destructive .action-sheet-item-text {
-    color: #ff4d4f;
+.msg-popover-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8rpx 20rpx;
+  min-width: 96rpx;
+  cursor: pointer;
+
+  &:active {
+    background: rgba(255, 255, 255, 0.1);
   }
 }
 
-.action-sheet-item-content {
+.msg-popover-item-icon {
+  width: 42rpx;
+  height: 42rpx;
   display: flex;
   align-items: center;
-  gap: 16rpx;
+  justify-content: center;
 }
 
-.action-sheet-item-icon {
-  width: 36rpx;
+.msg-popover-item-image {
+  width: 42rpx;
+  height: 42rpx;
+}
+
+.msg-popover-icon-placeholder {
+  width: 42rpx;
+  height: 42rpx;
+}
+
+.msg-popover-item-text {
+  margin-top: 10rpx;
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.92);
   text-align: center;
-  color: #333;
-  flex-shrink: 0;
+  white-space: nowrap;
+
+  &.destructive {
+    color: #ff6b6b;
+  }
 }
 
-.action-sheet-item-image {
-  width: 38rpx;
-  height: 38rpx;
-  flex-shrink: 0;
-}
+.msg-popover-arrow {
+  position: fixed;
+  z-index: 9999;
+  width: 0;
+  height: 0;
 
-.action-sheet-item-icon-placeholder {
-  width: 36rpx;
-  height: 36rpx;
-  flex-shrink: 0;
-}
+  &.arrow-top {
+    border-left: 9px solid transparent;
+    border-right: 9px solid transparent;
+    border-top: 9px solid rgba(45, 45, 45, 0.96);
+  }
 
-.action-sheet-item-text {
-  font-size: 30rpx;
-  line-height: 1.4;
-  color: #333;
-}
-
-.action-sheet-item-content {
-  text-align: baseline;
-}
-
-.action-sheet-item::before {
-  height: 1px;
+  &.arrow-bottom {
+    border-left: 9px solid transparent;
+    border-right: 9px solid transparent;
+    border-bottom: 9px solid rgba(45, 45, 45, 0.96);
+  }
 }
 ::v-deep .z-paging-content {
   padding-top: inherit !important;
