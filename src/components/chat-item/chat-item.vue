@@ -78,6 +78,11 @@
               <view
                 :class="{ 'chat-text-container': true, 'chat-text-container-me': item.is_self }"
               >
+                <!-- 回复引用 -->
+                <view v-if="item.reply_to" class="reply-ref">
+                  <text class="reply-ref-name">{{ item.reply_to.sender_nickname }}：</text>
+                  <text class="reply-ref-content">{{ item.reply_to.content }}</text>
+                </view>
                 <text :class="{ 'chat-text': true, 'chat-text-me': item.is_self }">
                   {{ item.payload.text }}
                 </text>
@@ -437,6 +442,41 @@ const handleAvatarClick = (memberId: number | undefined) => {
   background-color: var(--liberty-cats-primary-color);
   // background-color: #007aff;
   border-radius: 30rpx 8rpx 30rpx 30rpx !important;
+}
+/* 回复引用样式 */
+.reply-ref {
+  display: flex;
+  align-items: center;
+  padding: 8rpx 16rpx;
+  margin-bottom: 12rpx;
+  background-color: rgba(0, 0, 0, 0.06);
+  border-radius: 8rpx;
+  border-left: 4rpx solid #ccc;
+  overflow: hidden;
+  max-width: 100%;
+}
+.chat-text-container-me .reply-ref {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-left-color: rgba(255, 255, 255, 0.5);
+}
+.reply-ref-name {
+  font-size: 22rpx;
+  color: #999;
+  flex-shrink: 0;
+}
+.chat-text-container-me .reply-ref-name {
+  color: rgba(255, 255, 255, 0.7);
+}
+.reply-ref-content {
+  font-size: 22rpx;
+  color: #666;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.chat-text-container-me .reply-ref-content {
+  color: rgba(255, 255, 255, 0.85);
 }
 /* 自己的消息气泡往右挪，减小右侧间距 */
 .chat-location-me .chat-content-container {

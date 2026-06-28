@@ -86,6 +86,7 @@
         </template>
         <template v-for="(item, index) in messages" :key="item.id">
           <view
+            :class="{ 'msg-row-highlight': highlightedMsgId == item.id }"
             style="transform: scaleY(-1)"
             @contextmenu.stop.prevent="handleMessageContextMenu($event, item)"
             @touchstart="handleMessageTouchStart($event, item)"
@@ -128,6 +129,11 @@
           />
         </template>
       </z-paging>
+      <!-- 右侧悬浮按钮 -->
+      <view class="float-action-btn" @click="handleFloatAction">
+        <wd-icon name="arrow-up" size="24rpx"></wd-icon>
+        <text class="float-action-text">重要消息</text>
+      </view>
       <!-- WeChat 风格气泡菜单 -->
       <view
         v-if="messagePopoverVisible"
@@ -264,7 +270,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { getImageUrl, toUrl, formatRelativeTime, getChatImageUrl } from '@/utils'
 import chatItem from '@/components/chat-item/chat-item.vue'
@@ -288,6 +294,7 @@ import {
   ChatMessage,
   ChatMember,
   ChatMessagePayload,
+  ChatMessageReplyTo,
   ChatRoomDetail,
   ChatMessageType,
   muteMemberApi,
@@ -325,6 +332,7 @@ const inputBar = ref<{
 } | null>(null)
 // v-model绑定的这个变量不要在分页请求结束中自己赋值！！！
 const messages = ref([])
+const highlightedMsgId = ref('')
 const roomDetail = ref<ChatRoomDetail | null>(null)
 const roomCode = ref('')
 const routeRoomId = ref<number>(0)
@@ -365,6 +373,38 @@ onLoad((options: any) => {
   roomCode.value = options?.code || ''
   routeRoomId.value = Number(options?.room_id || 0)
 })
+const scrollIntoViewById = async (id: string) => {
+  const targetId = Number(id)
+  // 检查当前消息列表中是否已存在目标消息
+  const findInCurrent = () => messages.value.some((m: any) => m.id === targetId)
+
+  // 如果当前列表中不存在，循环加载历史消息直到找到或没有更多数据
+  while (!findInCurrent() && hasMoreHistory.value) {
+    const earliestId =
+      messages.value.length > 0 ? Math.min(...messages.value.map((m: any) => m.id)) : undefined
+    if (!earliestId) break
+    // 使用 silent=true 避免触发 paging.complete，手动控制消息追加
+    await getChatMessageList(earliestId, true)
+    // 从缓存中取出刚加载的消息并追加到列表头部
+    const cached = messageCache.get(earliestId)
+    if (cached) {
+      const filtered = filterExistingMessages(messages.value, cached.messages)
+      messages.value = [...filtered, ...messages.value]
+      lastestMessageId.value = cached.newLastestId
+      messageCache.delete(earliestId)
+    }
+    await nextTick()
+  }
+
+  // 找到后滚动并高亮
+  if (findInCurrent()) {
+    paging.value.scrollIntoViewById('msg-row-' + id, 500)
+    highlightedMsgId.value = id
+    setTimeout(() => {
+      highlightedMsgId.value = ''
+    }, 1000)
+  }
+}
 onHide(() => {
   // console.log('onHide')
   clearPendingMessageLongPress()
@@ -1100,6 +1140,13 @@ const handleJumpToLatestMessage = () => {
     backfillMissingMessagesByRoomSeq(lastMsg)
   }
 }
+
+// 悬浮按钮点击
+const handleFloatAction = () => {
+  // TODO: 实现重要消息逻辑
+  console.log('float action clicked')
+  scrollIntoViewById(28225)
+}
 //  向下的箭头 ⬇️⬇️⬇️⬇️⬇️⬇️⬇️⬇️⬇️ end
 const messageCache = new Map()
 const lastestMessageId = ref('')
@@ -1201,6 +1248,7 @@ const createLocalPendingMessage = (
   clientMessageId: string,
   messageType: ChatMessageType,
   payload: ChatMessagePayload,
+  reply_to?: ChatMessageReplyTo,
 ) => {
   const roomId = roomDetail.value?.room.id || routeRoomId.value
   const memberId = Number(userStore.userInfo.member_id || 0)
@@ -1229,6 +1277,7 @@ const createLocalPendingMessage = (
     client_message_id: clientMessageId,
     local_id: clientMessageId,
     local_status: 'sending' as const,
+    reply_to,
   } satisfies ChatMessage
 }
 const sendChatMessageWithClientMessageId = async (
@@ -1237,7 +1286,7 @@ const sendChatMessageWithClientMessageId = async (
   clientMessageId: string,
   payload: ChatMessagePayload,
   mentioned_member_ids?: number[],
-  reply_to_message_id?: number,
+  reply_to?: ChatMessageReplyTo,
 ) => {
   const res = await sendChatMessageApi(
     roomId,
@@ -1245,7 +1294,7 @@ const sendChatMessageWithClientMessageId = async (
     clientMessageId,
     payload,
     mentioned_member_ids,
-    reply_to_message_id,
+    reply_to?.message_id,
   )
   if (res.code === 1) {
     const nextMessage = {
@@ -1346,7 +1395,7 @@ const updateChatMessageByClientMessageId = (
   })
   return true
 }
-const doSend = (messageType, payload, mentioned_member_ids?, reply_to_message_id?) => {
+const doSend = (messageType, payload, mentioned_member_ids?, reply_to?: ChatMessageReplyTo) => {
   const clientMessageId = createClientMessageId()
 
   // 先追加暂存的离屏消息（确保时序正确：他人消息在自己消息之前）
@@ -1358,7 +1407,7 @@ const doSend = (messageType, payload, mentioned_member_ids?, reply_to_message_id
 
   // 乐观追加本地消息，立即展示并滚动到底部
   paging.value?.addChatRecordData(
-    createLocalPendingMessage(clientMessageId, messageType, payload),
+    createLocalPendingMessage(clientMessageId, messageType, payload, reply_to),
     true,
     false,
   )
@@ -1369,7 +1418,7 @@ const doSend = (messageType, payload, mentioned_member_ids?, reply_to_message_id
     clientMessageId,
     payload,
     mentioned_member_ids,
-    reply_to_message_id,
+    reply_to,
   ).catch((error: any) => {
     markLocalMessageFailed(clientMessageId)
     console.error('sendChatMessageWithClientMessageId error:', error)
@@ -2366,6 +2415,30 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
   // position: fixed;
   // z-index: 9999;
   // width: 100vw;
+}
+
+/* 右侧悬浮按钮 */
+.float-action-btn {
+  position: absolute;
+  right: 0;
+  top: 20vh;
+  z-index: 100;
+  background-color: #fff;
+  border-radius: 999px 0 0 999px;
+  padding: 18rpx 24rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.08),
+    0 -2px 10px rgba(0, 0, 0, 0.04);
+}
+
+.float-action-text {
+  font-size: 24rpx;
+  color: #333;
+  font-weight: 500;
 }
 .customNav {
   position: fixed;
@@ -3472,5 +3545,8 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
   margin-left: 24rpx;
   font-size: 28rpx !important;
   font-family: Alibaba PuHuiTi2 !important;
+}
+.msg-row-highlight {
+  background-color: rgba(255, 107, 3, 0.12);
 }
 </style>

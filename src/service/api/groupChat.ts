@@ -145,6 +145,13 @@ export interface ChatMessageMyReactionItem {
   reaction_value: string
 }
 
+export interface ChatMessageReplyTo {
+  message_id: number
+  sender_member_id: number
+  sender_nickname: string
+  content: string
+}
+
 export interface ChatMessage {
   id: number
   room_seq: number
@@ -163,6 +170,7 @@ export interface ChatMessage {
   client_message_id?: string
   local_id?: string
   local_status?: 'sending' | 'failed' | 'sent'
+  reply_to?: ChatMessageReplyTo
 }
 
 export interface ChatMessageListResponse {

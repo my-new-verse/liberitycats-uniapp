@@ -145,7 +145,7 @@
 import { ref, nextTick, computed, watch, onMounted } from 'vue'
 import { debounce } from 'lodash-es'
 import { getImageUrl, toUrl, formatRelativeTime, getChatImageUrl } from '@/utils'
-import { ChatMessagePayload, ChatMember } from '@/service/api/groupChat'
+import { ChatMessagePayload, ChatMember, ChatMessageReplyTo } from '@/service/api/groupChat'
 import MentionMemberPopup from './MentionMemberPopup.vue'
 import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/store'
@@ -618,9 +618,16 @@ const doSend = (type, payload, mentioned_member_ids?: number[]) => {
   commentContent.value = ''
   customEmojiList.value = []
   mentionedUsers.value.clear()
-  const replyToId = replyInfo.value?.messageId || undefined
+  const replyTo: ChatMessageReplyTo | undefined = replyInfo.value
+    ? {
+        message_id: replyInfo.value.messageId,
+        sender_member_id: 0,
+        sender_nickname: replyInfo.value.nickname,
+        content: replyInfo.value.content,
+      }
+    : undefined
   replyInfo.value = null
-  emit('sendMsg', type, payload, mentioned_member_ids, replyToId)
+  emit('sendMsg', type, payload, mentioned_member_ids, replyTo)
 }
 
 // ── @提及弹窗状态 ──
