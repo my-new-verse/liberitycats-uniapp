@@ -1129,21 +1129,21 @@ const bindArGame = () => {
         }
       }
       .nftAssetSummary {
-        margin-top: 28rpx;
+        margin-top: 24rpx;
         overflow: hidden;
-        background: linear-gradient(135deg, #2a1605 0%, #3d2102 100%);
-        border-radius: 28rpx;
+        background: #fff6ef;
+        border: 2rpx solid #ffe4d1;
+        border-radius: 24rpx;
 
         .summaryHero {
-          padding: 32rpx 32rpx 28rpx;
+          padding: 24rpx 28rpx 20rpx;
 
           .heroLabel {
             display: flex;
             align-items: center;
             font-size: 22rpx;
             font-weight: 400;
-            letter-spacing: 1rpx;
-            color: rgba(255, 255, 255, 0.55);
+            color: #a8917f;
 
             &::after {
               flex: none;
@@ -1151,27 +1151,26 @@ const bindArGame = () => {
               height: 10rpx;
               margin-left: 12rpx;
               content: '';
-              background: #1fd27a;
+              background: #ff6b03;
               border-radius: 50%;
-              box-shadow: 0 0 0 4rpx rgba(31, 210, 122, 0.2);
+              box-shadow: 0 0 0 4rpx rgba(255, 107, 3, 0.15);
             }
           }
 
           .heroAmount {
             display: flex;
             align-items: baseline;
-            margin-top: 10rpx;
-            color: #ffffff;
+            margin-top: 8rpx;
+            color: #ff6b03;
 
             .cur {
               margin-right: 4rpx;
-              font-size: 36rpx;
+              font-size: 34rpx;
               font-weight: 600;
-              color: #ff9a3d;
             }
 
             .num {
-              font-size: 60rpx;
+              font-size: 56rpx;
               font-weight: 700;
               line-height: 1.1;
             }
@@ -1181,9 +1180,9 @@ const bindArGame = () => {
         .summaryStats {
           display: flex;
           align-items: center;
-          padding: 24rpx 32rpx;
-          background: rgba(255, 255, 255, 0.06);
-          border-top: 2rpx solid rgba(255, 255, 255, 0.08);
+          padding: 20rpx 28rpx;
+          background: rgba(255, 107, 3, 0.04);
+          border-top: 2rpx solid #ffe4d1;
 
           .statCell {
             flex: 1;
@@ -1193,19 +1192,19 @@ const bindArGame = () => {
             .statLabel {
               font-size: 22rpx;
               font-weight: 400;
-              color: rgba(255, 255, 255, 0.5);
+              color: #a8917f;
             }
 
             .statVal {
               margin-top: 8rpx;
               font-size: 30rpx;
               font-weight: 600;
-              color: #ffffff;
+              color: #261000;
 
               .cur {
                 margin-right: 2rpx;
                 font-size: 22rpx;
-                color: rgba(255, 255, 255, 0.7);
+                color: #ff6b03;
               }
             }
           }
@@ -1214,7 +1213,7 @@ const bindArGame = () => {
             padding: 0 28rpx;
             font-size: 30rpx;
             font-weight: 400;
-            color: rgba(255, 255, 255, 0.35);
+            color: #d8b9a4;
           }
         }
       }
