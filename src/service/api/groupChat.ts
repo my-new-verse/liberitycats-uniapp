@@ -378,7 +378,7 @@ export const sendChatMessageApi = (
   clientMessageId: string,
   payload: ChatMessagePayload,
   mentioned_member_ids?: number[],
-  reply_to_message_id?: number,
+  reply_message_id?: number,
 ) => {
   return http.post<SendChatMessageResponse>('/v1/community/chat/message/send', {
     room_id: roomId,
@@ -386,12 +386,23 @@ export const sendChatMessageApi = (
     client_message_id: clientMessageId,
     payload,
     mentioned_member_ids,
-    reply_to_message_id,
+    reply_message_id,
   })
 }
 
 export const getUnreadSummaryApi = () => {
   return http.get<UnreadSummaryResponse>('/v1/community/chat/unread-summary')
+}
+
+export interface UnreadNotification {
+  important_unread_count: number
+  important_unread_messages: Array<{ message_id: number }>
+}
+
+export const getUnreadNotificationsApi = (roomId: number) => {
+  return http.get<UnreadNotification>('/v1/community/chat/room/unread-notifications', {
+    room_id: roomId,
+  })
 }
 
 export const getChatMessageListApi = (params: {

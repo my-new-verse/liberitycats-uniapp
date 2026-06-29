@@ -130,9 +130,9 @@
         </template>
       </z-paging>
       <!-- 右侧悬浮按钮 -->
-      <view class="float-action-btn" @click="handleFloatAction">
+      <view v-if="showFloatBtn" class="float-action-btn" @click="handleFloatAction">
         <wd-icon name="arrow-up" size="24rpx"></wd-icon>
-        <text class="float-action-text">重要消息</text>
+        <text class="float-action-text">重要消息 ({{ importantUnreadMessages.length }})</text>
       </view>
       <!-- WeChat 风格气泡菜单 -->
       <view
@@ -303,6 +303,7 @@ import {
   recallChatMessageApi,
   reactChatMessageApi,
   deleteChatMessageApi,
+  getUnreadNotificationsApi,
 } from '@/service/api/groupChat'
 import { useUserStore } from '@/store'
 import { useToast } from 'wot-design-uni'
@@ -333,6 +334,9 @@ const inputBar = ref<{
 // v-model绑定的这个变量不要在分页请求结束中自己赋值！！！
 const messages = ref([])
 const highlightedMsgId = ref('')
+const showFloatBtn = ref(false)
+const importantUnreadMessages = ref<Array<{ message_id: number }>>([])
+const currentUnreadIndex = ref(0)
 const roomDetail = ref<ChatRoomDetail | null>(null)
 const roomCode = ref('')
 const routeRoomId = ref<number>(0)
@@ -1141,11 +1145,104 @@ const handleJumpToLatestMessage = () => {
   }
 }
 
-// 悬浮按钮点击
+// 加载未读通知
+const loadUnreadNotifications = async (roomId: number) => {
+  try {
+    const res = await getUnreadNotificationsApi(roomId)
+    if (res.code === 1 && res.data) {
+      const { important_unread_count, important_unread_messages } = res.data
+      if (!(important_unread_count > 0 && important_unread_messages?.length > 0)) {
+        showFloatBtn.value = true
+        importantUnreadMessages.value = important_unread_messages
+        currentUnreadIndex.value = 0
+
+        // 等待消息列表渲染完成后，检查并移除已在视窗中显示的消息
+        await nextTick()
+        setTimeout(() => {
+          filterVisibleUnreadMessages()
+        }, 300)
+      } else {
+        showFloatBtn.value = false
+      }
+    }
+  } catch (e) {
+    // 忽略错误
+  }
+}
+
+// 检查消息是否在视窗中可见
+const isMessageVisibleInViewport = (messageId: number): Promise<boolean> => {
+  return new Promise((resolve) => {
+    const query = uni.createSelectorQuery()
+
+    query
+      .select(`#msg-row-${messageId}`)
+      .boundingClientRect((rect) => {
+        if (rect) {
+          const windowHeight = uni.getSystemInfoSync().windowHeight
+          // 判断消息是否在视窗内（考虑一定的边距）
+          const isVisible = rect.top >= 0 && rect.bottom <= windowHeight
+          resolve(isVisible)
+        } else {
+          resolve(false)
+        }
+      })
+      .exec()
+  })
+}
+
+// 过滤掉已在视窗中显示的消息
+const filterVisibleUnreadMessages = async () => {
+  const visibleMessages: Array<{ message_id: number }> = []
+  const visibleMessageIds: number[] = []
+
+  for (const msg of importantUnreadMessages.value) {
+    const isVisible = await isMessageVisibleInViewport(msg.message_id)
+    if (isVisible) {
+      visibleMessageIds.push(msg.message_id)
+    } else {
+      visibleMessages.push(msg)
+    }
+  }
+
+  // 高亮已在视窗中显示的消息
+  if (visibleMessageIds.length > 0) {
+    highlightMessages(visibleMessageIds)
+  }
+
+  importantUnreadMessages.value = visibleMessages
+
+  // 如果所有消息都已在视窗中显示，隐藏按钮
+  if (visibleMessages.length === 0) {
+    showFloatBtn.value = false
+  }
+}
+
+// 高亮消息
+const highlightMessages = (messageIds: number[]) => {
+  messageIds.forEach((msgId, index) => {
+    setTimeout(() => {
+      highlightedMsgId.value = String(msgId)
+      setTimeout(() => {
+        highlightedMsgId.value = ''
+      }, 2000)
+    }, index * 2200)
+  })
+}
+
+// 悬浮按钮点击 - 依次跳转到未读重要消息
 const handleFloatAction = () => {
-  // TODO: 实现重要消息逻辑
-  console.log('float action clicked')
-  scrollIntoViewById(28225)
+  const msgs = importantUnreadMessages.value
+  if (msgs.length === 0) return
+  const msg = msgs[currentUnreadIndex.value]
+  if (msg) {
+    scrollIntoViewById(String(msg.message_id))
+    currentUnreadIndex.value++
+    // 所有未读消息都已跳转完，隐藏按钮
+    if (currentUnreadIndex.value >= msgs.length) {
+      showFloatBtn.value = false
+    }
+  }
 }
 //  向下的箭头 ⬇️⬇️⬇️⬇️⬇️⬇️⬇️⬇️⬇️ end
 const messageCache = new Map()
@@ -1486,6 +1583,7 @@ const ensureRoomDetailLoaded = async () => {
       roomDetail.value = res.data
       routeRoomId.value = res.data.room.id
       await loadCurrentAnnouncement(res.data.room.id)
+      await loadUnreadNotifications(res.data.room.id)
       return true
     } catch (error) {
       // console.error('loadRoomDetail error:', error)
