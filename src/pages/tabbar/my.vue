@@ -237,25 +237,25 @@
             </view>
             <template v-if="userStore.userInfo.wallet_address !== ''">
               <view class="nftAssetSummary" v-if="nftList.length > 0">
-                <view class="totalValue">
-                  <view class="totalLabel">{{ t('my.nft.total_value') }}</view>
-                  <view class="totalAmount">
+                <view class="summaryHero">
+                  <view class="heroLabel">{{ t('my.nft.total_value') }}</view>
+                  <view class="heroAmount">
                     <text class="cur">$</text>
-                    {{ formatNumber(nftTotalValue, 2) }}
+                    <text class="num">{{ formatNumber(nftTotalValue, 2) }}</text>
                   </view>
                 </view>
-                <view class="formula">
-                  <view class="formulaItem">
-                    <view class="formulaLabel">{{ t('my.nft.floor_price') }}</view>
-                    <view class="formulaVal">
+                <view class="summaryStats">
+                  <view class="statCell">
+                    <view class="statLabel">{{ t('my.nft.floor_price') }}</view>
+                    <view class="statVal">
                       <text class="cur">$</text>
                       {{ formatNumber(nftFloorPrice, 4) }}
                     </view>
                   </view>
-                  <view class="operator">×</view>
-                  <view class="formulaItem">
-                    <view class="formulaLabel">{{ t('my.nft.quantity') }}</view>
-                    <view class="formulaVal">{{ nftCount }}</view>
+                  <view class="statOperator">×</view>
+                  <view class="statCell">
+                    <view class="statLabel">{{ t('my.nft.quantity') }}</view>
+                    <view class="statVal">{{ nftCount }}</view>
                   </view>
                 </view>
               </view>
@@ -1129,73 +1129,92 @@ const bindArGame = () => {
         }
       }
       .nftAssetSummary {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 24rpx 28rpx;
         margin-top: 28rpx;
-        background: #fff7f0;
-        border: 2rpx solid #ffe2cc;
-        border-radius: 24rpx;
+        overflow: hidden;
+        background: linear-gradient(135deg, #2a1605 0%, #3d2102 100%);
+        border-radius: 28rpx;
 
-        .totalValue {
-          display: flex;
-          flex-direction: column;
+        .summaryHero {
+          padding: 32rpx 32rpx 28rpx;
 
-          .totalLabel {
-            font-size: 24rpx;
+          .heroLabel {
+            display: flex;
+            align-items: center;
+            font-size: 22rpx;
             font-weight: 400;
-            color: #99877a;
+            letter-spacing: 1rpx;
+            color: rgba(255, 255, 255, 0.55);
+
+            &::after {
+              flex: none;
+              width: 10rpx;
+              height: 10rpx;
+              margin-left: 12rpx;
+              content: '';
+              background: #1fd27a;
+              border-radius: 50%;
+              box-shadow: 0 0 0 4rpx rgba(31, 210, 122, 0.2);
+            }
           }
 
-          .totalAmount {
-            margin-top: 6rpx;
-            font-size: 40rpx;
-            font-weight: 600;
-            line-height: 1.2;
-            color: #ff6b03;
+          .heroAmount {
+            display: flex;
+            align-items: baseline;
+            margin-top: 10rpx;
+            color: #ffffff;
 
             .cur {
-              margin-right: 2rpx;
-              font-size: 28rpx;
+              margin-right: 4rpx;
+              font-size: 36rpx;
+              font-weight: 600;
+              color: #ff9a3d;
+            }
+
+            .num {
+              font-size: 60rpx;
+              font-weight: 700;
+              line-height: 1.1;
             }
           }
         }
 
-        .formula {
+        .summaryStats {
           display: flex;
           align-items: center;
+          padding: 24rpx 32rpx;
+          background: rgba(255, 255, 255, 0.06);
+          border-top: 2rpx solid rgba(255, 255, 255, 0.08);
 
-          .formulaItem {
+          .statCell {
+            flex: 1;
             display: flex;
             flex-direction: column;
-            align-items: center;
 
-            .formulaLabel {
+            .statLabel {
               font-size: 22rpx;
               font-weight: 400;
-              color: #99877a;
+              color: rgba(255, 255, 255, 0.5);
             }
 
-            .formulaVal {
-              margin-top: 6rpx;
-              font-size: 28rpx;
-              font-weight: 500;
-              color: #261000;
+            .statVal {
+              margin-top: 8rpx;
+              font-size: 30rpx;
+              font-weight: 600;
+              color: #ffffff;
 
               .cur {
                 margin-right: 2rpx;
                 font-size: 22rpx;
+                color: rgba(255, 255, 255, 0.7);
               }
             }
           }
 
-          .operator {
-            padding: 0 20rpx;
-            margin-top: 20rpx;
-            font-size: 28rpx;
-            font-weight: 500;
-            color: #99877a;
+          .statOperator {
+            padding: 0 28rpx;
+            font-size: 30rpx;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.35);
           }
         }
       }
