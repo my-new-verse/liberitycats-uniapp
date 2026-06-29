@@ -236,6 +236,29 @@
               </view>
             </view>
             <template v-if="userStore.userInfo.wallet_address !== ''">
+              <view class="nftAssetSummary" v-if="nftList.length > 0">
+                <view class="totalValue">
+                  <view class="totalLabel">{{ t('my.nft.total_value') }}</view>
+                  <view class="totalAmount">
+                    <text class="cur">$</text>
+                    {{ formatNumber(nftTotalValue, 2) }}
+                  </view>
+                </view>
+                <view class="formula">
+                  <view class="formulaItem">
+                    <view class="formulaLabel">{{ t('my.nft.floor_price') }}</view>
+                    <view class="formulaVal">
+                      <text class="cur">$</text>
+                      {{ formatNumber(nftFloorPrice, 4) }}
+                    </view>
+                  </view>
+                  <view class="operator">×</view>
+                  <view class="formulaItem">
+                    <view class="formulaLabel">{{ t('my.nft.quantity') }}</view>
+                    <view class="formulaVal">{{ nftCount }}</view>
+                  </view>
+                </view>
+              </view>
               <view class="nftBox">
                 <template v-if="nftList.length > 0">
                   <view class="nftList" @click="toUrl('/pages/cats/pledge/index', true)">
@@ -444,6 +467,8 @@ import {
   refreshMemberNftsApi,
 } from '@/service/api/pledge'
 
+import { getCollectionDetailApi, getCollectionDetailApiResponse } from '@/service/api/quotes'
+
 import buildInfo from '@/../build-info.json'
 
 import { useUserStore } from '@/store/user'
@@ -501,6 +526,7 @@ onMounted(() => {
   if (userStore.isLogin) {
     loadNftList()
     loadCheckinData()
+    loadCollectionDetail()
   }
 })
 
@@ -510,6 +536,7 @@ onShow(() => {
   loadNftList()
   loadCheckinData()
   refreshLevel()
+  loadCollectionDetail()
 })
 
 const iconMap = {
@@ -555,6 +582,7 @@ watch(
     if (userStore.isLogin) {
       loadNftList()
       loadCheckinData()
+      loadCollectionDetail()
     }
   },
 )
@@ -614,6 +642,40 @@ const connectWallet = () => {
 }
 
 const nftList = ref<getMemberNftsApiResponse['data']>([])
+
+// NFT 系列实时行情（用于计算资产：地板价 x 数量 = 总价）
+const collectionDetail = ref<getCollectionDetailApiResponse>({
+  name: '',
+  image: '',
+  stats: {
+    floorPrice: 0,
+  },
+})
+
+// 地板价（数值化）
+const nftFloorPrice = computed(() => {
+  const fp = collectionDetail.value?.stats?.floorPrice
+  const num = typeof fp === 'string' ? parseFloat(fp) : fp
+  return Number.isFinite(num as number) ? (num as number) : 0
+})
+
+// 数量
+const nftCount = computed(() => nftList.value.length)
+
+// 总价值 = 地板价 x 数量
+const nftTotalValue = computed(() => nftFloorPrice.value * nftCount.value)
+
+const loadCollectionDetail = () => {
+  return getCollectionDetailApi()
+    .then((res) => {
+      if (res.data) {
+        collectionDetail.value = res.data
+      }
+    })
+    .catch((error) => {
+      console.error('加载NFT行情失败:', error)
+    })
+}
 
 const handleRefreshNftList = () => {
   if (!userStore.isLogin) return
@@ -720,6 +782,7 @@ const refreshData = async () => {
       refreshAssets(),
       loadNftList(),
       refreshLevel(),
+      loadCollectionDetail(),
       // 其他需要刷新的数据
     ])
   } catch (error) {
@@ -1065,6 +1128,78 @@ const bindArGame = () => {
           color: #261000;
         }
       }
+      .nftAssetSummary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 24rpx 28rpx;
+        margin-top: 28rpx;
+        background: #fff7f0;
+        border: 2rpx solid #ffe2cc;
+        border-radius: 24rpx;
+
+        .totalValue {
+          display: flex;
+          flex-direction: column;
+
+          .totalLabel {
+            font-size: 24rpx;
+            font-weight: 400;
+            color: #99877a;
+          }
+
+          .totalAmount {
+            margin-top: 6rpx;
+            font-size: 40rpx;
+            font-weight: 600;
+            line-height: 1.2;
+            color: #ff6b03;
+
+            .cur {
+              margin-right: 2rpx;
+              font-size: 28rpx;
+            }
+          }
+        }
+
+        .formula {
+          display: flex;
+          align-items: center;
+
+          .formulaItem {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+
+            .formulaLabel {
+              font-size: 22rpx;
+              font-weight: 400;
+              color: #99877a;
+            }
+
+            .formulaVal {
+              margin-top: 6rpx;
+              font-size: 28rpx;
+              font-weight: 500;
+              color: #261000;
+
+              .cur {
+                margin-right: 2rpx;
+                font-size: 22rpx;
+              }
+            }
+          }
+
+          .operator {
+            padding: 0 20rpx;
+            margin-top: 20rpx;
+            font-size: 28rpx;
+            font-weight: 500;
+            color: #99877a;
+          }
+        }
+      }
+
       .nftConnect {
         display: flex;
         align-items: center;
