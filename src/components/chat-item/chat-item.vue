@@ -207,9 +207,6 @@
   </view>
 </template>
 
-// 处理回复引用点击 const handleReplyClick = () => { const replyMessageId =
-props.item.reply_to?.message_id || props.item.reply_message?.id if (replyMessageId) {
-emit('reply-click', replyMessageId) } }
 <script setup lang="ts">
 import { getImageUrl, toUrl, formatRelativeTime, getChatImageUrl } from '@/utils'
 import {
@@ -230,6 +227,15 @@ const props = defineProps({
     default: () => ({}),
   },
 })
+
+// 处理回复引用点击
+const handleReplyClick = () => {
+  const replyMessageId = props.item.reply_to?.message_id || props.item.reply_message?.id
+  if (replyMessageId) {
+    emit('reply-click', replyMessageId)
+  }
+}
+
 const getMessageSenderDisplayName = (msg: ChatMessage) => {
   const nickname = msg.sender?.nickname || ''
   if (!isMessageSenderRemoved(msg)) return nickname
