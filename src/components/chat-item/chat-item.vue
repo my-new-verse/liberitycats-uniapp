@@ -79,9 +79,13 @@
                 :class="{ 'chat-text-container': true, 'chat-text-container-me': item.is_self }"
               >
                 <!-- 回复引用 -->
-                <view v-if="item.reply_to" class="reply-ref">
-                  <text class="reply-ref-name">{{ item.reply_to.sender_nickname }}：</text>
-                  <text class="reply-ref-content">{{ item.reply_to.content }}</text>
+                <view v-if="item.reply_to || item.reply_message" class="reply-ref">
+                  <text class="reply-ref-name">
+                    {{ item.reply_to?.sender_nickname || item.reply_message?.sender?.nickname }}：
+                  </text>
+                  <text class="reply-ref-content">
+                    {{ item.reply_to?.content || item.reply_message?.payload?.text }}
+                  </text>
                 </view>
                 <text :class="{ 'chat-text': true, 'chat-text-me': item.is_self }">
                   {{ item.payload.text }}
@@ -89,30 +93,65 @@
               </view>
             </template>
             <template v-else-if="item.message_type === 'image'">
-              <wd-img
-                custom-class="chat-img-custom"
-                mode="aspectFill"
-                :width="`${getImageMessageBoxSize(item).width}px`"
-                :height="`${getImageMessageBoxSize(item).height}px`"
-                :src="item.payload.thumb_url"
-                :enable-preview="true"
-                radius="24rpx"
-              />
+              <view
+                :class="{ 'chat-text-container': true, 'chat-text-container-me': item.is_self }"
+              >
+                <!-- 回复引用 -->
+                <view v-if="item.reply_to || item.reply_message" class="reply-ref">
+                  <text class="reply-ref-name">
+                    {{ item.reply_to?.sender_nickname || item.reply_message?.sender?.nickname }}：
+                  </text>
+                  <text class="reply-ref-content">
+                    {{ item.reply_to?.content || item.reply_message?.payload?.text }}
+                  </text>
+                </view>
+                <wd-img
+                  custom-class="chat-img-custom"
+                  mode="aspectFill"
+                  :width="`${getImageMessageBoxSize(item).width}px`"
+                  :height="`${getImageMessageBoxSize(item).height}px`"
+                  :src="item.payload.thumb_url"
+                  :enable-preview="true"
+                  radius="24rpx"
+                />
+              </view>
             </template>
             <template v-else-if="item.message_type === 'emotion'">
-              <wd-img
-                custom-class="chat-img-custom"
-                mode="aspectFill"
-                width="140rpx"
-                height="140rpx"
-                :src="
-                  item.payload?.emotion_url
-                    ? getImageUrl(item.payload?.emotion_url)
-                    : getEmotionMessageSrc(item)
-                "
-              />
+              <view
+                :class="{ 'chat-text-container': true, 'chat-text-container-me': item.is_self }"
+              >
+                <!-- 回复引用 -->
+                <view v-if="item.reply_to || item.reply_message" class="reply-ref">
+                  <text class="reply-ref-name">
+                    {{ item.reply_to?.sender_nickname || item.reply_message?.sender?.nickname }}：
+                  </text>
+                  <text class="reply-ref-content">
+                    {{ item.reply_to?.content || item.reply_message?.payload?.text }}
+                  </text>
+                </view>
+                <wd-img
+                  custom-class="chat-img-custom"
+                  mode="aspectFill"
+                  width="140rpx"
+                  height="140rpx"
+                  :src="
+                    item.payload?.emotion_url
+                      ? getImageUrl(item.payload?.emotion_url)
+                      : getEmotionMessageSrc(item)
+                  "
+                />
+              </view>
             </template>
             <view v-else-if="item.message_type === 'rich'" class="rich-item">
+              <!-- 回复引用 -->
+              <view v-if="item.reply_to || item.reply_message" class="reply-ref">
+                <text class="reply-ref-name">
+                  {{ item.reply_to?.sender_nickname || item.reply_message?.sender?.nickname }}：
+                </text>
+                <text class="reply-ref-content">
+                  {{ item.reply_to?.content || item.reply_message?.payload?.text }}
+                </text>
+              </view>
               <view v-for="(richItem, index) in item.payload?.parts" :key="index">
                 <template v-if="richItem.type === 'text'">
                   <view>
