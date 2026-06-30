@@ -22,6 +22,8 @@
       hide-cancel
       :placeholder="searchPlaceholderText"
       @change="handleSearch"
+      @clear="handleClear"
+      @click.stop
     />
     <!-- 已选成员头像行 -->
     <scroll-view v-if="multiSelect && selectedMembers.length > 0" scroll-x class="selected-bar">
@@ -46,7 +48,7 @@
             v-for="member in smartMembers"
             :key="member.member_id"
             class="mention-member-item"
-            @touchend.prevent="toggleMember(member)"
+            @click="toggleMember(member)"
           >
             <wd-checkbox :model-value="selectedIdArr.includes(member.member_id)" />
             <image class="mention-avatar" :src="member.avatar" mode="aspectFill" />
@@ -58,7 +60,7 @@
             v-for="member in smartMembers"
             :key="member.member_id"
             class="mention-member-item"
-            @touchend.prevent="handleItemClick(member)"
+            @click="handleItemClick(member)"
           >
             <image class="mention-avatar" :src="member.avatar" mode="aspectFill" />
             <text class="mention-nickname">{{ member.nickname }}</text>
@@ -74,7 +76,7 @@
             v-for="member in allMembers"
             :key="member.member_id"
             class="mention-member-item"
-            @touchend.prevent="toggleMember(member)"
+            @click="toggleMember(member)"
           >
             <wd-checkbox :model-value="selectedIdArr.includes(member.member_id)" />
             <image class="mention-avatar" :src="member.avatar" mode="aspectFill" />
@@ -86,7 +88,7 @@
             v-for="member in allMembers"
             :key="member.member_id"
             class="mention-member-item"
-            @touchend.prevent="handleItemClick(member)"
+            @click="handleItemClick(member)"
           >
             <image class="mention-avatar" :src="member.avatar" mode="aspectFill" />
             <text class="mention-nickname">{{ member.nickname }}</text>
@@ -126,6 +128,8 @@ const emit = defineEmits<{
 
 const smartMembers = ref<ChatMember[]>([]) // 最常提醒
 const allMembers = ref<ChatMember[]>([]) // 全部人员
+const rawSmartMembers = ref<ChatMember[]>([]) // 原始最常提醒数据（未搜索）
+const rawAllMembers = ref<ChatMember[]>([]) // 原始全部人员数据（未搜索）
 const loading = ref(false)
 const multiSelect = ref(false)
 const selectedIdArr = ref<number[]>([])
@@ -150,22 +154,36 @@ const selectedMembers = computed(() => {
   return members.value.filter((m) => idSet.has(m.member_id))
 })
 
-const fetchMembers = async (keyword: string) => {
+const fetchMembers = async (keyword: string, isInitialLoad = false) => {
   if (!props.roomId) return
   loading.value = true
   try {
-    // 并行请求两个接口
-    const [smartRes, allRes] = await Promise.all([
-      getSmartMembersApi(props.roomId, 1, 30, keyword),
-      getChatRoomMembersApi(props.roomId, undefined, 1, 100, keyword),
-    ])
+    if (isInitialLoad) {
+      // 初始加载：并行请求两个接口
+      const [smartRes, allRes] = await Promise.all([
+        getSmartMembersApi(props.roomId, 1, 30, keyword),
+        getChatRoomMembersApi(props.roomId, undefined, 1, 100, keyword),
+      ])
 
-    if (smartRes.code === 1) {
-      smartMembers.value = smartRes.data.members || []
+      if (smartRes.code === 1) {
+        const data = smartRes.data.members || []
+        smartMembers.value = data
+        rawSmartMembers.value = data
+      }
+      if (allRes.code === 1) {
+        const data = allRes.data.data || []
+        allMembers.value = data
+        rawAllMembers.value = data
+      }
+    } else {
+      // 搜索时：只请求全部人员接口
+      const allRes = await getChatRoomMembersApi(props.roomId, undefined, 1, 100, keyword)
+      if (allRes.code === 1) {
+        allMembers.value = allRes.data.data || []
+      }
     }
-    if (allRes.code === 1) {
-      allMembers.value = allRes.data.data || []
-    }
+  } catch (error) {
+    console.error(error)
   } finally {
     loading.value = false
   }
@@ -176,9 +194,13 @@ watch(
   () => props.visible,
   (val) => {
     if (val) {
-      fetchMembers('')
+      // 弹出层打开时隐藏键盘
+      uni.hideKeyboard()
+      fetchMembers('', true) // 初始加载，传入 isInitialLoad = true
     } else {
       members.value = []
+      rawSmartMembers.value = []
+      rawAllMembers.value = []
       multiSelect.value = false
       selectedIdArr.value = []
       searchValue.value = ''
@@ -206,11 +228,22 @@ const handleClose = () => {
 
 // 处理搜索框输入
 let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null
-const handleSearch = (value: string) => {
+const handleSearch = (keyword: string) => {
   if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
   searchDebounceTimer = setTimeout(() => {
-    fetchMembers(value)
+    if (keyword.value === '') {
+      smartMembers.value = rawSmartMembers.value
+      allMembers.value = rawAllMembers.value
+    } else {
+      fetchMembers(keyword.value)
+    }
   }, 300)
+}
+
+// 处理搜索框清除
+const handleClear = () => {
+  searchValue.value = ''
+  fetchMembers('')
 }
 
 const handleItemClick = (member: ChatMember) => {
