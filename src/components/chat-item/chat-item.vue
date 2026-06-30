@@ -79,7 +79,11 @@
                 :class="{ 'chat-text-container': true, 'chat-text-container-me': item.is_self }"
               >
                 <!-- 回复引用 -->
-                <view v-if="item.reply_to || item.reply_message" class="reply-ref">
+                <view
+                  v-if="item.reply_to || item.reply_message"
+                  class="reply-ref"
+                  @click.stop="handleReplyClick"
+                >
                   <text class="reply-ref-name">
                     {{ item.reply_to?.sender_nickname || item.reply_message?.sender?.nickname }}：
                   </text>
@@ -97,7 +101,11 @@
                 :class="{ 'chat-text-container': true, 'chat-text-container-me': item.is_self }"
               >
                 <!-- 回复引用 -->
-                <view v-if="item.reply_to || item.reply_message" class="reply-ref">
+                <view
+                  v-if="item.reply_to || item.reply_message"
+                  class="reply-ref"
+                  @click.stop="handleReplyClick"
+                >
                   <text class="reply-ref-name">
                     {{ item.reply_to?.sender_nickname || item.reply_message?.sender?.nickname }}：
                   </text>
@@ -121,7 +129,11 @@
                 :class="{ 'chat-text-container': true, 'chat-text-container-me': item.is_self }"
               >
                 <!-- 回复引用 -->
-                <view v-if="item.reply_to || item.reply_message" class="reply-ref">
+                <view
+                  v-if="item.reply_to || item.reply_message"
+                  class="reply-ref"
+                  @click.stop="handleReplyClick"
+                >
                   <text class="reply-ref-name">
                     {{ item.reply_to?.sender_nickname || item.reply_message?.sender?.nickname }}：
                   </text>
@@ -144,7 +156,11 @@
             </template>
             <view v-else-if="item.message_type === 'rich'" class="rich-item">
               <!-- 回复引用 -->
-              <view v-if="item.reply_to || item.reply_message" class="reply-ref">
+              <view
+                v-if="item.reply_to || item.reply_message"
+                class="reply-ref"
+                @click.stop="handleReplyClick"
+              >
                 <text class="reply-ref-name">
                   {{ item.reply_to?.sender_nickname || item.reply_message?.sender?.nickname }}：
                 </text>
@@ -191,6 +207,9 @@
   </view>
 </template>
 
+// 处理回复引用点击 const handleReplyClick = () => { const replyMessageId =
+props.item.reply_to?.message_id || props.item.reply_message?.id if (replyMessageId) {
+emit('reply-click', replyMessageId) } }
 <script setup lang="ts">
 import { getImageUrl, toUrl, formatRelativeTime, getChatImageUrl } from '@/utils'
 import {
@@ -202,7 +221,7 @@ import {
 } from '@/utils/avatarCache'
 import { useI18n } from 'vue-i18n'
 
-const emit = defineEmits(['retry', 'mention'])
+const emit = defineEmits(['retry', 'mention', 'reply-click'])
 const { t } = useI18n()
 
 const props = defineProps({
