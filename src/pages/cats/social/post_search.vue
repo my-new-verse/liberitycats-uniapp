@@ -1,0 +1,1486 @@
+<route lang="json5" type="page">
+{
+  style: {
+    navigationStyle: 'custom',
+  },
+}
+</route>
+
+<template>
+  <view class="page" :class="[locale]">
+    <!-- ========== 自定义导航栏 + 搜索框 ========== -->
+    <view class="customNav" :style="{ height: navHeight + 'rpx' }">
+      <view class="navHeaderBg" :style="{ paddingTop: navHeaderPaddingTop + 'rpx' }">
+        <view class="navCnt">
+          <view class="left" @click="navigateBack()">
+            <image src="/static/images/back2.png" mode="widthFix" />
+          </view>
+          <view class="searchBox">
+            <wd-input
+              type="text"
+              v-model="searchText"
+              :placeholder="t('social.search.searchInput.placeholder')"
+              :no-border="true"
+              custom-class="searchInput"
+              confirm-type="search"
+              @confirm="search"
+            />
+            <view class="searchDivider"></view>
+            <text class="searchBtn" @click="search">{{ t('common.search') }}</text>
+          </view>
+        </view>
+      </view>
+      <view class="navBg">
+        <view class="pbl2"><view class="fbg"></view></view>
+        <view class="pbr2"><view class="fbg"></view></view>
+      </view>
+    </view>
+
+    <view class="cnt" :style="{ paddingTop: cntPaddingTop + 'rpx' }">
+      <!-- ========== 筛选栏：用户 + 时间 ========== -->
+      <view class="filterSticky" :style="{ top: cntPaddingTop + 'rpx' }">
+        <view class="filterBar">
+          <view class="filterItem" @click="showUserFilter = true">
+            <text class="filterLabel">
+              {{ selectedUserLabel || t('social.search.filter.user') }}
+            </text>
+            <text class="filterArrow">▼</text>
+          </view>
+          <view class="filterItem" @click="showTimeFilter = true">
+            <text class="filterLabel">
+              {{ selectedTimeLabel || t('social.search.filter.time') }}
+            </text>
+            <text class="filterArrow">▼</text>
+          </view>
+        </view>
+
+        <view class="selectedUsersBar" v-if="confirmedUserIds.length > 0">
+          <scroll-view scroll-x class="selectedUsersScroll">
+            <view class="selectedUserItem" v-for="uid in confirmedUserIds" :key="uid">
+              <view class="userAvatarWrap">
+                <image
+                  class="userAvatar"
+                  :src="selectedUsersCache.get(uid)?.avatar"
+                  mode="aspectFill"
+                />
+                <view class="removeIcon" @click.stop="removeSelectedUser(uid)">×</view>
+              </view>
+              <text class="userName">{{ selectedUsersCache.get(uid)?.nickname }}</text>
+            </view>
+          </scroll-view>
+        </view>
+      </view>
+
+      <view :style="{ height: filterStickyHeight + 'rpx' }"></view>
+
+      <!-- ========== 搜索状态：初始提示 / 结果列表（暂无数据） ========== -->
+      <template v-if="!hasSearched">
+        <view class="emptyBox">
+          <view class="emptyText">{{ t('social.search.hint') }}</view>
+        </view>
+      </template>
+      <template v-else-if="searchResult.posts.length > 0">
+        <view class="socialBox">
+          <view class="cell" v-for="post in searchResult.posts" :key="post.id">
+            <view class="socialItem">
+              <view
+                class="delBox"
+                v-if="post.member?.is_self"
+                @click="handleDelPost(post.id)"
+              ></view>
+              <view class="jbBox" v-else @click="reportPost(post)"></view>
+              <view class="socialHead">
+                <view class="avatarBox" @click="toPostDetail(post)">
+                  <image class="avatar" :src="post.member?.avatar" />
+                  <view class="levelIcon" v-if="post.member?.level">
+                    <image :src="`/static/images/level/${post.member.level}.png`" mode="widthFix" />
+                  </view>
+                </view>
+                <view class="nameWrap">
+                  <view class="name">{{ post.member?.nickname }}</view>
+                  <view
+                    v-if="getMemberFollowInfo(post.member)"
+                    class="followBtn"
+                    :class="getMemberFollowInfo(post.member).style"
+                    @click.stop="handleFollowClick(post.member)"
+                  >
+                    {{ getMemberFollowInfo(post.member).text }}
+                  </view>
+                </view>
+                <view v-if="post.tag?.name" class="tag" :class="post.tag?.class">
+                  {{ post.tag.name }}
+                </view>
+              </view>
+              <view class="socialCntBox" @click="toPostDetail(post)">
+                <view class="socialCnt">{{ post.content }}</view>
+                <view
+                  class="socialMedia"
+                  v-if="post.images && post.images.length > 0"
+                  :class="{ mediaImg4: post.images.length === 4 }"
+                >
+                  <template v-if="post.images.length == 1">
+                    <wd-img
+                      custom-class="mediaImgItem"
+                      mode="widthFix"
+                      :src="getImageUrl(post.images[0] + '?x-oss-process=style/sqdt')"
+                      :preview-src="post.images.map((img) => getImageUrl(img))"
+                      :enable-preview="false"
+                      @tap.stop="handlePreview(post.images, 0)"
+                    />
+                  </template>
+                  <template v-else-if="post.images.length > 1">
+                    <template v-for="(image, index) in post.images" :key="index">
+                      <wd-img
+                        custom-class="mediaImgItem"
+                        mode="widthFix"
+                        :src="getImageUrl(image + '?x-oss-process=style/jzcq')"
+                        :preview-src="post.images.map((img) => getImageUrl(img))"
+                        :enable-preview="false"
+                        @tap.stop="handlePreview(post.images, index)"
+                      />
+                    </template>
+                  </template>
+                </view>
+                <view class="socialTime">{{ formatRelativeTime(post.create_time) }}</view>
+              </view>
+              <view class="socialFoot">
+                <view class="socialBtnBox" @click="toPostDetail(post)">
+                  <view class="socialBtnIcon view"></view>
+                  <view class="socialBtn">{{ post.view_count || 0 }}</view>
+                </view>
+                <view class="socialBtnBox" @click="toPostDetail(post)">
+                  <view class="socialBtnIcon quote"></view>
+                  <view class="socialBtn">{{ post.commit_count || 0 }}</view>
+                </view>
+                <view class="socialBtnBox">
+                  <view class="zanWrapper" @click.stop="likeSearchPost(post)">
+                    <image
+                      class="Icon"
+                      :src="
+                        post.is_liked === 1
+                          ? '/static/images/unlike.png'
+                          : '/static/images/zan0.33.png'
+                      "
+                      mode="aspectFit"
+                      :style="{ opacity: post.currentGif ? 0 : 1 }"
+                    />
+                    <image
+                      v-if="post.currentGif"
+                      :src="post.currentGif"
+                      class="Icon"
+                      mode="aspectFit"
+                    />
+                  </view>
+                  <view class="socialBtn" style="margin-left: 10rpx">
+                    {{ post.like_count || 0 }}
+                  </view>
+                </view>
+                <view class="socialBtnBox" @click.stop="handleShare(post)">
+                  <view class="socialBtnIcon share"></view>
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </template>
+      <template v-else>
+        <view class="emptyBox">
+          <view class="emptyText">{{ t('common.no_data') }}</view>
+        </view>
+      </template>
+    </view>
+
+    <!-- ========== 时间筛选弹窗 ========== -->
+    <wd-action-sheet
+      v-model="showTimeFilter"
+      :title="t('social.search.filter.time')"
+      :z-index="1100"
+      @closed="onTimeFilterClosed"
+    >
+      <view class="filterContent">
+        <!-- 预设时间范围：横向排列 -->
+        <view class="timePresetRow">
+          <view
+            class="timePresetItem"
+            :class="{ active: selectedTimeRange === range.value }"
+            v-for="range in timeRanges"
+            :key="range.value"
+            @click="selectTimeRange(range)"
+          >
+            {{ range.label }}
+          </view>
+        </view>
+        <!-- 自定义时间范围：标题 + 起止两行 -->
+        <view class="customTimeSection">
+          <view class="sectionTitle">{{ t('social.search.filter.time.custom') }}</view>
+          <view class="timeRow" @click="showStartCalendar = true">
+            <text class="timeRowLabel">{{ t('social.search.filter.time.start') }}</text>
+
+            <wd-calendar
+              v-model="customStartTime"
+              v-model:visible="showStartCalendar"
+              type="date"
+              :max-date="customEndTime || Date.now()"
+              @confirm="showStartCalendar = false"
+            />
+          </view>
+          <view class="timeDivider"></view>
+          <view class="timeRow" @click="showEndCalendar = true">
+            <text class="timeRowLabel">{{ t('social.search.filter.time.end') }}</text>
+
+            <wd-calendar
+              v-model="customEndTime"
+              v-model:visible="showEndCalendar"
+              type="date"
+              :min-date="customStartTime || undefined"
+              :max-date="Date.now()"
+              @confirm="showEndCalendar = false"
+            />
+          </view>
+        </view>
+
+        <view class="filterActions">
+          <wd-button custom-class="cancelBtn" size="large" block @click="showTimeFilter = false">
+            {{ t('common.cancel') }}
+          </wd-button>
+          <wd-button type="primary" size="large" block @click="confirmTimeFilter">
+            {{ t('common.confirm') }}
+          </wd-button>
+        </view>
+      </view>
+    </wd-action-sheet>
+
+    <!-- ========== 用户筛选弹窗 ========== -->
+    <wd-action-sheet
+      v-model="showUserFilter"
+      :title="t('social.search.filter.user')"
+      :z-index="1100"
+      @closed="onUserFilterClosed"
+    >
+      <view class="filterContent">
+        <view class="searchMember">
+          <wd-input
+            v-model="memberKeyword"
+            :placeholder="t('social.search.filter.userPlaceholder')"
+            clearable
+            @confirm="searchUsers"
+          />
+          <wd-button
+            type="primary"
+            size="small"
+            @click="searchUsers"
+            custom-class="searchMemberBtn"
+          >
+            {{ t('common.search') }}
+          </wd-button>
+        </view>
+        <scroll-view scroll-y class="memberList" v-if="searchedUsers.length > 0">
+          <view
+            class="memberItem"
+            v-for="user in searchedUsers"
+            :key="user.member_id"
+            @click="selectUser(user)"
+          >
+            <image class="memberAvatar" :src="user.avatar" mode="aspectFill" />
+            <view class="memberInfo">
+              <text class="memberName">{{ user.nickname }}</text>
+              <text class="memberId">ID: {{ user.member_id }}</text>
+            </view>
+            <view class="memberActions">
+              <view
+                v-if="getFollowButtonInfo(user)"
+                class="followBtn"
+                :class="getFollowButtonInfo(user).style"
+                @click.stop="handleFollow(user)"
+              >
+                {{ getFollowButtonInfo(user).text }}
+              </view>
+              <view class="memberCheck" v-if="tempSelectedUserIds.includes(user.member_id)">✓</view>
+            </view>
+          </view>
+        </scroll-view>
+        <view class="emptyHint" v-else>
+          {{ t('social.search.filter.userHint') }}
+        </view>
+        <view class="filterActions">
+          <wd-button custom-class="cancelBtn" size="large" block @click="showUserFilter = false">
+            {{ t('common.cancel') }}
+          </wd-button>
+          <wd-button type="primary" size="large" block @click="confirmUserFilter">
+            {{ t('common.confirm') }}
+          </wd-button>
+        </view>
+      </view>
+    </wd-action-sheet>
+
+    <SharePopup ref="shareRef" />
+
+    <!-- ========== 举报/操作弹窗 ========== -->
+    <wd-action-sheet
+      v-model="reportShow"
+      :actions="reportActions"
+      :z-index="1100"
+      @select="reportSheetSelect"
+    />
+
+    <wd-message-box />
+  </view>
+</template>
+
+<script lang="ts" setup>
+import { t } from '@/locale/index'
+import { http } from '@/utils/http'
+import { formatRelativeTime, getImageUrl, handlePreview } from '@/utils'
+import {
+  createFollowApi,
+  deleteFollowApi,
+  searchPostsApi,
+  likePostApi,
+  deletePostApi,
+  setSpecialFollowApi,
+  blockUserApi,
+  adminRemovalApi,
+} from '@/service/api/community'
+import { useUserStore } from '@/store/user'
+import { useMessage } from 'wot-design-uni'
+import SharePopup from '@/components/SharePopup/SharePopup.vue'
+
+// ============================================================
+// 导航栏布局
+// ============================================================
+const locale = uni.getLocale()
+
+const { safeAreaInsets } = uni.getSystemInfoSync()
+const safeTopRpx = ref<number>(0)
+const navHeight = ref<number>(0)
+const navHeaderPaddingTop = ref<number>(0)
+const cntPaddingTop = ref<number>(0)
+
+onMounted(() => {
+  const systemInfo = uni.getSystemInfoSync()
+  const statusBarHeight = systemInfo.statusBarHeight || 0
+  safeTopRpx.value =
+    systemInfo.platform === 'android' ? statusBarHeight : safeAreaInsets?.top || statusBarHeight
+  safeTopRpx.value = safeTopRpx.value / (systemInfo.windowWidth / 750)
+  navHeight.value = safeTopRpx.value + 40 + 104
+  navHeaderPaddingTop.value = safeTopRpx.value
+  cntPaddingTop.value = navHeight.value - 20
+})
+
+const navigateBack = () => {
+  uni.navigateBack({ delta: 1 })
+}
+
+// ============================================================
+// 搜索
+// ============================================================
+const searchText = ref('')
+/** 是否已执行过搜索，控制初始提示 / 搜索结果切换 */
+const hasSearched = ref(false)
+const isLoading = ref(false)
+
+/** 搜索结果 */
+const searchResult = ref<{
+  posts: any[]
+  total: number
+  page: number
+  limit: number
+}>({
+  posts: [],
+  total: 0,
+  page: 0,
+  limit: 20,
+})
+
+/** 构建搜索参数 */
+const buildSearchParams = (page: number) => {
+  const params: any = { page, limit: 20 }
+
+  const keyword = searchText.value.trim()
+  if (keyword) params.keyword = keyword
+
+  if (confirmedUserIds.value.length > 0) {
+    params.member_ids = confirmedUserIds.value
+  }
+
+  const timeRange = getTimeRange()
+  if (timeRange.start_time) params.start_time = timeRange.start_time
+  if (timeRange.end_time) params.end_time = timeRange.end_time
+
+  return params
+}
+
+const search = async () => {
+  const hasKeyword = searchText.value.trim() !== ''
+  const hasUser = confirmedUserIds.value.length > 0
+  if (!hasKeyword && !hasUser) {
+    uni.showToast({ title: t('social.search.requireKeywordOrUser'), icon: 'none' })
+    return
+  }
+
+  console.log('search', buildSearchParams(1))
+  if (isLoading.value) return
+  isLoading.value = true
+  hasSearched.value = true
+
+  try {
+    const res = await searchPostsApi(buildSearchParams(1))
+    if (res.code === 1 && res.data) {
+      searchResult.value = res.data
+    }
+  } catch (e) {
+    console.error('search failed', e)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const loadMore = async () => {
+  if (isLoading.value) return
+  if (searchResult.value.page * searchResult.value.limit >= searchResult.value.total) return
+  isLoading.value = true
+  try {
+    const res = await searchPostsApi(buildSearchParams(searchResult.value.page + 1))
+    if (res.code === 1 && res.data) {
+      searchResult.value.posts = searchResult.value.posts.concat(res.data.posts)
+      searchResult.value.page = res.data.page
+    }
+  } catch (e) {
+    console.error('loadMore failed', e)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+/** 删除帖子 */
+const handleDelPost = (id: number) => {
+  console.log('handleDelPost', id)
+  uni.showModal({
+    content: t('social.index.del_post_confirm_txt'),
+    success: (r) => {
+      if (r.confirm) {
+        deletePostApi(id).then((res) => {
+          if (res.data?.result === 1) {
+            searchResult.value.posts = searchResult.value.posts.filter((p) => p.id !== id)
+            uni.showToast({ title: t('common.delete_success'), icon: 'none' })
+          }
+        })
+      }
+    },
+  })
+}
+
+// ========== 举报/操作弹窗 ==========
+const reportShow = ref(false)
+const reportActions = ref<any[]>([])
+const reportActionIndex: any = { follow: -1, special: -1, report: -1, block: -1, remove: -1 }
+const reportPostItem = ref<any>({})
+
+const reportSheetSelect = ({ item, index }: any) => {
+  if (index === reportActionIndex.follow) {
+    handleFollowClick(reportPostItem.value.member)
+    reportShow.value = false
+    return
+  }
+  if (index === reportActionIndex.special) {
+    handleSpecialFollow()
+    return
+  }
+  if (index === reportActionIndex.report) {
+    handleReportPostAction()
+    return
+  }
+  if (index === reportActionIndex.block) {
+    handleBlockUser()
+    return
+  }
+  if (index === reportActionIndex.remove) {
+    handleRemovePost()
+    return
+  }
+}
+
+const reportPost = (post: any) => {
+  if (!userStore.isLogin) {
+    uni.navigateTo({ url: '/pages/cats/login/login' })
+    return
+  }
+  const member = post.member
+  const isFollowing = member?.is_following === 1
+  const isSpecial = member?.is_special_following === 1
+  const actions: any[] = []
+
+  if (isFollowing) {
+    actions.push({ name: t('social.index.user.unfollow'), type: 'follow', color: '#333' })
+    reportActionIndex.follow = actions.length - 1
+    actions.push({
+      name: isSpecial ? t('social.index.user.special.cancel') : t('social.index.user.special.set'),
+      type: 'special',
+      color: '#333',
+    })
+    reportActionIndex.special = actions.length - 1
+  } else {
+    actions.push({ name: t('social.index.user.follow'), type: 'follow', color: '#ff6b03' })
+    reportActionIndex.follow = actions.length - 1
+    actions.push({
+      name: t('social.index.user.special.set'),
+      type: 'special',
+      color: '#333',
+    })
+    reportActionIndex.special = actions.length - 1
+  }
+
+  actions.push({ name: '', type: 'divider', disabled: true })
+  actions.push({ name: t('social.index.post.report'), type: 'report', color: '#ff6b03' })
+  reportActionIndex.report = actions.length - 1
+  actions.push({ name: t('social.index.user.block'), type: 'block' })
+  reportActionIndex.block = actions.length - 1
+
+  if (userStore.userInfo.community_permissions?.can_take_down === 1) {
+    actions.push({ name: t('report.admin.remove_post'), type: 'remove', color: '#FF3B30' })
+    reportActionIndex.remove = actions.length - 1
+  }
+  reportActions.value = actions
+  reportShow.value = true
+  reportPostItem.value = post
+}
+
+const handleSpecialFollow = () => {
+  const member = reportPostItem.value.member
+  const isSpecial = member.is_special_following === 1
+  setSpecialFollowApi(member.id, isSpecial ? 0 : 1).then((res) => {
+    if (res.code === 1) {
+      member.is_special_following = isSpecial ? 0 : 1
+      uni.showToast({
+        title: isSpecial
+          ? t('social.index.user.special.canceled')
+          : t('social.index.user.special.success'),
+        icon: 'none',
+      })
+    } else {
+      uni.showToast({ title: res.msg || t('common.error'), icon: 'none' })
+    }
+  })
+  reportShow.value = false
+}
+
+const handleReportPostAction = () => {
+  uni.navigateTo({ url: `/pages/cats/report/content?id=${reportPostItem.value.id}&type=post` })
+}
+
+const handleBlockUser = () => {
+  message
+    .confirm({ msg: t('social.index.report_user_confirm_txt') })
+    .then(() => {
+      blockUserApi(reportPostItem.value.id).then((res) => {
+        if (res.data?.result === 1) {
+          searchResult.value.posts = searchResult.value.posts.filter(
+            (p) => p.member_id !== reportPostItem.value.member_id,
+          )
+        }
+      })
+    })
+    .catch(() => {})
+}
+
+const handleRemovePost = () => {
+  uni.showModal({
+    title: t('report.admin.remove_post'),
+    content: t('social.index.post.remove_content'),
+    success: (r) => {
+      if (r.confirm) {
+        adminRemovalApi(reportPostItem.value.id, 'post').then((res) => {
+          if (res.data?.status === 0) {
+            searchResult.value.posts = searchResult.value.posts.filter(
+              (p) => p.id !== reportPostItem.value.id,
+            )
+            uni.showToast({ title: t('common.operation_success'), icon: 'none' })
+          }
+        })
+      }
+    },
+  })
+}
+
+/** 跳转帖子详情 */
+const toPostDetail = (post: any) => {
+  console.log('toPostDetail', post.id)
+  uni.navigateTo({ url: `/pages/cats/social/detail?id=${post.id}` })
+}
+
+/** 触底加载更多 */
+onReachBottom(() => {
+  if (searchResult.value.page * searchResult.value.limit < searchResult.value.total) {
+    loadMore()
+  }
+})
+
+const GIF_LIKE = '/static/images/like_action.gif'
+const GIF_UNLIKE = '/static/images/unlike_action.gif'
+
+const message = useMessage()
+const shareRef = ref<any>(null)
+
+/** 帖子作者关注按钮信息 */
+const getMemberFollowInfo = (member: any) => {
+  if (!member || member.is_self) return null
+  if (member.is_special_following) return { text: '已特别关注', style: 'special' }
+  if (member.is_mutual_following) return { text: '互相关注', style: 'followed' }
+  if (member.is_following) return { text: '已关注', style: 'followed' }
+  if (member.is_following_me) return { text: '回关', style: 'follow' }
+  return { text: '关注', style: 'follow' }
+}
+
+/** 关注/取关帖子作者 */
+const handleFollowClick = async (member: any) => {
+  console.log('handleFollowClick', member.id)
+  if (!userStore.isLogin) {
+    uni.navigateTo({ url: '/pages/cats/login/login' })
+    return
+  }
+  try {
+    if (member.is_following) {
+      const confirm = await new Promise<boolean>((resolve) => {
+        uni.showModal({
+          content: t('social.index.user.follow.cancel'),
+          success: (r) => resolve(r.confirm),
+        })
+      })
+      if (!confirm) return
+      const res = await deleteFollowApi(member.id)
+      if (res.code === 1) {
+        const d = res.data
+        member.is_following = d.is_following
+        member.is_mutual_following = d.is_mutual_following
+        member.is_special_following = d.is_special_following
+      }
+      uni.showToast({ title: t('social.index.user.follow.canceled'), icon: 'none' })
+    } else {
+      const res = await createFollowApi(member.id)
+      if (res.code === 1) {
+        const d = res.data
+        member.is_following = d.is_following
+        member.is_mutual_following = d.is_mutual_following
+        member.is_special_following = d.is_special_following
+      }
+      uni.showToast({ title: t('social.index.user.follow.success'), icon: 'none' })
+    }
+  } catch (e) {
+    console.error('handleFollowClick failed', e)
+  }
+}
+
+/** 帖子作者关注按钮 */
+const getPostFollowInfo = (member: any) => {
+  if (!member) return null
+  if (member.is_self) return null
+  if (member.is_mutual_following) return { text: '互相关注', style: 'mutual' }
+  if (member.is_following) return { text: '已关注', style: 'followed' }
+  if (member.is_following_me) return { text: '回关', style: 'follow' }
+  return { text: '关注', style: 'follow' }
+}
+
+const handlePostMemberFollow = async (member: any) => {
+  console.log('handlePostMemberFollow', member.member_id)
+  if (!userStore.isLogin) {
+    uni.navigateTo({ url: '/pages/cats/login/login' })
+    return
+  }
+  try {
+    if (member.is_following) {
+      await deleteFollowApi(member.member_id)
+      member.is_following = false
+      member.is_mutual_following = false
+      uni.showToast({ title: '已取消关注', icon: 'none' })
+    } else {
+      await createFollowApi(member.member_id)
+      member.is_following = true
+      if (member.is_following_me) member.is_mutual_following = true
+      uni.showToast({ title: '关注成功', icon: 'none' })
+    }
+  } catch (e) {
+    console.error('handlePostMemberFollow failed', e)
+  }
+}
+
+const handleShare = (post: any) => {
+  console.log('handleShare', post.id)
+  shareRef.value?.openSharePopup(post)
+}
+
+const likeSearchPost = async (post: any) => {
+  console.log('likeSearchPost', post.id)
+  if (!userStore.isLogin) {
+    uni.navigateTo({ url: '/pages/cats/login/login' })
+    return
+  }
+  try {
+    const res = await likePostApi(post.id)
+    if (res.code === 1) {
+      post.like_count = res.data.like_count
+      post.is_liked = res.data.is_liked
+      const ts = Date.now()
+      post.currentGif = post.is_liked === 1 ? `${GIF_LIKE}?t=${ts}` : `${GIF_UNLIKE}?t=${ts}`
+      setTimeout(() => {
+        post.currentGif = ''
+      }, 800)
+    }
+  } catch (e) {
+    console.error('likeSearchPost failed', e)
+  }
+}
+
+/** 格式化帖子时间 */
+const formatPostTime = (timeStr: string) => {
+  if (!timeStr) return ''
+  const d = new Date(timeStr)
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  const h = String(d.getHours()).padStart(2, '0')
+  const min = String(d.getMinutes()).padStart(2, '0')
+  return `${m}/${day} ${h}:${min}`
+}
+
+// ============================================================
+// 时间筛选
+// ============================================================
+const showTimeFilter = ref(false)
+/** 预设时间范围：''=全部 / 'today' / 'week' / 'month' */
+const selectedTimeRange = ref('')
+/** 自定义开始时间（时间戳 ms） */
+const customStartTime = ref<number>(0)
+/** 自定义结束时间（时间戳 ms） */
+const customEndTime = ref<number>(0)
+const showStartCalendar = ref(false)
+const showEndCalendar = ref(false)
+
+/** 预设时间选项 */
+const timeRanges = computed(() => [
+  { label: t('social.search.filter.time.all'), value: '' },
+  { label: t('social.search.filter.time.today'), value: 'today' },
+  { label: t('social.search.filter.time.week'), value: 'week' },
+  { label: t('social.search.filter.time.month'), value: 'month' },
+])
+
+/** 时间戳 → 展示文本 "M/D" */
+const formatDateStr = (ts: number) => {
+  const d = new Date(ts)
+  return `${d.getMonth() + 1}/${d.getDate()}`
+}
+
+/** 时间戳 → 日期字符串 "YYYY-MM-DD" */
+const toDateStr = (ts: number) => {
+  if (!ts) return ''
+  const d = new Date(ts)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+/** 监听自定义日期变化，自动匹配预设按钮 */
+watch([customStartTime, customEndTime], ([s, e]) => {
+  if (!s && !e) return
+  const day = 86400000
+  const today = toDateStr(Date.now())
+  const weekAgo = toDateStr(getTodayStart() - 7 * day)
+  const monthAgo = toDateStr(getTodayStart() - 30 * day)
+  const sDate = toDateStr(s)
+  const eDate = toDateStr(e)
+
+  if (sDate === today && eDate === today) {
+    selectedTimeRange.value = 'today'
+  } else if (sDate === weekAgo && eDate === today) {
+    selectedTimeRange.value = 'week'
+  } else if (sDate === monthAgo && eDate === today) {
+    selectedTimeRange.value = 'month'
+  } else {
+    selectedTimeRange.value = ''
+  }
+})
+const confirmedTimeRange = ref('')
+const confirmedStartTime = ref<number>(0)
+const confirmedEndTime = ref<number>(0)
+
+/** 筛选栏按钮上展示的时间标签：基于确认后的值 */
+const selectedTimeLabel = computed(() => {
+  if (confirmedStartTime.value || confirmedEndTime.value) {
+    const s = confirmedStartTime.value ? formatDateStr(confirmedStartTime.value) : ''
+    const e = confirmedEndTime.value ? formatDateStr(confirmedEndTime.value) : ''
+    if (s && e) return `${s} ~ ${e}`
+    if (s) return `${s} 起`
+    if (e) return `至 ${e}`
+  }
+  if (!confirmedTimeRange.value) return ''
+  const range = timeRanges.value.find((r) => r.value === confirmedTimeRange.value)
+  return range ? range.label : ''
+})
+
+/** 今天的开始时间戳 */
+const getTodayStart = () => new Date(new Date().toDateString()).getTime()
+
+/** 点击预设范围：应用预设，回填自定义日期 */
+const selectTimeRange = (range: { label: string; value: string }) => {
+  selectedTimeRange.value = range.value
+  const now = Date.now()
+  const day = 86400000
+  switch (range.value) {
+    case 'today':
+      customStartTime.value = getTodayStart()
+      customEndTime.value = now
+      break
+    case 'week':
+      customStartTime.value = getTodayStart() - 7 * day
+      customEndTime.value = now
+      break
+    case 'month':
+      customStartTime.value = getTodayStart() - 30 * day
+      customEndTime.value = now
+      break
+    default:
+      customStartTime.value = 0
+      customEndTime.value = 0
+      break
+  }
+}
+
+/** 弹窗关闭动画完成后，恢复临时值为确认态 */
+const onTimeFilterClosed = () => {
+  selectedTimeRange.value = confirmedTimeRange.value
+  customStartTime.value = confirmedStartTime.value
+  customEndTime.value = confirmedEndTime.value
+}
+
+/** 确认时间筛选：同步到确认态，关闭弹窗 */
+const confirmTimeFilter = () => {
+  confirmedTimeRange.value = selectedTimeRange.value
+  confirmedStartTime.value = customStartTime.value
+  confirmedEndTime.value = customEndTime.value
+  console.log(
+    'confirmTimeFilter',
+    confirmedTimeRange.value,
+    confirmedStartTime.value,
+    confirmedEndTime.value,
+  )
+  showTimeFilter.value = false
+}
+
+/** 将确认后的筛选状态转为接口参数（start_time / end_time，单位秒） */
+const getTimeRange = () => {
+  // 自定义时间优先
+  if (confirmedStartTime.value || confirmedEndTime.value) {
+    const result: any = {}
+    if (confirmedStartTime.value) result.start_time = Math.floor(confirmedStartTime.value / 1000)
+    if (confirmedEndTime.value)
+      result.end_time = Math.floor(confirmedEndTime.value / 1000) + 86400 - 1
+    return result
+  }
+
+  if (!confirmedTimeRange.value) return {}
+
+  const now = Math.floor(Date.now() / 1000)
+  const day = 86400
+
+  switch (confirmedTimeRange.value) {
+    case 'today':
+      return { start_time: now - day, end_time: now }
+    case 'week':
+      return { start_time: now - 7 * day, end_time: now }
+    case 'month':
+      return { start_time: now - 30 * day, end_time: now }
+    default:
+      return {}
+  }
+}
+
+// ============================================================
+// 用户筛选
+// ============================================================
+const showUserFilter = ref(false)
+const memberKeyword = ref('')
+const searchedUsers = ref<any[]>([])
+/** 弹窗内临时选中的用户 ID */
+const tempSelectedUserIds = ref<number[]>([])
+/** 弹窗内临时缓存的用户信息 */
+const tempSelectedUsers = ref<Map<number, any>>(new Map())
+/** 确认后的用户 ID */
+const confirmedUserIds = ref<number[]>([])
+/** 确认后的用户信息缓存 */
+const confirmedUsers = ref<Map<number, any>>(new Map())
+
+/** 已选用户的完整信息缓存（跨搜索保留头像/昵称） */
+const selectedUsersCache = computed(() => {
+  const map = new Map<number, any>()
+  for (const uid of confirmedUserIds.value) {
+    const cached = confirmedUsers.value.get(uid)
+    if (cached) {
+      map.set(uid, cached)
+    }
+  }
+  return map
+})
+
+/** sticky 筛选栏占位高度（nav底部到内容区的间距） */
+const filterStickyHeight = computed(() => (confirmedUserIds.value.length > 0 ? 260 : 110))
+
+/** 筛选栏用户按钮标签 */
+const selectedUserLabel = computed(() => {
+  if (confirmedUserIds.value.length === 0) return ''
+  return `${confirmedUserIds.value.length}位用户`
+})
+
+/** 移除已选用户 */
+const removeSelectedUser = (memberId: number) => {
+  confirmedUserIds.value = confirmedUserIds.value.filter((id) => id !== memberId)
+  confirmedUsers.value.delete(memberId)
+  tempSelectedUserIds.value = tempSelectedUserIds.value.filter((id) => id !== memberId)
+  tempSelectedUsers.value.delete(memberId)
+}
+
+/** 搜索成员 */
+const searchUsers = async () => {
+  console.log('searchUsers', memberKeyword.value)
+  if (!memberKeyword.value.trim()) return
+  try {
+    const res = await http.get<any>('/v1/member/user/search-members', {
+      keyword: memberKeyword.value.trim(),
+      page: 1,
+      limit: 50,
+    })
+    if (res.code === 1 && res.data) {
+      searchedUsers.value = res.data.list || []
+    }
+  } catch (e) {
+    console.error('searchUsers failed', e)
+  }
+}
+
+/** 选中/取消选中用户 */
+const selectUser = (user: any) => {
+  const idx = tempSelectedUserIds.value.indexOf(user.member_id)
+  if (idx > -1) {
+    tempSelectedUserIds.value.splice(idx, 1)
+    tempSelectedUsers.value.delete(user.member_id)
+  } else {
+    tempSelectedUserIds.value.push(user.member_id)
+    tempSelectedUsers.value.set(user.member_id, user)
+  }
+}
+
+/** 确认用户筛选 */
+const confirmUserFilter = () => {
+  console.log('confirmUserFilter', tempSelectedUserIds.value)
+  confirmedUserIds.value = [...tempSelectedUserIds.value]
+  confirmedUsers.value = new Map(tempSelectedUsers.value)
+  showUserFilter.value = false
+}
+
+const userStore = useUserStore()
+
+/** 获取关注按钮文案和样式 */
+const getFollowButtonInfo = (user: any) => {
+  if (user.is_self) return null
+  if (user.is_mutual) return { text: '互相关注', style: 'mutual' }
+  if (user.is_followed) return { text: '已关注', style: 'followed' }
+  if (user.is_following_me) return { text: '回关', style: 'follow' }
+  return { text: '关注', style: 'follow' }
+}
+
+/** 关注/取消关注 */
+const handleFollow = async (user: any) => {
+  console.log('handleFollow', user.member_id)
+  try {
+    if (user.is_followed) {
+      await deleteFollowApi(user.member_id)
+      user.is_followed = false
+      user.is_mutual = false
+      uni.showToast({ title: '已取消关注', icon: 'none' })
+    } else {
+      await createFollowApi(user.member_id)
+      user.is_followed = true
+      if (user.is_following_me) user.is_mutual = true
+      uni.showToast({ title: '关注成功', icon: 'none' })
+    }
+  } catch (e) {
+    console.error('handleFollow failed', e)
+  }
+}
+
+/** 弹窗关闭后恢复临时值为确认态 */
+const onUserFilterClosed = () => {
+  tempSelectedUserIds.value = [...confirmedUserIds.value]
+  tempSelectedUsers.value = new Map(confirmedUsers.value)
+  searchedUsers.value = []
+  memberKeyword.value = ''
+}
+</script>
+
+<style lang="scss" scoped>
+@import '/src/style/base';
+@import '/src/style/social';
+
+/* ========== 页面容器 ========== */
+.page {
+  min-height: 100vh;
+  background-color: var(--liberty-cats-page-background-color);
+}
+
+/* ========== 自定义导航栏 ========== */
+.customNav {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 99;
+  width: 100%;
+  overflow: hidden;
+
+  .navHeaderBg {
+    width: 100%;
+    height: 104rpx;
+    overflow: hidden;
+    background-color: var(--liberty-cats-primary-color);
+  }
+
+  .navCnt {
+    display: flex;
+    align-items: center;
+    height: 104rpx;
+    padding: 0 24rpx;
+
+    .left {
+      width: 44rpx;
+      height: 44rpx;
+      margin-right: 16rpx;
+      image {
+        width: 100%;
+        height: 100%;
+      }
+    }
+
+    .searchBox {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: calc(100% - 44rpx - 16rpx);
+      height: 56rpx;
+      padding: 6rpx;
+      background-color: #ffffff;
+      border-radius: 34rpx;
+    }
+
+    .searchDivider {
+      width: 1rpx;
+      height: 28rpx;
+      background: rgba(0, 0, 0, 0.12);
+    }
+
+    .searchBtn {
+      font-size: 28rpx;
+      font-weight: 500;
+      color: #999;
+      white-space: nowrap;
+      padding: 0 16rpx;
+    }
+
+    .searchInput {
+      display: flex;
+      align-items: center;
+      flex: 1;
+      height: 100%;
+      margin-left: 24rpx;
+    }
+  }
+
+  .navBg {
+    position: relative;
+    width: 100%;
+    height: var(--liberty-cats-page-common-border-radius);
+    background-color: var(--liberty-cats-page-background-color);
+
+    .pbl2,
+    .pbr2 {
+      position: absolute;
+      top: 0;
+      width: var(--liberty-cats-page-common-border-radius);
+      height: var(--liberty-cats-page-common-border-radius);
+      overflow: hidden;
+      background-color: var(--liberty-cats-primary-color);
+      .fbg {
+        width: 100%;
+        height: 100%;
+        background-color: var(--liberty-cats-page-background-color);
+      }
+    }
+    .pbl2 {
+      left: 0;
+      .fbg {
+        border-radius: var(--liberty-cats-page-common-border-radius) 0 0 0;
+      }
+    }
+    .pbr2 {
+      right: 0;
+      .fbg {
+        border-radius: 0 var(--liberty-cats-page-common-border-radius) 0 0;
+      }
+    }
+  }
+}
+
+/* ========== 内容区 ========== */
+.cnt {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding-left: 32rpx !important;
+  padding-right: 32rpx !important;
+}
+
+/* ========== 筛选栏 ========== */
+.filterSticky {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 98;
+  background-color: var(--liberty-cats-page-background-color);
+}
+
+.selectedUsersBar {
+  padding: 16rpx 32rpx;
+  //   border-bottom: 1rpx solid #f0f0f0;
+
+  .selectedUsersScroll {
+    white-space: nowrap;
+
+    .selectedUserItem {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      width: 110rpx;
+      margin-right: 16rpx;
+      vertical-align: top;
+
+      .userAvatarWrap {
+        position: relative;
+        width: 80rpx;
+        height: 80rpx;
+        margin: 0 auto 15rpx;
+
+        .userAvatar {
+          width: 100%;
+          height: 100%;
+          border-radius: 50%;
+          border: 2rpx solid var(--liberty-cats-primary-color);
+        }
+
+        .removeIcon {
+          position: absolute;
+          bottom: -6rpx;
+          right: -6rpx;
+          width: 32rpx;
+          height: 32rpx;
+          background-color: #ff4444;
+          color: #fff;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 24rpx;
+          font-weight: bold;
+          line-height: 1;
+          z-index: 2;
+        }
+      }
+
+      .userName {
+        font-size: 24rpx;
+        color: #666;
+        width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        text-align: center;
+      }
+    }
+  }
+}
+
+.filterBar {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  padding: 24rpx 32rpx;
+
+  .filterItem {
+    display: flex;
+    align-items: center;
+    gap: 8rpx;
+    padding: 12rpx 24rpx;
+    font-size: 28rpx;
+    color: var(--liberty-cats-primary-color);
+    border: 1rpx solid var(--liberty-cats-primary-color);
+    border-radius: 34rpx;
+
+    .filterLabel {
+      max-width: 200rpx;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .filterArrow {
+      font-size: 20rpx;
+    }
+  }
+}
+
+/* ========== 时间筛选弹窗内容 ========== */
+.filterContent {
+  padding: 24rpx 24rpx;
+
+  .timePresetRow {
+    display: flex;
+    gap: 16rpx;
+
+    .timePresetItem {
+      flex: 1;
+      padding: 16rpx 0;
+      font-size: 28rpx;
+      color: #333;
+      text-align: center;
+      background: #f5f5f5;
+      border-radius: 12rpx;
+
+      &.active {
+        color: #fff;
+        background: var(--liberty-cats-primary-color);
+      }
+    }
+  }
+
+  .customTimeSection {
+    margin-top: 32rpx;
+    padding-top: 24rpx;
+    border-top: 2rpx solid #f0f0f0;
+
+    .sectionTitle {
+      font-size: 30rpx;
+      font-weight: 500;
+      color: #333333;
+      margin-bottom: 16rpx;
+    }
+
+    .timeRow {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18rpx 0;
+
+      .timeRowLabel {
+        font-size: 28rpx;
+        color: #333;
+      }
+    }
+
+    .timeDivider {
+      height: 1rpx;
+      background: #f0f0f0;
+    }
+  }
+
+  .searchMember {
+    display: flex;
+    align-items: center;
+    gap: 16rpx;
+    margin-bottom: 24rpx;
+    width: 100%;
+
+    :deep(.wd-input) {
+      flex: 1;
+    }
+
+    :deep(.searchMemberBtn) {
+      flex-shrink: 0;
+    }
+  }
+
+  .memberList {
+    max-height: 600rpx;
+    margin-bottom: 24rpx;
+
+    .memberItem {
+      display: flex;
+      align-items: center;
+      gap: 16rpx;
+      padding: 20rpx 0;
+      border-bottom: 1rpx solid #f0f0f0;
+
+      .memberAvatar {
+        width: 72rpx;
+        height: 72rpx;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      .memberInfo {
+        flex: 1;
+        .memberName {
+          font-size: 28rpx;
+          color: #333;
+          margin-right: 12rpx;
+        }
+        .memberId {
+          font-size: 24rpx;
+          color: #999;
+          margin-top: 4rpx;
+        }
+      }
+
+      .memberActions {
+        display: flex;
+        align-items: center;
+        gap: 16rpx;
+        flex-shrink: 0;
+
+        .followBtn {
+          padding: 8rpx 24rpx;
+          border-radius: 34rpx;
+          font-size: 24rpx;
+          white-space: nowrap;
+
+          &.follow {
+            background: var(--liberty-cats-primary-color);
+            color: #fff;
+            border: 1rpx solid var(--liberty-cats-primary-color);
+          }
+          &.followed {
+            background: #fff;
+            color: #999;
+            border: 1rpx solid #d9d9d9;
+          }
+          &.mutual {
+            background: #fff;
+            color: var(--liberty-cats-primary-color);
+            border: 1rpx solid var(--liberty-cats-primary-color);
+          }
+        }
+
+        .memberCheck {
+          font-size: 32rpx;
+          color: var(--liberty-cats-primary-color);
+          width: 48rpx;
+          text-align: center;
+        }
+      }
+    }
+  }
+
+  .emptyHint {
+    padding: 48rpx 0;
+    font-size: 28rpx;
+    color: #999;
+    text-align: center;
+  }
+
+  .filterActions {
+    display: flex;
+    flex-direction: column;
+    gap: 16rpx;
+    margin-top: 24rpx;
+
+    :deep(.cancelBtn) {
+      background: #f5f5f5 !important;
+      color: #333 !important;
+      border: none !important;
+    }
+  }
+}
+
+.nameWrap {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+
+  .followBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 40rpx;
+    padding: 0 14rpx;
+    border-radius: 50rpx;
+    font-size: 22rpx;
+    line-height: 1;
+    white-space: nowrap;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    border: 1rpx solid transparent;
+    background-color: #ff6b03;
+    color: #fff;
+
+    &.followed {
+      background-color: #ffffff;
+      color: #999;
+      border-color: #ddd;
+    }
+    &.special {
+      background-color: #ffffff;
+      color: var(--liberty-cats-primary-color);
+      border-color: var(--liberty-cats-primary-color);
+    }
+  }
+}
+
+.zanWrapper {
+  width: 85rpx !important;
+  height: 85rpx !important;
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0 !important;
+  vertical-align: middle;
+  margin: 0 -22rpx !important;
+  overflow: visible !important;
+
+  .Icon {
+    position: absolute !important;
+    width: 100% !important;
+    height: 100% !important;
+    left: 0 !important;
+    top: 0 !important;
+    display: block !important;
+    pointer-events: none !important;
+  }
+}
+
+:deep(.wd-action-sheet__action--disabled) {
+  height: 2rpx !important;
+  min-height: 2rpx !important;
+  margin: 16rpx 0;
+  padding: 0 !important;
+  background: #f0f0f0;
+  pointer-events: none;
+  border: none !important;
+  overflow: hidden;
+
+  .wd-action-sheet__name {
+    display: none;
+  }
+}
+
+/* ========== 空状态 ========== */
+.emptyBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding-bottom: 200rpx;
+
+  .emptyText {
+    font-size: 28rpx;
+    color: #999999;
+  }
+}
+</style>

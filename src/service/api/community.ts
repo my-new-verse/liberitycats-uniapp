@@ -287,3 +287,37 @@ export const generatePostPosterApi = (params: {
 }) => {
   return http.post<GeneratePosterData>('/v1/community/post/generate-poster', params)
 }
+
+/** 帖子搜索参数 */
+export interface SearchPostsParams {
+  keyword?: string
+  member_ids?: number[]
+  member_id?: number
+  member_keyword?: string
+  category_id?: number
+  start_time?: number
+  end_time?: number
+  page?: number
+  limit?: number
+}
+
+/** 帖子搜索响应 */
+export interface SearchPostsResponse {
+  posts: getPostDetailResponse[]
+  total: number
+  page: number
+  limit: number
+}
+
+/** 帖子搜索 */
+export const searchPostsApi = (params: SearchPostsParams) => {
+  return http.get<SearchPostsResponse>('/v1/community/post/search', params)
+}
+
+/** 设置/取消特别关注 */
+export const setSpecialFollowApi = (memberId: number, isSpecial: number) => {
+  return http.post<any>('/v1/community/follow/set-special', {
+    member_id: memberId,
+    is_special: isSpecial,
+  })
+}
