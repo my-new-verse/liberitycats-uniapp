@@ -621,6 +621,13 @@
       }
     },
     {
+      "path": "pages/cats/social/post_search",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/cats/social/publish",
       "type": "page",
       "layout": "default",

@@ -102,13 +102,14 @@
                           {{ item.display?.titleSegments?.[0]?.text || '' }}
                           {{ item.display?.titleSegments?.[1]?.text || '' }}
                         </text>
+
                         <view
                           v-if="item.display.titleSegments[2]"
                           class="name-link"
                           @click.stop="handleUserHomeClick(item)"
                         >
                           <text style="font-weight: 700">
-                            {{ ' ' + item.display.titleSegments?.[2]?.text || '' }}
+                            {{ item.display.titleSegments?.[2]?.text || '' }}
                           </text>
                         </view>
                       </view>
@@ -366,6 +367,13 @@ const subtypeList = computed(() => [
     iconBgClass: 'bg-comment',
     iconSrc: '/static/images/comment1.png',
   },
+  {
+    value: 'special_follow_post',
+    label: t('notification.index.tab.special_follow'),
+    iconClass: 'icon-special',
+    iconBgClass: 'bg-special',
+    iconSrc: '/static/images/special.png',
+  },
 ])
 // 页面加载
 onLoad((options) => {
@@ -521,6 +529,10 @@ const toDetail = (notificationItem: any) => {
               `/pages/cats/social/detail?id=${rootPostId}&showComment=${true}&commentId=${id}`,
             )
           else toUrlOnce('/pages/cats/social/detail?id=' + id)
+          break
+        // 特别关注发帖
+        case 'special_follow_post':
+          toUrlOnce('/pages/cats/social/detail?id=' + rootPostId)
           break
         // 评论
         case 'comment':
@@ -899,6 +911,7 @@ onUnmounted(() => {
   max-width: 100%;
   flex: 0 0 auto;
   pointer-events: auto;
+  margin-left: 0.3em;
 }
 
 :deep(.wd-tabs) {
@@ -1055,6 +1068,10 @@ onUnmounted(() => {
 }
 .bg-comment {
   background: #e5f5e5; // 浅绿色背景（评论）
+  background-color: rgba(255, 107, 3, 0.1);
+}
+.bg-special {
+  background: #fff0e5; // 浅橙色背景（特别关注）
   background-color: rgba(255, 107, 3, 0.1);
 }
 
