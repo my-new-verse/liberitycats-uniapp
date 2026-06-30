@@ -17,7 +17,12 @@
         {{ doneText }}
       </view>
     </view>
-    <wd-search v-model="searchValue" hide-cancel :placeholder="searchPlaceholderText" />
+    <wd-search
+      v-model="searchValue"
+      hide-cancel
+      :placeholder="searchPlaceholderText"
+      @change="handleSearch"
+    />
     <!-- 已选成员头像行 -->
     <scroll-view v-if="multiSelect && selectedMembers.length > 0" scroll-x class="selected-bar">
       <view class="selected-bar__inner">
@@ -33,29 +38,62 @@
       </view>
     </scroll-view>
     <scroll-view scroll-y class="mention-popup-scroll">
-      <template v-if="multiSelect">
-        <view
-          v-for="member in filteredMembers"
-          :key="member.member_id"
-          class="mention-member-item"
-          @touchend.prevent="toggleMember(member)"
-        >
-          <wd-checkbox :model-value="selectedIdArr.includes(member.member_id)" />
-          <image class="mention-avatar" :src="member.avatar" mode="aspectFill" />
-          <text class="mention-nickname">{{ member.nickname }}</text>
-        </view>
+      <!-- 最常提醒区域 -->
+      <template v-if="smartMembers.length > 0">
+        <view class="section-title">{{ t('group.chat.mention.smartMembers') || '最常提醒' }}</view>
+        <template v-if="multiSelect">
+          <view
+            v-for="member in smartMembers"
+            :key="member.member_id"
+            class="mention-member-item"
+            @touchend.prevent="toggleMember(member)"
+          >
+            <wd-checkbox :model-value="selectedIdArr.includes(member.member_id)" />
+            <image class="mention-avatar" :src="member.avatar" mode="aspectFill" />
+            <text class="mention-nickname">{{ member.nickname }}</text>
+          </view>
+        </template>
+        <template v-else>
+          <view
+            v-for="member in smartMembers"
+            :key="member.member_id"
+            class="mention-member-item"
+            @touchend.prevent="handleItemClick(member)"
+          >
+            <image class="mention-avatar" :src="member.avatar" mode="aspectFill" />
+            <text class="mention-nickname">{{ member.nickname }}</text>
+          </view>
+        </template>
       </template>
-      <template v-else>
-        <view
-          v-for="member in filteredMembers"
-          :key="member.member_id"
-          class="mention-member-item"
-          @touchend.prevent="handleItemClick(member)"
-        >
-          <image class="mention-avatar" :src="member.avatar" mode="aspectFill" />
-          <text class="mention-nickname">{{ member.nickname }}</text>
-        </view>
+
+      <!-- 全部人员区域 -->
+      <template v-if="allMembers.length > 0">
+        <view class="section-title">{{ t('group.chat.mention.allMembers') || '全部人员' }}</view>
+        <template v-if="multiSelect">
+          <view
+            v-for="member in allMembers"
+            :key="member.member_id"
+            class="mention-member-item"
+            @touchend.prevent="toggleMember(member)"
+          >
+            <wd-checkbox :model-value="selectedIdArr.includes(member.member_id)" />
+            <image class="mention-avatar" :src="member.avatar" mode="aspectFill" />
+            <text class="mention-nickname">{{ member.nickname }}</text>
+          </view>
+        </template>
+        <template v-else>
+          <view
+            v-for="member in allMembers"
+            :key="member.member_id"
+            class="mention-member-item"
+            @touchend.prevent="handleItemClick(member)"
+          >
+            <image class="mention-avatar" :src="member.avatar" mode="aspectFill" />
+            <text class="mention-nickname">{{ member.nickname }}</text>
+          </view>
+        </template>
       </template>
+
       <view v-if="loading" class="mention-loading">{{ loadingText }}</view>
     </scroll-view>
   </wd-popup>
@@ -64,7 +102,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import type { ChatMember } from '@/service/api/groupChat'
-import { getChatRoomMembersApi } from '@/service/api/groupChat'
+import { getChatRoomMembersApi, getSmartMembersApi } from '@/service/api/groupChat'
 import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{
@@ -86,16 +124,25 @@ const emit = defineEmits<{
   (e: 'confirm', members: ChatMember[]): void
 }>()
 
-const members = ref<ChatMember[]>([])
+const smartMembers = ref<ChatMember[]>([]) // 最常提醒
+const allMembers = ref<ChatMember[]>([]) // 全部人员
 const loading = ref(false)
 const multiSelect = ref(false)
 const selectedIdArr = ref<number[]>([])
 const searchValue = ref('')
 
-const filteredMembers = computed(() => {
-  const kw = searchValue.value.trim().toLowerCase()
-  if (!kw) return members.value
-  return members.value.filter((m) => m.nickname.toLowerCase().includes(kw))
+// 合并后的成员列表（用于显示，去重）
+const members = computed(() => {
+  const memberMap = new Map<number, ChatMember>()
+  // 先添加全部人员
+  allMembers.value.forEach((m) => {
+    memberMap.set(m.member_id, m)
+  })
+  // 再添加最常提醒（如果已存在则覆盖，确保显示最常提醒的数据）
+  smartMembers.value.forEach((m) => {
+    memberMap.set(m.member_id, m)
+  })
+  return Array.from(memberMap.values())
 })
 
 const selectedMembers = computed(() => {
@@ -107,9 +154,17 @@ const fetchMembers = async (keyword: string) => {
   if (!props.roomId) return
   loading.value = true
   try {
-    const res = await getChatRoomMembersApi(props.roomId, 'member', 1, 30, keyword)
-    if (res.code === 1) {
-      members.value = res.data.data
+    // 并行请求两个接口
+    const [smartRes, allRes] = await Promise.all([
+      getSmartMembersApi(props.roomId, 1, 30, keyword),
+      getChatRoomMembersApi(props.roomId, undefined, 1, 100, keyword),
+    ])
+
+    if (smartRes.code === 1) {
+      smartMembers.value = smartRes.data.members || []
+    }
+    if (allRes.code === 1) {
+      allMembers.value = allRes.data.data || []
     }
   } finally {
     loading.value = false
@@ -139,12 +194,23 @@ watch(
     if (searchTimer) clearTimeout(searchTimer)
     searchTimer = setTimeout(() => {
       searchValue.value = kw
+      // 搜索时调用后端接口（通过 handleSearch 统一处理）
+      handleSearch(kw)
     }, 300)
   },
 )
 
 const handleClose = () => {
   emit('update:visible', false)
+}
+
+// 处理搜索框输入
+let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null
+const handleSearch = (value: string) => {
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
+  searchDebounceTimer = setTimeout(() => {
+    fetchMembers(value)
+  }, 300)
 }
 
 const handleItemClick = (member: ChatMember) => {
@@ -204,6 +270,13 @@ const handleConfirm = () => {
 
 .mention-popup-scroll {
   max-height: 60vh;
+}
+
+.section-title {
+  padding: 24rpx 24rpx 12rpx;
+  font-size: 26rpx;
+  color: #999;
+  font-weight: 500;
 }
 
 .selected-bar {

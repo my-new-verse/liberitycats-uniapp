@@ -557,6 +557,8 @@
   "group.chat.mention.done": "完成",
   "group.chat.mention.searchPlaceholder": "搜尋成員",
   "group.chat.mention.loading": "載入中...",
+  "group.chat.mention.smartMembers": "最常提醒",
+  "group.chat.mention.allMembers": "全部人員",
 
   "report.page_title": "舉報內容",
   "report.submit_title": "提交舉報",

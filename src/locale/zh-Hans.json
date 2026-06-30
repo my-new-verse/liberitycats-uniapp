@@ -516,6 +516,8 @@
   "group.chat.mention.done": "完成",
   "group.chat.mention.searchPlaceholder": "搜索成员",
   "group.chat.mention.loading": "加载中...",
+  "group.chat.mention.smartMembers": "最常提醒",
+  "group.chat.mention.allMembers": "全部人员",
   "group.chat.member.searchPlaceholder": "搜索成员...",
   "group.chat.member.adminGroupTitle": "群主及群管理员",
   "group.chat.member.memberGroupTitle": "群成员",

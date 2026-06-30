@@ -556,6 +556,8 @@
   "group.chat.mention.done": "Done",
   "group.chat.mention.searchPlaceholder": "Search members",
   "group.chat.mention.loading": "Loading...",
+  "group.chat.mention.smartMembers": "Frequently Mentioned",
+  "group.chat.mention.allMembers": "All Members",
 
   "report.page_title": "Report Content",
   "report.submit_title": "Submit Report",
