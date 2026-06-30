@@ -60,7 +60,10 @@
                     <wd-img custom-class="tab-icon-svg" mode="widthFix" :src="option.iconSrc" />
                   </view>
                 </wd-badge>
-                <view class="tab-text" :class="{ active: activeSubtype === option.value }">
+                <view
+                  class="tab-text"
+                  :class="{ active: activeSubtype === option.value && !isShowingAll }"
+                >
                   {{ option.label }}
                 </view>
               </view>
@@ -246,18 +249,25 @@ const activeCategory = ref<string>('all')
 const activeSubtype = ref<NotificationSubtype>('like')
 
 const listCache = reactive<Record<string, NotificationCacheEntry>>({})
-const getCacheKey = (category = activeCategory.value, subtype = activeSubtype.value) =>
+const getCacheKey = (category = activeCategory.value, subtype: string = activeSubtype.value) =>
   category === 'community' ? `${category}:${subtype}` : category
 const currentCacheKey = ref(getCacheKey())
 const getCacheByKey = (key: string) => {
   if (!listCache[key]) listCache[key] = createCacheEntry()
   return listCache[key]
 }
-const getCurrentCache = () => getCacheByKey(getCacheKey())
+// 是否在全选模式（点同一个分类反选后）
+const isShowingAll = ref(false)
+
+const getCurrentCache = () => {
+  const subtype = isShowingAll.value ? '' : activeSubtype.value
+  return getCacheByKey(getCacheKey(activeCategory.value, subtype))
+}
 // 消息列表数据
 const listData = ref<getNotificationListResponse>(getCurrentCache().listData)
 const syncCurrentCache = () => {
-  const key = getCacheKey()
+  const subtype = isShowingAll.value ? '' : activeSubtype.value
+  const key = getCacheKey(activeCategory.value, subtype)
   currentCacheKey.value = key
   const cache = getCacheByKey(key)
   listData.value = cache.listData
@@ -414,8 +424,11 @@ const getUnreadByCategory = () => {
 // 加载消息列表
 const loadMore = (refresh = false) => {
   const requestCategory = activeCategory.value
-  const requestSubtype = activeSubtype.value
+  const requestSubtype = isShowingAll.value ? '' : activeSubtype.value
   const requestKey = getCacheKey(requestCategory, requestSubtype)
+  const apiSubtype = isShowingAll.value
+    ? undefined
+    : (activeSubtype.value as 'like' | 'follow' | 'comment')
   const cache = getCurrentCache()
 
   if (cache.loading) return
@@ -430,7 +443,7 @@ const loadMore = (refresh = false) => {
     cache.listData.current_page + 1,
     cache.listData.per_page,
     requestCategory && requestCategory !== 'all' ? requestCategory : '',
-    requestCategory === 'community' ? requestSubtype : undefined,
+    requestCategory === 'community' ? apiSubtype : undefined,
   )
     .then((res) => {
       console.log(res)
@@ -457,7 +470,7 @@ const loadMore = (refresh = false) => {
     .finally(() => {
       cache.loading = false
       cache.state = 'finished'
-      if (getCacheKey() === requestKey) syncCurrentCache()
+      if (getCacheKey(requestCategory, requestSubtype) === requestKey) syncCurrentCache()
       uni.hideLoading()
     })
   getUnreadByCategory()
@@ -473,13 +486,25 @@ const handleCategoryChange = (prop) => {
   const cache = getCurrentCache()
   if (!cache.loaded) loadMore()
 }
+let lastSubtype = ''
+
 const handleSubtypeChange = (prop?: NotificationSubtype | { value?: NotificationSubtype }) => {
   saveCurrentScrollTop()
-  if (typeof prop === 'string') {
-    activeSubtype.value = prop
-  } else if (prop?.value) {
-    activeSubtype.value = prop.value
+  const nextValue = typeof prop === 'string' ? prop : prop?.value || ''
+
+  // wd-segmented 已通过 v-model 更新了 activeSubtype
+  if (nextValue === lastSubtype && !isShowingAll.value) {
+    // 重复点击同一分类 → 展示全部
+    isShowingAll.value = true
+  } else if (nextValue === lastSubtype && isShowingAll.value) {
+    // 再次点击 → 恢复筛选
+    isShowingAll.value = false
+  } else {
+    // 切换不同分类 → 筛选新分类
+    isShowingAll.value = false
   }
+  lastSubtype = nextValue
+
   syncCurrentCache()
   restoreCurrentScrollTop()
   const cache = getCurrentCache()
