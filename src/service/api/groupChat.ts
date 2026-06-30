@@ -305,6 +305,28 @@ export const getChatRoomMembersApi = (
   return http.get<ChatMembersResponse>('/v1/community/chat/room/members', params)
 }
 
+// 搜索成员智能
+export const getSmartMembersApi = (
+  roomId: number,
+  page?: number,
+  limit?: number,
+  keyword?: string,
+) => {
+  const params: Record<string, any> = {
+    room_id: roomId,
+    page: page || 1,
+    limit: limit || 20,
+  }
+  if (keyword && keyword.trim()) {
+    params.keyword = keyword.trim()
+  }
+
+  return http.get<ChatMembersResponse>(
+    '/v1/community/chat/room/recommend-members-for-mention',
+    params,
+  )
+}
+
 export const joinChatRoomApi = (roomId: number) => {
   return http.post<{ success: boolean }>('/v1/community/chat/room/join', {
     room_id: roomId,

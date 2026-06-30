@@ -98,6 +98,7 @@
               :item="item"
               @retry="retryFailedMessage"
               @mention="handleMentionUser"
+              @reply-click="handleReplyClick"
             ></chat-item>
           </view>
         </template>
@@ -446,6 +447,11 @@ onUnmounted(() => {
 })
 const handleMentionUser = ({ member_id, nickname }: { member_id: number; nickname: string }) => {
   inputBar.value?.addMention(member_id, nickname)
+}
+
+// 处理回复引用点击 - 跳转到被回复的消息并高亮
+const handleReplyClick = (replyMessageId: number) => {
+  scrollIntoViewById(String(replyMessageId))
 }
 
 const navigateBack = () => {
