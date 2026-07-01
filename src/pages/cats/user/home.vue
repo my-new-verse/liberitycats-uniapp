@@ -129,7 +129,7 @@
                     <view
                       v-for="(image, index) in item.images"
                       :key="index"
-                      @tap.stop="handlePreview(item.images, index)"
+                      @tap.stop="doHandlePreview(item.images, index)"
                     >
                       <wd-img
                         :radius="5"
@@ -414,6 +414,10 @@ const handleFollow = () => {
       }
     })
   }
+}
+const doHandlePreview = (images: string[], currentIndex: number = 0, needDealImg = true) => {
+  images = images.map((item) => (item = item + '?x-oss-process=style/sqdt'))
+  handlePreview(images, currentIndex)
 }
 </script>
 

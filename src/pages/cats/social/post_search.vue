@@ -125,7 +125,7 @@
                       :src="getImageUrl(post.images[0] + '?x-oss-process=style/sqdt')"
                       :preview-src="post.images.map((img) => getImageUrl(img))"
                       :enable-preview="false"
-                      @tap.stop="handlePreview(post.images, 0)"
+                      @tap.stop="doHandlePreview(post.images, 0)"
                     />
                   </template>
                   <template v-else-if="post.images.length > 1">
@@ -136,7 +136,7 @@
                         :src="getImageUrl(image + '?x-oss-process=style/jzcq')"
                         :preview-src="post.images.map((img) => getImageUrl(img))"
                         :enable-preview="false"
-                        @tap.stop="handlePreview(post.images, index)"
+                        @tap.stop="doHandlePreview(post.images, index)"
                       />
                     </template>
                   </template>
@@ -1012,6 +1012,11 @@ const onUserFilterClosed = () => {
   tempSelectedUsers.value = new Map(confirmedUsers.value)
   searchedUsers.value = []
   memberKeyword.value = ''
+}
+
+const doHandlePreview = (images: string[], currentIndex: number = 0) => {
+  images = images.map((item) => (item = item + '?x-oss-process=style/sqdt'))
+  handlePreview(images, currentIndex)
 }
 </script>
 

@@ -61,7 +61,7 @@
                       :mode="postDetail.images.length === 1 ? 'widthFix' : 'aspectFill'"
                       :src="getImageUrl(image + '?x-oss-process=style/sqdt')"
                       :enable-preview="false"
-                      @click="handlePreview(postDetail.images, index)"
+                      @click="doHandlePreview(postDetail.images, index)"
                     />
                   </view>
                 </view>
@@ -168,7 +168,7 @@
                         custom-class="mediaImg"
                         :src="img"
                         :enable-preview="false"
-                        @click="handlePreview(item._previewImages, index, false)"
+                        @click="doHandlePreview(item._previewImages, index, false)"
                       />
                     </template>
                   </view>
@@ -263,7 +263,7 @@
                                 custom-class="mediaImg"
                                 :src="img"
                                 :enable-preview="false"
-                                @click="handlePreview(reply._previewImages, index, false)"
+                                @click="doHandlePreview(reply._previewImages, index, false)"
                               />
                             </template>
                           </view>
@@ -1424,6 +1424,11 @@ const expandReplies = async (item: any) => {
 const shareRef = ref<any>(null)
 const handleOpenShare = (item: any) => {
   shareRef.value?.openSharePopup(item)
+}
+
+const doHandlePreview = (images: string[], currentIndex: number = 0) => {
+  images = images.map((item) => (item = item + '?x-oss-process=style/sqdt'))
+  handlePreview(images, currentIndex)
 }
 </script>
 

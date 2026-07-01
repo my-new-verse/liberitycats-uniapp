@@ -63,7 +63,7 @@
                   <view
                     v-for="(image, index) in item.images"
                     :key="index"
-                    @tap.stop="handlePreview(item.images, index)"
+                    @tap.stop="doHandlePreview(item.images, index)"
                   >
                     <wd-img
                       :radius="5"
@@ -282,6 +282,10 @@ const handleDelPost = (id: number) => {
 
 const showMemberLevelPopup = () => {
   message.alert({})
+}
+const doHandlePreview = (images: string[], currentIndex: number = 0) => {
+  images = images.map((item) => (item = item + '?x-oss-process=style/sqdt'))
+  handlePreview(images, currentIndex)
 }
 </script>
 

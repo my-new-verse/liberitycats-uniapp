@@ -57,7 +57,7 @@
                     mode="widthFix"
                     :src="getImageUrl(image + '?x-oss-process=style/jzcq')"
                     :enable-preview="false"
-                    @click="handlePreview(postDetail.images, index)"
+                    @click="doHandlePreview(postDetail.images, index)"
                   />
                 </template>
               </view>
@@ -141,7 +141,7 @@
                       custom-class="mediaImg"
                       :src="getImageUrl(image)"
                       :enable-preview="false"
-                      @click="handlePreview(item.images, index)"
+                      @click="doHandlePreview(item.images, index)"
                     />
                   </template>
                 </view>
@@ -790,6 +790,10 @@ const toUserHome = (memberId: number) => {
   uni.navigateTo({
     url: `/pages/cats/user/home?member_id=${memberId}`,
   })
+}
+const doHandlePreview = (images: string[], currentIndex: number = 0) => {
+  images = images.map((item) => (item = item + '?x-oss-process=style/sqdt'))
+  handlePreview(images, currentIndex)
 }
 </script>
 
