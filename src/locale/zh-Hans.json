@@ -90,6 +90,7 @@
   "my.menu.update.checking": "正在检测更新...",
   "my.menu.update.latest": "当前已是最新版本",
   "my.menu.update.popup.title": "发现新版本",
+  "my.menu.update.popup.current_version": "当前版本",
   "my.menu.update.popup.content_prefix": "新版本：",
   "my.menu.update.popup.content_title": "更新内容：",
   "my.menu.update.popup.download_progress": "下载进度",

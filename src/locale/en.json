@@ -89,6 +89,7 @@
   "my.menu.update.checking": "Checking for updates...",
   "my.menu.update.latest": "You are using the latest version",
   "my.menu.update.popup.title": "New Version Available",
+  "my.menu.update.popup.current_version": "Current Version",
   "my.menu.update.popup.content_prefix": "New version: ",
   "my.menu.update.popup.content_title": "Update content: ",
   "my.menu.update.popup.download_progress": "Download progress",

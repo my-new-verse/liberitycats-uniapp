@@ -14,6 +14,7 @@
       <view class="version" v-if="version">{{ version }}</view>
     </view>
     <view class="contentBox">
+      <view>{{ t('my.menu.update.popup.current_version') }}:{{ currentVersion }}</view>
       <view class="content-title">{{ t('my.menu.update.popup.content_title') }}</view>
       <scroll-view class="scrollBox" :scroll-y="true">
         <rich-text :nodes="content"></rich-text>
@@ -69,6 +70,8 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { t } from '@/locale'
+import buildInfo from '@/../build-info.json'
+const currentVersion = `${buildInfo.version}`
 
 declare const plus: any
 
@@ -302,7 +305,7 @@ const closePopup = () => {
 <style lang="scss" scoped>
 @import '/src/style/base';
 :deep(.globalPopupBox) :not(.wd-popup__close):not(.wd-icon-add) {
-  font-family: 'Alimama FangYuanTi VF' !important;
+  font-family: 'Alibaba PuHuiTi2' !important;
 }
 :deep(.globalPopupBox) {
   position: relative;
@@ -312,7 +315,7 @@ const closePopup = () => {
   padding-bottom: 48rpx !important;
   background-color: #ffffff;
   border-radius: 24rpx;
-  font-family: 'Alimama FangYuanTi VF' !important;
+  font-family: 'Alibaba PuHuiTi2' !important;
 
   .wd-popup__close {
     color: #ffffff;
