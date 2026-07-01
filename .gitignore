@@ -51,6 +51,13 @@ mp-360/
 # 其他缓存
 *.local
 
+# 外部技能（antfu/skills 通过 skills-lock.json 复现）
+.agents/
+.claude/
+.codex/
+.cursor/
+.codegraph/
+
 # WeChat Mini Program & Others
 project.config.json
 project.private.config.json
