@@ -288,10 +288,11 @@ const navigateBack = () => {
   uni.navigateBack({ delta: 1 })
 }
 
-/** 点击消息跳转到群聊并定位到对应消息 */
+/** 点击消息：直接跳转群聊页，由群聊页调用 context 接口加载上下文 */
 const handleMessageClick = (msg: any) => {
+  if (!roomId.value || !msg.id) return
   toUrl(
-    `/pages/cats/social/group_chat_new?room_id=${roomId.value}&code=${roomCode.value}&message_id=${msg.id}`,
+    `/pages/cats/social/group_chat_new?room_id=${roomId.value}&code=${roomCode.value}&message_id=${msg.id}&from_context=1`,
     true,
     false,
   )

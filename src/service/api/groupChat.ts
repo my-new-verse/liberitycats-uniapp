@@ -171,6 +171,7 @@ export interface ChatMessage {
   local_id?: string
   local_status?: 'sending' | 'failed' | 'sent'
   reply_to?: ChatMessageReplyTo
+  reply_message?: ChatMessage
 }
 
 export interface ChatMessageListResponse {
@@ -434,6 +435,13 @@ export const getChatMessageListApi = (params: {
   limit?: number
 }) => {
   return http.get<ChatMessageListResponse>('/v1/community/chat/message/list', params)
+}
+
+export const getChatMessageContextApi = (roomId: number, messageId: number) => {
+  return http.get<ChatMessageListResponse>('/v1/community/chat/message/context', {
+    room_id: roomId,
+    message_id: messageId,
+  })
 }
 
 export const markMessageReadApi = (roomId: number, lastReadMessageId: number) => {

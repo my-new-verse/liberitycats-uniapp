@@ -292,6 +292,7 @@ import {
   getChatRoomMembersApi,
   sendChatMessageApi,
   getChatMessageListApi,
+  getChatMessageContextApi,
   markMessageReadApi,
   ChatMessage,
   ChatMember,
@@ -308,7 +309,6 @@ import {
   getUnreadNotificationsApi,
 } from '@/service/api/groupChat'
 import { useUserStore } from '@/store'
-import { getGroupChatPageCache, setGroupChatPageCache } from '@/utils/groupChatPageCache'
 import { useToast } from 'wot-design-uni'
 const locale = uni.getLocale()
 
@@ -339,6 +339,7 @@ const messages = ref([])
 const highlightedMsgId = ref('')
 const pendingScrollToMessageId = ref('')
 const isRestoringFromCache = ref(false)
+const isFromContext = ref(false)
 const showFloatBtn = ref(false)
 const importantUnreadMessages = ref<Array<{ message_id: number }>>([])
 const currentUnreadIndex = ref(0)
@@ -381,33 +382,9 @@ onMounted(() => {
 onLoad((options: any) => {
   roomCode.value = options?.code || ''
   routeRoomId.value = Number(options?.room_id || 0)
-
-  // 尝试从缓存恢复页面状态（从历史搜索页返回时）
-  const cached = getGroupChatPageCache({
-    roomCode: roomCode.value,
-    roomId: routeRoomId.value,
-  })
-  if (cached) {
-    isRestoringFromCache.value = true
-    roomDetail.value = cached.roomDetail
-    hasMoreHistory.value = cached.hasMoreHistory
-    if (cached.nextBeforeMessageId) {
-      lastestMessageId.value = String(cached.nextBeforeMessageId)
-    }
-  }
-
+  isFromContext.value = options?.from_context === '1'
   if (options?.message_id) {
     pendingScrollToMessageId.value = String(options.message_id)
-    if (!isRestoringFromCache.value) {
-      // 非缓存模式：直接尝试滚动定位
-      const targetId = pendingScrollToMessageId.value
-      pendingScrollToMessageId.value = ''
-      nextTick(() => {
-        console.log(targetId)
-        scrollIntoViewById(targetId)
-      })
-    }
-    // 缓存模式：在 queryList 恢复消息后再滚动
   }
 })
 const scrollIntoViewById = async (id: string) => {
@@ -579,7 +556,7 @@ const applyMessagesBatch = (incomingMessages: ChatMessage[], scrollToLatest = fa
 }
 
 const getLastPersistedMessage = () => {
-  for (let index = 0; index < messages.value.length; index++) {
+  for (let index = messages.value.length - 1; index >= 0; index--) {
     const message = messages.value[index]
     const messageId = Number(message?.id || 0)
     if (Number.isFinite(messageId) && messageId > 0) {
@@ -592,7 +569,7 @@ const getLastPersistedMessageId = () => getLastPersistedMessage()?.id || null
 
 const backfillMissingMessagesByRoomSeq = async (incomingMessage: ChatMessage) => {
   const roomId = roomDetail.value?.room.id || routeRoomId.value
-  const lastMessageId = incomingMessage?.id || getLastPersistedMessageId()
+  const lastMessageId = getLastPersistedMessageId()
   if (!roomId || !lastMessageId || !incomingMessage?.id) return
 
   let nextAfterMessageId = Number(lastMessageId)
@@ -1289,42 +1266,29 @@ const hasMoreHistory = ref(true)
 // @query所绑定的方法不要自己调用！！需要刷新列表数据时，只需要调用paging.value.reload()即可
 const queryList = async (pageNo, pageSize) => {
   if (pageNo === 1) {
-    // 检查是否从缓存恢复（从历史搜索页 navigateTo 返回时）
-    if (isRestoringFromCache.value) {
-      isRestoringFromCache.value = false
-      const cached = getGroupChatPageCache({
-        roomCode: roomCode.value,
-        roomId: routeRoomId.value,
-      })
-      if (cached && cached.messages.length > 0) {
-        // 使用缓存的消息，不重新获取 list 接口
-        paging.value?.complete(cached.messages)
-        // 等待 z-paging 渲染完成
-        await nextTick()
-        // 使用缓存中保存的 lastMsg，避免依赖 messages.value 同步更新
-        const lastMsg = cached.lastPersistedMessage
-        if (lastMsg) {
-          backfillMissingMessagesByRoomSeq(lastMsg).finally(() => {
-            // 回填完成后（无论成功或失败）滚动到目标消息
-            if (pendingScrollToMessageId.value) {
-              const targetId = pendingScrollToMessageId.value
-              pendingScrollToMessageId.value = ''
-              nextTick(() => {
-                scrollIntoViewById(targetId)
-              })
-            }
-          })
-        } else if (pendingScrollToMessageId.value) {
-          const targetId = pendingScrollToMessageId.value
-          pendingScrollToMessageId.value = ''
-          nextTick(() => {
+    if (isFromContext.value) {
+      isFromContext.value = false
+      const targetId = pendingScrollToMessageId.value
+      pendingScrollToMessageId.value = ''
+      try {
+        const res = await getChatMessageContextApi(routeRoomId.value, Number(targetId))
+        if (res.code === 1 && res.data?.messages?.length > 0) {
+          const messages = [...res.data.messages].reverse()
+          hasMoreHistory.value = res.data.has_more_history === 1
+          if (res.data.next_before_message_id) {
+            lastestMessageId.value = String(res.data.next_before_message_id)
+          }
+          paging.value?.complete(messages)
+          await nextTick()
+          setTimeout(() => {
             scrollIntoViewById(targetId)
-          })
+          }, 500)
         }
-        return
+      } catch (e) {
+        console.error('getChatMessageContextApi failed', e)
       }
+      return
     }
-    // 正常加载
     await getChatMessageList()
     setTimeout(() => {
       if (hasMoreHistory.value) {
