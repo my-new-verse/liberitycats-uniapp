@@ -50,10 +50,10 @@
         <view
           class="avatarBox"
           @click="!item.is_self && handleAvatarClick(item?.member_id)"
-          @touchstart="handleAvatarTouchStart($event)"
-          @touchmove="handleAvatarTouchMove($event)"
-          @touchend="handleAvatarTouchEnd"
-          @touchcancel="handleAvatarTouchEnd"
+          @touchstart.stop="handleAvatarTouchStart($event)"
+          @touchmove.stop="handleAvatarTouchMove($event)"
+          @touchend.stop="handleAvatarTouchEnd"
+          @touchcancel.stop="handleAvatarTouchEnd"
         >
           <view class="u-avatar" :style="getAvatarStyle(item?.sender?.avatar || '', 'chat')"></view>
           <view class="levelIcon">
@@ -115,59 +115,24 @@
               </view>
             </template>
             <template v-else-if="item.message_type === 'image'">
-              <view class="chat-img-container">
-                <!-- 回复引用 -->
-                <view
-                  v-if="item.reply_to || item.reply_message"
-                  class="reply-ref"
-                  @click.stop="handleReplyClick"
-                >
-                  <text class="reply-ref-name">
-                    {{ item.reply_to?.sender_nickname || item.reply_message?.sender?.nickname }}：
-                  </text>
-                  <wd-img
-                    v-if="replyMessageType === 'image'"
-                    custom-class="reply-ref-thumb"
-                    mode="aspectFill"
-                    width="40rpx"
-                    height="40rpx"
-                    :src="replyMessageThumbUrl"
-                    radius="4rpx"
-                  />
-                  <wd-img
-                    v-else-if="replyMessageType === 'emotion'"
-                    custom-class="reply-ref-thumb"
-                    mode="aspectFill"
-                    width="40rpx"
-                    height="40rpx"
-                    :src="replyMessageEmotionSrc"
-                    radius="4rpx"
-                  />
-                  <text v-else class="reply-ref-content">
-                    {{ replyPreviewContent }}
-                  </text>
-                </view>
-                <wd-img
-                  custom-class="chat-img-custom"
-                  mode="aspectFill"
-                  :width="`${getImageMessageBoxSize(item).width}px`"
-                  :height="`${getImageMessageBoxSize(item).height}px`"
-                  :src="item.payload.thumb_url"
-                  :enable-preview="true"
-                  radius="24rpx"
-                />
-              </view>
+              <wd-img
+                custom-class="chat-img-custom"
+                mode="aspectFill"
+                :width="`${getImageMessageBoxSize(item).width}px`"
+                :height="`${getImageMessageBoxSize(item).height}px`"
+                :src="item.payload.thumb_url"
+                :enable-preview="true"
+                radius="24rpx"
+              />
             </template>
             <template v-else-if="item.message_type === 'emotion'">
+              <!-- 有回复引用时需要容器包裹 -->
               <view
+                v-if="item.reply_to || item.reply_message"
                 :class="{ 'chat-text-container': true, 'chat-text-container-me': item.is_self }"
               >
                 <!-- 回复引用 -->
-                <view
-                  v-if="item.reply_to || item.reply_message"
-                  class="reply-ref"
-                  @click.stop="handleReplyClick"
-                >
+                <view class="reply-ref" @click.stop="handleReplyClick">
                   <text class="reply-ref-name">
                     {{ item.reply_to?.sender_nickname || item.reply_message?.sender?.nickname }}：
                   </text>
@@ -205,6 +170,19 @@
                   "
                 />
               </view>
+              <!-- 无回复时直接渲染 wd-img -->
+              <wd-img
+                v-else
+                custom-class="chat-img-custom"
+                mode="aspectFill"
+                width="140rpx"
+                height="140rpx"
+                :src="
+                  item.payload?.emotion_url
+                    ? getImageUrl(item.payload?.emotion_url)
+                    : getEmotionMessageSrc(item)
+                "
+              />
             </template>
             <view v-else-if="item.message_type === 'rich'" class="rich-item">
               <!-- 回复引用 -->
