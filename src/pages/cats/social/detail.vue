@@ -1347,7 +1347,23 @@ const handleFollowClick = async (member: any) => {
     return
   }
   try {
-    if (member.is_following) {
+    // 特别关注 → 取消特别关注，保持关注
+    if (member.is_special_following) {
+      try {
+        await message.confirm({ msg: '确定取消特别关注吗？' })
+      } catch {
+        return
+      }
+      const res = await setSpecialFollowApi(member.id, 0)
+      if (res.code === 1) {
+        syncMemberFollowState(member.id, {
+          is_following: member.is_following,
+          is_mutual_following: member.is_mutual_following,
+          is_special_following: 0,
+        })
+        uni.showToast({ title: t('social.index.user.special.canceled'), icon: 'none' })
+      }
+    } else if (member.is_following) {
       const confirm = await new Promise<boolean>((resolve) => {
         message
           .confirm({ msg: t('social.index.user.follow.cancel') })
@@ -1472,7 +1488,8 @@ const syncMemberFollowState = (memberId: number, data: any) => {
 /** 帖子/评论作者关注按钮信息 */
 const getMemberFollowInfo = (member: any) => {
   if (!member || member.is_self) return null
-  if (member.is_special_following) return { text: '特别关注', style: 'special' }
+  if (member.is_special_following)
+    return { text: t('social.index.user.special.following'), style: 'special' }
   if (member.is_mutual_following) return { text: '互相关注', style: 'followed' }
   if (member.is_following) return { text: '已关注', style: 'followed' }
   if (member.is_following_me) return { text: '回关', style: 'follow' }
@@ -2259,9 +2276,9 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
     background-color: #ff6b03;
     color: #fff;
     &.followed {
-      background-color: #f7f7f7;
-      color: #666;
-      border-color: #e5e5e5;
+      background-color: #ffffff;
+      color: #999;
+      border-color: #ddd;
     }
     &.special {
       background: linear-gradient(135deg, #fff7e5 0%, #fff0d6 100%);

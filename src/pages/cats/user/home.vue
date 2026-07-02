@@ -409,9 +409,9 @@ const followBtnInfo = computed(() => {
   if (u.is_special_following)
     return { text: t('social.index.user.special.following'), style: 'special' }
   if (u.is_mutual_following) return { text: '互相关注', style: 'followed' }
-  if (u.is_following === 1) return { text: t('social.index.user.unfollow'), style: 'followed' }
+  if (u.is_following === 1) return { text: '已关注', style: 'followed' }
   if (u.is_following_me) return { text: '回关', style: 'follow' }
-  return { text: t('social.index.user.follow'), style: 'follow' }
+  return { text: '关注', style: 'follow' }
 })
 
 const openMoreActions = () => {
@@ -564,7 +564,21 @@ const handleFollow = () => {
     return
   }
 
-  if (userInfo.value.is_following === 1) {
+  const u: any = userInfo.value
+  // 特别关注 → 取消特别关注，保持关注
+  if (u.is_special_following) {
+    message
+      .confirm({ msg: '确定取消特别关注吗？' })
+      .then(() => {
+        setSpecialFollowApi(memberId.value, 0).then((res) => {
+          if (res.code === 1) {
+            userInfo.value.is_special_following = 0
+            uni.showToast({ title: t('social.index.user.special.canceled'), icon: 'none' })
+          }
+        })
+      })
+      .catch(() => {})
+  } else if (u.is_following === 1) {
     message
       .confirm({ msg: t('social.index.user.follow.cancel') })
       .then(() => {
@@ -778,9 +792,9 @@ const doHandlePreview = (images: string[], currentIndex: number = 0, needDealImg
   min-height: 36rpx;
   &.followed {
     :deep(.follow-btn) {
-      background: #f7f7f7 !important;
-      color: #666 !important;
-      border-color: #e5e5e5 !important;
+      background: #ffffff !important;
+      color: #999 !important;
+      border-color: #ddd !important;
     }
   }
   &.special {

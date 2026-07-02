@@ -735,7 +735,8 @@ const shareRef = ref<any>(null)
 /** 帖子作者关注按钮信息 */
 const getMemberFollowInfo = (member: any) => {
   if (!member || member.is_self) return null
-  if (member.is_special_following) return { text: '特别关注', style: 'special', icon: true }
+  if (member.is_special_following)
+    return { text: t('social.index.user.special.following'), style: 'special' }
   if (member.is_mutual_following) return { text: '互相关注', style: 'followed' }
   if (member.is_following) return { text: '已关注', style: 'followed' }
   if (member.is_following_me) return { text: '回关', style: 'follow' }
@@ -752,13 +753,11 @@ const handleFollowClick = async (member: any) => {
   try {
     // 特别关注状态 - 取消特别关注
     if (member.is_special_following) {
-      const confirm = await new Promise<boolean>((resolve) => {
-        uni.showModal({
-          content: t('social.index.user.special.cancel'),
-          success: (r) => resolve(r.confirm),
-        })
-      })
-      if (!confirm) return
+      try {
+        await message.confirm({ msg: '确定取消特别关注吗？' })
+      } catch {
+        return
+      }
       const res = await setSpecialFollowApi(member.id, 0)
       if (res.code === 1) {
         member.is_special_following = 0
@@ -767,13 +766,11 @@ const handleFollowClick = async (member: any) => {
     }
     // 普通关注状态 - 取消关注
     else if (member.is_following) {
-      const confirm = await new Promise<boolean>((resolve) => {
-        uni.showModal({
-          content: t('social.index.user.follow.cancel'),
-          success: (r) => resolve(r.confirm),
-        })
-      })
-      if (!confirm) return
+      try {
+        await message.confirm({ msg: t('social.index.user.follow.cancel') })
+      } catch {
+        return
+      }
       const res = await deleteFollowApi(member.id)
       if (res.code === 1) {
         const d = res.data
@@ -1797,48 +1794,27 @@ const handleLevelIconError = (member: any) => {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 4rpx; /* 图标和文字间距 */
-    height: 44rpx;
-    padding: 0 20rpx;
-    border-radius: 22rpx;
+    height: 40rpx;
+    padding: 0 14rpx;
+    border-radius: 50rpx;
+    border: 1rpx solid transparent;
+    background-color: #ff6b03;
+    color: #fff;
     font-size: 22rpx;
-    font-weight: 500;
     line-height: 1;
     white-space: nowrap;
     flex-shrink: 0;
     box-sizing: border-box;
-    border: 1rpx solid transparent;
-    background-color: #ff6b03;
-    color: #fff;
-    transition: all 0.15s ease;
-
-    .starIcon {
-      font-size: 22rpx; /* 与文字同大小 */
-      line-height: 1;
-      transform: scale(1.1); /* 稍微放大星标，增强视觉 */
-    }
-
     &.followed {
-      background-color: #f7f7f7;
-      color: #666;
-      border-color: #e5e5e5;
+      background-color: #ffffff;
+      color: #999;
+      border-color: #ddd;
     }
-
     &.special {
-      background: linear-gradient(135deg, #fff7e5 0%, #fff0d6 100%); /* 渐变背景增强特殊感 */
+      background: linear-gradient(135deg, #fff7e5 0%, #fff0d6 100%);
       color: #ff6b03;
       border-color: #ff6b03;
-      font-weight: 600; /* 加粗强调 */
-
-      .starIcon {
-        color: #ff6b03;
-      }
-    }
-
-    /* 添加触控反馈 */
-    &:active {
-      opacity: 0.85;
-      transform: scale(0.96);
+      font-weight: 600;
     }
   }
 }
