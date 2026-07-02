@@ -529,3 +529,20 @@ export interface SearchChatMessagesResponse {
 export const searchChatMessagesApi = (params: SearchChatMessagesParams) => {
   return http.get<SearchChatMessagesResponse>('/v1/community/chat/message/search', params)
 }
+
+/** 单个房间通知摘要 */
+export interface NotificationSummaryRoom {
+  room_id: number
+  unread_mentions: number
+  unread_replies: number
+}
+
+/** 通知摘要响应 */
+export interface NotificationsSummaryResponse {
+  rooms: NotificationSummaryRoom[]
+}
+
+/** 获取各聊天室未读 @提及 和 未读回复 汇总 */
+export const getNotificationsSummaryApi = () => {
+  return http.get<NotificationsSummaryResponse>('/v1/community/chat/room/notifications-summary')
+}

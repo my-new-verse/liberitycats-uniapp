@@ -38,9 +38,14 @@
             <text class="g-sub-title">{{ item.sub_title || item.description }}</text>
           </view>
 
-          <wd-button class="join-button" @click.stop="handleJoinOrEnter(item)" size="small">
-            {{ t(item.is_joined === 1 ? 'group.chat.enter_chat' : 'group.chat.join_now') }}
-          </wd-button>
+          <view class="join-btn-wrapper">
+            <wd-button class="join-button" @click.stop="handleJoinOrEnter(item)" size="small">
+              {{ t(item.is_joined === 1 ? 'group.chat.enter_chat' : 'group.chat.join_now') }}
+            </wd-button>
+            <view v-if="notificationBadgeMap[item.id]" class="badge">
+              {{ notificationBadgeMap[item.id] > 99 ? '99+' : notificationBadgeMap[item.id] }}
+            </view>
+          </view>
         </view>
       </view>
     </scroll-view>
@@ -57,7 +62,9 @@ import {
   joinChatRoomApi,
   patchCachedChatRoom,
   setCachedChatRoomsApi,
+  getNotificationsSummaryApi,
   ChatRoom,
+  NotificationSummaryRoom,
 } from '@/service/api/groupChat'
 import { useUserStore } from '@/store/user'
 
@@ -73,8 +80,26 @@ const GROUP_CHAT_ROOMS_REFRESH_EVENT = 'refreshGroupChatRooms'
 const groupList = ref<ChatRoom[]>([])
 const groupLoading = ref(false)
 const enteringGroupMap = ref<Record<number, boolean>>({})
+// room_id -> 未读提及+回复总数
+const notificationBadgeMap = ref<Record<number, number>>({})
 const hasLoginToken = () =>
   Boolean(userStore.userInfo.token || uni.getStorageSync('token') || uni.getStorageSync('hasToken'))
+
+const loadNotificationsSummary = async () => {
+  try {
+    const res = await getNotificationsSummaryApi()
+    if (res?.code === 1 && res.data?.rooms) {
+      const map: Record<number, number> = {}
+      res.data.rooms.forEach((room: NotificationSummaryRoom) => {
+        const total = (room.unread_mentions || 0) + (room.unread_replies || 0)
+        if (total > 0) map[room.room_id] = total
+      })
+      notificationBadgeMap.value = map
+    }
+  } catch (error) {
+    console.error('loadNotificationsSummary error:', error)
+  }
+}
 
 const loadGroupList = async (forceRefresh = false) => {
   if (groupLoading.value) return
@@ -96,6 +121,8 @@ const loadGroupList = async (forceRefresh = false) => {
       groupList.value = [...(res.data?.rooms || [])]
       // 同步更新缓存，保证后续 getCachedChatRoomsApi 返回最新数据
       setCachedChatRoomsApi(res.data)
+      // 群聊列表加载成功后，拉取未读通知摘要
+      void loadNotificationsSummary()
     } else if (!groupList.value.length) {
       uni.showToast({ title: res.msg || '加载失败', icon: 'none' })
     }
@@ -279,6 +306,31 @@ onUnmounted(() => {
   line-height: 1.4;
   color: rgba(255, 255, 255, 0.92);
   text-shadow: 0 4rpx 12rpx rgba(72, 35, 0, 0.22);
+}
+
+.join-btn-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.badge {
+  position: absolute;
+  top: -10rpx;
+  right: -10rpx;
+  min-width: 32rpx;
+  height: 32rpx;
+  padding: 0 8rpx;
+  border-radius: 999rpx;
+  background-color: #ff4d4f; /* 醒目红色 */
+  // background-color: #d4380d; /* 深橘红色 */
+  background-color: var(--wot-button-primary-bg-color);
+  color: #ffffff;
+  font-size: 20rpx;
+  line-height: 32rpx;
+  text-align: center;
+  box-sizing: border-box;
+  pointer-events: none;
+  border: 1px solid;
 }
 
 .join-button {
