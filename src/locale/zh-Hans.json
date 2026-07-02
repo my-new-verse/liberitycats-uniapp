@@ -404,6 +404,9 @@
   "my.nft.import_from_okx": "立即从钱包关联",
   "my.nft.empty.with_wallet": "您关联的钱包中没有LibertyCats NFTs数据",
   "my.nft.empty_txt": "钱包空空的，还差一只猫猫",
+  "my.nft.valuation.total_value": "总估值",
+  "my.nft.valuation.floor_price": "地板价",
+  "my.nft.valuation.quantity": "数量",
 
   "order.confirm_order.page_title": "确认订单",
   "order.confirm_order.add_address": "+ 添加地址",

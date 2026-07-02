@@ -235,6 +235,28 @@
                 {{ nftList.length }}
               </view>
             </view>
+            <view class="nftValuation" v-if="nftList.length > 0">
+              <view class="summaryHero">
+                <view class="heroLabel">{{ t('my.nft.valuation.total_value') }}</view>
+                <view class="heroValue">
+                  <text class="currency">{{ nftCurrencySymbol }}</text>
+                  <text class="amount">{{ nftTotalValue }}</text>
+                </view>
+              </view>
+              <view class="summaryStats">
+                <view class="statItem">
+                  <view class="statLabel">{{ t('my.nft.valuation.floor_price') }}</view>
+                  <view class="statValue">
+                    <text class="currency">{{ nftCurrencySymbol }}</text>
+                    <text class="amount">{{ nftFloorPrice }}</text>
+                  </view>
+                </view>
+                <view class="statItem">
+                  <view class="statLabel">{{ t('my.nft.valuation.quantity') }}</view>
+                  <view class="statValue">{{ nftTotalCount }}</view>
+                </view>
+              </view>
+            </view>
             <template v-if="userStore.userInfo.wallet_address !== ''">
               <view class="nftBox">
                 <template v-if="nftList.length > 0">
@@ -467,6 +489,7 @@ import {
   getMemberNftsApi,
   getMemberNftsApiResponse,
   refreshMemberNftsApi,
+  NftValuation,
 } from '@/service/api/pledge'
 
 import buildInfo from '@/../build-info.json'
@@ -591,6 +614,7 @@ const loadNftList = () => {
   if (!userStore.isLogin) return
   getMemberNftsApi(1, false).then((res) => {
     nftList.value = res.data.data.filter((item) => item !== null)
+    nftValuation.value = res.data.valuation || { ...DEFAULT_VALUATION }
   })
 }
 
@@ -640,6 +664,29 @@ const connectWallet = () => {
     })
     .catch(() => {})
 }
+
+const DEFAULT_VALUATION: NftValuation = {
+  floor_price: '0',
+  quantity: 0,
+  total_value: '0',
+  currency_symbol: '$',
+}
+
+const nftValuation = ref<NftValuation>({ ...DEFAULT_VALUATION })
+
+const nftCurrencySymbol = computed(() => nftValuation.value.currency_symbol)
+
+const nftFloorPrice = computed(() => {
+  const price = parseFloat(nftValuation.value.floor_price)
+  return isNaN(price) ? '0.0000' : price.toFixed(4)
+})
+
+const nftTotalCount = computed(() => nftValuation.value.quantity)
+
+const nftTotalValue = computed(() => {
+  const value = parseFloat(nftValuation.value.total_value)
+  return isNaN(value) ? '0.00' : value.toFixed(2)
+})
 
 const nftList = ref<getMemberNftsApiResponse['data']>([])
 
@@ -1210,6 +1257,90 @@ const bindArGame = () => {
       // 新增：当 showNftMoreOnOff 为 true 时，箭头图片旋转180度
       .opBtn.up image {
         transform: rotate(180deg);
+      }
+
+      // NFT 估值卡片
+      .nftValuation {
+        margin-top: 24rpx;
+        overflow: hidden;
+        background: #fff8f0;
+        border: 2rpx solid #ff6b03;
+        border-radius: 24rpx;
+
+        .summaryHero {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 28rpx 32rpx 20rpx 32rpx;
+
+          .heroLabel {
+            font-size: 24rpx;
+            font-weight: 400;
+            color: #999999;
+            margin-bottom: 8rpx;
+          }
+
+          .heroValue {
+            display: flex;
+            align-items: baseline;
+
+            .currency {
+              font-size: 32rpx;
+              font-weight: 600;
+              color: #ff6b03;
+              margin-right: 4rpx;
+            }
+
+            .amount {
+              font-size: 56rpx;
+              font-weight: 700;
+              color: #ff6b03;
+              line-height: 1.2;
+            }
+          }
+        }
+
+        .summaryStats {
+          display: flex;
+          border-top: 1rpx solid rgba(255, 107, 3, 0.2);
+
+          .statItem {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20rpx 16rpx;
+
+            &:first-child {
+              border-right: 1rpx solid rgba(255, 107, 3, 0.2);
+            }
+
+            .statLabel {
+              font-size: 22rpx;
+              font-weight: 400;
+              color: #999999;
+              margin-bottom: 6rpx;
+            }
+
+            .statValue {
+              display: flex;
+              align-items: baseline;
+
+              .currency {
+                font-size: 22rpx;
+                font-weight: 600;
+                color: #261000;
+                margin-right: 2rpx;
+              }
+
+              .amount {
+                font-size: 32rpx;
+                font-weight: 700;
+                color: #261000;
+              }
+            }
+          }
+        }
       }
     }
 

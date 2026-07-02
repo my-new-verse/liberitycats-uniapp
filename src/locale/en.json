@@ -391,6 +391,9 @@
   "my.nft.import_from_okx": "Immediately associate with Wallet",
   "my.nft.empty.with_wallet": "There are no LibertyCats Nfts in the wallet associated with you",
   "my.nft.empty_txt": "Empty wallet, just one cat to start!",
+  "my.nft.valuation.total_value": "Total Value",
+  "my.nft.valuation.floor_price": "Floor Price",
+  "my.nft.valuation.quantity": "Quantity",
 
   "order.confirm_order.page_title": "Confirm Order",
   "order.confirm_order.add_address": "+ Add Address",
