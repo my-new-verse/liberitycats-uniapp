@@ -236,7 +236,7 @@
   "social.index.user.follow.canceled": "已取消關注",
   "social.index.user.special.following": "已特別關注",
   "social.index.user.special.set": "設為特別關注",
-  "social.index.user.special.cancel": "確定取消特別關注嗎？",
+  "social.index.user.special.cancel": "取消特別關注",
   "social.index.user.special.success": "已設為特別關注",
   "social.index.user.special.canceled": "已取消特別關注",
   "social.index.user.unfollow": "取消關注",

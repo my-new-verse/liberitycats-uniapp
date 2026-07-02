@@ -253,7 +253,7 @@
   "social.index.user.follow.canceled": "Unfollowed",
   "social.index.user.special.following": "Special followed",
   "social.index.user.special.set": "Set special follow",
-  "social.index.user.special.cancel": "Confirm to cancel special follow?",
+  "social.index.user.special.cancel": "Cancel special follow",
   "social.index.user.special.success": "Special follow set",
   "social.index.user.special.canceled": "Special follow canceled",
   "discover.social.filter.latest": "Latest",
