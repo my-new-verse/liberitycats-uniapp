@@ -594,6 +594,14 @@
       }
     },
     {
+      "path": "pages/cats/social/group_chat_history",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
       "path": "pages/cats/social/group_chat_new",
       "type": "page",
       "layout": "default",
