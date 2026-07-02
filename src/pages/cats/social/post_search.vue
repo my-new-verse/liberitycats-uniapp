@@ -36,158 +36,174 @@
       </view>
     </view>
 
-    <view class="cnt" :style="{ paddingTop: cntPaddingTop + 'rpx' }">
-      <!-- ========== 筛选栏：用户 + 时间 ========== -->
-      <view class="filterSticky" :style="{ top: cntPaddingTop + 'rpx' }">
-        <view class="filterBar">
-          <view class="filterItem" @click="showUserFilter = true">
-            <text class="filterLabel">
-              {{ selectedUserLabel || t('social.search.filter.user') }}
-            </text>
-            <text class="filterArrow">▼</text>
-          </view>
-          <view class="filterItem" @click="showTimeFilter = true">
-            <text class="filterLabel">
-              {{ selectedTimeLabel || t('social.search.filter.time') }}
-            </text>
-            <text class="filterArrow">▼</text>
-          </view>
+    <!-- ========== 筛选栏：用户 + 时间（fixed，在 scroll-view 外） ========== -->
+    <view class="filterSticky" :style="{ top: cntPaddingTop + 'rpx' }">
+      <view class="filterBar">
+        <view class="filterItem" @click="showUserFilter = true">
+          <text class="filterLabel">
+            {{ selectedUserLabel || t('social.search.filter.user') }}
+          </text>
+          <text class="filterArrow">▼</text>
         </view>
-
-        <view class="selectedUsersBar" v-if="confirmedUserIds.length > 0">
-          <scroll-view scroll-x class="selectedUsersScroll">
-            <view class="selectedUserItem" v-for="uid in confirmedUserIds" :key="uid">
-              <view class="userAvatarWrap">
-                <image
-                  class="userAvatar"
-                  :src="selectedUsersCache.get(uid)?.avatar"
-                  mode="aspectFill"
-                />
-                <view class="removeIcon" @click.stop="removeSelectedUser(uid)">×</view>
-              </view>
-              <text class="userName">{{ selectedUsersCache.get(uid)?.nickname }}</text>
-            </view>
-          </scroll-view>
+        <view class="filterItem" @click="showTimeFilter = true">
+          <text class="filterLabel">
+            {{ selectedTimeLabel || t('social.search.filter.time') }}
+          </text>
+          <text class="filterArrow">▼</text>
         </view>
       </view>
 
-      <view :style="{ height: filterStickyHeight + 'rpx' }"></view>
+      <view class="selectedUsersBar" v-if="confirmedUserIds.length > 0">
+        <scroll-view scroll-x class="selectedUsersScroll">
+          <view class="selectedUserItem" v-for="uid in confirmedUserIds" :key="uid">
+            <view class="userAvatarWrap">
+              <image
+                class="userAvatar"
+                :src="selectedUsersCache.get(uid)?.avatar"
+                mode="aspectFill"
+              />
+              <view class="removeIcon" @click.stop="removeSelectedUser(uid)">×</view>
+            </view>
+            <text class="userName">{{ selectedUsersCache.get(uid)?.nickname }}</text>
+          </view>
+        </scroll-view>
+      </view>
+    </view>
 
-      <!-- ========== 搜索状态：初始提示 / 结果列表（暂无数据） ========== -->
-      <template v-if="!hasSearched">
-        <view class="emptyBox">
-          <view class="emptyText">{{ t('social.search.hint') }}</view>
-        </view>
-      </template>
-      <template v-else-if="searchResult.posts.length > 0">
-        <view class="socialBox">
-          <view class="cell" v-for="post in searchResult.posts" :key="post.id">
-            <view class="socialItem">
-              <view
-                class="delBox"
-                v-if="post.member?.is_self"
-                @click="handleDelPost(post.id)"
-              ></view>
-              <view class="jbBox" v-else @click="reportPost(post)"></view>
-              <view class="socialHead">
-                <view class="avatarBox" @click="toPostDetail(post)">
-                  <image class="avatar" :src="post.member?.avatar" />
-                  <view class="levelIcon" v-if="post.member?.level">
-                    <image :src="`/static/images/level/${post.member.level}.png`" mode="widthFix" />
-                  </view>
-                </view>
-                <view class="nameWrap">
-                  <view class="name">{{ post.member?.nickname }}</view>
-                  <view
-                    v-if="getMemberFollowInfo(post.member)"
-                    class="followBtn"
-                    :class="getMemberFollowInfo(post.member).style"
-                    @click.stop="handleFollowClick(post.member)"
-                  >
-                    {{ getMemberFollowInfo(post.member).text }}
-                  </view>
-                </view>
-                <view v-if="post.tag?.name" class="tag" :class="post.tag?.class">
-                  {{ post.tag.name }}
-                </view>
-              </view>
-              <view class="socialCntBox" @click="toPostDetail(post)">
-                <view class="socialCnt">{{ post.content }}</view>
+    <!-- ========== 滚动内容区 ========== -->
+    <view class="cntScrollWrap" :style="{ top: scrollViewTop, height: scrollViewHeight }">
+      <scroll-view
+        class="cntScroll"
+        :scroll-y="true"
+        refresher-background="transparent"
+        :refresher-enabled="true"
+        refresher-color="#ff6b03"
+        :refresher-triggered="isRefreshing"
+        @refresherrefresh="onRefresh"
+        @refresherrestore="onRefreshRestore"
+        @refresherabort="onRefreshAbort"
+        @scrolltolower="onScrollToLower"
+      >
+        <!-- ========== 搜索状态：初始提示 / 结果列表（暂无数据） ========== -->
+        <template v-if="!hasSearched">
+          <view class="emptyBox">
+            <view class="emptyText">{{ t('social.search.hint') }}</view>
+          </view>
+        </template>
+        <template v-else-if="searchResult.posts.length > 0">
+          <view class="socialBox">
+            <view class="cell" v-for="post in searchResult.posts" :key="post.id">
+              <view class="socialItem">
                 <view
-                  class="socialMedia"
-                  v-if="post.images && post.images.length > 0"
-                  :class="{ mediaImg4: post.images.length === 4 }"
-                >
-                  <template v-if="post.images.length == 1">
-                    <wd-img
-                      custom-class="mediaImgItem"
-                      mode="widthFix"
-                      :src="getImageUrl(post.images[0] + '?x-oss-process=style/sqdt')"
-                      :preview-src="post.images.map((img) => getImageUrl(img))"
-                      :enable-preview="false"
-                      @tap.stop="doHandlePreview(post.images, 0)"
-                    />
-                  </template>
-                  <template v-else-if="post.images.length > 1">
-                    <template v-for="(image, index) in post.images" :key="index">
+                  class="delBox"
+                  v-if="post.member?.is_self"
+                  @click="handleDelPost(post.id)"
+                ></view>
+                <view class="jbBox" v-else @click="reportPost(post)"></view>
+                <view class="socialHead">
+                  <view class="avatarBox" @click="toPostDetail(post)">
+                    <image class="avatar" :src="post.member?.avatar" />
+                    <view class="levelIcon" v-if="post.member?.level">
+                      <image
+                        :src="`/static/images/level/${post.member.level}.png`"
+                        mode="widthFix"
+                      />
+                    </view>
+                  </view>
+                  <view class="nameWrap">
+                    <view class="name">{{ post.member?.nickname }}</view>
+                    <view
+                      v-if="getMemberFollowInfo(post.member)"
+                      class="followBtn"
+                      :class="getMemberFollowInfo(post.member).style"
+                      @click.stop="handleFollowClick(post.member)"
+                    >
+                      {{ getMemberFollowInfo(post.member).text }}
+                    </view>
+                  </view>
+                  <view v-if="post.tag?.name" class="tag" :class="post.tag?.class">
+                    {{ post.tag.name }}
+                  </view>
+                </view>
+                <view class="socialCntBox" @click="toPostDetail(post)">
+                  <view class="socialCnt">{{ post.content }}</view>
+                  <view
+                    class="socialMedia"
+                    v-if="post.images && post.images.length > 0"
+                    :class="{ mediaImg4: post.images.length === 4 }"
+                  >
+                    <template v-if="post.images.length == 1">
                       <wd-img
                         custom-class="mediaImgItem"
                         mode="widthFix"
-                        :src="getImageUrl(image + '?x-oss-process=style/jzcq')"
+                        :src="getImageUrl(post.images[0] + '?x-oss-process=style/sqdt')"
                         :preview-src="post.images.map((img) => getImageUrl(img))"
                         :enable-preview="false"
-                        @tap.stop="doHandlePreview(post.images, index)"
+                        @tap.stop="doHandlePreview(post.images, 0)"
                       />
                     </template>
-                  </template>
-                </view>
-                <view class="socialTime">{{ formatRelativeTime(post.create_time) }}</view>
-              </view>
-              <view class="socialFoot">
-                <view class="socialBtnBox" @click="toPostDetail(post)">
-                  <view class="socialBtnIcon view"></view>
-                  <view class="socialBtn">{{ post.view_count || 0 }}</view>
-                </view>
-                <view class="socialBtnBox" @click="toPostDetail(post)">
-                  <view class="socialBtnIcon quote"></view>
-                  <view class="socialBtn">{{ post.commit_count || 0 }}</view>
-                </view>
-                <view class="socialBtnBox">
-                  <view class="zanWrapper" @click.stop="likeSearchPost(post)">
-                    <image
-                      class="Icon"
-                      :src="
-                        post.is_liked === 1
-                          ? '/static/images/unlike.png'
-                          : '/static/images/zan0.33.png'
-                      "
-                      mode="aspectFit"
-                      :style="{ opacity: post.currentGif ? 0 : 1 }"
-                    />
-                    <image
-                      v-if="post.currentGif"
-                      :src="post.currentGif"
-                      class="Icon"
-                      mode="aspectFit"
-                    />
+                    <template v-else-if="post.images.length > 1">
+                      <template v-for="(image, index) in post.images" :key="index">
+                        <wd-img
+                          custom-class="mediaImgItem"
+                          mode="widthFix"
+                          :src="getImageUrl(image + '?x-oss-process=style/jzcq')"
+                          :preview-src="post.images.map((img) => getImageUrl(img))"
+                          :enable-preview="false"
+                          @tap.stop="doHandlePreview(post.images, index)"
+                        />
+                      </template>
+                    </template>
                   </view>
-                  <view class="socialBtn" style="margin-left: 10rpx">
-                    {{ post.like_count || 0 }}
-                  </view>
+                  <view class="socialTime">{{ formatRelativeTime(post.create_time) }}</view>
                 </view>
-                <view class="socialBtnBox" @click.stop="handleShare(post)">
-                  <view class="socialBtnIcon share"></view>
+                <view class="socialFoot">
+                  <view class="socialBtnBox" @click="toPostDetail(post)">
+                    <view class="socialBtnIcon view"></view>
+                    <view class="socialBtn">{{ post.view_count || 0 }}</view>
+                  </view>
+                  <view class="socialBtnBox" @click="toPostDetail(post)">
+                    <view class="socialBtnIcon quote"></view>
+                    <view class="socialBtn">{{ post.commit_count || 0 }}</view>
+                  </view>
+                  <view class="socialBtnBox">
+                    <view class="zanWrapper" @click.stop="likeSearchPost(post)">
+                      <image
+                        class="Icon"
+                        :src="
+                          post.is_liked === 1
+                            ? '/static/images/unlike.png'
+                            : '/static/images/zan0.33.png'
+                        "
+                        mode="aspectFit"
+                        :style="{ opacity: post.currentGif ? 0 : 1 }"
+                      />
+                      <image
+                        v-if="post.currentGif"
+                        :src="post.currentGif"
+                        class="Icon"
+                        mode="aspectFit"
+                      />
+                    </view>
+                    <view class="socialBtn" style="margin-left: 10rpx">
+                      {{ post.like_count || 0 }}
+                    </view>
+                  </view>
+                  <view class="socialBtnBox" @click.stop="handleShare(post)">
+                    <view class="socialBtnIcon share"></view>
+                  </view>
                 </view>
               </view>
             </view>
           </view>
-        </view>
-      </template>
-      <template v-else>
-        <view class="emptyBox">
-          <view class="emptyText">{{ t('common.no_data') }}</view>
-        </view>
-      </template>
+          <wd-loadmore :state="loadMoreState" @reload="loadMore" />
+        </template>
+        <template v-else>
+          <view class="emptyBox">
+            <view class="emptyText">{{ t('common.no_data') }}</view>
+          </view>
+        </template>
+      </scroll-view>
     </view>
 
     <!-- ========== 时间筛选弹窗 ========== -->
@@ -329,12 +345,12 @@
 
 <script lang="ts" setup>
 import { t } from '@/locale/index'
-import { http } from '@/utils/http'
 import { formatRelativeTime, getImageUrl, handlePreview } from '@/utils'
 import {
   createFollowApi,
   deleteFollowApi,
   searchPostsApi,
+  searchMembersApi,
   likePostApi,
   deletePostApi,
   setSpecialFollowApi,
@@ -343,6 +359,7 @@ import {
 } from '@/service/api/community'
 import { useUserStore } from '@/store/user'
 import { useMessage } from 'wot-design-uni'
+import { LoadMoreState } from 'wot-design-uni/components/wd-loadmore/types'
 import SharePopup from '@/components/SharePopup/SharePopup.vue'
 
 // ============================================================
@@ -378,6 +395,7 @@ const searchText = ref('')
 /** 是否已执行过搜索，控制初始提示 / 搜索结果切换 */
 const hasSearched = ref(false)
 const isLoading = ref(false)
+const loadMoreState = ref<LoadMoreState>('loading')
 
 /** 搜索结果 */
 const searchResult = ref<{
@@ -422,14 +440,18 @@ const search = async () => {
   if (isLoading.value) return
   isLoading.value = true
   hasSearched.value = true
+  loadMoreState.value = 'loading'
 
   try {
     const res = await searchPostsApi(buildSearchParams(1))
     if (res.code === 1 && res.data) {
       searchResult.value = res.data
+      loadMoreState.value =
+        res.data.page * res.data.limit >= res.data.total ? 'finished' : 'loading'
     }
   } catch (e) {
     console.error('search failed', e)
+    loadMoreState.value = 'error'
   } finally {
     isLoading.value = false
   }
@@ -437,16 +459,21 @@ const search = async () => {
 
 const loadMore = async () => {
   if (isLoading.value) return
-  if (searchResult.value.page * searchResult.value.limit >= searchResult.value.total) return
+  if (loadMoreState.value === 'finished' || loadMoreState.value === 'error') return
   isLoading.value = true
+  loadMoreState.value = 'loading'
   try {
     const res = await searchPostsApi(buildSearchParams(searchResult.value.page + 1))
     if (res.code === 1 && res.data) {
       searchResult.value.posts = searchResult.value.posts.concat(res.data.posts)
       searchResult.value.page = res.data.page
+      searchResult.value.total = res.data.total
+      loadMoreState.value =
+        res.data.page * res.data.limit >= res.data.total ? 'finished' : 'loading'
     }
   } catch (e) {
     console.error('loadMore failed', e)
+    loadMoreState.value = 'error'
   } finally {
     isLoading.value = false
   }
@@ -608,12 +635,58 @@ const toPostDetail = (post: any) => {
   uni.navigateTo({ url: `/pages/cats/social/detail?id=${post.id}` })
 }
 
-/** 触底加载更多 */
-onReachBottom(() => {
-  if (searchResult.value.page * searchResult.value.limit < searchResult.value.total) {
+// ========== 滚动区域定位 ==========
+const scrollViewTop = computed(() => cntPaddingTop.value + filterStickyHeight.value + 'rpx')
+const scrollViewHeight = computed(
+  () => `calc(100vh - ${cntPaddingTop.value + filterStickyHeight.value}rpx)`,
+)
+
+// ========== scroll-view 下拉刷新 ==========
+const isRefreshing = ref(false)
+
+const onRefresh = () => {
+  if (!hasSearched.value) {
+    isRefreshing.value = false
+    return
+  }
+  isRefreshing.value = true
+  refreshData()
+}
+
+const onRefreshRestore = () => {
+  // 刷新被重置
+}
+
+const onRefreshAbort = () => {
+  isRefreshing.value = false
+}
+
+const refreshData = async () => {
+  if (isLoading.value) return
+  isLoading.value = true
+  loadMoreState.value = 'loading'
+  try {
+    const res = await searchPostsApi(buildSearchParams(1))
+    if (res.code === 1 && res.data) {
+      searchResult.value = res.data
+      loadMoreState.value =
+        res.data.page * res.data.limit >= res.data.total ? 'finished' : 'loading'
+    }
+  } catch (e) {
+    console.error('refreshData failed', e)
+    loadMoreState.value = 'error'
+  } finally {
+    isLoading.value = false
+    isRefreshing.value = false
+  }
+}
+
+// ========== scroll-view 触底加载更多 ==========
+const onScrollToLower = () => {
+  if (loadMoreState.value !== 'finished' && loadMoreState.value !== 'error') {
     loadMore()
   }
-})
+}
 
 const GIF_LIKE = '/static/images/like_action.gif'
 const GIF_UNLIKE = '/static/images/unlike_action.gif'
@@ -942,11 +1015,7 @@ const searchUsers = async () => {
   console.log('searchUsers', memberKeyword.value)
   if (!memberKeyword.value.trim()) return
   try {
-    const res = await http.get<any>('/v1/member/user/search-members', {
-      keyword: memberKeyword.value.trim(),
-      page: 1,
-      limit: 50,
-    })
+    const res = await searchMembersApi(memberKeyword.value.trim())
     if (res.code === 1 && res.data) {
       searchedUsers.value = res.data.list || []
     }
@@ -1132,13 +1201,29 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   }
 }
 
-/* ========== 内容区 ========== */
-.cnt {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  padding-left: 32rpx !important;
-  padding-right: 32rpx !important;
+/* ========== 滚动内容区 ========== */
+.cntScrollWrap {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+}
+
+.cntScroll {
+  width: 100%;
+  height: 100%;
+  padding-left: 32rpx;
+  padding-right: 32rpx;
+  box-sizing: border-box;
+}
+
+/* ========== 橙色下拉刷新 ========== */
+:deep(.uni-scroll-view-refresh__spinner > circle) {
+  color: #ff6b03 !important;
+}
+:deep(.uni-scroll-view-refresh-inner > svg) {
+  fill: #ff6b03 !important;
 }
 
 /* ========== 筛选栏 ========== */

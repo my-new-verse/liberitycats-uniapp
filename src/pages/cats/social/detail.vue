@@ -1443,6 +1443,8 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
 :deep(.zh-Hans, .zh-Hant) {
   .socialBox .socialItem .socialCntBox .socialCnt {
     font-family: Alibaba PuHuiTi2 !important;
+    -webkit-user-select: text;
+    user-select: text;
   }
   .commentBox .commentItem .commentCntBox .commentCnt {
     font-family: Alibaba PuHuiTi2 !important;
@@ -1451,6 +1453,11 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
     font-family: Alibaba PuHuiTi2 !important;
   }
 }
+.socialBox .socialItem .socialCntBox .socialCnt {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 .page {
   padding-bottom: 120rpx;
   .cnt {
