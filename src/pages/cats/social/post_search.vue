@@ -56,13 +56,16 @@
       <view class="selectedUsersBar" v-if="confirmedUserIds.length > 0">
         <scroll-view scroll-x class="selectedUsersScroll">
           <view class="selectedUserItem" v-for="uid in confirmedUserIds" :key="uid">
-            <view class="userAvatarWrap">
+            <view class="userAvatarWrap" @click="removeSelectedUser(uid)">
               <image
                 class="userAvatar"
                 :src="selectedUsersCache.get(uid)?.avatar"
                 mode="aspectFill"
               />
-              <view class="removeIcon" @click.stop="removeSelectedUser(uid)">×</view>
+              <view class="levelIcon" v-if="getLevelValue(selectedUsersCache.get(uid))">
+                <image :src="getLevelIcon(selectedUsersCache.get(uid))" mode="aspectFit" />
+              </view>
+              <view class="removeIcon">×</view>
             </view>
             <text class="userName">{{ selectedUsersCache.get(uid)?.nickname }}</text>
           </view>
@@ -103,10 +106,12 @@
                 <view class="socialHead">
                   <view class="avatarBox" @click="toPostDetail(post)">
                     <image class="avatar" :src="post.member?.avatar" />
-                    <view class="levelIcon" v-if="post.member?.level">
+                    <view class="levelIcon" v-if="getLevelValue(post.member)">
                       <image
-                        :src="`/static/images/level/${post.member.level}.png`"
-                        mode="widthFix"
+                        :src="getLevelIcon(post.member)"
+                        mode="aspectFit"
+                        @error="handleLevelIconError(post.member)"
+                        @load="handleLevelIconLoad(post.member)"
                       />
                     </view>
                   </view>
@@ -118,6 +123,7 @@
                       :class="getMemberFollowInfo(post.member).style"
                       @click.stop="handleFollowClick(post.member)"
                     >
+                      <!-- <text v-if="getMemberFollowInfo(post.member).icon" class="starIcon">★</text> -->
                       {{ getMemberFollowInfo(post.member).text }}
                     </view>
                   </view>
@@ -196,7 +202,6 @@
               </view>
             </view>
           </view>
-          <wd-loadmore :state="loadMoreState" @reload="loadMore" />
         </template>
         <template v-else>
           <view class="emptyBox">
@@ -290,6 +295,34 @@
             {{ t('common.search') }}
           </wd-button>
         </view>
+
+        <!-- 最近 @ 的成员 -->
+        <view class="recentMembers" v-if="recentMembers.length > 0 && searchedUsers.length === 0">
+          <view class="recentTitle">{{ t('social.search.filter.recentMembers') }}</view>
+          <view class="recentMemberList">
+            <view
+              class="recentMemberItem"
+              v-for="member in recentMembers"
+              :key="member.member_id"
+              @click="selectRecentMember(member)"
+            >
+              <view class="recentAvatarWrap">
+                <image class="recentAvatar" :src="member.avatar" mode="aspectFill" />
+                <view class="levelIcon" v-if="getLevelValue(member)">
+                  <image :src="getLevelIcon(member)" mode="aspectFit" />
+                </view>
+              </view>
+              <view class="recentMemberInfo">
+                <text class="recentName">{{ member.nickname }}</text>
+                <text class="recentId">ID: {{ member.member_id }}</text>
+              </view>
+              <view class="recentCheck" v-if="tempSelectedUserIds.includes(member.member_id)">
+                ✓
+              </view>
+            </view>
+          </view>
+        </view>
+
         <scroll-view scroll-y class="memberList" v-if="searchedUsers.length > 0">
           <view
             class="memberItem"
@@ -297,7 +330,12 @@
             :key="user.member_id"
             @click="selectUser(user)"
           >
-            <image class="memberAvatar" :src="user.avatar" mode="aspectFill" />
+            <view class="memberAvatarWrap">
+              <image class="memberAvatar" :src="user.avatar" mode="aspectFill" />
+              <view class="levelIcon" v-if="getLevelValue(user)">
+                <image :src="getLevelIcon(user)" mode="aspectFit" />
+              </view>
+            </view>
             <view class="memberInfo">
               <text class="memberName">{{ user.nickname }}</text>
               <text class="memberId">ID: {{ user.member_id }}</text>
@@ -382,6 +420,9 @@ onMounted(() => {
   navHeight.value = safeTopRpx.value + 40 + 104
   navHeaderPaddingTop.value = safeTopRpx.value
   cntPaddingTop.value = navHeight.value - 20
+
+  // 加载最近选择的成员
+  loadRecentMembers()
 })
 
 const navigateBack = () => {
@@ -467,7 +508,6 @@ const loadMore = async () => {
     if (res.code === 1 && res.data) {
       searchResult.value.posts = searchResult.value.posts.concat(res.data.posts)
       searchResult.value.page = res.data.page
-      searchResult.value.total = res.data.total
       loadMoreState.value =
         res.data.page * res.data.limit >= res.data.total ? 'finished' : 'loading'
     }
@@ -653,9 +693,7 @@ const onRefresh = () => {
   refreshData()
 }
 
-const onRefreshRestore = () => {
-  // 刷新被重置
-}
+const onRefreshRestore = () => {}
 
 const onRefreshAbort = () => {
   isRefreshing.value = false
@@ -697,7 +735,7 @@ const shareRef = ref<any>(null)
 /** 帖子作者关注按钮信息 */
 const getMemberFollowInfo = (member: any) => {
   if (!member || member.is_self) return null
-  if (member.is_special_following) return { text: '已特别关注', style: 'special' }
+  if (member.is_special_following) return { text: '特别关注', style: 'special', icon: true }
   if (member.is_mutual_following) return { text: '互相关注', style: 'followed' }
   if (member.is_following) return { text: '已关注', style: 'followed' }
   if (member.is_following_me) return { text: '回关', style: 'follow' }
@@ -712,7 +750,23 @@ const handleFollowClick = async (member: any) => {
     return
   }
   try {
-    if (member.is_following) {
+    // 特别关注状态 - 取消特别关注
+    if (member.is_special_following) {
+      const confirm = await new Promise<boolean>((resolve) => {
+        uni.showModal({
+          content: t('social.index.user.special.cancel'),
+          success: (r) => resolve(r.confirm),
+        })
+      })
+      if (!confirm) return
+      const res = await setSpecialFollowApi(member.id, 0)
+      if (res.code === 1) {
+        member.is_special_following = 0
+        uni.showToast({ title: t('social.index.user.special.canceled'), icon: 'none' })
+      }
+    }
+    // 普通关注状态 - 取消关注
+    else if (member.is_following) {
       const confirm = await new Promise<boolean>((resolve) => {
         uni.showModal({
           content: t('social.index.user.follow.cancel'),
@@ -728,7 +782,9 @@ const handleFollowClick = async (member: any) => {
         member.is_special_following = d.is_special_following
       }
       uni.showToast({ title: t('social.index.user.follow.canceled'), icon: 'none' })
-    } else {
+    }
+    // 未关注状态 - 直接关注
+    else {
       const res = await createFollowApi(member.id)
       if (res.code === 1) {
         const d = res.data
@@ -981,6 +1037,53 @@ const confirmedUserIds = ref<number[]>([])
 /** 确认后的用户信息缓存 */
 const confirmedUsers = ref<Map<number, any>>(new Map())
 
+// ============================================================
+// 最近 @ 的成员（本地缓存）
+// ============================================================
+const RECENT_MEMBERS_KEY = 'social_search_recent_members'
+const MAX_RECENT_MEMBERS = 5
+
+/** 最近选择的成员列表 */
+const recentMembers = ref<any[]>([])
+
+/** 从本地存储加载最近成员 */
+const loadRecentMembers = () => {
+  try {
+    const stored = uni.getStorageSync(RECENT_MEMBERS_KEY)
+    if (stored && Array.isArray(stored)) {
+      recentMembers.value = stored.slice(0, MAX_RECENT_MEMBERS)
+    }
+  } catch (e) {
+    console.error('loadRecentMembers failed', e)
+  }
+}
+
+/** 添加成员到最近列表 */
+const addToRecentMembers = (member: any) => {
+  // 移除已存在的相同成员
+  recentMembers.value = recentMembers.value.filter((m) => m.member_id !== member.member_id)
+  // 添加到列表开头
+  recentMembers.value.unshift({
+    member_id: member.member_id,
+    nickname: member.nickname,
+    avatar: member.avatar,
+    level: member.level,
+  })
+  // 限制最多5个
+  recentMembers.value = recentMembers.value.slice(0, MAX_RECENT_MEMBERS)
+  // 保存到本地存储
+  try {
+    uni.setStorageSync(RECENT_MEMBERS_KEY, recentMembers.value)
+  } catch (e) {
+    console.error('saveRecentMembers failed', e)
+  }
+}
+
+/** 点击最近成员 */
+const selectRecentMember = (member: any) => {
+  selectUser(member)
+}
+
 /** 已选用户的完整信息缓存（跨搜索保留头像/昵称） */
 const selectedUsersCache = computed(() => {
   const map = new Map<number, any>()
@@ -1041,6 +1144,12 @@ const confirmUserFilter = () => {
   console.log('confirmUserFilter', tempSelectedUserIds.value)
   confirmedUserIds.value = [...tempSelectedUserIds.value]
   confirmedUsers.value = new Map(tempSelectedUsers.value)
+
+  // 将选中的成员添加到最近列表
+  tempSelectedUsers.value.forEach((member) => {
+    addToRecentMembers(member)
+  })
+
   showUserFilter.value = false
 }
 
@@ -1086,6 +1195,57 @@ const onUserFilterClosed = () => {
 const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   images = images.map((item) => (item = item + '?x-oss-process=style/sqdt'))
   handlePreview(images, currentIndex)
+}
+
+// ============================================================
+// Level 等级处理工具函数
+// ============================================================
+/** 获取 level_id 的值（优先使用 level_id，兼容旧的 level 字段） */
+const getLevelValue = (member: any): number | null => {
+  // 优先使用 level_id
+  if (member?.level_id !== undefined) {
+    const num = Number(member.level_id)
+    return isNaN(num) || num <= 0 ? null : num
+  }
+
+  // 兼容旧的 level 字段
+  const level = member?.level
+  if (!level) return null
+
+  // Vue 3 的响应式对象也是 object，先尝试取 level 属性
+  const levelNum = level.level !== undefined ? level.level : level
+
+  // 转换为数字
+  const num = Number(levelNum)
+  return isNaN(num) || num <= 0 ? null : num
+}
+
+/** 获取 level 图标路径（使用 level_id） */
+const getLevelIcon = (member: any): string => {
+  const levelId = getLevelValue(member)
+  if (!levelId) return ''
+  return `/static/images/level/${levelId}.png`
+}
+
+/** 图片加载成功 */
+const handleLevelIconLoad = (member: any) => {
+  console.log('Level icon loaded:', {
+    nickname: member?.nickname,
+    level_id: member?.level_id,
+    level: member?.level,
+    icon: getLevelIcon(member),
+  })
+}
+
+/** 图片加载失败 */
+const handleLevelIconError = (member: any) => {
+  console.error('Level icon load failed:', {
+    nickname: member?.nickname,
+    level_id: member?.level_id,
+    level: member?.level,
+    levelValue: getLevelValue(member),
+    icon: getLevelIcon(member),
+  })
 }
 </script>
 
@@ -1256,6 +1416,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
         width: 80rpx;
         height: 80rpx;
         margin: 0 auto 15rpx;
+        cursor: pointer;
 
         .userAvatar {
           width: 100%;
@@ -1264,22 +1425,50 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
           border: 2rpx solid var(--liberty-cats-primary-color);
         }
 
+        .levelIcon {
+          position: absolute;
+          right: -4rpx;
+          bottom: 4rpx;
+          z-index: 1;
+          width: 28rpx;
+          height: 28rpx;
+          pointer-events: none;
+
+          image {
+            width: 100%;
+            height: 100%;
+          }
+        }
+
         .removeIcon {
           position: absolute;
-          bottom: -6rpx;
-          right: -6rpx;
+          top: 0;
+          right: 0;
           width: 32rpx;
           height: 32rpx;
-          background-color: #ff4444;
+          background-color: rgba(0, 0, 0, 0.7);
           color: #fff;
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 24rpx;
+          font-size: 22rpx;
           font-weight: bold;
           line-height: 1;
           z-index: 2;
+          backdrop-filter: blur(4rpx);
+          box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15);
+          pointer-events: none;
+
+          &::before {
+            content: '';
+            position: absolute;
+            top: -8rpx;
+            right: -8rpx;
+            bottom: -8rpx;
+            left: -8rpx;
+            pointer-events: auto;
+          }
         }
       }
 
@@ -1395,6 +1584,98 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
     }
   }
 
+  .recentMembers {
+    margin-bottom: 24rpx;
+    padding-bottom: 24rpx;
+    border-bottom: 2rpx solid #f0f0f0;
+
+    .recentTitle {
+      font-size: 28rpx;
+      font-weight: 500;
+      color: #666;
+      margin-bottom: 20rpx;
+    }
+
+    .recentMemberList {
+      display: flex;
+      flex-direction: column;
+      gap: 12rpx;
+
+      .recentMemberItem {
+        display: flex;
+        align-items: center;
+        gap: 16rpx;
+        padding: 16rpx;
+        background: #f7f7f7;
+        border-radius: 12rpx;
+        transition: all 0.2s ease;
+
+        &:active {
+          background: #efefef;
+          transform: scale(0.98);
+        }
+
+        .recentAvatarWrap {
+          position: relative;
+          width: 64rpx;
+          height: 64rpx;
+          flex-shrink: 0;
+
+          .recentAvatar {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+          }
+
+          .levelIcon {
+            position: absolute;
+            right: -4rpx;
+            bottom: 2rpx;
+            z-index: 9;
+            width: 26rpx;
+            height: 26rpx;
+
+            image {
+              width: 100%;
+              height: 100%;
+            }
+          }
+        }
+
+        .recentMemberInfo {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 6rpx;
+          min-width: 0;
+
+          .recentName {
+            font-size: 28rpx;
+            font-weight: 500;
+            color: #333;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+
+          .recentId {
+            font-size: 24rpx;
+            color: #999;
+          }
+        }
+
+        .recentCheck {
+          font-size: 32rpx;
+          color: var(--liberty-cats-primary-color);
+          font-weight: bold;
+          width: 48rpx;
+          text-align: center;
+          flex-shrink: 0;
+        }
+      }
+    }
+  }
+
   .memberList {
     max-height: 600rpx;
     margin-bottom: 24rpx;
@@ -1406,11 +1687,31 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
       padding: 20rpx 0;
       border-bottom: 1rpx solid #f0f0f0;
 
-      .memberAvatar {
+      .memberAvatarWrap {
+        position: relative;
         width: 72rpx;
         height: 72rpx;
-        border-radius: 50%;
         flex-shrink: 0;
+
+        .memberAvatar {
+          width: 100%;
+          height: 100%;
+          border-radius: 50%;
+        }
+
+        .levelIcon {
+          position: absolute;
+          right: -4rpx;
+          bottom: 4rpx;
+          z-index: 9;
+          width: 28rpx;
+          height: 28rpx;
+
+          image {
+            width: 100%;
+            height: 100%;
+          }
+        }
       }
 
       .memberInfo {
@@ -1496,10 +1797,12 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    height: 40rpx;
-    padding: 0 14rpx;
-    border-radius: 50rpx;
+    gap: 4rpx; /* 图标和文字间距 */
+    height: 44rpx;
+    padding: 0 20rpx;
+    border-radius: 22rpx;
     font-size: 22rpx;
+    font-weight: 500;
     line-height: 1;
     white-space: nowrap;
     flex-shrink: 0;
@@ -1507,16 +1810,35 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
     border: 1rpx solid transparent;
     background-color: #ff6b03;
     color: #fff;
+    transition: all 0.15s ease;
+
+    .starIcon {
+      font-size: 22rpx; /* 与文字同大小 */
+      line-height: 1;
+      transform: scale(1.1); /* 稍微放大星标，增强视觉 */
+    }
 
     &.followed {
-      background-color: #ffffff;
-      color: #999;
-      border-color: #ddd;
+      background-color: #f7f7f7;
+      color: #666;
+      border-color: #e5e5e5;
     }
+
     &.special {
-      background-color: #ffffff;
-      color: var(--liberty-cats-primary-color);
-      border-color: var(--liberty-cats-primary-color);
+      background: linear-gradient(135deg, #fff7e5 0%, #fff0d6 100%); /* 渐变背景增强特殊感 */
+      color: #ff6b03;
+      border-color: #ff6b03;
+      font-weight: 600; /* 加粗强调 */
+
+      .starIcon {
+        color: #ff6b03;
+      }
+    }
+
+    /* 添加触控反馈 */
+    &:active {
+      opacity: 0.85;
+      transform: scale(0.96);
     }
   }
 }

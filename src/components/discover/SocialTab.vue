@@ -988,9 +988,10 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
     border-color: #ddd;
   }
   &.special {
-    background-color: #ffffff;
-    color: var(--liberty-cats-primary-color);
-    border-color: var(--liberty-cats-primary-color);
+    background: linear-gradient(135deg, #fff7e5 0%, #fff0d6 100%);
+    color: #ff6b03;
+    border-color: #ff6b03;
+    font-weight: 600;
   }
 }
 .socialOpBox {
