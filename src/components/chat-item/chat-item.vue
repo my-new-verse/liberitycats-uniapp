@@ -87,8 +87,26 @@
                   <text class="reply-ref-name">
                     {{ item.reply_to?.sender_nickname || item.reply_message?.sender?.nickname }}：
                   </text>
-                  <text class="reply-ref-content">
-                    {{ item.reply_to?.content || item.reply_message?.payload?.text }}
+                  <wd-img
+                    v-if="replyMessageType === 'image'"
+                    custom-class="reply-ref-thumb"
+                    mode="aspectFill"
+                    width="40rpx"
+                    height="40rpx"
+                    :src="replyMessageThumbUrl"
+                    radius="4rpx"
+                  />
+                  <wd-img
+                    v-else-if="replyMessageType === 'emotion'"
+                    custom-class="reply-ref-thumb"
+                    mode="aspectFill"
+                    width="40rpx"
+                    height="40rpx"
+                    :src="replyMessageEmotionSrc"
+                    radius="4rpx"
+                  />
+                  <text v-else class="reply-ref-content">
+                    {{ replyPreviewContent }}
                   </text>
                 </view>
                 <text :class="{ 'chat-text': true, 'chat-text-me': item.is_self }">
@@ -97,9 +115,7 @@
               </view>
             </template>
             <template v-else-if="item.message_type === 'image'">
-              <view
-                :class="{ 'chat-text-container': true, 'chat-text-container-me': item.is_self }"
-              >
+              <view class="chat-img-container">
                 <!-- 回复引用 -->
                 <view
                   v-if="item.reply_to || item.reply_message"
@@ -109,8 +125,26 @@
                   <text class="reply-ref-name">
                     {{ item.reply_to?.sender_nickname || item.reply_message?.sender?.nickname }}：
                   </text>
-                  <text class="reply-ref-content">
-                    {{ item.reply_to?.content || item.reply_message?.payload?.text }}
+                  <wd-img
+                    v-if="replyMessageType === 'image'"
+                    custom-class="reply-ref-thumb"
+                    mode="aspectFill"
+                    width="40rpx"
+                    height="40rpx"
+                    :src="replyMessageThumbUrl"
+                    radius="4rpx"
+                  />
+                  <wd-img
+                    v-else-if="replyMessageType === 'emotion'"
+                    custom-class="reply-ref-thumb"
+                    mode="aspectFill"
+                    width="40rpx"
+                    height="40rpx"
+                    :src="replyMessageEmotionSrc"
+                    radius="4rpx"
+                  />
+                  <text v-else class="reply-ref-content">
+                    {{ replyPreviewContent }}
                   </text>
                 </view>
                 <wd-img
@@ -137,8 +171,26 @@
                   <text class="reply-ref-name">
                     {{ item.reply_to?.sender_nickname || item.reply_message?.sender?.nickname }}：
                   </text>
-                  <text class="reply-ref-content">
-                    {{ item.reply_to?.content || item.reply_message?.payload?.text }}
+                  <wd-img
+                    v-if="replyMessageType === 'image'"
+                    custom-class="reply-ref-thumb"
+                    mode="aspectFill"
+                    width="40rpx"
+                    height="40rpx"
+                    :src="replyMessageThumbUrl"
+                    radius="4rpx"
+                  />
+                  <wd-img
+                    v-else-if="replyMessageType === 'emotion'"
+                    custom-class="reply-ref-thumb"
+                    mode="aspectFill"
+                    width="40rpx"
+                    height="40rpx"
+                    :src="replyMessageEmotionSrc"
+                    radius="4rpx"
+                  />
+                  <text v-else class="reply-ref-content">
+                    {{ replyPreviewContent }}
                   </text>
                 </view>
                 <wd-img
@@ -164,8 +216,26 @@
                 <text class="reply-ref-name">
                   {{ item.reply_to?.sender_nickname || item.reply_message?.sender?.nickname }}：
                 </text>
-                <text class="reply-ref-content">
-                  {{ item.reply_to?.content || item.reply_message?.payload?.text }}
+                <wd-img
+                  v-if="replyMessageType === 'image'"
+                  custom-class="reply-ref-thumb"
+                  mode="aspectFill"
+                  width="40rpx"
+                  height="40rpx"
+                  :src="replyMessageThumbUrl"
+                  radius="4rpx"
+                />
+                <wd-img
+                  v-else-if="replyMessageType === 'emotion'"
+                  custom-class="reply-ref-thumb"
+                  mode="aspectFill"
+                  width="40rpx"
+                  height="40rpx"
+                  :src="replyMessageEmotionSrc"
+                  radius="4rpx"
+                />
+                <text v-else class="reply-ref-content">
+                  {{ replyPreviewContent }}
                 </text>
               </view>
               <view v-for="(richItem, index) in item.payload?.parts" :key="index">
@@ -235,6 +305,58 @@ const handleReplyClick = () => {
     emit('reply-click', replyMessageId)
   }
 }
+
+// 回复引用预览内容：根据被回复消息的类型展示对应内容
+const replyPreviewContent = computed(() => {
+  const replyTo = props.item.reply_to
+  const replyMessage = props.item.reply_message
+
+  // reply_to.content 非空时直接使用（包括 [图片]、[表情] 等占位文本）
+  if (replyTo?.content) {
+    return replyTo.content
+  }
+
+  // reply_message 存在时根据消息类型生成预览
+  if (replyMessage) {
+    const messageType = replyMessage.message_type
+    if (messageType === 'text') {
+      return replyMessage.payload?.text || ''
+    } else if (messageType === 'image') {
+      return t('group.chat.imageMessage')
+    } else if (messageType === 'emotion') {
+      return t('group.chat.emojiMessage')
+    } else if (messageType === 'rich' && replyMessage.payload?.parts) {
+      return replyMessage.payload.parts
+        .filter((part: any) => part.type === 'text' && !!part.text)
+        .map((part: any) => part.text || '')
+        .join('')
+    }
+  }
+
+  return ''
+})
+
+// 被回复消息的类型（仅 reply_message 存在时可获取）
+const replyMessageType = computed(() => {
+  return props.item.reply_message?.message_type || ''
+})
+
+// 被回复消息的图片缩略图URL
+const replyMessageThumbUrl = computed(() => {
+  const replyMessage = props.item.reply_message
+  if (!replyMessage) return ''
+  return replyMessage.payload?.thumb_url || replyMessage.payload?.url || ''
+})
+
+// 被回复消息的表情图URL
+const replyMessageEmotionSrc = computed(() => {
+  const replyMessage = props.item.reply_message
+  if (!replyMessage) return ''
+  if (replyMessage.payload?.emotion_url) {
+    return getImageUrl(replyMessage.payload.emotion_url)
+  }
+  return getEmotionMessageSrc(replyMessage)
+})
 
 const getMessageSenderDisplayName = (msg: ChatMessage) => {
   const nickname = msg.sender?.nickname || ''
@@ -469,6 +591,8 @@ const handleAvatarClick = (memberId: number | undefined) => {
 }
 .chat-content-container {
   margin: 0rpx 15rpx;
+  flex: 1;
+  min-width: 0;
 }
 .chat-user-name {
   @include chat-font;
@@ -518,6 +642,11 @@ const handleAvatarClick = (memberId: number | undefined) => {
   border-left: 4rpx solid #ccc;
   overflow: hidden;
   max-width: 100%;
+
+  :deep(.reply-ref-thumb) {
+    flex-shrink: 0;
+    border-radius: 4rpx;
+  }
 }
 .chat-text-container-me .reply-ref {
   background-color: rgba(255, 255, 255, 0.2);
