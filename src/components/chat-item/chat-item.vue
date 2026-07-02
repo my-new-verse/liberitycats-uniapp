@@ -994,4 +994,15 @@ const handleAvatarClick = (memberId: number | undefined) => {
     }
   }
 }
+
+::v-deep {
+  .chat-img-custom {
+    width: 100%;
+    height: 100%;
+    border-radius: 16rpx;
+    display: block;
+    box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+    margin-top: 18rpx;
+  }
+}
 </style>
