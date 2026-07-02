@@ -24,10 +24,10 @@
               :no-border="true"
               custom-class="searchInput"
               confirm-type="search"
-              @confirm="search"
+              @confirm="handleSearchClick"
             />
             <view class="searchDivider"></view>
-            <text class="searchBtn" @click="search">{{ t('common.search') }}</text>
+            <text class="searchBtn" @click="handleSearchClick">{{ t('common.search') }}</text>
           </view>
         </view>
       </view>
@@ -80,7 +80,7 @@
         </view>
       </view>
 
-      <view :style="{ height: filterStickyHeight + 'rpx' }"></view>
+      <view :style="{ height: filterStickyHeight + 28 + 'rpx' }"></view>
 
       <!-- ========== 搜索状态：初始提示 / 结果列表（暂无数据） ========== -->
       <template v-if="!hasSearched">
@@ -88,77 +88,92 @@
           <view class="emptyText">输入关键词搜索聊天记录</view>
         </view>
       </template>
-      <template v-else-if="searchResult.messages.length > 0">
-        <view class="messageList">
+      <template v-else>
+        <template v-for="tab in tabNames" :key="tab">
+          <!-- 消息列表 -->
           <view
-            class="messageItem"
-            v-for="msg in searchResult.messages"
-            :key="msg.id"
-            @click="handleMessageClick(msg)"
+            class="messageList"
+            v-show="activeTab === tab"
+            v-if="getTabMessages(tab).length > 0"
           >
-            <!-- 头像 + 等级徽章 -->
-            <view class="avatarBox">
-              <view
-                class="u-avatar"
-                :style="getAvatarStyle(msg.sender?.avatar || '', 'chat')"
-              ></view>
-              <view class="levelIcon">
+            <view
+              class="messageItem"
+              v-for="msg in getTabMessages(tab)"
+              :key="msg.id"
+              @click="handleMessageClick(msg)"
+            >
+              <!-- 头像 + 等级徽章 -->
+              <view class="avatarBox">
                 <view
-                  v-if="getLevelBadgeStyle(msg.sender?.level?.level)"
-                  class="levelBadge"
-                  :style="getLevelBadgeStyle(msg.sender?.level?.level)"
+                  class="u-avatar"
+                  :style="getAvatarStyle(msg.sender?.avatar || '', 'chat')"
                 ></view>
+                <view class="levelIcon">
+                  <view
+                    v-if="getLevelBadgeStyle(msg.sender?.level?.level)"
+                    class="levelBadge"
+                    :style="getLevelBadgeStyle(msg.sender?.level?.level)"
+                  ></view>
+                </view>
               </view>
-            </view>
-            <!-- 右侧内容区 -->
-            <view class="msgContent">
-              <view class="msgHeader">
-                <text class="msgNickname">{{ msg.sender?.nickname }}</text>
-                <text class="msgTime">{{ formatRelativeTime(msg.create_time) }}</text>
-              </view>
-              <!-- 图片消息 -->
-              <wd-img
-                v-if="msg.message_type === 'image'"
-                custom-class="chat-img-custom"
-                mode="aspectFill"
-                :width="`${getImageMessageBoxSize(msg).width}px`"
-                :height="`${getImageMessageBoxSize(msg).height}px`"
-                :src="getImageUrl(msg.payload?.thumb_url || msg.payload?.url || '')"
-                :enable-preview="false"
-                radius="24rpx"
-              />
-              <!-- 表情消息 -->
-              <wd-img
-                v-else-if="msg.message_type === 'emotion'"
-                custom-class="chat-img-custom"
-                mode="aspectFill"
-                width="140rpx"
-                height="140rpx"
-                :src="
-                  getImageUrl(
-                    msg.payload?.emotion_url || getEmotionIconPath(msg.payload?.emotion_id),
-                  )
-                "
-              />
-              <!-- 文本消息 -->
-              <view class="msgText" v-else>
-                <text
-                  v-for="(seg, i) in highlightKeyword(msg.payload?.text || '', searchText.trim())"
-                  :key="i"
-                  :style="seg.isMatch ? { color: '#ff6b03' } : {}"
-                >
-                  {{ seg.text }}
-                </text>
+              <!-- 右侧内容区 -->
+              <view class="msgContent">
+                <view class="msgHeader">
+                  <text class="msgNickname">{{ msg.sender?.nickname }}</text>
+                  <text class="msgTime">{{ formatRelativeTime(msg.create_time) }}</text>
+                </view>
+                <!-- 图片消息 -->
+                <wd-img
+                  v-if="msg.message_type === 'image'"
+                  custom-class="chat-img-custom"
+                  mode="aspectFill"
+                  :width="`${getImageMessageBoxSize(msg).width}px`"
+                  :height="`${getImageMessageBoxSize(msg).height}px`"
+                  :src="getImageUrl(msg.payload?.thumb_url || msg.payload?.url || '')"
+                  :enable-preview="false"
+                  radius="24rpx"
+                />
+                <!-- 表情消息 -->
+                <wd-img
+                  v-else-if="msg.message_type === 'emotion'"
+                  custom-class="chat-img-custom"
+                  mode="aspectFill"
+                  width="140rpx"
+                  height="140rpx"
+                  :src="
+                    getImageUrl(
+                      msg.payload?.emotion_url || getEmotionIconPath(msg.payload?.emotion_id),
+                    )
+                  "
+                />
+                <!-- 文本消息 -->
+                <view class="msgText" v-else>
+                  <text
+                    v-for="(seg, i) in highlightKeyword(msg.payload?.text || '', searchText.trim())"
+                    :key="i"
+                    :style="seg.isMatch ? { color: '#ff6b03' } : {}"
+                  >
+                    {{ seg.text }}
+                  </text>
+                </view>
               </view>
             </view>
           </view>
-        </view>
-        <wd-loadmore :state="loadMoreState" style="padding-bottom: 10rpx" />
-      </template>
-      <template v-else>
-        <view class="emptyBox">
-          <view class="emptyText">{{ t('common.no_data') }}</view>
-        </view>
+          <wd-loadmore
+            v-show="activeTab === tab"
+            v-if="getTabMessages(tab).length > 0"
+            :state="getTabLoadMoreState(tab)"
+            style="padding-bottom: 10rpx"
+          />
+          <!-- 空状态 -->
+          <view
+            class="emptyBox"
+            v-show="activeTab === tab"
+            v-if="isTabInitialized(tab) && getTabMessages(tab).length === 0"
+          >
+            <view class="emptyText">{{ t('common.no_data') }}</view>
+          </view>
+        </template>
       </template>
     </view>
 
@@ -398,20 +413,48 @@ const saveTabCache = (tabName: string) => {
   cache.hasInitialized = true
 }
 
-/** 是否已加载全部数据 */
-const isNoMoreData = computed(() => {
-  return (
-    searchResult.value.total > 0 &&
-    searchResult.value.page * searchResult.value.limit >= searchResult.value.total
-  )
-})
+/** 清空所有 Tab 缓存 */
+const clearAllTabCaches = () => {
+  tabCacheMap.value.all = createTabCache()
+  tabCacheMap.value.message = createTabCache()
+  tabCacheMap.value.image = createTabCache()
+  searchResult.value = { messages: [], total: 0, page: 0, limit: 20 }
+  // 重置各 Tab 滚动位置
+  tabScrollTopMap.value = { all: 0, message: 0, image: 0 }
+  // 滚动到顶部
+  nextTick(() => {
+    uni.pageScrollTo({ scrollTop: 0, duration: 0 })
+  })
+}
 
-/** wd-loadmore 状态 */
-const loadMoreState = computed<LoadMoreState>(() => {
-  if (isLoading.value) return 'loading'
-  if (isNoMoreData.value) return 'finished'
+/** 清空所有数据并重置搜索状态 */
+const clearAllData = () => {
+  clearAllTabCaches()
+  hasSearched.value = false
+}
+
+/** Tab 名称列表 */
+const tabNames = ['all', 'message', 'image'] as const
+
+/** 获取指定 tab 的消息列表 */
+const getTabMessages = (tab: string) => {
+  return tabCacheMap.value[tab]?.data?.messages || []
+}
+
+/** 获取指定 tab 的加载更多状态 */
+const getTabLoadMoreState = (tab: string): LoadMoreState => {
+  const cache = tabCacheMap.value[tab]
+  if (!cache.hasInitialized) return 'loading'
+  const isNoMore = cache.data.total > 0 && cache.data.page * cache.data.limit >= cache.data.total
+  if (isNoMore) return 'finished'
+  if (isLoading.value && activeTab.value === tab) return 'loading'
   return 'success'
-})
+}
+
+/** 检查指定 tab 是否已初始化 */
+const isTabInitialized = (tab: string) => {
+  return tabCacheMap.value[tab]?.hasInitialized ?? false
+}
 
 /** 构建搜索参数 */
 const buildSearchParams = (page: number) => {
@@ -437,6 +480,18 @@ const buildSearchParams = (page: number) => {
   if (timeRange.end_time) params.end_time = timeRange.end_time
 
   return params
+}
+
+/** 点击搜索按钮：校验后清空缓存并搜索 */
+const handleSearchClick = () => {
+  const hasKeyword = searchText.value.trim() !== ''
+  const hasUser = confirmedUserIds.value.length > 0
+  if (!hasKeyword && !hasUser) {
+    uni.showToast({ title: t('social.search.requireKeywordOrUser'), icon: 'none' })
+    return
+  }
+  clearAllTabCaches()
+  search()
 }
 
 const search = async () => {
@@ -503,7 +558,9 @@ onPullDownRefresh(async () => {
   } catch (e) {
     console.error('pullDownRefresh failed', e)
   } finally {
-    uni.stopPullDownRefresh()
+    setTimeout(() => {
+      uni.stopPullDownRefresh()
+    }, 500)
   }
 })
 
@@ -631,7 +688,14 @@ const confirmTimeFilter = () => {
   showTimeFilter.value = false
   // 已有查询条件时自动触发搜索
   if (hasSearched.value) {
-    search()
+    const hasKeyword = searchText.value.trim() !== ''
+    const hasUser = confirmedUserIds.value.length > 0
+    if (hasKeyword || hasUser) {
+      clearAllTabCaches()
+      search()
+    } else {
+      clearAllData()
+    }
   }
 }
 
@@ -739,11 +803,13 @@ const selectedUserLabel = computed(() => {
 const removeSelectedUser = (memberId: number) => {
   confirmedUserIds.value = confirmedUserIds.value.filter((id) => id !== memberId)
   confirmedUsers.value.delete(memberId)
-  // 人员变化后重新查询第一页（有搜索条件时才触发）
-  if (confirmedUserIds.value.length > 0 || searchText.value.trim()) {
+  const hasKeyword = searchText.value.trim() !== ''
+  const hasUser = confirmedUserIds.value.length > 0
+  if (hasKeyword || hasUser) {
+    clearAllTabCaches()
     search()
   } else {
-    searchResult.value.messages = []
+    clearAllData()
   }
 }
 
@@ -756,7 +822,8 @@ const handleUserFilterConfirm = (members: ChatMember[]) => {
   })
   confirmedUsers.value = map
   showUserFilter.value = false
-  // 选择用户后直接触发搜索（search 内部会校验是否有搜索条件）
+  // 筛选条件变化，清空缓存并重新搜索
+  clearAllTabCaches()
   search()
 }
 
@@ -902,6 +969,7 @@ const getImageMessageBoxSize = (msg: any) => {
   right: 0;
   z-index: 9;
   background-color: var(--liberty-cats-page-background-color);
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);
 }
 
 .selectedUsersBar {
@@ -1156,7 +1224,7 @@ const getImageMessageBoxSize = (msg: any) => {
       :deep(.chat-img-custom) {
         display: block;
         border-radius: 16rpx;
-        box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+        // box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
       }
     }
   }
