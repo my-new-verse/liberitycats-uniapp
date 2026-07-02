@@ -458,6 +458,18 @@ const handleMentionUser = ({ member_id, nickname }: { member_id: number; nicknam
   inputBar.value?.addMention(member_id, nickname)
 }
 
+/** 单选模式：选中成员后立即添加 @提及 */
+const handlePopupSelectMention = (member: ChatMember) => {
+  inputBar.value?.addMention(member.member_id, member.nickname)
+}
+
+/** 多选模式：批量添加 @提及 */
+const handlePopupConfirmMention = (members: ChatMember[]) => {
+  members.forEach((member) => {
+    inputBar.value?.addMention(member.member_id, member.nickname)
+  })
+}
+
 // 处理回复引用点击 - 跳转到被回复的消息并高亮
 const handleReplyClick = (replyMessageId: number) => {
   scrollIntoViewById(String(replyMessageId))
@@ -1773,7 +1785,7 @@ const clearPendingMessageLongPress = () => {
 }
 // 触摸开始处理
 const handleMessageTouchStart = (event: any, msg: ChatMessage) => {
-  if (!isTouchRuntime || msg.display_status === 'recalled') return
+  if (!isTouchRuntime || msg.display_status === 'recalled' || msg.message_type === 'system') return
 
   clearPendingMessageLongPress()
   const touch = event?.touches?.[0] || event?.changedTouches?.[0]
@@ -1817,6 +1829,7 @@ const handleMessageTouchEnd = () => {
 const handleMessageContextMenu = (event: Event, msg: ChatMessage) => {
   event.preventDefault()
   event.stopPropagation()
+  if (msg.message_type === 'system') return
 
   if (isTouchRuntime) {
     // 移动端由 touch 事件处理，避免重复触发
@@ -1831,7 +1844,7 @@ const handleMessageContextMenu = (event: Event, msg: ChatMessage) => {
 // 显示上下文菜单气泡
 const showMessageContextMenu = async (msg: ChatMessage, touchX = 0, touchY = 0) => {
   console.log(msg)
-  if (msg.display_status === 'recalled') return
+  if (msg.display_status === 'recalled' || msg.message_type === 'system') return
 
   selectedMessageActionTarget.value = msg
   if (messageActionSheetActions.value.length === 0) return
@@ -1872,6 +1885,10 @@ const handleReplyMessage = (msg: ChatMessage) => {
   let content = ''
   if (msg.message_type === 'text') {
     content = msg.payload?.text || ''
+  } else if (msg.message_type === 'image') {
+    content = t('group.chat.imageMessage')
+  } else if (msg.message_type === 'emotion') {
+    content = t('group.chat.emojiMessage')
   } else if (msg.message_type === 'rich' && msg.payload?.parts) {
     content = msg.payload.parts
       .filter((part) => part.type === 'text' && !!part.text)
@@ -2504,9 +2521,10 @@ const flushPendingReadOnLeave = async () => {
   // if (hasFlushedReadOnLeave) return
 
   const roomId = roomDetail.value?.room.id || routeRoomId.value
-  // 兜底：如果从来没有消息触发过 stageReadMessage，用列表最后一条消息的 id
-  const lastReadMessageId =
-    pendingReadMessageId.value || messages.value[messages.value.length - 1]?.id || 0
+  // 兜底：数组可能经过翻转，顺序不确定，取首尾两项中 ID 较大的
+  const firstId = messages.value[0]?.id || 0
+  const lastId = messages.value[messages.value.length - 1]?.id || 0
+  const lastReadMessageId = pendingReadMessageId.value || Math.max(firstId, lastId)
   if (!roomId || !lastReadMessageId) return
 
   hasFlushedReadOnLeave = true
@@ -2902,6 +2920,7 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
             border-radius: 16rpx;
             display: block;
             box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+            margin-top: 18rpx;
           }
         }
 
