@@ -192,6 +192,7 @@
   "social.search.filter.user": "用戶",
   "social.search.filter.userPlaceholder": "搜尋成員",
   "social.search.filter.userHint": "輸入關鍵詞搜尋成員",
+  "social.search.filter.recentMembers": "最近選擇",
   "social.search.filter.time": "時間",
   "social.search.filter.time.all": "不限",
   "social.search.filter.time.today": "今天",
@@ -404,6 +405,9 @@
   "my.nft.import_from_okx": "立即從錢包關聯",
   "my.nft.empty.with_wallet": "您關聯的钱包中沒有LibertyCats NFTs數據",
   "my.nft.empty_txt": "錢包空空的，還差一隻貓貓",
+  "my.nft.valuation.total_value": "總估值",
+  "my.nft.valuation.floor_price": "地板價",
+  "my.nft.valuation.quantity": "數量",
 
   "order.confirm_order.page_title": "確認訂單",
   "order.confirm_order.add_address": "+ 新增住址",

@@ -528,7 +528,26 @@ const handleFollowClick = (member: any) => {
   }
 
   const memberId = member.id
-  if (member.is_following) {
+  // 特别关注 → 取消特别关注，保持关注
+  if (member.is_special_following) {
+    message
+      .confirm({ msg: '确定取消特别关注吗？' })
+      .then(() => {
+        setSpecialFollowApi(memberId, 0).then((res) => {
+          if (res.code === 1) {
+            syncMemberFollowState(memberId, {
+              is_following: member.is_following,
+              is_mutual_following: member.is_mutual_following,
+              is_special_following: 0,
+            })
+            uni.showToast({ title: t('social.index.user.special.canceled'), icon: 'none' })
+          } else {
+            toast.show(res.msg || t('common.error'))
+          }
+        })
+      })
+      .catch(() => {})
+  } else if (member.is_following) {
     message
       .confirm({ msg: t('social.index.user.follow.cancel') })
       .then(() => {
@@ -988,9 +1007,10 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
     border-color: #ddd;
   }
   &.special {
-    background-color: #ffffff;
-    color: var(--liberty-cats-primary-color);
-    border-color: var(--liberty-cats-primary-color);
+    background: linear-gradient(135deg, #fff7e5 0%, #fff0d6 100%);
+    color: #ff6b03;
+    border-color: #ff6b03;
+    font-weight: 600;
   }
 }
 .socialOpBox {

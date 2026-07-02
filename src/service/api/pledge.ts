@@ -54,10 +54,18 @@ type TokenAttributes = {
   trait_type: string
 }
 
+export interface NftValuation {
+  floor_price: string
+  quantity: number
+  total_value: string
+  currency_symbol: string
+}
+
 export interface getMemberNftsApiResponse {
   current_page: number
   data: NftItem[]
   last_page: number
+  valuation?: NftValuation
 }
 
 // 获取 NFT 列表

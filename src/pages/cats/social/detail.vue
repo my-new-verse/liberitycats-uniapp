@@ -16,6 +16,12 @@
         <view class="container">
           <view class="socialBox">
             <view class="socialItem">
+              <view
+                class="delBox"
+                v-if="postDetail.member_id === userStore.userInfo?.member_id"
+                @click="handleDelMainPost"
+              ></view>
+              <view class="jbBox" v-else @click="reportPost(postDetail)"></view>
               <view class="socialHead">
                 <view class="avatarBox" @click="debouncedToUserHomeRef?.(postDetail?.member_id)">
                   <image
@@ -30,7 +36,17 @@
                     />
                   </view>
                 </view>
-                <view class="name">{{ formatNickname(postDetail?.member?.nickname, 22) }}</view>
+                <view class="nameWrap">
+                  <view class="name">{{ formatNickname(postDetail?.member?.nickname, 22) }}</view>
+                  <view
+                    v-if="getMemberFollowInfo(postDetail?.member)"
+                    class="followBtn"
+                    :class="getMemberFollowInfo(postDetail?.member).style"
+                    @click.stop="handleFollowClick(postDetail?.member)"
+                  >
+                    {{ getMemberFollowInfo(postDetail?.member).text }}
+                  </view>
+                </view>
                 <view
                   v-if="postDetail.tag?.name"
                   class="tag"
@@ -148,12 +164,19 @@
                   </view>
                 </view>
                 <view class="commentCntBox">
-                  <view class="nickname">
+                  <view class="nameWrap">
                     <text class="nickname">{{ item._nickname }}</text>
-
                     <text class="authorTag" v-if="item.member_id === postDetail.member_id">
                       {{ t('social.detail.authorTag') }}
                     </text>
+                    <view
+                      v-if="getMemberFollowInfo(item.member)"
+                      class="followBtn"
+                      :class="getMemberFollowInfo(item.member).style"
+                      @click.stop="handleFollowClick(item.member)"
+                    >
+                      {{ getMemberFollowInfo(item.member).text }}
+                    </view>
                   </view>
                   <view class="commentCnt">
                     <view class="socialTips" v-if="item.is_approved === 0">
@@ -231,14 +254,24 @@
                               />
                             </view>
                           </view>
-                          <view
-                            class="replyNickname"
-                            @click.stop="debouncedToUserHomeRef(reply.member.id)"
-                          >
-                            <text class="nickname">{{ reply.member.nickname }}</text>
+                          <view class="nameWrap">
+                            <text
+                              class="nickname replyNickname"
+                              @click.stop="debouncedToUserHomeRef(reply.member.id)"
+                            >
+                              {{ reply.member.nickname }}
+                            </text>
                             <text class="authorTag" v-if="reply.member_id === postDetail.member_id">
                               {{ t('social.detail.authorTag') }}
                             </text>
+                            <view
+                              v-if="getMemberFollowInfo(reply.member)"
+                              class="followBtn"
+                              :class="getMemberFollowInfo(reply.member).style"
+                              @click.stop="handleFollowClick(reply.member)"
+                            >
+                              {{ getMemberFollowInfo(reply.member).text }}
+                            </view>
                           </view>
                         </view>
 
@@ -466,10 +499,12 @@ import {
   getCommunityEmotionListByCategoryApi,
   getCommunityEmotionListItem,
   deletePostApi,
-  reportPostApi,
   getCommunityPostThreadApi,
   adminRemovalApi,
   blockUserApi,
+  createFollowApi,
+  deleteFollowApi,
+  setSpecialFollowApi,
 } from '@/service/api/community'
 import {
   formatNickname,
@@ -502,23 +537,49 @@ const message = useMessage('wd-message-box-slot')
 const postId = ref<number>(0)
 const reportShow = ref<boolean>(false)
 const reportActions = ref<any[]>([])
-const reportPostItem = ref<getCommunityPostListApiResponse['data'][number]>({})
-const reportPost = (post: getCommunityPostListApiResponse['data'][number]) => {
+const reportPostItem = ref<any>({})
+
+const reportPost = (post: any) => {
   if (!userStore.isLogin) {
     toUrl('/pages/cats/login/login', true)
     return
   }
-  const actions = [
-    { name: t('social.index.post.report_comment'), color: '#ff6b03' },
-    // { name: t('social.index.user.block') },
-  ]
-  // 有权限
+
+  const member = post.member
+  const isFollowing = member?.is_following === 1
+  const isSpecial = member?.is_special_following === 1
+  const isPost = post === postDetail.value
+  const actions: any[] = []
+
+  // 关注相关操作
+  if (isFollowing) {
+    actions.push({ name: t('social.index.user.unfollow'), type: 'follow', color: '#333' })
+    actions.push({
+      name: isSpecial ? t('social.index.user.special.cancel') : t('social.index.user.special.set'),
+      type: 'specialFollow',
+      color: '#333',
+    })
+  } else {
+    actions.push({ name: t('social.index.user.follow'), type: 'follow', color: '#ff6b03' })
+    actions.push({ name: t('social.index.user.special.set'), type: 'specialFollow', color: '#333' })
+  }
+
+  actions.push({ name: '', type: 'divider', disabled: true })
+  actions.push({
+    name: isPost ? t('social.index.post.report') : t('social.index.post.report_comment'),
+    type: 'report',
+    color: '#ff6b03',
+  })
+  actions.push({ name: t('social.index.user.block'), type: 'block' })
+
   if (userStore.userInfo.community_permissions?.can_take_down === 1) {
     actions.push({
-      name: t('report.admin.remove_comment'),
+      name: isPost ? t('report.admin.remove_post') : t('report.admin.remove_comment'),
+      type: 'remove',
       color: '#FF3B30',
     })
   }
+
   reportActions.value = actions
   reportShow.value = true
   reportPostItem.value = post
@@ -564,13 +625,24 @@ function reportSheetClose() {
   reportShow.value = false
 }
 
-function reportSheetSelect({ item, index }) {
-  if (index === 0) {
-    handleReportPost()
-    //   } else if (index === 1) {
-    //     handleReportUser()
-  } else if (index === 1) {
-    handleRemovePost()
+function reportSheetSelect({ item }) {
+  reportShow.value = false
+  switch (item.type) {
+    case 'follow':
+      handleFollowClick(reportPostItem.value.member)
+      break
+    case 'specialFollow':
+      handleSpecialFollow()
+      break
+    case 'report':
+      handleReportPost()
+      break
+    case 'block':
+      handleBlockUser()
+      break
+    case 'remove':
+      handleRemovePost()
+      break
   }
 }
 
@@ -579,33 +651,38 @@ const handleReportPost = () => {
     toUrl('/pages/cats/login/login', true)
     return
   }
-  toUrl(`/pages/cats/report/content?id=${reportPostItem.value.id}&type=comment`)
+  const isPost = reportPostItem.value === postDetail.value
+  toUrl(
+    `/pages/cats/report/content?id=${reportPostItem.value.id}&type=${isPost ? 'post' : 'comment'}`,
+  )
 }
 
-// 管理员下架
+/** 管理员下架 */
 const handleRemovePost = () => {
   if (!userStore.isLogin) {
     toUrl('/pages/cats/login/login', true)
     return
   }
-  const item = reportPostItem.value // 当前点击的评论
+  const item = reportPostItem.value
+  const isPost = item === postDetail.value
 
   message
     .confirm({
-      title: t('report.admin.remove_comment'),
-      msg: t('social.index.comment.remove_content'),
+      title: isPost ? t('report.admin.remove_post') : t('report.admin.remove_comment'),
+      msg: isPost
+        ? t('social.index.post.remove_content')
+        : t('social.index.comment.remove_content'),
     })
     .then(() => {
       uni.showLoading()
-      adminRemovalApi(reportPostItem.value.id, 'comment')
+      adminRemovalApi(item.id, isPost ? 'post' : 'comment')
         .then((res) => {
           if (res.data?.status === 0) {
-            // 删除点击下架的这条评论
-            if (item.reply_preview) {
-              // 一级评论
+            if (isPost) {
+              uni.navigateBack()
+            } else if (item.reply_preview) {
               commentList.value.data = commentList.value.data.filter((i) => i.id !== item.id)
             } else {
-              // 二级评论
               const parentComment = commentList.value.data.find((i) => i.id === item.reply_to_id)
               if (parentComment) {
                 parentComment.reply_preview = parentComment.reply_preview.filter(
@@ -618,7 +695,6 @@ const handleRemovePost = () => {
             toast.show(res.msg || t('common.operationFailedRetry'))
           }
         })
-
         .finally(() => {
           uni.hideLoading()
         })
@@ -1242,6 +1318,184 @@ const handleDelPost = (id: number, type: 'l1' | 'l2', parentItem?: any) => {
     .catch(() => {})
 }
 
+/** 删除主帖 */
+const handleDelMainPost = () => {
+  if (!userStore.isLogin) {
+    toUrl('/pages/cats/login/login', true)
+    return
+  }
+  message
+    .confirm({ msg: t('social.index.del_post_confirm_txt') })
+    .then(() => {
+      uni.showLoading()
+      deletePostApi(postDetail.value.id)
+        .then((res) => {
+          if (res.data?.result == 1) {
+            toast.show(t('common.delete_success'))
+            setTimeout(() => uni.navigateBack(), 500)
+          }
+        })
+        .finally(() => uni.hideLoading())
+    })
+    .catch(() => {})
+}
+
+/** 关注/取关 */
+const handleFollowClick = async (member: any) => {
+  if (!userStore.isLogin) {
+    toUrl('/pages/cats/login/login', true)
+    return
+  }
+  try {
+    // 特别关注 → 取消特别关注，保持关注
+    if (member.is_special_following) {
+      try {
+        await message.confirm({ msg: '确定取消特别关注吗？' })
+      } catch {
+        return
+      }
+      const res = await setSpecialFollowApi(member.id, 0)
+      if (res.code === 1) {
+        syncMemberFollowState(member.id, {
+          is_following: member.is_following,
+          is_mutual_following: member.is_mutual_following,
+          is_special_following: 0,
+        })
+        uni.showToast({ title: t('social.index.user.special.canceled'), icon: 'none' })
+      }
+    } else if (member.is_following) {
+      const confirm = await new Promise<boolean>((resolve) => {
+        message
+          .confirm({ msg: t('social.index.user.follow.cancel') })
+          .then(() => resolve(true))
+          .catch(() => resolve(false))
+      })
+      if (!confirm) return
+      const res = await deleteFollowApi(member.id)
+      if (res.code === 1) {
+        syncMemberFollowState(member.id, res.data)
+        uni.showToast({ title: t('social.index.user.follow.canceled'), icon: 'none' })
+      }
+    } else {
+      const res = await createFollowApi(member.id)
+      if (res.code === 1) {
+        syncMemberFollowState(member.id, res.data)
+        uni.showToast({ title: t('social.index.user.follow.success'), icon: 'none' })
+      }
+    }
+  } catch (e) {
+    console.error('handleFollowClick failed', e)
+  }
+}
+
+/** 设为/取消特别关注 */
+const handleSpecialFollow = () => {
+  const member = reportPostItem.value.member
+  const isSpecial = member.is_special_following === 1
+  if (isSpecial) {
+    uni.showModal({
+      content: '确定取消特别关注吗？',
+      success: (r) => {
+        if (!r.confirm) return
+        doSpecialFollow(member, isSpecial)
+      },
+    })
+  } else {
+    doSpecialFollow(member, isSpecial)
+  }
+}
+
+const doSpecialFollow = (member: any, isSpecial: boolean) => {
+  setSpecialFollowApi(member.id, isSpecial ? 0 : 1).then((res) => {
+    if (res.code === 1) {
+      syncMemberFollowState(member.id, {
+        is_following: member.is_following,
+        is_mutual_following: member.is_mutual_following,
+        is_special_following: res.data.is_special_following,
+      })
+      uni.showToast({
+        title: isSpecial
+          ? t('social.index.user.special.canceled')
+          : t('social.index.user.special.success'),
+        icon: 'none',
+      })
+    } else {
+      toast.show(res.msg || t('common.error'))
+    }
+  })
+}
+
+/** 拉黑用户 */
+const handleBlockUser = () => {
+  if (!userStore.isLogin) {
+    toUrl('/pages/cats/login/login', true)
+    return
+  }
+  const item = reportPostItem.value
+  message
+    .confirm({ msg: t('social.index.report_user_confirm_txt') })
+    .then(() => {
+      uni.showLoading()
+      blockUserApi(item.id)
+        .then((res) => {
+          if (res.data?.result === 1) {
+            // 删除该用户的所有评论
+            commentList.value.data = commentList.value.data.filter(
+              (i) => i.member_id !== item.member_id,
+            )
+            // 同时清理剩余评论中该用户的二级回复
+            commentList.value.data.forEach((i) => {
+              if (i.reply_preview?.length) {
+                i.reply_preview = i.reply_preview.filter((r: any) => r.member_id !== item.member_id)
+              }
+            })
+            toast.show(t('common.operation_success'))
+          } else {
+            toast.show(res.msg || t('common.error'))
+          }
+        })
+        .finally(() => uni.hideLoading())
+    })
+    .catch(() => {})
+}
+
+/** 同步评论中同一作者的关注状态 */
+const syncMemberFollowState = (memberId: number, data: any) => {
+  // 主帖作者
+  if (postDetail.value.member?.id === memberId) {
+    postDetail.value.member.is_following = data.is_following
+    postDetail.value.member.is_mutual_following = data.is_mutual_following
+    postDetail.value.member.is_special_following = data.is_special_following
+  }
+  // 评论
+  commentList.value.data.forEach((comment) => {
+    if (comment.member_id === memberId) {
+      comment.member.is_following = data.is_following
+      comment.member.is_mutual_following = data.is_mutual_following
+      comment.member.is_special_following = data.is_special_following
+    }
+    // 二级评论
+    comment.reply_preview?.forEach((reply: any) => {
+      if (reply.member_id === memberId) {
+        reply.member.is_following = data.is_following
+        reply.member.is_mutual_following = data.is_mutual_following
+        reply.member.is_special_following = data.is_special_following
+      }
+    })
+  })
+}
+
+/** 帖子/评论作者关注按钮信息 */
+const getMemberFollowInfo = (member: any) => {
+  if (!member || member.is_self) return null
+  if (member.is_special_following)
+    return { text: t('social.index.user.special.following'), style: 'special' }
+  if (member.is_mutual_following) return { text: '互相关注', style: 'followed' }
+  if (member.is_following) return { text: '已关注', style: 'followed' }
+  if (member.is_following_me) return { text: '回关', style: 'follow' }
+  return { text: '关注', style: 'follow' }
+}
+
 const scrollToComment = () => {
   const query = uni.createSelectorQuery()
   query.select('#commentSection').boundingClientRect()
@@ -1439,10 +1693,27 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   font-family:
     Alimama FangYuanTi VF,
     sans-serif;
+
+  .wd-action-sheet__action--disabled {
+    height: 2rpx !important;
+    min-height: 2rpx !important;
+    margin: 16rpx 0;
+    padding: 0 !important;
+    background: #f0f0f0;
+    pointer-events: none;
+    border: none !important;
+    overflow: hidden;
+
+    .wd-action-sheet__name {
+      display: none;
+    }
+  }
 }
 :deep(.zh-Hans, .zh-Hant) {
   .socialBox .socialItem .socialCntBox .socialCnt {
     font-family: Alibaba PuHuiTi2 !important;
+    -webkit-user-select: text;
+    user-select: text;
   }
   .commentBox .commentItem .commentCntBox .commentCnt {
     font-family: Alibaba PuHuiTi2 !important;
@@ -1451,6 +1722,11 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
     font-family: Alibaba PuHuiTi2 !important;
   }
 }
+.socialBox .socialItem .socialCntBox .socialCnt {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 .page {
   padding-bottom: 120rpx;
   .cnt {
@@ -1976,6 +2252,40 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
     top: 0 !important;
     display: block !important;
     pointer-events: none !important;
+  }
+}
+
+/* ========== 关注按钮 ========== */
+.nameWrap {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  .followBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 40rpx;
+    padding: 0 14rpx;
+    border-radius: 50rpx;
+    font-size: 22rpx;
+    line-height: 1;
+    white-space: nowrap;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    border: 1rpx solid transparent;
+    background-color: #ff6b03;
+    color: #fff;
+    &.followed {
+      background-color: #ffffff;
+      color: #999;
+      border-color: #ddd;
+    }
+    &.special {
+      background: linear-gradient(135deg, #fff7e5 0%, #fff0d6 100%);
+      color: #ff6b03;
+      border-color: #ff6b03;
+      font-weight: 600;
+    }
   }
 }
 </style>

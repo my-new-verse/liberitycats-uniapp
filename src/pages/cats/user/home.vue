@@ -55,18 +55,15 @@
 
       <view
         v-if="!userInfo.is_self"
-        class="followBtn"
+        class="followActions"
         :style="{ top: `calc(${kfBoxTop} + 176rpx + 48rpx)` }"
-        :class="{ followed: userInfo.is_following === 1 }"
-        @click="handleFollow"
       >
-        <wd-button plain custom-class="follow-btn" size="small">
-          {{
-            userInfo.is_following === 1
-              ? t('social.index.user.unfollow')
-              : t('social.index.user.follow')
-          }}
-        </wd-button>
+        <view class="followBtn" :class="followBtnInfo.style" @click="handleFollow">
+          <wd-button plain custom-class="follow-btn" size="small">
+            {{ followBtnInfo.text }}
+          </wd-button>
+        </view>
+        <view class="moreActionsBtn" @click="openMoreActions"></view>
       </view>
     </view>
 
@@ -189,6 +186,13 @@
 
       <wd-message-box selector="wd-message-box-slot2"></wd-message-box>
     </view>
+
+    <wd-action-sheet
+      v-model="showMoreActions"
+      :actions="moreActions"
+      :z-index="997"
+      @select="handleMoreActionSelect"
+    />
   </view>
 </template>
 
@@ -213,6 +217,9 @@ import {
   getMyPostListApi,
   deleteFollowApi,
   createFollowApi,
+  setSpecialFollowApi,
+  blockUserApi,
+  adminRemovalApi,
 } from '@/service/api/community'
 
 const userStore = useUserStore()
@@ -392,6 +399,164 @@ const onRefreshAbort = () => {
   isRefreshing.value = false
 }
 
+// ========== 更多操作面板 ==========
+const showMoreActions = ref(false)
+const moreActions = ref<any[]>([])
+
+/** 关注按钮文案和样式 */
+const followBtnInfo = computed(() => {
+  const u: any = userInfo.value || {}
+  if (u.is_special_following)
+    return { text: t('social.index.user.special.following'), style: 'special' }
+  if (u.is_mutual_following) return { text: '互相关注', style: 'followed' }
+  if (u.is_following === 1) return { text: '已关注', style: 'followed' }
+  if (u.is_following_me) return { text: '回关', style: 'follow' }
+  return { text: '关注', style: 'follow' }
+})
+
+const openMoreActions = () => {
+  console.log('openMoreActions called')
+  if (!userStore.isLogin) {
+    toUrl('/pages/cats/login', true)
+    return
+  }
+  const isFollowing = userInfo.value.is_following === 1
+  const isSpecial = userInfo.value.is_special_following === 1
+  const actions: any[] = []
+
+  if (isFollowing) {
+    actions.push({ name: t('social.index.user.unfollow'), type: 'follow', color: '#333' })
+    actions.push({
+      name: isSpecial ? t('social.index.user.special.cancel') : t('social.index.user.special.set'),
+      type: 'specialFollow',
+      color: '#333',
+    })
+  } else {
+    actions.push({ name: t('social.index.user.follow'), type: 'follow', color: '#ff6b03' })
+    actions.push({
+      name: t('social.index.user.special.set'),
+      type: 'specialFollow',
+      color: '#333',
+    })
+  }
+
+  actions.push({ name: '', type: 'divider', disabled: true })
+  actions.push({ name: t('social.index.user.block'), type: 'block' })
+  actions.push({
+    name: t('social.index.post.report'),
+    type: 'report',
+    color: '#ff6b03',
+  })
+
+  if (userStore.userInfo.community_permissions?.can_take_down === 1) {
+    actions.push({ name: t('report.admin.remove_post'), type: 'remove', color: '#FF3B30' })
+  }
+
+  moreActions.value = actions
+  showMoreActions.value = true
+}
+
+const handleMoreActionSelect = ({ item }: any) => {
+  showMoreActions.value = false
+  switch (item.type) {
+    case 'follow':
+      handleFollow()
+      break
+    case 'specialFollow':
+      handleSpecialFollow()
+      break
+    case 'block':
+      handleBlock()
+      break
+    case 'report':
+      handleReport()
+      break
+    case 'remove':
+      handleAdminRemove()
+      break
+  }
+}
+
+const handleSpecialFollow = () => {
+  const isSpecial = userInfo.value.is_special_following === 1
+  if (isSpecial) {
+    uni.showModal({
+      content: '确定取消特别关注吗？',
+      success: (r) => {
+        if (r.confirm) doSpecialFollow(isSpecial)
+      },
+    })
+  } else {
+    doSpecialFollow(isSpecial)
+  }
+}
+
+const doSpecialFollow = (isSpecial: boolean) => {
+  setSpecialFollowApi(memberId.value, isSpecial ? 0 : 1).then((res) => {
+    if (res.code === 1) {
+      userInfo.value.is_special_following = isSpecial ? 0 : 1
+      uni.showToast({
+        title: isSpecial
+          ? t('social.index.user.special.canceled')
+          : t('social.index.user.special.success'),
+        icon: 'none',
+      })
+    }
+  })
+}
+
+const handleBlock = () => {
+  if (!userStore.isLogin) {
+    toUrl('/pages/cats/login', true)
+    return
+  }
+  message
+    .confirm({ msg: t('social.index.report_user_confirm_txt') })
+    .then(() => {
+      uni.showLoading()
+      // 用用户的第一篇帖子 ID 作为 block 的标识
+      const postId = socialList.value.data?.[0]?.id || memberId.value
+      blockUserApi(postId)
+        .then((res) => {
+          if (res.data?.result === 1) {
+            uni.showToast({ title: t('common.operation_success'), icon: 'none' })
+            setTimeout(() => uni.navigateBack(), 500)
+          }
+        })
+        .finally(() => uni.hideLoading())
+    })
+    .catch(() => {})
+}
+
+const handleReport = () => {
+  uni.navigateTo({ url: `/pages/cats/report/content?id=${memberId.value}&type=user` })
+}
+
+const handleAdminRemove = () => {
+  const postId = socialList.value.data?.[0]?.id
+  if (!postId) {
+    uni.showToast({ title: t('common.no_data'), icon: 'none' })
+    return
+  }
+  message
+    .confirm({
+      title: t('report.admin.remove_post'),
+      msg: t('social.index.post.remove_content'),
+    })
+    .then(() => {
+      uni.showLoading()
+      adminRemovalApi(postId, 'post')
+        .then((res) => {
+          if (res.data?.status === 0) {
+            socialList.value.data = socialList.value.data.filter((i) => i.id !== postId)
+            uni.showToast({ title: t('common.operation_success'), icon: 'none' })
+          }
+        })
+        .finally(() => uni.hideLoading())
+    })
+    .catch(() => {})
+}
+
 // 关注/取消关注
 const handleFollow = () => {
   if (userStore.isLogin === false) {
@@ -399,17 +564,38 @@ const handleFollow = () => {
     return
   }
 
-  if (userInfo.value.is_following === 1) {
-    deleteFollowApi(memberId.value).then((res) => {
-      if (res.code === 1) {
-        userInfo.value.is_following = 0
-        uni.showToast({ title: t('social.index.user.follow.canceled'), icon: 'none' })
-      }
-    })
+  const u: any = userInfo.value
+  // 特别关注 → 取消特别关注，保持关注
+  if (u.is_special_following) {
+    message
+      .confirm({ msg: '确定取消特别关注吗？' })
+      .then(() => {
+        setSpecialFollowApi(memberId.value, 0).then((res) => {
+          if (res.code === 1) {
+            userInfo.value.is_special_following = 0
+            uni.showToast({ title: t('social.index.user.special.canceled'), icon: 'none' })
+          }
+        })
+      })
+      .catch(() => {})
+  } else if (u.is_following === 1) {
+    message
+      .confirm({ msg: t('social.index.user.follow.cancel') })
+      .then(() => {
+        deleteFollowApi(memberId.value).then((res) => {
+          if (res.code === 1) {
+            userInfo.value.is_following = 0
+            userInfo.value.is_special_following = res.data?.is_special_following || 0
+            uni.showToast({ title: t('social.index.user.follow.canceled'), icon: 'none' })
+          }
+        })
+      })
+      .catch(() => {})
   } else {
     createFollowApi(memberId.value).then((res) => {
       if (res.code === 1) {
         userInfo.value.is_following = 1
+        userInfo.value.is_special_following = res.data?.is_special_following || 0
         uni.showToast({ title: t('social.index.user.follow.success'), icon: 'none' })
       }
     })
@@ -585,10 +771,16 @@ const doHandlePreview = (images: string[], currentIndex: number = 0, needDealImg
     height: 36rpx;
   }
 }
-.followBtn {
+.followActions {
   position: absolute;
   z-index: 99;
   right: 32rpx;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.followBtn {
   line-height: 1.1;
   text-align: center;
   white-space: nowrap;
@@ -599,9 +791,19 @@ const doHandlePreview = (images: string[], currentIndex: number = 0, needDealImg
   justify-content: center;
   min-height: 36rpx;
   &.followed {
-    // background-color: #ffffff;
-    // color: #999;
-    // border: 1rpx solid #ddd;
+    :deep(.follow-btn) {
+      background: #ffffff !important;
+      color: #999 !important;
+      border-color: #ddd !important;
+    }
+  }
+  &.special {
+    :deep(.follow-btn) {
+      background: linear-gradient(135deg, #fff7e5 0%, #fff0d6 100%) !important;
+      color: #ff6b03 !important;
+      border-color: #ff6b03 !important;
+      font-weight: 600;
+    }
   }
 }
 :deep() {
@@ -612,6 +814,33 @@ const doHandlePreview = (images: string[], currentIndex: number = 0, needDealImg
     // background-image: linear-gradient(90deg, rgba(232, 82, 18, 1) 0.00%, rgba(245, 148, 0, 1) 100.00%) !important;
     width: 140rpx;
     border-color: rgba(255, 208, 86, 1) !important;
+  }
+}
+
+.moreActionsBtn {
+  width: 40rpx;
+  height: 40rpx;
+  background-color: #fff;
+  border-radius: 50%;
+  background-image: url('@/static/images/more.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 24rpx 24rpx;
+}
+
+/* ========== 操作面板分割线 ========== */
+:deep(.wd-action-sheet__action--disabled) {
+  height: 2rpx !important;
+  min-height: 2rpx !important;
+  margin: 16rpx 0;
+  padding: 0 !important;
+  background: #f0f0f0;
+  pointer-events: none;
+  border: none !important;
+  overflow: hidden;
+
+  .wd-action-sheet__name {
+    display: none;
   }
 }
 </style>
