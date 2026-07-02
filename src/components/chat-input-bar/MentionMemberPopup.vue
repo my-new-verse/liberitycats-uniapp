@@ -107,15 +107,24 @@ import type { ChatMember } from '@/service/api/groupChat'
 import { getChatRoomMembersApi, getSmartMembersApi } from '@/service/api/groupChat'
 import { useI18n } from 'vue-i18n'
 
-const props = defineProps<{
-  visible: boolean
-  roomId: number
-  keyword: string
-  titleText: string
-  doneText: string
-  searchPlaceholderText: string
-  loadingText: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    visible: boolean
+    roomId: number
+    keyword: string
+    titleText: string
+    doneText: string
+    searchPlaceholderText: string
+    loadingText: string
+    selectedIds?: number[]
+    defaultMultiSelect?: boolean
+    maxSelected?: number
+  }>(),
+  {
+    defaultMultiSelect: true,
+    maxSelected: 10,
+  },
+)
 const { t } = useI18n()
 
 const emit = defineEmits<{
@@ -196,9 +205,18 @@ watch(
     if (val) {
       // 弹出层打开时隐藏键盘
       uni.hideKeyboard()
+      // 预选成员（用于筛选场景恢复已选状态）
+      if (props.selectedIds && props.selectedIds.length > 0) {
+        selectedIdArr.value = [...props.selectedIds]
+      }
+      // 默认多选模式（可通过 defaultMultiSelect=false 关闭）
+      if (props.defaultMultiSelect || (props.selectedIds && props.selectedIds.length > 0)) {
+        multiSelect.value = true
+      }
       fetchMembers('', true) // 初始加载，传入 isInitialLoad = true
     } else {
-      members.value = []
+      smartMembers.value = []
+      allMembers.value = []
       rawSmartMembers.value = []
       rawAllMembers.value = []
       multiSelect.value = false
@@ -257,6 +275,13 @@ const toggleMember = (member: ChatMember) => {
   if (idx > -1) {
     selectedIdArr.value.splice(idx, 1)
   } else {
+    if (selectedIdArr.value.length >= props.maxSelected) {
+      uni.showToast({
+        title: t('group.chat.mention.maxSelectedLimit', { count: props.maxSelected }),
+        icon: 'none',
+      })
+      return
+    }
     selectedIdArr.value.push(member.member_id)
   }
 }

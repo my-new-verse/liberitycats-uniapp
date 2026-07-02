@@ -504,3 +504,28 @@ export const deleteChatMessageApi = (messageId: number, reason?: string) => {
     reason,
   })
 }
+
+/** 聊天消息搜索参数 */
+export interface SearchChatMessagesParams {
+  room_id: number
+  keyword?: string
+  member_ids?: number[]
+  member_keyword?: string
+  start_time?: number
+  end_time?: number
+  page?: number
+  limit?: number
+}
+
+/** 聊天消息搜索响应 */
+export interface SearchChatMessagesResponse {
+  messages: any[]
+  total: number
+  page: number
+  limit: number
+}
+
+/** 搜索聊天消息 */
+export const searchChatMessagesApi = (params: SearchChatMessagesParams) => {
+  return http.get<SearchChatMessagesResponse>('/v1/community/chat/message/search', params)
+}

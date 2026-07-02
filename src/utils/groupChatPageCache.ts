@@ -7,6 +7,7 @@ export type GroupChatPageCacheSnapshot = {
   messages: ChatMessage[]
   hasMoreHistory: boolean
   nextBeforeMessageId: number | null
+  lastPersistedMessage: ChatMessage | null
   cachedAt: number
 }
 
