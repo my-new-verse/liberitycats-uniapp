@@ -55,7 +55,7 @@
           <wd-textarea
             v-model="commentContent"
             :placeholder="t('social.detail.comment.placeholder')"
-            :maxlength="300"
+            :maxlength="dynamicMaxlength"
             show-word-limit
             auto-height
             hold-keyboard
@@ -65,6 +65,7 @@
             :focus="shouldFocus"
             :ignoreCompositionEvent="false"
             ref="commentTextarea"
+            @input="handleTextareaInput"
           />
         </view>
 
@@ -206,6 +207,16 @@ const cannotSpeak = computed(() => {
   return roomDetail.value?.speaking?.can_speak !== 1
 })
 
+/** @提及文本不占用字符限额：maxlength = 300 + 每个@用户的 (@符号1 + 尾部空格1 + 昵称长度) */
+const MAX_INPUT_LENGTH = 300
+const dynamicMaxlength = computed(() => {
+  let extra = 0
+  for (const nickname of mentionedUsers.value.values()) {
+    extra += nickname.length + 2 // @(1) + 空格(1) + 昵称长度
+  }
+  return MAX_INPUT_LENGTH + extra
+})
+
 /** 当前展示在输入框的提示文案 */
 const inputPlaceholder = computed(() => {
   if (selfMuted.value) return selfMuteReason.value || t('group.chat.muted')
@@ -221,6 +232,7 @@ const changeExpressionCategory = (index: number) => {
 }
 const addEmoji = (emoji: string) => {
   commentContent.value += emoji
+  oldCommentContent = commentContent.value
 }
 
 const changeOpBtn = () => {
@@ -248,6 +260,7 @@ const showCommentPopup = () => {
     return
   }
   commentPopupVisible.value = true
+  oldCommentContent = commentContent.value
   // 重置焦点状态
   shouldFocus.value = false
   customEmojiList.value = []
@@ -268,7 +281,102 @@ const handleCloseCommentPopup = () => {
   commentPopupVisible.value = false
   shouldFocus.value = false
   commentContent.value = ''
+  oldCommentContent = ''
   replyInfo.value = null
+}
+
+let oldCommentContent = ''
+const handleTextareaInput = () => {
+  const oldText = oldCommentContent
+  const newText = commentContent.value
+  oldCommentContent = newText
+
+  if (newText.length >= oldText.length) return
+  if (mentionedUsers.value.size === 0) return
+
+  // Diff：找到删除范围
+  let prefixLen = 0
+  while (
+    prefixLen < newText.length &&
+    prefixLen < oldText.length &&
+    newText[prefixLen] === oldText[prefixLen]
+  ) {
+    prefixLen++
+  }
+  let suffixLen = 0
+  while (
+    suffixLen < newText.length - prefixLen &&
+    suffixLen < oldText.length - prefixLen &&
+    newText[newText.length - 1 - suffixLen] === oldText[oldText.length - 1 - suffixLen]
+  ) {
+    suffixLen++
+  }
+
+  const delStart = prefixLen
+  const delEnd = oldText.length - suffixLen
+  if (delStart >= delEnd) return
+
+  // 收集 oldText 中存在的 @提及，按位置降序排列（从后往前处理，避免位置偏移）
+  const mentionsInOld: Array<{
+    id: number
+    fullMention: string
+    mentionPos: number
+    mentionEnd: number
+  }> = []
+  for (const [id, nickname] of mentionedUsers.value) {
+    const fullMention = `@${nickname} `
+    const mentionPos = oldText.indexOf(fullMention)
+    if (mentionPos !== -1) {
+      mentionsInOld.push({
+        id,
+        fullMention,
+        mentionPos,
+        mentionEnd: mentionPos + fullMention.length,
+      })
+    }
+  }
+  mentionsInOld.sort((a, b) => b.mentionPos - a.mentionPos)
+
+  let resultText = newText
+  const usersToDelete: number[] = []
+
+  for (const { id, fullMention, mentionPos, mentionEnd } of mentionsInOld) {
+    // 删除范围与提及是否重叠
+    if (delStart >= mentionEnd || delEnd <= mentionPos) {
+      if (!resultText.includes(fullMention)) {
+        usersToDelete.push(id)
+      }
+      continue
+    }
+
+    // 提及仍完整存在（可能删除发生在边缘）
+    if (resultText.includes(fullMention)) continue
+
+    // 提及被部分删除 → 移除残留部分
+    const remainingParts: Array<[number, number]> = []
+    if (mentionPos < delStart) {
+      remainingParts.push([mentionPos, delStart])
+    }
+    if (mentionEnd > delEnd) {
+      const shift = delEnd - delStart
+      const startInNew = delStart
+      const endInNew = mentionEnd - shift
+      if (endInNew > startInNew) {
+        remainingParts.push([startInNew, endInNew])
+      }
+    }
+    for (const [start, end] of remainingParts) {
+      resultText = resultText.slice(0, start) + resultText.slice(end)
+    }
+
+    usersToDelete.push(id)
+  }
+
+  if (resultText !== newText) {
+    commentContent.value = resultText
+    oldCommentContent = resultText
+  }
+  usersToDelete.forEach((id) => mentionedUsers.value.delete(id))
 }
 
 const keyboardHeight = ref(0)
@@ -616,6 +724,7 @@ const doSend = (type, payload, mentioned_member_ids?: number[]) => {
   commentPopupVisible.value = false
   shouldFocus.value = false
   commentContent.value = ''
+  oldCommentContent = ''
   customEmojiList.value = []
   mentionedUsers.value.clear()
   const replyTo: ChatMessageReplyTo | undefined = replyInfo.value
@@ -647,6 +756,7 @@ const handleSelectMention = (member: ChatMember) => {
   const text = commentContent.value
   // 弹窗打开时末尾只有 @，直接替换
   commentContent.value = text.replace(/@$/, `@${member.nickname} `)
+  oldCommentContent = commentContent.value
   mentionedUsers.value.set(member.member_id, member.nickname)
   mentionVisible.value = false
   nextTick(() => {
@@ -664,6 +774,7 @@ const handleConfirmMention = (members: ChatMember[]) => {
     return `@${m.nickname}`
   })
   commentContent.value = base ? `${base} ${mentions.join(' ')} ` : `${mentions.join(' ')} `
+  oldCommentContent = commentContent.value
   mentionVisible.value = false
   nextTick(() => {
     shouldFocus.value = true
