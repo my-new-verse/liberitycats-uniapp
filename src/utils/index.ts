@@ -719,7 +719,7 @@ export const handlePreview = (images: string[], currentIndex: number = 0, needDe
     current: currentIndex,
     urls, // 所有图片数组
     indicator: 'number', // 显示页码
-    loop: true, // 循环滑动
+    loop: false, // 循环滑动
   })
 }
 
