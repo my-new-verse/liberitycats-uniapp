@@ -620,6 +620,18 @@ const reportPost = (post: any) => {
 const handleSpecialFollow = () => {
   const member = reportPostItem.value.member
   const isSpecial = member.is_special_following === 1
+  if (isSpecial) {
+    message
+      .confirm({ msg: t('social.index.user.special.cancel.confirm') })
+      .then(() => doSetSpecialFollow(member, isSpecial))
+      .catch(() => {})
+  } else {
+    doSetSpecialFollow(member, isSpecial)
+  }
+  reportShow.value = false
+}
+
+const doSetSpecialFollow = (member: any, isSpecial: boolean) => {
   setSpecialFollowApi(member.id, isSpecial ? 0 : 1).then((res) => {
     if (res.code === 1) {
       member.is_special_following = isSpecial ? 0 : 1
@@ -633,7 +645,6 @@ const handleSpecialFollow = () => {
       uni.showToast({ title: res.msg || t('common.error'), icon: 'none' })
     }
   })
-  reportShow.value = false
 }
 
 const handleReportPostAction = () => {
