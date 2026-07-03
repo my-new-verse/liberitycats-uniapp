@@ -1798,15 +1798,24 @@ const messagePopoverBubbleStyle = computed(() => {
   const x = messagePopoverAnchorX.value
   const y = messagePopoverAnchorY.value
   const isSelf = selectedMessageActionTarget.value?.is_self === 1
-  const left = isSelf
-    ? screenW / 2 - 16
-    : Math.max(
-        16,
-        Math.min(
-          x - Math.min(screenW / 2 - 16, 200),
-          screenW - Math.min(screenW / 2 - 16, 200) * 2 - 16,
-        ),
-      )
+
+  if (isSelf) {
+    // 自己的消息：用 right 定位
+    const right = screenW / 10
+    if (messagePopoverPlacement.value === 'top') {
+      return { position: 'fixed', right: `${right}px`, bottom: `${screenH - y + 16}px` }
+    }
+    return { position: 'fixed', right: `${right}px`, top: `${y + 16}px` }
+  }
+
+  // 别人的消息：用 left 定位
+  const left = Math.max(
+    16,
+    Math.min(
+      x - Math.min(screenW / 2 - 16, 200),
+      screenW - Math.min(screenW / 2 - 16, 200) * 2 - 16,
+    ),
+  )
   if (messagePopoverPlacement.value === 'top') {
     return { position: 'fixed', left: `${left}px`, bottom: `${screenH - y + 16}px` }
   }
