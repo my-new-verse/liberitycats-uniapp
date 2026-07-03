@@ -35,7 +35,7 @@
             </view>
           </view>
           <view class="right-icons">
-            <wd-icon name="search" size="22px" color="#fff" @click="goToHistory()"></wd-icon>
+            <wd-icon name="search1" size="22px" color="#fff" @click="goToHistory()"></wd-icon>
             <wd-icon
               name="notification"
               size="22px"
@@ -1227,7 +1227,7 @@ const loadUnreadNotifications = async (roomId: number) => {
     const res = await getUnreadNotificationsApi(roomId)
     if (res.code === 1 && res.data) {
       const { important_unread_count, important_unread_messages } = res.data
-      if (!(important_unread_count > 0 && important_unread_messages?.length > 0)) {
+      if (important_unread_count > 0 && important_unread_messages?.length > 0) {
         showFloatBtn.value = true
         importantUnreadMessages.value = important_unread_messages
         currentUnreadIndex.value = 0

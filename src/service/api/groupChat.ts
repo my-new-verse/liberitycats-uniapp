@@ -58,6 +58,7 @@ export interface ChatMember {
   is_muted: 0 | 1
   mute_until?: number
   is_self?: boolean
+  level_id?: number
   level?: {
     level: number
     name?: string
