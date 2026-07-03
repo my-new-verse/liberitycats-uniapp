@@ -1829,7 +1829,7 @@ const handleLevelIconError = (member: any) => {
     justify-content: center;
     height: 40rpx;
     padding: 0 14rpx;
-    border-radius: 50rpx;
+    border-radius: 22rpx;
     border: 1rpx solid transparent;
     background-color: #ff6b03;
     color: #fff;
