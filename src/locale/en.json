@@ -511,6 +511,7 @@
   "group.chat.loadingMoreHistory": "Loading more messages...",
   "group.chat.noMoreHistory": "No more message history",
   "group.chat.newMessages": " new messages",
+  "group.chat.importantMessages": "Important",
   "group.chat.unmuteDialogTitle": "Unmute",
   "group.chat.unmuteReasonOptionalLabel": "Reason for unmuting (optional)",
   "group.chat.unmuteReasonOptionalPlaceholder": "Enter a reason for unmuting, or leave blank",

@@ -133,7 +133,11 @@
         </template>
       </z-paging>
       <!-- 右侧悬浮按钮 -->
-      <view v-if="showFloatBtn" class="float-action-btn" @click="handleFloatAction">
+      <view
+        v-if="showFloatBtn && !isFromHistory"
+        class="float-action-btn"
+        @click="handleFloatAction"
+      >
         <wd-icon name="arrow-up" size="24rpx"></wd-icon>
         <text class="float-action-text">
           {{ t('group.chat.importantMessages') }} ({{ importantUnreadMessages.length }})
@@ -343,6 +347,7 @@ const highlightedMsgId = ref('')
 const pendingScrollToMessageId = ref('')
 const isRestoringFromCache = ref(false)
 const isFromContext = ref(false)
+const isFromHistory = ref(false)
 const contextAfterMessageId = ref<number | null>(null)
 const contextLoadingMore = ref(false)
 const showFloatBtn = ref(false)
@@ -388,6 +393,7 @@ onLoad((options: any) => {
   roomCode.value = options?.code || ''
   routeRoomId.value = Number(options?.room_id || 0)
   isFromContext.value = options?.from_context === '1'
+  isFromHistory.value = options?.from_context === '1'
   if (options?.message_id) {
     pendingScrollToMessageId.value = String(options.message_id)
   }
@@ -504,10 +510,47 @@ const loadRoomDetail = async () => {
 const scrollTopValue = ref(0)
 let lastScrollTop = 0
 
+const loadAfterContextMessages = (afterId: number) => {
+  contextLoadingMore.value = true
+  getChatMessageListApi({
+    room_id: roomDetail.value?.room?.id || routeRoomId.value,
+    after_message_id: afterId,
+    limit: 50,
+  })
+    .then((afterRes) => {
+      if (afterRes.code === 1 && afterRes.data?.messages?.length > 0) {
+        const afterMessages = [...afterRes.data.messages]
+        paging.value?.addChatRecordData(afterMessages, false, false)
+      }
+      if (
+        afterRes.code === 1 &&
+        afterRes.data?.has_more_latest === 1 &&
+        afterRes.data?.next_after_message_id
+      ) {
+        loadAfterContextMessages(afterRes.data.next_after_message_id)
+      } else {
+        contextAfterMessageId.value = null
+      }
+    })
+    .catch((e) => {
+      console.error('load after context messages failed', e)
+    })
+    .finally(() => {
+      contextLoadingMore.value = false
+    })
+}
+
 const handleChatScroll = (e) => {
   const scrollTop = e.detail ? e.detail.scrollTop : e.contentOffset.y
   lastScrollTop = scrollTop
   scrollTopValue.value = e.detail.scrollTop
+
+  // 上下文模式：检测到用户滚动时，加载 message_id 之后的新消息
+  if (contextAfterMessageId.value && !contextLoadingMore.value) {
+    const afterId = contextAfterMessageId.value
+    contextAfterMessageId.value = null
+    loadAfterContextMessages(afterId)
+  }
 
   // 用户滚动到底部时，追加暂存的离屏消息并清除指示器
   if (isNearBottom()) {
@@ -1298,36 +1341,14 @@ const queryList = async (pageNo, pageSize) => {
           }
           paging.value?.complete(messages)
           await nextTick()
-          setTimeout(() => {
-            scrollIntoViewById(targetId)
+          setTimeout(async () => {
+            await scrollIntoViewById(targetId)
+            // 等 scrollIntoViewById 的滚动动画完全停止后，再设置 after_message_id
+            // 这样只有用户后续手动滚动才会触发 loadAfterContextMessages
+            setTimeout(() => {
+              contextAfterMessageId.value = Number(targetId)
+            }, 800)
           }, 500)
-          // 轮询加载 message_id 之后的新消息，直到 has_more_latest 为 0
-          setTimeout(() => {
-            const loadAfterMessages = (afterId: number) => {
-              getChatMessageListApi({
-                room_id: roomDetail.value?.room?.id || routeRoomId.value,
-                after_message_id: afterId,
-                limit: 50,
-              })
-                .then((afterRes) => {
-                  if (afterRes.code === 1 && afterRes.data?.messages?.length > 0) {
-                    const afterMessages = [...afterRes.data.messages]
-                    paging.value?.addChatRecordData(afterMessages, false, false)
-                  }
-                  if (
-                    afterRes.code === 1 &&
-                    afterRes.data?.has_more_latest === 1 &&
-                    afterRes.data?.next_after_message_id
-                  ) {
-                    loadAfterMessages(afterRes.data.next_after_message_id)
-                  }
-                })
-                .catch((e) => {
-                  console.error('load after context messages failed', e)
-                })
-            }
-            loadAfterMessages(Number(targetId))
-          }, 2000)
         }
       } catch (e) {
         console.error('getChatMessageContextApi failed', e)
