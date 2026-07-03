@@ -34,7 +34,12 @@
           class="selected-bar__item"
           @click="toggleMember(m)"
         >
-          <image class="selected-bar__avatar" :src="m.avatar" mode="aspectFill" />
+          <view class="selected-bar__avatar-wrap">
+            <image class="selected-bar__avatar" :src="m.avatar" mode="aspectFill" />
+            <view v-if="getMemberLevelStyle(m)" class="levelIcon">
+              <view class="levelBadge" :style="getMemberLevelStyle(m)"></view>
+            </view>
+          </view>
           <text class="selected-bar__name">{{ m.nickname }}</text>
         </view>
       </view>
@@ -51,7 +56,12 @@
             @click="toggleMember(member)"
           >
             <wd-checkbox :model-value="selectedIdArr.includes(member.member_id)" />
-            <image class="mention-avatar" :src="member.avatar" mode="aspectFill" />
+            <view class="mention-avatar-wrap">
+              <image class="mention-avatar" :src="member.avatar" mode="aspectFill" />
+              <view v-if="getMemberLevelStyle(member)" class="levelIcon">
+                <view class="levelBadge" :style="getMemberLevelStyle(member)"></view>
+              </view>
+            </view>
             <text class="mention-nickname">{{ member.nickname }}</text>
           </view>
         </template>
@@ -62,7 +72,12 @@
             class="mention-member-item"
             @click="handleItemClick(member)"
           >
-            <image class="mention-avatar" :src="member.avatar" mode="aspectFill" />
+            <view class="mention-avatar-wrap">
+              <image class="mention-avatar" :src="member.avatar" mode="aspectFill" />
+              <view v-if="getMemberLevelStyle(member)" class="levelIcon">
+                <view class="levelBadge" :style="getMemberLevelStyle(member)"></view>
+              </view>
+            </view>
             <text class="mention-nickname">{{ member.nickname }}</text>
           </view>
         </template>
@@ -79,7 +94,12 @@
             @click="toggleMember(member)"
           >
             <wd-checkbox :model-value="selectedIdArr.includes(member.member_id)" />
-            <image class="mention-avatar" :src="member.avatar" mode="aspectFill" />
+            <view class="mention-avatar-wrap">
+              <image class="mention-avatar" :src="member.avatar" mode="aspectFill" />
+              <view v-if="getMemberLevelStyle(member)" class="levelIcon">
+                <view class="levelBadge" :style="getMemberLevelStyle(member)"></view>
+              </view>
+            </view>
             <text class="mention-nickname">{{ member.nickname }}</text>
           </view>
         </template>
@@ -90,7 +110,12 @@
             class="mention-member-item"
             @click="handleItemClick(member)"
           >
-            <image class="mention-avatar" :src="member.avatar" mode="aspectFill" />
+            <view class="mention-avatar-wrap">
+              <image class="mention-avatar" :src="member.avatar" mode="aspectFill" />
+              <view v-if="getMemberLevelStyle(member)" class="levelIcon">
+                <view class="levelBadge" :style="getMemberLevelStyle(member)"></view>
+              </view>
+            </view>
             <text class="mention-nickname">{{ member.nickname }}</text>
           </view>
         </template>
@@ -105,6 +130,7 @@
 import { ref, computed, watch } from 'vue'
 import type { ChatMember } from '@/service/api/groupChat'
 import { getChatRoomMembersApi, getSmartMembersApi } from '@/service/api/groupChat'
+import { getLevelBadgeStyle } from '@/utils/avatarCache'
 import { useI18n } from 'vue-i18n'
 
 const props = withDefaults(
@@ -326,6 +352,12 @@ const toggleMember = (member: ChatMember) => {
   }
 }
 
+/** 获取成员 level 徽章样式（优先 level_id，兼容 level.level） */
+const getMemberLevelStyle = (member: ChatMember) => {
+  const level = member.level_id ?? member.level?.level
+  return getLevelBadgeStyle(level)
+}
+
 const handleConfirm = () => {
   const idSet = new Set(selectedIdArr.value)
   const selected = members.value.filter((m) => idSet.has(m.member_id))
@@ -401,6 +433,13 @@ const handleConfirm = () => {
     }
   }
 
+  &__avatar-wrap {
+    position: relative;
+    width: 72rpx;
+    height: 72rpx;
+    flex-shrink: 0;
+  }
+
   &__avatar {
     width: 72rpx;
     height: 72rpx;
@@ -438,11 +477,34 @@ const handleConfirm = () => {
   font-size: 36rpx;
 }
 
+.mention-avatar-wrap {
+  position: relative;
+  width: 64rpx;
+  height: 64rpx;
+  flex-shrink: 0;
+}
+
 .mention-avatar {
   width: 64rpx;
   height: 64rpx;
   border-radius: 50%;
   flex-shrink: 0;
+}
+
+.levelIcon {
+  position: absolute;
+  right: -4rpx;
+  bottom: 2rpx;
+  width: 24rpx;
+  height: 24rpx;
+
+  .levelBadge {
+    width: 100%;
+    height: 100%;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+  }
 }
 
 .mention-nickname {

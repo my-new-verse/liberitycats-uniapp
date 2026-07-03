@@ -1001,7 +1001,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
     height: 100%;
     border-radius: 16rpx;
     display: block;
-    box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+    // box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
     margin-top: 18rpx;
   }
 }
