@@ -66,13 +66,13 @@
         <view class="selectedUsersBar" v-if="confirmedUserIds.length > 0">
           <scroll-view scroll-x class="selectedUsersScroll">
             <view class="selectedUserItem" v-for="uid in confirmedUserIds" :key="uid">
-              <view class="userAvatarWrap">
+              <view class="userAvatarWrap" @click="removeSelectedUser(uid)">
                 <image
                   class="userAvatar"
                   :src="selectedUsersCache.get(uid)?.avatar"
                   mode="aspectFill"
                 />
-                <view class="removeIcon" @click.stop="removeSelectedUser(uid)">×</view>
+                <view class="removeIcon">×</view>
               </view>
               <text class="userName">{{ selectedUsersCache.get(uid)?.nickname }}</text>
             </view>
@@ -993,6 +993,7 @@ const getImageMessageBoxSize = (msg: any) => {
         width: 80rpx;
         height: 80rpx;
         margin: 0 auto 15rpx;
+        cursor: pointer;
 
         .userAvatar {
           width: 100%;
@@ -1003,20 +1004,33 @@ const getImageMessageBoxSize = (msg: any) => {
 
         .removeIcon {
           position: absolute;
-          bottom: -6rpx;
-          right: -6rpx;
+          top: 0;
+          right: 0;
           width: 32rpx;
           height: 32rpx;
-          background-color: #ff4444;
+          background-color: rgba(0, 0, 0, 0.7);
           color: #fff;
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 24rpx;
+          font-size: 22rpx;
           font-weight: bold;
           line-height: 1;
           z-index: 2;
+          backdrop-filter: blur(4rpx);
+          box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15);
+          pointer-events: none;
+
+          &::before {
+            content: '';
+            position: absolute;
+            top: -8rpx;
+            right: -8rpx;
+            bottom: -8rpx;
+            left: -8rpx;
+            pointer-events: auto;
+          }
         }
       }
 
