@@ -47,6 +47,7 @@
           :done-text="t('group.chat.mention.done')"
           :search-placeholder-text="t('group.chat.mention.searchPlaceholder')"
           :loading-text="t('group.chat.mention.loading')"
+          :default-multi-select="false"
           @update:visible="mentionVisible = $event"
           @select="handleSelectMention"
           @confirm="handleConfirmMention"

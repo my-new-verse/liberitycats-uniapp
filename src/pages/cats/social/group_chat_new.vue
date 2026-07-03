@@ -35,7 +35,7 @@
             </view>
           </view>
           <view class="right-icons">
-            <wd-icon name="search" size="22px" color="#fff" @click="goToHistory()"></wd-icon>
+            <wd-icon name="search1" size="22px" color="#fff" @click="goToHistory()"></wd-icon>
             <wd-icon
               name="notification"
               size="22px"
@@ -64,6 +64,7 @@
         @query="queryList"
         @scroll="handleChatScroll"
         cellKeyName="id"
+        :show-scrollbar="false"
       >
         <template #top>
           <wd-notice-bar
@@ -132,9 +133,15 @@
         </template>
       </z-paging>
       <!-- 右侧悬浮按钮 -->
-      <view v-if="showFloatBtn" class="float-action-btn" @click="handleFloatAction">
+      <view
+        v-if="showFloatBtn && !isFromHistory"
+        class="float-action-btn"
+        @click="handleFloatAction"
+      >
         <wd-icon name="arrow-up" size="24rpx"></wd-icon>
-        <text class="float-action-text">重要消息 ({{ importantUnreadMessages.length }})</text>
+        <text class="float-action-text">
+          {{ t('group.chat.importantMessages') }} ({{ importantUnreadMessages.length }})
+        </text>
       </view>
       <!-- WeChat 风格气泡菜单 -->
       <view
@@ -340,6 +347,9 @@ const highlightedMsgId = ref('')
 const pendingScrollToMessageId = ref('')
 const isRestoringFromCache = ref(false)
 const isFromContext = ref(false)
+const isFromHistory = ref(false)
+const contextAfterMessageId = ref<number | null>(null)
+const contextLoadingMore = ref(false)
 const showFloatBtn = ref(false)
 const importantUnreadMessages = ref<Array<{ message_id: number }>>([])
 const currentUnreadIndex = ref(0)
@@ -383,6 +393,7 @@ onLoad((options: any) => {
   roomCode.value = options?.code || ''
   routeRoomId.value = Number(options?.room_id || 0)
   isFromContext.value = options?.from_context === '1'
+  isFromHistory.value = options?.from_context === '1'
   if (options?.message_id) {
     pendingScrollToMessageId.value = String(options.message_id)
   }
@@ -499,10 +510,47 @@ const loadRoomDetail = async () => {
 const scrollTopValue = ref(0)
 let lastScrollTop = 0
 
+const loadAfterContextMessages = (afterId: number) => {
+  contextLoadingMore.value = true
+  getChatMessageListApi({
+    room_id: roomDetail.value?.room?.id || routeRoomId.value,
+    after_message_id: afterId,
+    limit: 50,
+  })
+    .then((afterRes) => {
+      if (afterRes.code === 1 && afterRes.data?.messages?.length > 0) {
+        const afterMessages = [...afterRes.data.messages]
+        paging.value?.addChatRecordData(afterMessages, false, false)
+      }
+      if (
+        afterRes.code === 1 &&
+        afterRes.data?.has_more_latest === 1 &&
+        afterRes.data?.next_after_message_id
+      ) {
+        loadAfterContextMessages(afterRes.data.next_after_message_id)
+      } else {
+        contextAfterMessageId.value = null
+      }
+    })
+    .catch((e) => {
+      console.error('load after context messages failed', e)
+    })
+    .finally(() => {
+      contextLoadingMore.value = false
+    })
+}
+
 const handleChatScroll = (e) => {
   const scrollTop = e.detail ? e.detail.scrollTop : e.contentOffset.y
   lastScrollTop = scrollTop
   scrollTopValue.value = e.detail.scrollTop
+
+  // 上下文模式：检测到用户滚动时，加载 message_id 之后的新消息
+  if (contextAfterMessageId.value && !contextLoadingMore.value) {
+    const afterId = contextAfterMessageId.value
+    contextAfterMessageId.value = null
+    loadAfterContextMessages(afterId)
+  }
 
   // 用户滚动到底部时，追加暂存的离屏消息并清除指示器
   if (isNearBottom()) {
@@ -1174,11 +1222,12 @@ const handleJumpToLatestMessage = () => {
 
 // 加载未读通知
 const loadUnreadNotifications = async (roomId: number) => {
+  if (isFromContext.value) return // 从聊天记录跳转过来的不展示重要消息按钮
   try {
     const res = await getUnreadNotificationsApi(roomId)
     if (res.code === 1 && res.data) {
       const { important_unread_count, important_unread_messages } = res.data
-      if (!(important_unread_count > 0 && important_unread_messages?.length > 0)) {
+      if (important_unread_count > 0 && important_unread_messages?.length > 0) {
         showFloatBtn.value = true
         importantUnreadMessages.value = important_unread_messages
         currentUnreadIndex.value = 0
@@ -1292,8 +1341,13 @@ const queryList = async (pageNo, pageSize) => {
           }
           paging.value?.complete(messages)
           await nextTick()
-          setTimeout(() => {
-            scrollIntoViewById(targetId)
+          setTimeout(async () => {
+            await scrollIntoViewById(targetId)
+            // 等 scrollIntoViewById 的滚动动画完全停止后，再设置 after_message_id
+            // 这样只有用户后续手动滚动才会触发 loadAfterContextMessages
+            setTimeout(() => {
+              contextAfterMessageId.value = Number(targetId)
+            }, 800)
           }, 500)
         }
       } catch (e) {
@@ -1744,15 +1798,24 @@ const messagePopoverBubbleStyle = computed(() => {
   const x = messagePopoverAnchorX.value
   const y = messagePopoverAnchorY.value
   const isSelf = selectedMessageActionTarget.value?.is_self === 1
-  const left = isSelf
-    ? screenW / 2 - 16
-    : Math.max(
-        16,
-        Math.min(
-          x - Math.min(screenW / 2 - 16, 200),
-          screenW - Math.min(screenW / 2 - 16, 200) * 2 - 16,
-        ),
-      )
+
+  if (isSelf) {
+    // 自己的消息：用 right 定位
+    const right = screenW / 10
+    if (messagePopoverPlacement.value === 'top') {
+      return { position: 'fixed', right: `${right}px`, bottom: `${screenH - y + 16}px` }
+    }
+    return { position: 'fixed', right: `${right}px`, top: `${y + 16}px` }
+  }
+
+  // 别人的消息：用 left 定位
+  const left = Math.max(
+    16,
+    Math.min(
+      x - Math.min(screenW / 2 - 16, 200),
+      screenW - Math.min(screenW / 2 - 16, 200) * 2 - 16,
+    ),
+  )
   if (messagePopoverPlacement.value === 'top') {
     return { position: 'fixed', left: `${left}px`, bottom: `${screenH - y + 16}px` }
   }
@@ -1766,7 +1829,7 @@ const messagePopoverArrowStyle = computed(() => {
   const x = messagePopoverAnchorX.value
   const y = messagePopoverAnchorY.value
   const isSelf = selectedMessageActionTarget.value?.is_self === 1
-  const left = isSelf ? screenW / 2 : screenW / 5
+  const left = isSelf ? (screenW * 3) / 4 : screenW / 5
   if (messagePopoverPlacement.value === 'top') {
     return { position: 'fixed', left: `${left}px`, bottom: `${screenH - y + 8}px` }
   }
@@ -2458,16 +2521,6 @@ const goToHistory = async () => {
   const roomId = roomDetail.value?.room.id || routeRoomId.value
   if (!roomId) return
   // 保存页面状态到缓存，以便从历史搜索页返回时恢复
-  setGroupChatPageCache({
-    roomCode: roomCode.value,
-    roomId,
-    roomDetail: roomDetail.value,
-    messages: messages.value,
-    hasMoreHistory: hasMoreHistory.value,
-    nextBeforeMessageId: Number(lastestMessageId.value) || null,
-    lastPersistedMessage: getLastPersistedMessage(),
-    cachedAt: Date.now(),
-  })
   chatSocketClient.value?.setKeepAliveOnHide(true)
   toUrl(
     `/pages/cats/social/group_chat_history?room_id=${roomId}&code=${roomCode.value}`,

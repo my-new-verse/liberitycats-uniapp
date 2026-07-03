@@ -61,6 +61,7 @@ interface NavigateToOptions {
        "/pages/cats/social/group_announcement_detail" |
        "/pages/cats/social/group_announcement_list" |
        "/pages/cats/social/group_chat" |
+       "/pages/cats/social/group_chat_history" |
        "/pages/cats/social/group_chat_new" |
        "/pages/cats/social/group_members" |
        "/pages/cats/social/inFocus-detail" |

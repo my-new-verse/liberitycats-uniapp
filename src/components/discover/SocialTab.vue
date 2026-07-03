@@ -35,6 +35,9 @@
         @click="handleFilterChange('groupChat')"
       >
         {{ t('discover.social.filter.groupChat') }}
+        <view v-if="groupChatNotificationCount > 0" class="opItemBadge">
+          {{ groupChatNotificationCount > 99 ? '99+' : groupChatNotificationCount }}
+        </view>
       </view>
       <image
         src="/static/images/search1.png"
@@ -197,17 +200,22 @@
           <view class="emptyImg"></view>
         </view>
       </template>
-      <view class="msgEntry" @click="toUrl('/pages/cats/message/index?category=community', true)">
-        <view class="msgDot" v-if="msgUnreadCount > 0">
-          <view>{{ msgUnreadCount > 99 ? 99 : msgUnreadCount }}</view>
-          <view v-if="msgUnreadCount > 99">+</view>
-        </view>
-        <view class="msgImg"></view>
-      </view>
       <view class="pubSocial" @click="toUrl('/pages/cats/social/publish', true)">
         <view class="pubImg"></view>
       </view>
     </template>
+    <!-- 消息入口浮窗（社区帖子 tab 和 inFocus tab 展示） -->
+    <view
+      v-if="socialFilter !== 'groupChat' && socialFilter !== 'message'"
+      class="msgEntry"
+      @click="toUrl('/pages/cats/message/index?category=community', true)"
+    >
+      <view class="msgDot" v-if="msgUnreadCount > 0">
+        <view>{{ msgUnreadCount > 99 ? 99 : msgUnreadCount }}</view>
+        <view v-if="msgUnreadCount > 99">+</view>
+      </view>
+      <view class="msgImg"></view>
+    </view>
     <!-- 群聊 Tab -->
     <template v-if="socialFilter === 'groupChat'">
       <view :style="{ paddingTop: cntPaddingTop + 36 + 20 + 'rpx' }">
@@ -251,7 +259,7 @@ import {
   setSpecialFollowApi,
   adminRemovalApi,
 } from '@/service/api/community'
-import { preloadChatRoomsApi } from '@/service/api/groupChat'
+import { preloadChatRoomsApi, getNotificationsSummaryApi } from '@/service/api/groupChat'
 import { getUnReadNotificationCountApi } from '@/service/api/user'
 import SharePopup from '@/components/SharePopup/SharePopup.vue'
 
@@ -329,6 +337,7 @@ const socialFilter = ref<SocialFilter>('latest')
 const groupChatRenderKey = ref(0)
 const groupChatReady = ref(false)
 const msgUnreadCount = ref(0)
+const groupChatNotificationCount = ref(0)
 let groupChatReadyTimer: ReturnType<typeof setTimeout> | null = null
 const GROUP_CHAT_ROOMS_REFRESH_EVENT = 'refreshGroupChatRooms'
 const activeSocialCache = computed(() => {
@@ -714,13 +723,27 @@ function fetchUnreadCount() {
     })
     .catch(() => {})
 }
+
+/** 拉取群聊未读通知摘要 */
+function fetchGroupChatNotifications() {
+  if (!userStore.isLogin) return
+  getNotificationsSummaryApi()
+    .then((res) => {
+      if (res?.code === 1 && res.data) {
+        groupChatNotificationCount.value = res.data.total_important || 0
+      }
+    })
+    .catch(() => {})
+}
 onShow(() => {
   fetchUnreadCount()
+  fetchGroupChatNotifications()
 })
 // 初始加载
 onMounted(() => {
   void preloadChatRoomsApi(1)
   fetchUnreadCount()
+  fetchGroupChatNotifications()
   if (socialFilter.value !== 'groupChat') {
     syncActiveCache()
     if (!socialCacheMap.value[socialFilter.value as SocialCacheKey].hasInitialized) {
@@ -755,6 +778,7 @@ onMounted(() => {
     }
   })
   uni.$on('switchToChatGroup', () => {
+    uni.removeStorageSync('pendingSwitchToChatGroup')
     handleFilterChange('groupChat')
   })
   // 检查待切换标记（覆盖 SocialTab 首次挂载时事件已 emit 的场景）
@@ -810,7 +834,6 @@ function reportSheetSelect({ item, index }) {
   }
   if (index === reportActionIndex.remove) {
     handleRemovePost()
-    return
   }
 }
 
