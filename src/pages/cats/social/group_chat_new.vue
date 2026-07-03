@@ -64,6 +64,7 @@
         @query="queryList"
         @scroll="handleChatScroll"
         cellKeyName="id"
+        :show-scrollbar="false"
       >
         <template #top>
           <wd-notice-bar
@@ -134,7 +135,9 @@
       <!-- 右侧悬浮按钮 -->
       <view v-if="showFloatBtn" class="float-action-btn" @click="handleFloatAction">
         <wd-icon name="arrow-up" size="24rpx"></wd-icon>
-        <text class="float-action-text">重要消息 ({{ importantUnreadMessages.length }})</text>
+        <text class="float-action-text">
+          {{ t('group.chat.importantMessages') }} ({{ importantUnreadMessages.length }})
+        </text>
       </view>
       <!-- WeChat 风格气泡菜单 -->
       <view
@@ -1176,6 +1179,7 @@ const handleJumpToLatestMessage = () => {
 
 // 加载未读通知
 const loadUnreadNotifications = async (roomId: number) => {
+  if (isFromContext.value) return // 从聊天记录跳转过来的不展示重要消息按钮
   try {
     const res = await getUnreadNotificationsApi(roomId)
     if (res.code === 1 && res.data) {
