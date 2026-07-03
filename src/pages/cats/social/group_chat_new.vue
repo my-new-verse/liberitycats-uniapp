@@ -340,6 +340,8 @@ const highlightedMsgId = ref('')
 const pendingScrollToMessageId = ref('')
 const isRestoringFromCache = ref(false)
 const isFromContext = ref(false)
+const contextAfterMessageId = ref<number | null>(null)
+const contextLoadingMore = ref(false)
 const showFloatBtn = ref(false)
 const importantUnreadMessages = ref<Array<{ message_id: number }>>([])
 const currentUnreadIndex = ref(0)
@@ -1295,6 +1297,33 @@ const queryList = async (pageNo, pageSize) => {
           setTimeout(() => {
             scrollIntoViewById(targetId)
           }, 500)
+          // 轮询加载 message_id 之后的新消息，直到 has_more_latest 为 0
+          setTimeout(() => {
+            const loadAfterMessages = (afterId: number) => {
+              getChatMessageListApi({
+                room_id: roomDetail.value?.room?.id || routeRoomId.value,
+                after_message_id: afterId,
+                limit: 50,
+              })
+                .then((afterRes) => {
+                  if (afterRes.code === 1 && afterRes.data?.messages?.length > 0) {
+                    const afterMessages = [...afterRes.data.messages]
+                    paging.value?.addChatRecordData(afterMessages, false, false)
+                  }
+                  if (
+                    afterRes.code === 1 &&
+                    afterRes.data?.has_more_latest === 1 &&
+                    afterRes.data?.next_after_message_id
+                  ) {
+                    loadAfterMessages(afterRes.data.next_after_message_id)
+                  }
+                })
+                .catch((e) => {
+                  console.error('load after context messages failed', e)
+                })
+            }
+            loadAfterMessages(Number(targetId))
+          }, 2000)
         }
       } catch (e) {
         console.error('getChatMessageContextApi failed', e)
@@ -2458,16 +2487,6 @@ const goToHistory = async () => {
   const roomId = roomDetail.value?.room.id || routeRoomId.value
   if (!roomId) return
   // 保存页面状态到缓存，以便从历史搜索页返回时恢复
-  setGroupChatPageCache({
-    roomCode: roomCode.value,
-    roomId,
-    roomDetail: roomDetail.value,
-    messages: messages.value,
-    hasMoreHistory: hasMoreHistory.value,
-    nextBeforeMessageId: Number(lastestMessageId.value) || null,
-    lastPersistedMessage: getLastPersistedMessage(),
-    cachedAt: Date.now(),
-  })
   chatSocketClient.value?.setKeepAliveOnHide(true)
   toUrl(
     `/pages/cats/social/group_chat_history?room_id=${roomId}&code=${roomCode.value}`,
