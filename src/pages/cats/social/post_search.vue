@@ -135,31 +135,25 @@
                   <view class="socialCnt">{{ post.content }}</view>
                   <view
                     class="socialMedia"
-                    v-if="post.images && post.images.length > 0"
-                    :class="{ mediaImg4: post.images.length === 4 }"
+                    v-if="post.images.length > 0"
+                    :class="{
+                      mediaImg4: post.images.length === 4,
+                      singleImg: post.images.length === 1,
+                    }"
                   >
-                    <template v-if="post.images.length == 1">
+                    <view
+                      v-for="(image, index) in post.images"
+                      :key="index"
+                      @tap.stop="doHandlePreview(post.images, index)"
+                    >
                       <wd-img
+                        :radius="5"
                         custom-class="mediaImgItem"
-                        mode="widthFix"
-                        :src="getImageUrl(post.images[0] + '?x-oss-process=style/sqdt')"
-                        :preview-src="post.images.map((img) => getImageUrl(img))"
+                        :mode="post.images.length === 1 ? 'widthFix' : 'aspectFill'"
+                        :src="getImageUrl(image + '?x-oss-process=style/sqdt')"
                         :enable-preview="false"
-                        @tap.stop="doHandlePreview(post.images, 0)"
                       />
-                    </template>
-                    <template v-else-if="post.images.length > 1">
-                      <template v-for="(image, index) in post.images" :key="index">
-                        <wd-img
-                          custom-class="mediaImgItem"
-                          mode="widthFix"
-                          :src="getImageUrl(image + '?x-oss-process=style/jzcq')"
-                          :preview-src="post.images.map((img) => getImageUrl(img))"
-                          :enable-preview="false"
-                          @tap.stop="doHandlePreview(post.images, index)"
-                        />
-                      </template>
-                    </template>
+                    </view>
                   </view>
                   <view class="socialTime">{{ formatRelativeTime(post.create_time) }}</view>
                 </view>
@@ -472,6 +466,8 @@ const buildSearchParams = (page: number) => {
 const search = async () => {
   const hasKeyword = searchText.value.trim() !== ''
   const hasUser = confirmedUserIds.value.length > 0
+  const timeRange = getTimeRange()
+  const hasTimeFilter = !!(timeRange.start_time || timeRange.end_time)
   if (!hasKeyword && !hasUser) {
     uni.showToast({ title: t('social.search.requireKeywordOrUser'), icon: 'none' })
     return
@@ -568,7 +564,6 @@ const reportSheetSelect = ({ item, index }: any) => {
   }
   if (index === reportActionIndex.remove) {
     handleRemovePost()
-    return
   }
 }
 
@@ -1024,6 +1019,24 @@ const confirmTimeFilter = () => {
   showTimeFilter.value = false
 }
 
+/** 监听确认时间变化，自动重新搜索或清空数据 */
+watch([confirmedTimeRange, confirmedStartTime, confirmedEndTime], () => {
+  const hasKeyword = searchText.value.trim() !== ''
+  const hasUser = confirmedUserIds.value.length > 0
+  const timeRange = getTimeRange()
+  const hasTimeFilter = !!(timeRange.start_time || timeRange.end_time)
+
+  // 用户、关键词、时间筛选都为空，直接清空数据不调接口
+  if (!hasUser && !hasKeyword && !hasTimeFilter) {
+    hasSearched.value = false
+    searchResult.value = { posts: [], total: 0, page: 0, limit: 20 }
+    return
+  }
+
+  // 有筛选条件，自动调用搜索
+  search()
+})
+
 /** 将确认后的筛选状态转为接口参数（start_time / end_time，单位秒） */
 const getTimeRange = () => {
   // 自定义时间优先
@@ -1142,6 +1155,28 @@ const removeSelectedUser = (memberId: number) => {
   tempSelectedUserIds.value = tempSelectedUserIds.value.filter((id) => id !== memberId)
   tempSelectedUsers.value.delete(memberId)
 }
+
+/** 监听已确认用户变化，自动重新搜索或清空数据 */
+watch(
+  confirmedUserIds,
+  () => {
+    const hasKeyword = searchText.value.trim() !== ''
+    const hasUser = confirmedUserIds.value.length > 0
+    const timeRange = getTimeRange()
+    const hasTimeFilter = !!(timeRange.start_time || timeRange.end_time)
+
+    // 用户、关键词、时间筛选都为空，直接清空数据不调接口
+    if (!hasUser && !hasKeyword && !hasTimeFilter) {
+      hasSearched.value = false
+      searchResult.value = { posts: [], total: 0, page: 0, limit: 20 }
+      return
+    }
+
+    // 有筛选条件，自动调用搜索
+    search()
+  },
+  { deep: true },
+)
 
 /** 搜索成员 */
 const searchUsers = async () => {
