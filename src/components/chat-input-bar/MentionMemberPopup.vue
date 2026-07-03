@@ -119,10 +119,13 @@ const props = withDefaults(
     selectedIds?: number[]
     defaultMultiSelect?: boolean
     maxSelected?: number
+    /** 推荐模式：'smart' 调用智能推荐接口 | 'history' 使用本地历史选择缓存 */
+    recommendMode?: 'smart' | 'history'
   }>(),
   {
     defaultMultiSelect: true,
     maxSelected: 10,
+    recommendMode: 'smart',
   },
 )
 const { t } = useI18n()
@@ -143,6 +146,28 @@ const loading = ref(false)
 const multiSelect = ref(false)
 const selectedIdArr = ref<number[]>([])
 const searchValue = ref('')
+
+// ========== 历史选择缓存 ==========
+const getHistoryCacheKey = () => `mentionHistory_${props.roomId}`
+
+const loadHistoryMembers = (): ChatMember[] => {
+  try {
+    const data = uni.getStorageSync(getHistoryCacheKey())
+    if (Array.isArray(data)) return data
+  } catch {
+    // ignore
+  }
+  return []
+}
+
+const saveHistoryMembers = (members: ChatMember[]) => {
+  if (members.length === 0) return
+  const existing = loadHistoryMembers()
+  const newIds = new Set(members.map((m) => m.member_id))
+  const remaining = existing.filter((m) => !newIds.has(m.member_id))
+  const merged = [...members, ...remaining].slice(0, 30)
+  uni.setStorageSync(getHistoryCacheKey(), merged)
+}
 
 // 合并后的成员列表（用于显示，去重）
 const members = computed(() => {
@@ -168,21 +193,35 @@ const fetchMembers = async (keyword: string, isInitialLoad = false) => {
   loading.value = true
   try {
     if (isInitialLoad) {
-      // 初始加载：并行请求两个接口
-      const [smartRes, allRes] = await Promise.all([
-        getSmartMembersApi(props.roomId, 1, 30, keyword),
-        getChatRoomMembersApi(props.roomId, undefined, 1, 100, keyword),
-      ])
+      if (props.recommendMode === 'history') {
+        // 历史选择模式：从本地缓存加载最常使用
+        const historyData = loadHistoryMembers()
+        smartMembers.value = historyData
+        rawSmartMembers.value = historyData
+        // 全部人员仍走接口
+        const allRes = await getChatRoomMembersApi(props.roomId, undefined, 1, 100, keyword)
+        if (allRes.code === 1) {
+          const data = allRes.data.data || []
+          allMembers.value = data
+          rawAllMembers.value = data
+        }
+      } else {
+        // 智能推荐模式：并行请求两个接口
+        const [smartRes, allRes] = await Promise.all([
+          getSmartMembersApi(props.roomId, 1, 30, keyword),
+          getChatRoomMembersApi(props.roomId, undefined, 1, 100, keyword),
+        ])
 
-      if (smartRes.code === 1) {
-        const data = smartRes.data.members || []
-        smartMembers.value = data
-        rawSmartMembers.value = data
-      }
-      if (allRes.code === 1) {
-        const data = allRes.data.data || []
-        allMembers.value = data
-        rawAllMembers.value = data
+        if (smartRes.code === 1) {
+          const data = smartRes.data.members || []
+          smartMembers.value = data
+          rawSmartMembers.value = data
+        }
+        if (allRes.code === 1) {
+          const data = allRes.data.data || []
+          allMembers.value = data
+          rawAllMembers.value = data
+        }
       }
     } else {
       // 搜索时：只请求全部人员接口
@@ -265,7 +304,8 @@ const handleClear = () => {
 }
 
 const handleItemClick = (member: ChatMember) => {
-  // 单选模式：立即选中并关闭
+  // 单选模式：缓存历史选择并关闭
+  saveHistoryMembers([member])
   emit('select', member)
 }
 
@@ -290,6 +330,8 @@ const handleConfirm = () => {
   const idSet = new Set(selectedIdArr.value)
   const selected = members.value.filter((m) => idSet.has(m.member_id))
   if (selected.length > 0) {
+    // 缓存历史选择
+    saveHistoryMembers(selected)
     emit('confirm', selected)
   }
   emit('update:visible', false)

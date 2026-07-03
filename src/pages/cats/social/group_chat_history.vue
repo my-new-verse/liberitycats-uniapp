@@ -247,6 +247,7 @@
       :done-text="t('common.confirm')"
       :search-placeholder-text="t('social.search.filter.userPlaceholder')"
       :loading-text="t('group.chat.mention.loading')"
+      recommend-mode="history"
       @update:visible="showUserFilter = $event"
       @confirm="handleUserFilterConfirm"
     />
@@ -855,6 +856,10 @@ const getImageMessageBoxSize = (msg: any) => {
 
   :deep(*) {
     font-family: Alibaba PuHuiTi2 !important;
+  }
+  /* 恢复 wd-icon 图标字体，避免 :deep(*) 覆盖导致图标不显示 */
+  :deep(.wd-icon) {
+    font-family: 'wd-icons' !important;
   }
 }
 
