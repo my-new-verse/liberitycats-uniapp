@@ -1820,7 +1820,7 @@ const messagePopoverArrowStyle = computed(() => {
   const x = messagePopoverAnchorX.value
   const y = messagePopoverAnchorY.value
   const isSelf = selectedMessageActionTarget.value?.is_self === 1
-  const left = isSelf ? screenW / 2 : screenW / 5
+  const left = isSelf ? (screenW * 3) / 4 : screenW / 5
   if (messagePopoverPlacement.value === 'top') {
     return { position: 'fixed', left: `${left}px`, bottom: `${screenH - y + 8}px` }
   }
