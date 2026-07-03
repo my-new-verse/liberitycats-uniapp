@@ -629,7 +629,11 @@ function reportSheetSelect({ item }) {
   reportShow.value = false
   switch (item.type) {
     case 'follow':
-      handleFollowClick(reportPostItem.value.member)
+      if (reportPostItem.value.member?.is_following) {
+        handleActionSheetUnfollow(reportPostItem.value.member)
+      } else {
+        handleFollowClick(reportPostItem.value.member)
+      }
       break
     case 'specialFollow':
       handleSpecialFollow()
@@ -1340,7 +1344,21 @@ const handleDelMainPost = () => {
     .catch(() => {})
 }
 
-/** 关注/取关 */
+/** 操作面板的取消关注（直接完全取关，不检查特别关注状态） */
+const handleActionSheetUnfollow = async (member: any) => {
+  try {
+    await message.confirm({ msg: t('social.index.user.follow.cancel') })
+  } catch {
+    return
+  }
+  const res = await deleteFollowApi(member.id)
+  if (res.code === 1) {
+    syncMemberFollowState(member.id, res.data)
+    uni.showToast({ title: t('social.index.user.follow.canceled'), icon: 'none' })
+  }
+}
+
+/** 关注/取关（用于名称旁的按钮，特别关注时先取消特别关注） */
 const handleFollowClick = async (member: any) => {
   if (!userStore.isLogin) {
     toUrl('/pages/cats/login/login', true)
@@ -1350,7 +1368,7 @@ const handleFollowClick = async (member: any) => {
     // 特别关注 → 取消特别关注，保持关注
     if (member.is_special_following) {
       try {
-        await message.confirm({ msg: '确定取消特别关注吗？' })
+        await message.confirm({ msg: t('social.index.user.special.cancel.confirm') })
       } catch {
         return
       }
@@ -1393,13 +1411,10 @@ const handleSpecialFollow = () => {
   const member = reportPostItem.value.member
   const isSpecial = member.is_special_following === 1
   if (isSpecial) {
-    uni.showModal({
-      content: '确定取消特别关注吗？',
-      success: (r) => {
-        if (!r.confirm) return
-        doSpecialFollow(member, isSpecial)
-      },
-    })
+    message
+      .confirm({ msg: t('social.index.user.special.cancel.confirm') })
+      .then(() => doSpecialFollow(member, isSpecial))
+      .catch(() => {})
   } else {
     doSpecialFollow(member, isSpecial)
   }

@@ -36,7 +36,12 @@
       >
         {{ t('discover.social.filter.groupChat') }}
       </view>
-      <view class="searchIcon" @click="goSearch"></view>
+      <image
+        src="/static/images/search1.png"
+        class="searchIcon"
+        mode="aspectFit"
+        @click="goSearch"
+      ></image>
       <!-- <view
         class="opItem"
         :class="{ active: socialFilter === 'message' }"
@@ -521,6 +526,21 @@ const getMemberFollowInfo = (member: any) => {
 }
 
 /** 点击关注按钮 */
+/** 操作面板的取消关注（直接完全取关） */
+const handleActionSheetUnfollow = (member: any) => {
+  message
+    .confirm({ msg: t('social.index.user.follow.cancel') })
+    .then(() => {
+      deleteFollowApi(member.id).then((res) => {
+        if (res.code === 1) {
+          syncMemberFollowState(member.id, res.data)
+          uni.showToast({ title: t('social.index.user.follow.canceled'), icon: 'none' })
+        }
+      })
+    })
+    .catch(() => {})
+}
+
 const handleFollowClick = (member: any) => {
   if (userStore.isLogin === false) {
     toUrl('/pages/cats/login', true)
@@ -531,7 +551,7 @@ const handleFollowClick = (member: any) => {
   // 特别关注 → 取消特别关注，保持关注
   if (member.is_special_following) {
     message
-      .confirm({ msg: '确定取消特别关注吗？' })
+      .confirm({ msg: t('social.index.user.special.cancel.confirm') })
       .then(() => {
         setSpecialFollowApi(memberId, 0).then((res) => {
           if (res.code === 1) {
@@ -565,7 +585,7 @@ const handleFollowClick = (member: any) => {
     createFollowApi(memberId).then((res) => {
       if (res.code === 1) {
         syncMemberFollowState(memberId, res.data)
-        uni.showToast({ title: '关注成功', icon: 'none' })
+        uni.showToast({ title: t('social.index.user.follow.success'), icon: 'none' })
       } else {
         toast.show(res.msg || t('common.error'))
       }
@@ -767,7 +787,12 @@ let reportActionIndex = { follow: -1, special: -1, report: -1, block: -1, remove
 
 function reportSheetSelect({ item, index }) {
   if (index === reportActionIndex.follow) {
-    handleFollowClick(reportPostItem.value.member)
+    const member = reportPostItem.value.member
+    if (member.is_following) {
+      handleActionSheetUnfollow(member)
+    } else {
+      handleFollowClick(member)
+    }
     reportShow.value = false
     return
   }
@@ -844,6 +869,18 @@ const reportPost = (post: getCommunityPostListApiResponse['data'][number]) => {
 const handleSpecialFollow = () => {
   const member = reportPostItem.value.member
   const isSpecial = member.is_special_following === 1
+  if (isSpecial) {
+    message
+      .confirm({ msg: t('social.index.user.special.cancel.confirm') })
+      .then(() => doSetSpecialFollow(member, isSpecial))
+      .catch(() => {})
+  } else {
+    doSetSpecialFollow(member, isSpecial)
+  }
+  reportShow.value = false
+}
+
+const doSetSpecialFollow = (member: any, isSpecial: boolean) => {
   setSpecialFollowApi(member.id, isSpecial ? 0 : 1).then((res) => {
     if (res.code === 1) {
       syncMemberFollowState(member.id, {
@@ -861,7 +898,6 @@ const handleSpecialFollow = () => {
       toast.show(res.msg || t('common.error'))
     }
   })
-  reportShow.value = false
 }
 
 const handleReportPost = () => {
@@ -1024,18 +1060,9 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   padding-bottom: 12rpx;
 }
 .searchIcon {
-  margin-left: auto;
   width: 40rpx;
   height: 40rpx;
-  background: #ff6b03;
-  -webkit-mask-image: url('/static/images/search.png');
-  mask-image: url('/static/images/search.png');
-  -webkit-mask-size: contain;
-  mask-size: contain;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-position: center;
+  margin-left: auto;
 }
 :deep(.wd-sticky__container) {
   width: 100vw;

@@ -226,6 +226,7 @@ const userStore = useUserStore()
 const toast = useToast()
 const locale = uni.getLocale()
 const message = useMessage('wd-message-box-slot')
+const message2 = useMessage('wd-message-box-slot2')
 // 加载状态
 const state = ref<LoadMoreState>('loading')
 // 滚动
@@ -460,7 +461,11 @@ const handleMoreActionSelect = ({ item }: any) => {
   showMoreActions.value = false
   switch (item.type) {
     case 'follow':
-      handleFollow()
+      if (userInfo.value.is_following === 1) {
+        unfollowUser()
+      } else {
+        handleFollow()
+      }
       break
     case 'specialFollow':
       handleSpecialFollow()
@@ -480,12 +485,10 @@ const handleMoreActionSelect = ({ item }: any) => {
 const handleSpecialFollow = () => {
   const isSpecial = userInfo.value.is_special_following === 1
   if (isSpecial) {
-    uni.showModal({
-      content: '确定取消特别关注吗？',
-      success: (r) => {
-        if (r.confirm) doSpecialFollow(isSpecial)
-      },
-    })
+    message2
+      .confirm({ msg: t('social.index.user.special.cancel.confirm') })
+      .then(() => doSpecialFollow(isSpecial))
+      .catch(() => {})
   } else {
     doSpecialFollow(isSpecial)
   }
@@ -494,7 +497,11 @@ const handleSpecialFollow = () => {
 const doSpecialFollow = (isSpecial: boolean) => {
   setSpecialFollowApi(memberId.value, isSpecial ? 0 : 1).then((res) => {
     if (res.code === 1) {
-      userInfo.value.is_special_following = isSpecial ? 0 : 1
+      syncUserFollowState({
+        ...res.data,
+        is_following: userInfo.value.is_following,
+        is_mutual_following: userInfo.value.is_mutual_following,
+      })
       uni.showToast({
         title: isSpecial
           ? t('social.index.user.special.canceled')
@@ -557,7 +564,31 @@ const handleAdminRemove = () => {
     .catch(() => {})
 }
 
-// 关注/取消关注
+/** 根据接口返回数据同步用户关注状态 */
+const syncUserFollowState = (data: any) => {
+  const u: any = userInfo.value
+  u.is_following = data.is_following
+  u.is_mutual_following = data.is_mutual_following
+  u.is_special_following = data.is_special_following
+  u.is_following_me = data.is_following_me
+}
+
+// 操作面板的取消关注（直接完全取关）
+const unfollowUser = () => {
+  message2
+    .confirm({ msg: t('social.index.user.follow.cancel') })
+    .then(() => {
+      deleteFollowApi(memberId.value).then((res) => {
+        if (res.code === 1) {
+          syncUserFollowState(res.data)
+          uni.showToast({ title: t('social.index.user.follow.canceled'), icon: 'none' })
+        }
+      })
+    })
+    .catch(() => {})
+}
+
+// 关注/取消关注按钮
 const handleFollow = () => {
   if (userStore.isLogin === false) {
     toUrl('/pages/cats/login', true)
@@ -567,25 +598,28 @@ const handleFollow = () => {
   const u: any = userInfo.value
   // 特别关注 → 取消特别关注，保持关注
   if (u.is_special_following) {
-    message
-      .confirm({ msg: '确定取消特别关注吗？' })
+    message2
+      .confirm({ msg: t('social.index.user.special.cancel.confirm') })
       .then(() => {
         setSpecialFollowApi(memberId.value, 0).then((res) => {
           if (res.code === 1) {
-            userInfo.value.is_special_following = 0
+            syncUserFollowState({
+              ...res.data,
+              is_following: userInfo.value.is_following,
+              is_mutual_following: userInfo.value.is_mutual_following,
+            })
             uni.showToast({ title: t('social.index.user.special.canceled'), icon: 'none' })
           }
         })
       })
       .catch(() => {})
   } else if (u.is_following === 1) {
-    message
+    message2
       .confirm({ msg: t('social.index.user.follow.cancel') })
       .then(() => {
         deleteFollowApi(memberId.value).then((res) => {
           if (res.code === 1) {
-            userInfo.value.is_following = 0
-            userInfo.value.is_special_following = res.data?.is_special_following || 0
+            syncUserFollowState(res.data)
             uni.showToast({ title: t('social.index.user.follow.canceled'), icon: 'none' })
           }
         })
@@ -594,8 +628,7 @@ const handleFollow = () => {
   } else {
     createFollowApi(memberId.value).then((res) => {
       if (res.code === 1) {
-        userInfo.value.is_following = 1
-        userInfo.value.is_special_following = res.data?.is_special_following || 0
+        syncUserFollowState(res.data)
         uni.showToast({ title: t('social.index.user.follow.success'), icon: 'none' })
       }
     })
@@ -620,7 +653,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0, needDealImg
 }
 :deep() {
   .wd-message-box__content {
-    text-align: left;
+    text-align: center;
     white-space: pre-line;
   }
 }

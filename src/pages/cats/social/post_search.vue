@@ -545,7 +545,12 @@ const reportPostItem = ref<any>({})
 
 const reportSheetSelect = ({ item, index }: any) => {
   if (index === reportActionIndex.follow) {
-    handleFollowClick(reportPostItem.value.member)
+    const member = reportPostItem.value.member
+    if (member?.is_following) {
+      handleActionSheetUnfollow(member)
+    } else {
+      handleFollowClick(member)
+    }
     reportShow.value = false
     return
   }
@@ -743,6 +748,23 @@ const getMemberFollowInfo = (member: any) => {
   return { text: '关注', style: 'follow' }
 }
 
+/** 操作面板的取消关注（直接完全取关） */
+const handleActionSheetUnfollow = async (member: any) => {
+  try {
+    await message.confirm({ msg: t('social.index.user.follow.cancel') })
+  } catch {
+    return
+  }
+  const res = await deleteFollowApi(member.id)
+  if (res.code === 1) {
+    const d = res.data
+    member.is_following = d.is_following
+    member.is_mutual_following = d.is_mutual_following
+    member.is_special_following = d.is_special_following
+    uni.showToast({ title: t('social.index.user.follow.canceled'), icon: 'none' })
+  }
+}
+
 /** 关注/取关帖子作者 */
 const handleFollowClick = async (member: any) => {
   console.log('handleFollowClick', member.id)
@@ -754,7 +776,7 @@ const handleFollowClick = async (member: any) => {
     // 特别关注状态 - 取消特别关注
     if (member.is_special_following) {
       try {
-        await message.confirm({ msg: '确定取消特别关注吗？' })
+        await message.confirm({ msg: t('social.index.user.special.cancel.confirm') })
       } catch {
         return
       }
@@ -817,12 +839,12 @@ const handlePostMemberFollow = async (member: any) => {
       await deleteFollowApi(member.member_id)
       member.is_following = false
       member.is_mutual_following = false
-      uni.showToast({ title: '已取消关注', icon: 'none' })
+      uni.showToast({ title: t('social.index.user.follow.canceled'), icon: 'none' })
     } else {
       await createFollowApi(member.member_id)
       member.is_following = true
       if (member.is_following_me) member.is_mutual_following = true
-      uni.showToast({ title: '关注成功', icon: 'none' })
+      uni.showToast({ title: t('social.index.user.follow.success'), icon: 'none' })
     }
   } catch (e) {
     console.error('handlePostMemberFollow failed', e)
@@ -1169,12 +1191,12 @@ const handleFollow = async (user: any) => {
       await deleteFollowApi(user.member_id)
       user.is_followed = false
       user.is_mutual = false
-      uni.showToast({ title: '已取消关注', icon: 'none' })
+      uni.showToast({ title: t('social.index.user.follow.canceled'), icon: 'none' })
     } else {
       await createFollowApi(user.member_id)
       user.is_followed = true
       if (user.is_following_me) user.is_mutual = true
-      uni.showToast({ title: '关注成功', icon: 'none' })
+      uni.showToast({ title: t('social.index.user.follow.success'), icon: 'none' })
     }
   } catch (e) {
     console.error('handleFollow failed', e)
