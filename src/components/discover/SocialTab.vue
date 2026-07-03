@@ -192,17 +192,22 @@
           <view class="emptyImg"></view>
         </view>
       </template>
-      <view class="msgEntry" @click="toUrl('/pages/cats/message/index?category=community', true)">
-        <view class="msgDot" v-if="msgUnreadCount > 0">
-          <view>{{ msgUnreadCount > 99 ? 99 : msgUnreadCount }}</view>
-          <view v-if="msgUnreadCount > 99">+</view>
-        </view>
-        <view class="msgImg"></view>
-      </view>
       <view class="pubSocial" @click="toUrl('/pages/cats/social/publish', true)">
         <view class="pubImg"></view>
       </view>
     </template>
+    <!-- 消息入口浮窗（社区帖子 tab 和 inFocus tab 展示） -->
+    <view
+      v-if="socialFilter !== 'groupChat' && socialFilter !== 'message'"
+      class="msgEntry"
+      @click="toUrl('/pages/cats/message/index?category=community', true)"
+    >
+      <view class="msgDot" v-if="msgUnreadCount > 0">
+        <view>{{ msgUnreadCount > 99 ? 99 : msgUnreadCount }}</view>
+        <view v-if="msgUnreadCount > 99">+</view>
+      </view>
+      <view class="msgImg"></view>
+    </view>
     <!-- 群聊 Tab -->
     <template v-if="socialFilter === 'groupChat'">
       <view :style="{ paddingTop: cntPaddingTop + 36 + 20 + 'rpx' }">
