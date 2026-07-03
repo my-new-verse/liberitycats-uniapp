@@ -35,6 +35,9 @@
         @click="handleFilterChange('groupChat')"
       >
         {{ t('discover.social.filter.groupChat') }}
+        <view v-if="groupChatNotificationCount > 0" class="opItemBadge">
+          {{ groupChatNotificationCount > 99 ? '99+' : groupChatNotificationCount }}
+        </view>
       </view>
       <view class="searchIcon" @click="goSearch"></view>
       <!-- <view
@@ -251,7 +254,7 @@ import {
   setSpecialFollowApi,
   adminRemovalApi,
 } from '@/service/api/community'
-import { preloadChatRoomsApi } from '@/service/api/groupChat'
+import { preloadChatRoomsApi, getNotificationsSummaryApi } from '@/service/api/groupChat'
 import { getUnReadNotificationCountApi } from '@/service/api/user'
 import SharePopup from '@/components/SharePopup/SharePopup.vue'
 
@@ -329,6 +332,7 @@ const socialFilter = ref<SocialFilter>('latest')
 const groupChatRenderKey = ref(0)
 const groupChatReady = ref(false)
 const msgUnreadCount = ref(0)
+const groupChatNotificationCount = ref(0)
 let groupChatReadyTimer: ReturnType<typeof setTimeout> | null = null
 const GROUP_CHAT_ROOMS_REFRESH_EVENT = 'refreshGroupChatRooms'
 const activeSocialCache = computed(() => {
@@ -699,13 +703,27 @@ function fetchUnreadCount() {
     })
     .catch(() => {})
 }
+
+/** 拉取群聊未读通知摘要 */
+function fetchGroupChatNotifications() {
+  if (!userStore.isLogin) return
+  getNotificationsSummaryApi()
+    .then((res) => {
+      if (res?.code === 1 && res.data) {
+        groupChatNotificationCount.value = res.data.total_important || 0
+      }
+    })
+    .catch(() => {})
+}
 onShow(() => {
   fetchUnreadCount()
+  fetchGroupChatNotifications()
 })
 // 初始加载
 onMounted(() => {
   void preloadChatRoomsApi(1)
   fetchUnreadCount()
+  fetchGroupChatNotifications()
   if (socialFilter.value !== 'groupChat') {
     syncActiveCache()
     if (!socialCacheMap.value[socialFilter.value as SocialCacheKey].hasInitialized) {
@@ -740,6 +758,7 @@ onMounted(() => {
     }
   })
   uni.$on('switchToChatGroup', () => {
+    uni.removeStorageSync('pendingSwitchToChatGroup')
     handleFilterChange('groupChat')
   })
   // 检查待切换标记（覆盖 SocialTab 首次挂载时事件已 emit 的场景）
@@ -790,7 +809,6 @@ function reportSheetSelect({ item, index }) {
   }
   if (index === reportActionIndex.remove) {
     handleRemovePost()
-    return
   }
 }
 

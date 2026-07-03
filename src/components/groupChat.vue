@@ -91,7 +91,7 @@ const loadNotificationsSummary = async () => {
     if (res?.code === 1 && res.data?.rooms) {
       const map: Record<number, number> = {}
       res.data.rooms.forEach((room: NotificationSummaryRoom) => {
-        const total = (room.unread_mentions || 0) + (room.unread_replies || 0)
+        const total = room.total_important || 0
         if (total > 0) map[room.room_id] = total
       })
       notificationBadgeMap.value = map
