@@ -364,14 +364,16 @@ const ensureGroupChatReady = () => {
 const refreshSocialChatData = () => {
   fetchGroupChatNotifications()
   preloadChatRoomsApi(1, true)
-  if (withGroupChatUI) {
-    ensureGroupChatReady()
-    socialCacheMap.value.groupChat.state = 'finished'
-    if (socialFilter.value === 'groupChat') {
-      emit('update:state', 'finished')
-    }
-  }
   uni.$emit(GROUP_CHAT_ROOMS_REFRESH_EVENT, true)
+}
+
+const refreshGroupChatRooms = (forceRefresh = false) => {
+  ensureGroupChatReady()
+  socialCacheMap.value.groupChat.state = 'finished'
+  if (socialFilter.value === 'groupChat') {
+    emit('update:state', 'finished')
+  }
+  uni.$emit(GROUP_CHAT_ROOMS_REFRESH_EVENT, forceRefresh)
 }
 
 // 更新加载状态
@@ -1097,6 +1099,27 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   background-color: var(--liberty-cats-page-background-color);
   align-items: flex-end !important;
   padding-bottom: 12rpx;
+}
+
+.opItem {
+  position: relative;
+}
+
+.opItemBadge {
+  position: absolute;
+  top: -12rpx;
+  right: -24rpx;
+  min-width: 32rpx;
+  height: 32rpx;
+  padding: 0 8rpx;
+  border-radius: 999rpx;
+  color: #fff;
+  font-size: 20rpx;
+  line-height: 32rpx;
+  text-align: center;
+  box-sizing: border-box;
+  pointer-events: none;
+  background-color: var(--liberty-cats-primary-color);
 }
 .searchIcon {
   width: 40rpx;

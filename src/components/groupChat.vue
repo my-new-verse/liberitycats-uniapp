@@ -94,17 +94,17 @@ const applyNotificationsRooms = (rooms?: NotificationSummaryRoom[]) => {
   if (!Array.isArray(rooms)) return
   const map: Record<number, number> = {}
   rooms.forEach((room: NotificationSummaryRoom) => {
-    // 计算未读提及 + 回复总数
-    const total = (room.unread_mentions || 0) + (room.unread_replies || 0)
+    const total = room.important_unread_count || 0
     if (total > 0) map[room.room_id] = total
   })
   notificationBadgeMap.value = map
 }
 
-// 监听父组件传递的通知数据
+// 监听父组件传递的通知数据（immediate: 组件挂载时已有数据也立即应用）
 watch(
   () => props.notificationRooms,
   (rooms) => applyNotificationsRooms(rooms),
+  { immediate: true },
 )
 
 const loadGroupList = async (forceRefresh = false) => {
