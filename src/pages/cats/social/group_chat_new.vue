@@ -1340,18 +1340,19 @@ const highlightMessages = (messageIds: number[]) => {
   })
 }
 
-// 悬浮按钮点击 - 依次跳转到未读重要消息
+// 悬浮按钮点击 - 依次跳转到未读重要消息，每跳转一条计数减 1
 const handleFloatAction = () => {
   const msgs = importantUnreadMessages.value
   if (msgs.length === 0) return
-  const msg = msgs[currentUnreadIndex.value]
-  if (msg) {
-    scrollIntoViewById(String(msg.message_id))
-    currentUnreadIndex.value++
-    // 所有未读消息都已跳转完，隐藏按钮
-    if (currentUnreadIndex.value >= msgs.length) {
-      showFloatBtn.value = false
-    }
+  // 取第一条未读消息，跳转后从数组中移除
+  const msg = msgs[0]
+  scrollIntoViewById(String(msg.message_id))
+  importantUnreadMessages.value = msgs.slice(1)
+
+  // 所有未读消息都已跳转完，隐藏按钮
+  if (importantUnreadMessages.value.length === 0) {
+    showFloatBtn.value = false
+    currentUnreadIndex.value = 0
   }
 }
 //  向下的箭头 ⬇️⬇️⬇️⬇️⬇️⬇️⬇️⬇️⬇️ end
