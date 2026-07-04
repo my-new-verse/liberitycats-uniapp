@@ -18,8 +18,6 @@ interface ImportMetaEnv {
 
   readonly VITE_IMAGE_HOST: string
 
-  readonly VITE_DAPP_BASEURL: string
-
   /** H5是否需要代理 */
   readonly VITE_APP_PROXY: 'true' | 'false'
   /** H5是否需要代理，需要的话有个前缀 */

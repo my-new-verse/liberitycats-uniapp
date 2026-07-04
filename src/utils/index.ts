@@ -752,6 +752,74 @@ export const formatWalletAddress = (address: string, prefixLength = 6, suffixLen
   return `${addr.slice(0, prefixLength)}...${addr.slice(-suffixLength)}`
 }
 
+export const openExternalPaymentLink = (link?: string | null, fallbackUrl?: string | null) => {
+  const targetUrl = link || fallbackUrl
+  if (!targetUrl) return
+
+  const openFallback = () => {
+    if (!fallbackUrl || fallbackUrl === targetUrl) return
+
+    // #ifdef APP-PLUS
+    plus.runtime.openURL(fallbackUrl, function (fallbackRes) {
+      console.log('plus.runtime.openURL fallback failed', fallbackRes)
+    })
+    // #endif
+
+    // #ifdef H5
+    window.location.href = fallbackUrl
+    // #endif
+  }
+
+  // #ifdef APP-PLUS
+  plus.runtime.openURL(targetUrl, function (res) {
+    console.log('plus.runtime.openURL failed', res)
+    openFallback()
+  })
+  // #endif
+
+  // #ifdef H5
+  if (/^https?:\/\//i.test(targetUrl)) {
+    window.open(targetUrl, '_blank')
+    return
+  }
+
+  let shouldFallback = true
+  const fallbackTimer =
+    fallbackUrl && fallbackUrl !== targetUrl
+      ? window.setTimeout(() => {
+          if (shouldFallback && document.visibilityState === 'visible') {
+            window.location.href = fallbackUrl
+          }
+        }, 1200)
+      : undefined
+
+  function clearFallback() {
+    shouldFallback = false
+    if (fallbackTimer) window.clearTimeout(fallbackTimer)
+    document.removeEventListener('visibilitychange', onVisibilityChange)
+    window.removeEventListener('pagehide', clearFallback)
+    window.removeEventListener('blur', clearFallback)
+  }
+
+  function onVisibilityChange() {
+    if (document.visibilityState === 'hidden') {
+      clearFallback()
+    }
+  }
+
+  document.addEventListener('visibilitychange', onVisibilityChange)
+  window.addEventListener('pagehide', clearFallback)
+  window.addEventListener('blur', clearFallback)
+
+  try {
+    window.location.href = targetUrl
+  } catch (error) {
+    console.error('openExternalPaymentLink failed:', error)
+    openFallback()
+  }
+  // #endif
+}
+
 export const openOkx = (dappUrl: string) => {
   const okxUrl = `okx://wallet/dapp/url?dappUrl=${encodeURIComponent(dappUrl)}`
   const webUrl =

@@ -363,6 +363,8 @@
   "pay.index.pay_method.stripe": "Stripe支付",
   "pay.index.pay_method.iap": "苹果支付",
   "pay.index.pay_confirm_loading_txt": "正在确认支付，请稍候",
+  "pay.index.get_methods_failed": "获取支付方式失败",
+  "pay.index.select_method_required": "请选择支付方式",
 
   "pay.result.page_title": "支付结果",
   "pay.result.pay_result": "支付结果",

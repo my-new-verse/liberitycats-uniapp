@@ -25,46 +25,23 @@
         <view class="payMethod">{{ t('pay.index.pay_method') }}</view>
 
         <view class="menuBox">
-          <!-- <view class="menuItem" v-if="isIos" @click="changePayMethod('iap')">
+          <view
+            v-for="method in paymentMethods"
+            :key="method.id"
+            class="menuItem"
+            :class="{ disabled: !method.enabled }"
+            @click="changePayMethod(method)"
+          >
             <view class="menuItemTitle">
-              <view class="title">{{ t('pay.index.pay_method.iap') }}</view>
+              <view class="title">{{ method.display_name }}</view>
             </view>
             <view class="menuItemRight">
-              <view class="arrow" :class="[usePayMethod === 'iap' ? 'active' : '']"></view>
+              <view
+                class="arrow"
+                :class="[selectedPaymentMethodId === method.id ? 'active' : '']"
+              ></view>
             </view>
           </view>
-          <view class="menuItem" v-else @click="changePayMethod('okx')">
-            <view class="menuItemTitle">
-              <view class="title">{{ t('pay.index.pay_method.okx') }}</view>
-            </view>
-            <view class="menuItemRight">
-              <view class="arrow" :class="[usePayMethod === 'okx' ? 'active' : '']"></view>
-            </view>
-          </view> -->
-          <view class="menuItem" @click="changePayMethod('okx')">
-            <view class="menuItemTitle">
-              <view class="title">{{ t('pay.index.pay_method.okx') }}</view>
-            </view>
-            <view class="menuItemRight">
-              <view class="arrow" :class="[usePayMethod === 'okx' ? 'active' : '']"></view>
-            </view>
-          </view>
-          <!-- <view class="menuItem" @click="changePayMethod('stripe')">
-            <view class="menuItemTitle">
-              <view class="title">{{ t('pay.index.pay_method.stripe') }}</view>
-            </view>
-            <view class="menuItemRight">
-              <view class="arrow" :class="[usePayMethod === 'stripe' ? 'active' : '']"></view>
-            </view>
-          </view> -->
-          <!-- <view class="menuItem">
-          <view class="menuItemTitle" @click="changePayMethod('points')">
-            <view class="title">积分</view>
-          </view>
-          <view class="menuItemRight">
-            <view class="arrow" :class="[usePayMethod === 'points' ? 'active' : '']"></view>
-          </view>
-        </view> -->
         </view>
       </template>
       <template #footer>
@@ -72,7 +49,7 @@
           <wd-button
             custom-class="mainBtn"
             :loading="submitLoading"
-            :disabled="payBtnDisabled || payData.pay_status !== 0"
+            :disabled="payBtnDisabled || !selectedPaymentMethod || payData.pay_status !== 0"
             @click="debouncedPay"
           >
             {{ t('pay.index.pay_now') }}
@@ -106,11 +83,15 @@
 </template>
 
 <script lang="ts" setup>
-import i18n, { t } from '@/locale/index'
-import { getPayStatusApi, getPayStatusApiResponse } from '@/service/api/pay'
-import { createPaymentCheckoutApi } from '@/service/api/stripe'
-import { createWebDataForKeyApi } from '@/service/api/web3'
-import { toUrl, openOkx } from '@/utils'
+import { t } from '@/locale/index'
+import {
+  createPayCheckoutApi,
+  getPaymentMethodsApi,
+  getPayStatusApi,
+  getPayStatusApiResponse,
+  type PaymentMethod,
+} from '@/service/api/pay'
+import { openExternalPaymentLink, toUrl } from '@/utils'
 import { debounce } from 'lodash-es'
 
 import CustomNav from '@/components/CustomNav/CustomNav.vue'
@@ -127,6 +108,7 @@ onLoad((options) => {
   if (options?.order_no) {
     orderNo.value = options.order_no
     getPayData()
+    getPaymentMethods()
   }
   if (options?.bak) {
     bak.value = decodeURIComponent(options.bak)
@@ -175,109 +157,54 @@ onBackPress(() => {
 
 const submitLoading = ref(false)
 const payBtnDisabled = ref(false)
-const usePayMethod = ref('okx')
+const selectedPaymentMethodId = ref('')
+const paymentMethods = ref<PaymentMethod[]>([])
 const overlayShow = ref(false)
 
-const changePayMethod = (method: string) => {
-  usePayMethod.value = method
-  // todo 如果是积分，就要检查下积分是否足够，能不能使用积分进行支付，检查通过后，payBtnDisabled = false
+const selectedPaymentMethod = computed(() => {
+  return paymentMethods.value.find((method) => method.id === selectedPaymentMethodId.value)
+})
+
+const getPaymentMethods = () => {
+  getPaymentMethodsApi(orderNo.value)
+    .then((res) => {
+      const methods = res.data.payment_methods || []
+      paymentMethods.value = methods
+      selectedPaymentMethodId.value =
+        methods.find((method) => method.enabled && method.id === res.data.default_method_id)?.id ||
+        methods.find((method) => method.enabled)?.id ||
+        ''
+    })
+    .catch((error: any) => {
+      toast.error(t('pay.index.get_methods_failed') + (error?.message ? ':' + error.message : ''))
+    })
+}
+
+const changePayMethod = (method: PaymentMethod) => {
+  if (!method.enabled) return
+  selectedPaymentMethodId.value = method.id
   payBtnDisabled.value = false
 }
 
-const okxPay = async () => {
+const walletDappPay = async () => {
+  const method = selectedPaymentMethod.value
+  if (!method) {
+    throw new Error(t('pay.index.select_method_required'))
+  }
+
   submitLoading.value = true
   try {
-    const res = await createWebDataForKeyApi('payOrder', {
-      order_no: orderNo.value,
-      pay_method: usePayMethod.value,
-    })
+    const res = await createPayCheckoutApi(orderNo.value, method.channel, method.wallet, locale)
     if (res.code === 1) {
-      const dappUrl = `${import.meta.env.VITE_DAPP_BASEURL}?key=${res.data.key}&lang=${locale}`
-      openOkx(dappUrl)
+      openExternalPaymentLink(res.data.link || res.data.url, res.data.fallback_url)
       return Promise.resolve()
     } else {
-      toast.show(res.msg)
+      // 错误提示统一由 pay() 的 catch 处理，这里只负责抛出
       return Promise.reject(new Error(res.msg))
     }
-  } catch (error) {
-    console.error('OKX支付失败:', error)
-    toast.error('支付失败:' + error.message)
+  } catch (error: any) {
+    console.error('钱包支付失败:', error)
     return Promise.reject(error)
-  } finally {
-    submitLoading.value = false
-  }
-}
-
-const stripePay = async () => {
-  // 订单对象
-  let orderInfo = {
-    customer: 'Stripe的Customer', // Customer
-    ephemeralKey: 'Stripe的Customer Ephemeral Key', // 临时访问Customer的Key
-    isAllowDelay: true, // 是否支持延迟支付  默认false
-    merchantName: 'DCloud', // 商户名
-    paymentIntent: 'Stripe的PaymentIntent', // 订单信息
-    publishKey: 'Public Key', // 公钥
-    billingDetails: {
-      // 账单信息(可选)
-      name: '',
-      email: '',
-      phone: '',
-      address: {
-        city: '',
-        country: 'CN', // 国家代码(ISO 3166-1 alpha-2)
-        line1: '',
-        line2: '',
-        postalCode: '',
-        state: '',
-      },
-    },
-  }
-
-  const res = await createPaymentCheckoutApi(orderNo.value, usePayMethod.value)
-  console.log('createPaymentIntentApi', JSON.stringify(res))
-  orderInfo = {
-    customer: res.data.customer,
-    ephemeralKey: res.data.ephemeralKey,
-    isAllowDelay: true,
-    merchantName: 'Liberty Cats',
-    paymentIntent: res.data.paymentIntent,
-    publishKey: res.data.publishableKey,
-    billingDetails: res.data.billingDetails,
-  }
-
-  console.log('orderInfo', JSON.stringify(orderInfo))
-
-  try {
-    const paymentResult = await new Promise((resolve, reject) => {
-      uni.getProvider({
-        service: 'payment',
-        success: function (res) {
-          console.log('getProvider', res)
-          if (~res.provider.indexOf('stripe')) {
-            uni.requestPayment({
-              provider: 'stripe',
-              orderInfo,
-              success(res) {
-                console.log('requestPayment Success: ' + JSON.stringify(res))
-                resolve(res)
-              },
-              fail(e) {
-                console.log('requestPayment failed: ' + JSON.stringify(e))
-                console.error(e)
-                reject(e)
-              },
-            })
-          } else {
-            reject(new Error('不支持Stripe支付'))
-          }
-        },
-        fail(e) {
-          console.log('getProvider failed: ' + JSON.stringify(e))
-          reject(e)
-        },
-      })
-    })
-    return paymentResult
   } finally {
     submitLoading.value = false
   }
@@ -291,21 +218,10 @@ const closePayConfirmWindow = () => {
 // 使用 ref 来存储防抖函数的引用
 const debouncedPay = ref<(() => Promise<void>) | null>(null)
 
-const isIos = ref(false)
 onMounted(() => {
   debouncedPay.value = debounce(pay, 1000, {
     leading: true, // 立即执行第一次
     trailing: false, // 不执行最后的回调
-  })
-
-  uni.getSystemInfo({
-    success(res) {
-      if (res.osName === 'ios') {
-        console.log('我是ios', res)
-        isIos.value = true
-        usePayMethod.value = 'iap'
-      }
-    },
   })
 })
 
@@ -320,60 +236,46 @@ onUnmounted(() => {
 const pay = async () => {
   try {
     submitLoading.value = true
-    if (usePayMethod.value === 'okx') {
-      await okxPay().then(() => {
-        toUrl(`/pages/cats/pay/result?order_no=${orderNo.value}`, false, true)
-      })
-    } else if (usePayMethod.value === 'stripe') {
-      await stripePay()
-        .then(() => {
-          toUrl(`/pages/cats/pay/result?order_no=${orderNo.value}`, false, true)
-        })
-        .catch((error) => {
-          submitLoading.value = false
-          toast.error('支付失败:' + error.errMsg)
-        })
-    } else if (usePayMethod.value === 'iap') {
-      await iapPay()
-        .then(() => {
-          // toUrl(`/pages/cats/pay/result?order_no=${orderNo.value}`, false, true)
-        })
-        .catch((error) => {
-          submitLoading.value = false
-          toast.error('支付失败:' + error.errMsg)
-        })
-    }
-  } catch (error) {
+    await walletDappPay()
+    toUrl(`/pages/cats/pay/result?order_no=${orderNo.value}`, false, true)
+  } catch (error: any) {
     console.error('支付失败:', error)
-    toast.error('支付失败:' + error.errMsg)
+    toast.error('支付失败:' + (error.errMsg || error.message || ''))
   } finally {
     submitLoading.value = false
   }
 }
 
-const iapPay = async () => {
-  submitLoading.value = true
-  try {
-    const res = await createWebDataForKeyApi('payOrder', {
-      order_no: orderNo.value,
-      pay_method: usePayMethod.value,
-    })
-    if (res.code === 1) {
-      const dappUrl = `${import.meta.env.VITE_DAPP_BASEURL}?key=${res.data.key}&lang=${locale}`
-      openOkx(dappUrl)
-      return Promise.resolve()
-    } else {
-      toast.show(res.msg)
-      return Promise.reject(new Error(res.msg))
-    }
-  } catch (error) {
-    console.error('苹果支付失败:', error)
-    toast.error('支付失败:' + error.message)
-    return Promise.reject(error)
-  } finally {
-    submitLoading.value = false
-  }
-}
+/*
+ * ⚠️ 苹果内购（Apple IAP）保留逻辑 —— 目前不启用。
+ * 收银台已统一走 Web3 钱包 DApp 支付（walletDappPay），此分支未接入 pay() 流程，
+ * 也不在支付方式列表中展示。若后续需要恢复 App Store 内购，可参考此实现重新接入：
+ * 依赖 createWebDataForKeyApi / openOkx（已从当前 import 中移除，恢复时需一并补回）。
+ *
+ * const iapPay = async () => {
+ *   submitLoading.value = true
+ *   try {
+ *     const res = await createWebDataForKeyApi('payOrder', {
+ *       order_no: orderNo.value,
+ *       pay_method: 'iap',
+ *     })
+ *     if (res.code === 1) {
+ *       const dappUrl = `${res.data.url}`
+ *       openOkx(dappUrl)
+ *       return Promise.resolve()
+ *     } else {
+ *       toast.show(res.msg)
+ *       return Promise.reject(new Error(res.msg))
+ *     }
+ *   } catch (error) {
+ *     console.error('苹果支付失败:', error)
+ *     toast.error('支付失败:' + error.message)
+ *     return Promise.reject(error)
+ *   } finally {
+ *     submitLoading.value = false
+ *   }
+ * }
+ */
 </script>
 
 <style lang="scss" scoped>
@@ -425,6 +327,10 @@ const iapPay = async () => {
 }
 
 .menuItem {
+  &.disabled {
+    opacity: 0.45;
+  }
+
   .menuItemRight {
     .arrow {
       width: 48rpx;

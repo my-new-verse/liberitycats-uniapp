@@ -653,10 +653,9 @@ const connectWallet = () => {
       // rich: true,
     })
     .then(() => {
-      createWebDataForKeyApi('bindWallet').then((res) => {
+      createWebDataForKeyApi('bindWallet', undefined, walletLang).then((res) => {
         if (res.code === 1) {
-          const dappUrl = `${import.meta.env.VITE_DAPP_BASEURL}?key=${res.data.key}&lang=${walletLang}`
-          openOkx(dappUrl)
+          openOkx(res.data.url)
         } else {
           toast.show(res.msg)
         }

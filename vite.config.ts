@@ -42,7 +42,6 @@ export default ({ command, mode }) => {
     VITE_APP_PORT,
     VITE_SERVER_BASEURL,
     VITE_IMAGE_HOST,
-    VITE_DAPP_BASEURL,
     VITE_DELETE_CONSOLE,
     VITE_SHOW_SOURCEMAP,
     VITE_APP_PROXY,

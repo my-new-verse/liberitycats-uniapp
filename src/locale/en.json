@@ -353,6 +353,8 @@
   "pay.index.pay_method.stripe": "Stripe",
   "pay.index.pay_method.iap": "Apple Pay",
   "pay.index.pay_confirm_loading_txt": "Payment confirmation in progress, please wait",
+  "pay.index.get_methods_failed": "Failed to load payment methods",
+  "pay.index.select_method_required": "Please select a payment method",
   "pay.result.page_title": "Payment Result",
   "pay.result.pay_result": "Payment Result",
   "pay.result.order_sn": "Order Number",
