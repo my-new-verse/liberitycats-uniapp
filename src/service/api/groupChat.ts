@@ -548,6 +548,9 @@ export interface NotificationSummaryRoom {
 
 /** 通知摘要响应 */
 export interface NotificationsSummaryResponse {
+  total_important: number
+  total_mentions: number
+  total_replies: number
   rooms: NotificationSummaryRoom[]
 }
 

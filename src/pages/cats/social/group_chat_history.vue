@@ -69,9 +69,12 @@
               <view class="userAvatarWrap" @click="removeSelectedUser(uid)">
                 <image
                   class="userAvatar"
-                  :src="selectedUsersCache.get(uid)?.avatar"
+                  :src="getCachedAvatar(uid, selectedUsersCache.get(uid)?.avatar)"
                   mode="aspectFill"
                 />
+                <view class="levelIcon" v-if="getLevelValue(selectedUsersCache.get(uid))">
+                  <image :src="getLevelIcon(selectedUsersCache.get(uid))" mode="aspectFit" />
+                </view>
                 <view class="removeIcon">×</view>
               </view>
               <text class="userName">{{ selectedUsersCache.get(uid)?.nickname }}</text>
@@ -259,7 +262,13 @@ import { LoadMoreState } from 'wot-design-uni/components/wd-loadmore/types'
 import { t } from '@/locale/index'
 import { toUrl, formatRelativeTime, getImageUrl } from '@/utils'
 import { getEmotionIconPath } from '@/utils/emotionTool'
-import { getAvatarStyle, getLevelBadgeStyle } from '@/utils/avatarCache'
+import {
+  getAvatarStyle,
+  getLevelBadgeStyle,
+  getCachedMemberAvatar,
+  cacheMemberAvatars,
+  getCachedLevelBadgeUrl,
+} from '@/utils/avatarCache'
 import { searchChatMessagesApi, type ChatMember } from '@/service/api/groupChat'
 import MentionMemberPopup from '@/components/chat-input-bar/MentionMemberPopup.vue'
 
@@ -815,6 +824,34 @@ const removeSelectedUser = (memberId: number) => {
   }
 }
 
+// ============================================================
+// Level 等级处理工具函数
+// ============================================================
+/** 获取 level_id 的值（优先使用 level_id，兼容旧的 level 字段） */
+const getLevelValue = (member: any): number | null => {
+  if (member?.level_id !== undefined) {
+    const num = Number(member.level_id)
+    return isNaN(num) || num <= 0 ? null : num
+  }
+  if (member?.level !== undefined && member?.level !== null) {
+    const levelNum =
+      typeof member.level === 'object' ? (member.level?.level_id ?? member.level?.id) : member.level
+    const num = Number(levelNum)
+    return isNaN(num) || num <= 0 ? null : num
+  }
+  return null
+}
+
+/** 获取 level 图标路径（使用缓存） */
+const getLevelIcon = (member: any): string => {
+  const levelId = getLevelValue(member)
+  return getCachedLevelBadgeUrl(levelId)
+}
+
+/** 获取缓存后的头像 URL（基于 member_id） */
+const getCachedAvatar = (memberId: number | undefined, source: string) =>
+  getCachedMemberAvatar(memberId, source, 'member')
+
 /** MentionMemberPopup 确认选择：更新已选用户并自动触发搜索 */
 const handleUserFilterConfirm = (members: ChatMember[]) => {
   confirmedUserIds.value = members.map((m) => m.member_id)
@@ -823,6 +860,8 @@ const handleUserFilterConfirm = (members: ChatMember[]) => {
     map.set(m.member_id, m)
   })
   confirmedUsers.value = map
+  // 缓存头像和 level 资源
+  cacheMemberAvatars(members)
   showUserFilter.value = false
   // 筛选条件变化，清空缓存并重新搜索
   clearAllTabCaches()
@@ -1005,6 +1044,21 @@ const getImageMessageBoxSize = (msg: any) => {
           height: 100%;
           border-radius: 50%;
           border: 2rpx solid var(--liberty-cats-primary-color);
+        }
+
+        .levelIcon {
+          position: absolute;
+          right: -4rpx;
+          bottom: 4rpx;
+          z-index: 1;
+          width: 28rpx;
+          height: 28rpx;
+          pointer-events: none;
+
+          image {
+            width: 100%;
+            height: 100%;
+          }
         }
 
         .removeIcon {

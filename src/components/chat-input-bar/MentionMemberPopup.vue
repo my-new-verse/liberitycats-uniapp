@@ -35,7 +35,7 @@
           @click="toggleMember(m)"
         >
           <view class="selected-bar__avatar-wrap">
-            <image class="selected-bar__avatar" :src="m.avatar" mode="aspectFill" />
+            <image class="selected-bar__avatar" :src="getCachedAvatar(m)" mode="aspectFill" />
             <view v-if="getMemberLevelStyle(m)" class="levelIcon">
               <view class="levelBadge" :style="getMemberLevelStyle(m)"></view>
             </view>
@@ -44,7 +44,7 @@
         </view>
       </view>
     </scroll-view>
-    <scroll-view scroll-y class="mention-popup-scroll">
+    <scroll-view scroll-y class="mention-popup-scroll" @scrolltolower="handleScrollToLower">
       <!-- 最常提醒区域 -->
       <template v-if="smartMembers.length > 0">
         <view class="section-title">{{ t('group.chat.mention.smartMembers') || '最常提醒' }}</view>
@@ -57,7 +57,7 @@
           >
             <wd-checkbox :model-value="selectedIdArr.includes(member.member_id)" />
             <view class="mention-avatar-wrap">
-              <image class="mention-avatar" :src="member.avatar" mode="aspectFill" />
+              <image class="mention-avatar" :src="getCachedAvatar(member)" mode="aspectFill" />
               <view v-if="getMemberLevelStyle(member)" class="levelIcon">
                 <view class="levelBadge" :style="getMemberLevelStyle(member)"></view>
               </view>
@@ -73,7 +73,7 @@
             @click="handleItemClick(member)"
           >
             <view class="mention-avatar-wrap">
-              <image class="mention-avatar" :src="member.avatar" mode="aspectFill" />
+              <image class="mention-avatar" :src="getCachedAvatar(member)" mode="aspectFill" />
               <view v-if="getMemberLevelStyle(member)" class="levelIcon">
                 <view class="levelBadge" :style="getMemberLevelStyle(member)"></view>
               </view>
@@ -95,7 +95,7 @@
           >
             <wd-checkbox :model-value="selectedIdArr.includes(member.member_id)" />
             <view class="mention-avatar-wrap">
-              <image class="mention-avatar" :src="member.avatar" mode="aspectFill" />
+              <image class="mention-avatar" :src="getCachedAvatar(member)" mode="aspectFill" />
               <view v-if="getMemberLevelStyle(member)" class="levelIcon">
                 <view class="levelBadge" :style="getMemberLevelStyle(member)"></view>
               </view>
@@ -111,7 +111,7 @@
             @click="handleItemClick(member)"
           >
             <view class="mention-avatar-wrap">
-              <image class="mention-avatar" :src="member.avatar" mode="aspectFill" />
+              <image class="mention-avatar" :src="getCachedAvatar(member)" mode="aspectFill" />
               <view v-if="getMemberLevelStyle(member)" class="levelIcon">
                 <view class="levelBadge" :style="getMemberLevelStyle(member)"></view>
               </view>
@@ -122,6 +122,10 @@
       </template>
 
       <view v-if="loading" class="mention-loading">{{ loadingText }}</view>
+      <view v-else-if="loadingMore" class="mention-loading">{{ loadingText }}</view>
+      <view v-else-if="!hasMoreAllMembers && allMembers.length > 0" class="mention-no-more">
+        {{ t('common.noMore') || '没有更多了' }}
+      </view>
     </scroll-view>
   </wd-popup>
 </template>
@@ -130,7 +134,7 @@
 import { ref, computed, watch } from 'vue'
 import type { ChatMember } from '@/service/api/groupChat'
 import { getChatRoomMembersApi, getSmartMembersApi } from '@/service/api/groupChat'
-import { getLevelBadgeStyle } from '@/utils/avatarCache'
+import { getLevelBadgeStyle, getCachedMemberAvatar, cacheMemberAvatars } from '@/utils/avatarCache'
 import { useI18n } from 'vue-i18n'
 
 const props = withDefaults(
@@ -172,6 +176,12 @@ const loading = ref(false)
 const multiSelect = ref(false)
 const selectedIdArr = ref<number[]>([])
 const searchValue = ref('')
+
+// ========== 分页状态 ==========
+const allMembersPage = ref(1) // 全部人员当前页码
+const hasMoreAllMembers = ref(true) // 是否还有更多全部人员
+const loadingMore = ref(false) // 是否正在加载更多
+const ALL_MEMBERS_PAGE_SIZE = 50 // 每页数量
 
 // ========== 历史选择缓存 ==========
 const getHistoryCacheKey = () => `mentionHistory_${props.roomId}`
@@ -217,6 +227,9 @@ const selectedMembers = computed(() => {
 const fetchMembers = async (keyword: string, isInitialLoad = false) => {
   if (!props.roomId) return
   loading.value = true
+  // 重置分页状态
+  allMembersPage.value = 1
+  hasMoreAllMembers.value = true
   try {
     if (isInitialLoad) {
       if (props.recommendMode === 'history') {
@@ -225,41 +238,106 @@ const fetchMembers = async (keyword: string, isInitialLoad = false) => {
         smartMembers.value = historyData
         rawSmartMembers.value = historyData
         // 全部人员仍走接口
-        const allRes = await getChatRoomMembersApi(props.roomId, undefined, 1, 100, keyword)
+        const allRes = await getChatRoomMembersApi(
+          props.roomId,
+          undefined,
+          1,
+          ALL_MEMBERS_PAGE_SIZE,
+          keyword,
+        )
         if (allRes.code === 1) {
           const data = allRes.data.data || []
           allMembers.value = data
           rawAllMembers.value = data
+          cacheMemberAvatars(data)
+          hasMoreAllMembers.value = data.length >= ALL_MEMBERS_PAGE_SIZE
         }
       } else {
         // 智能推荐模式：并行请求两个接口
         const [smartRes, allRes] = await Promise.all([
           getSmartMembersApi(props.roomId, 1, 30, keyword),
-          getChatRoomMembersApi(props.roomId, undefined, 1, 100, keyword),
+          getChatRoomMembersApi(props.roomId, undefined, 1, ALL_MEMBERS_PAGE_SIZE, keyword),
         ])
 
         if (smartRes.code === 1) {
           const data = smartRes.data.members || []
           smartMembers.value = data
           rawSmartMembers.value = data
+          cacheMemberAvatars(data)
         }
         if (allRes.code === 1) {
           const data = allRes.data.data || []
           allMembers.value = data
           rawAllMembers.value = data
+          cacheMemberAvatars(data)
+          hasMoreAllMembers.value = data.length >= ALL_MEMBERS_PAGE_SIZE
         }
       }
     } else {
       // 搜索时：只请求全部人员接口
-      const allRes = await getChatRoomMembersApi(props.roomId, undefined, 1, 100, keyword)
+      const allRes = await getChatRoomMembersApi(
+        props.roomId,
+        undefined,
+        1,
+        ALL_MEMBERS_PAGE_SIZE,
+        keyword,
+      )
       if (allRes.code === 1) {
-        allMembers.value = allRes.data.data || []
+        const data = allRes.data.data || []
+        allMembers.value = data
+        cacheMemberAvatars(data)
+        hasMoreAllMembers.value = data.length >= ALL_MEMBERS_PAGE_SIZE
       }
     }
   } catch (error) {
     console.error(error)
   } finally {
     loading.value = false
+  }
+}
+
+/** 加载更多全部人员 */
+const loadMoreMembers = async () => {
+  if (!props.roomId || loadingMore.value || !hasMoreAllMembers.value) return
+  loadingMore.value = true
+  try {
+    const nextPage = allMembersPage.value + 1
+    const keyword = searchValue.value
+    const allRes = await getChatRoomMembersApi(
+      props.roomId,
+      undefined,
+      nextPage,
+      ALL_MEMBERS_PAGE_SIZE,
+      keyword,
+    )
+    if (allRes.code === 1) {
+      const data = allRes.data.data || []
+      if (data.length > 0) {
+        // 追加新数据（去重）
+        const existingIds = new Set(allMembers.value.map((m) => m.member_id))
+        const newMembers = data.filter((m) => !existingIds.has(m.member_id))
+        if (newMembers.length > 0) {
+          allMembers.value = [...allMembers.value, ...newMembers]
+          rawAllMembers.value = [...rawAllMembers.value, ...newMembers]
+          cacheMemberAvatars(newMembers)
+        }
+        allMembersPage.value = nextPage
+        hasMoreAllMembers.value = data.length >= ALL_MEMBERS_PAGE_SIZE
+      } else {
+        hasMoreAllMembers.value = false
+      }
+    }
+  } catch (error) {
+    console.error('loadMoreMembers failed', error)
+  } finally {
+    loadingMore.value = false
+  }
+}
+
+/** 滚动到底部时触发加载更多 */
+const handleScrollToLower = () => {
+  if (!loading.value && !loadingMore.value && hasMoreAllMembers.value) {
+    loadMoreMembers()
   }
 }
 
@@ -287,6 +365,10 @@ watch(
       multiSelect.value = false
       selectedIdArr.value = []
       searchValue.value = ''
+      // 重置分页状态
+      allMembersPage.value = 1
+      hasMoreAllMembers.value = true
+      loadingMore.value = false
     }
   },
 )
@@ -357,6 +439,10 @@ const getMemberLevelStyle = (member: ChatMember) => {
   const level = member.level_id ?? member.level?.level
   return getLevelBadgeStyle(level)
 }
+
+/** 获取缓存后的头像 URL（基于 member_id） */
+const getCachedAvatar = (member: ChatMember) =>
+  getCachedMemberAvatar(member.member_id, member.avatar, 'member')
 
 const handleConfirm = () => {
   const idSet = new Set(selectedIdArr.value)
@@ -521,5 +607,12 @@ const handleConfirm = () => {
   text-align: center;
   color: #999;
   font-size: 26rpx;
+}
+
+.mention-no-more {
+  padding: 24rpx 32rpx;
+  text-align: center;
+  color: #ccc;
+  font-size: 24rpx;
 }
 </style>

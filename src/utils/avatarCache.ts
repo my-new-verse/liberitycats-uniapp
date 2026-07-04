@@ -14,6 +14,8 @@ const avatarUrlCache = new Map<string, string>()
 const avatarStyleCache = new Map<string, Record<string, string>>()
 const levelBadgeUrlCache = new Map<number, string>()
 const levelBadgeStyleCache = new Map<number, Record<string, string>>()
+// 基于 member_id 的头像缓存，避免 API 重新获取后重复加载
+const memberAvatarCache = new Map<number, string>()
 
 type AvatarCacheStats = {
   avatarUrlEntries: number
@@ -70,6 +72,33 @@ const normalizeAvatarUrl = (source: string, scene: AvatarScene) => {
 }
 
 export const isDefaultAvatarSource = (source: string) => !source.trim()
+
+/** 根据 member_id 获取缓存的头像 URL（避免重复加载） */
+export const getCachedMemberAvatar = (
+  memberId: number | undefined,
+  source: string,
+  scene: AvatarScene = 'member',
+) => {
+  if (!memberId) return getCachedAvatarUrl(source, scene)
+  const cached = memberAvatarCache.get(memberId)
+  if (cached) return cached
+  const url = getCachedAvatarUrl(source, scene)
+  touchLruCache(memberAvatarCache, String(memberId), url)
+  return url
+}
+
+/** 批量缓存成员头像（API 返回成员列表后调用） */
+export const cacheMemberAvatars = (
+  members: Array<{ member_id: number; avatar?: string }>,
+  scene: AvatarScene = 'member',
+) => {
+  members.forEach((m) => {
+    if (m.member_id && m.avatar) {
+      const url = getCachedAvatarUrl(m.avatar, scene)
+      touchLruCache(memberAvatarCache, String(m.member_id), url)
+    }
+  })
+}
 
 export const getCachedAvatarUrl = (source: string, scene: AvatarScene = 'chat') => {
   const cacheKey = createAvatarCacheKey(source || DEFAULT_AVATAR_URL, scene)
