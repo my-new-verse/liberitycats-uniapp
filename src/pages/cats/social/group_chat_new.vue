@@ -35,14 +35,24 @@
             </view>
           </view>
           <view class="right-icons">
-            <wd-icon name="search1" size="22px" color="#fff" @click="goToHistory()"></wd-icon>
+            <wd-icon
+              name="search1"
+              size="22px"
+              color="#fff"
+              @click="debouncedGoToHistory()"
+            ></wd-icon>
             <wd-icon
               name="notification"
               size="22px"
               color="#fff"
-              @click="goToAnnouncementList()"
+              @click="debouncedGoToAnnouncementList()"
             ></wd-icon>
-            <wd-icon name="usergroup" size="22px" color="#fff" @click="goToMembers()"></wd-icon>
+            <wd-icon
+              name="usergroup"
+              size="22px"
+              color="#fff"
+              @click="debouncedGoToMembers()"
+            ></wd-icon>
           </view>
         </view>
       </view>
@@ -281,6 +291,7 @@
 <script setup lang="ts">
 import { ref, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { debounce } from 'lodash-es'
 import { getImageUrl, toUrl, formatRelativeTime, getChatImageUrl } from '@/utils'
 import chatItem from '@/components/chat-item/chat-item.vue'
 import CryptoJS from 'crypto-js'
@@ -1696,6 +1707,10 @@ const goToAnnouncementList = async () => {
     false,
   )
 }
+const debouncedGoToAnnouncementList = debounce(goToAnnouncementList, 1000, {
+  leading: true,
+  trailing: false,
+})
 /* 公告end 📣📣📣📣📣📣📣📣📣📣📣 */
 const ensureRoomDetailLoaded = async () => {
   if (roomDetail.value?.room.id) return true
@@ -2542,6 +2557,10 @@ const goToMembers = async () => {
     false,
   )
 }
+const debouncedGoToMembers = debounce(goToMembers, 1000, {
+  leading: true,
+  trailing: false,
+})
 const goToHistory = async () => {
   const roomId = roomDetail.value?.room.id || routeRoomId.value
   if (!roomId) return
@@ -2553,6 +2572,10 @@ const goToHistory = async () => {
     false,
   )
 }
+const debouncedGoToHistory = debounce(goToHistory, 1000, {
+  leading: true,
+  trailing: false,
+})
 let roomMemberMapPromise: Promise<void> | null = null
 
 const ensureRoomMemberMapLoaded = async (forceRefresh = false) => {
