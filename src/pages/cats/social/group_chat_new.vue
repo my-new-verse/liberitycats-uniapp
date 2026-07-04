@@ -540,6 +540,29 @@ const loadAfterContextMessages = (afterId: number) => {
     })
 }
 
+/** 从历史记录页返回时，轮询获取新消息 */
+const pollNewMessagesAfterId = async (afterId: number) => {
+  const roomId = roomDetail.value?.room?.id || routeRoomId.value
+  if (!roomId) return
+  try {
+    const res = await getChatMessageListApi({
+      room_id: roomId,
+      after_message_id: afterId,
+      limit: 50,
+    })
+    if (res.code === 1 && res.data?.messages?.length > 0) {
+      const newMessages = [...res.data.messages]
+      paging.value?.addChatRecordData(newMessages, false, false)
+    }
+    // 继续轮询直到没有更多新消息
+    if (res.code === 1 && res.data?.has_more_latest === 1 && res.data?.next_after_message_id) {
+      await pollNewMessagesAfterId(res.data.next_after_message_id)
+    }
+  } catch (e) {
+    console.error('poll new messages failed', e)
+  }
+}
+
 const handleChatScroll = (e) => {
   const scrollTop = e.detail ? e.detail.scrollTop : e.contentOffset.y
   lastScrollTop = scrollTop
@@ -1345,8 +1368,10 @@ const queryList = async (pageNo, pageSize) => {
             await scrollIntoViewById(targetId)
             // 等 scrollIntoViewById 的滚动动画完全停止后，再设置 after_message_id
             // 这样只有用户后续手动滚动才会触发 loadAfterContextMessages
-            setTimeout(() => {
+            setTimeout(async () => {
               contextAfterMessageId.value = Number(targetId)
+              // 立即轮询获取新消息（after_message_id）
+              await pollNewMessagesAfterId(Number(targetId))
             }, 800)
           }, 500)
         }
