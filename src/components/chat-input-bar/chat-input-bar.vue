@@ -172,6 +172,10 @@ const mentionedUsers = ref<Map<number, string>>(new Map()) // memberId → nickn
 const textareaFocus = ref(true)
 const currentOpBtn = ref('keyboard')
 const shouldFocus = ref(false)
+// 用于取消延迟打开弹窗的定时器（长按头像场景，避免 touchend 合成 click 穿透遮罩）
+let pendingShowPopupTimer: ReturnType<typeof setTimeout> | null = null
+// 用于取消 shouldFocus 延迟设置的定时器（弹窗已关闭时旧定时器不应再触发）
+let pendingFocusTimer: ReturnType<typeof setTimeout> | null = null
 const emotionList = ref<getCommunityEmotionListItem[]>([])
 const ossConfig = ref<getAliyunOssConfigApiResponse | null>(null)
 const customEmojiList = ref<{ id: number; url: string }[]>([])
@@ -260,6 +264,13 @@ const showCommentPopup = () => {
     toUrl('/pages/cats/login', true)
     return
   }
+  // 取消之前的延迟定时器，避免重复打开
+  if (pendingShowPopupTimer) {
+    clearTimeout(pendingShowPopupTimer)
+    pendingShowPopupTimer = null
+  }
+  // 重置键盘高度，避免上次残留值导致 commentHidden 占位过高输入框弹飞
+  keyboardHeight.value = 0
   commentPopupVisible.value = true
   oldCommentContent = commentContent.value
   // 重置焦点状态
@@ -268,22 +279,40 @@ const showCommentPopup = () => {
   currentOpBtn.value = 'keyboard'
   expressionCategory.value = -1
 
+  // 取消旧的 focus 定时器，设置新的
+  if (pendingFocusTimer) clearTimeout(pendingFocusTimer)
   // 使用nextTick确保DOM更新
   nextTick(() => {
     // 使用setTimeout确保在下一个事件循环中设置焦点
-    setTimeout(() => {
-      shouldFocus.value = true
+    pendingFocusTimer = setTimeout(() => {
+      pendingFocusTimer = null
+      // 仅在弹窗仍打开时才聚焦
+      if (commentPopupVisible.value) {
+        shouldFocus.value = true
+      }
     }, 100)
   })
 }
 
 // 修改handleCloseCommentPopup方法
 const handleCloseCommentPopup = () => {
+  // 取消延迟打开弹窗的定时器
+  if (pendingShowPopupTimer) {
+    clearTimeout(pendingShowPopupTimer)
+    pendingShowPopupTimer = null
+  }
+  // 取消 focus 延迟定时器
+  if (pendingFocusTimer) {
+    clearTimeout(pendingFocusTimer)
+    pendingFocusTimer = null
+  }
   commentPopupVisible.value = false
   shouldFocus.value = false
+  keyboardHeight.value = 0
   commentContent.value = ''
   oldCommentContent = ''
   replyInfo.value = null
+  mentionedUsers.value.clear()
 }
 
 let oldCommentContent = ''
@@ -784,6 +813,7 @@ const handleConfirmMention = (members: ChatMember[]) => {
 
 /**
  * 接受外部 @提及调用（如长按头像），将 @nickname 插入到输入框并记录 memberId
+ * 延迟打开弹窗：长按 touchend 后 iOS 会合成 click 事件，若弹窗遮罩已渲染则会被点击关闭
  */
 const addMention = (memberId: number, nickname: string) => {
   if (!memberId || !nickname) return
@@ -797,7 +827,12 @@ const addMention = (memberId: number, nickname: string) => {
     const prefix = commentContent.value.trimEnd()
     commentContent.value = prefix ? `${prefix} @${nickname} ` : `@${nickname} `
   }
-  showCommentPopup()
+  // 延迟打开弹窗，等 touchend 及合成的 click 事件消费完毕后再显示遮罩
+  if (pendingShowPopupTimer) clearTimeout(pendingShowPopupTimer)
+  pendingShowPopupTimer = setTimeout(() => {
+    pendingShowPopupTimer = null
+    showCommentPopup()
+  }, 150)
 }
 
 /**
