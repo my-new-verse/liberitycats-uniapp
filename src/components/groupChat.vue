@@ -57,16 +57,20 @@ import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { getImageUrl, toUrl } from '@/utils'
 import {
-  getChatRoomsApi,
+  preloadChatRoomsApi,
   getCachedChatRoomsApi,
   joinChatRoomApi,
   patchCachedChatRoom,
   setCachedChatRoomsApi,
-  getNotificationsSummaryApi,
   ChatRoom,
   NotificationSummaryRoom,
 } from '@/service/api/groupChat'
 import { useUserStore } from '@/store/user'
+
+const props = defineProps<{
+  /** 父组件传递的通知摘要 rooms 数据 */
+  notificationRooms?: NotificationSummaryRoom[]
+}>()
 
 const userStore = useUserStore()
 type GroupChatItem = ChatRoom & {
@@ -85,21 +89,23 @@ const notificationBadgeMap = ref<Record<number, number>>({})
 const hasLoginToken = () =>
   Boolean(userStore.userInfo.token || uni.getStorageSync('token') || uni.getStorageSync('hasToken'))
 
-const loadNotificationsSummary = async () => {
-  try {
-    const res = await getNotificationsSummaryApi()
-    if (res?.code === 1 && res.data?.rooms) {
-      const map: Record<number, number> = {}
-      res.data.rooms.forEach((room: NotificationSummaryRoom) => {
-        const total = room.total_important || 0
-        if (total > 0) map[room.room_id] = total
-      })
-      notificationBadgeMap.value = map
-    }
-  } catch (error) {
-    console.error('loadNotificationsSummary error:', error)
-  }
+/** 根据父组件传递的 rooms 数据更新徽标 */
+const applyNotificationsRooms = (rooms?: NotificationSummaryRoom[]) => {
+  if (!Array.isArray(rooms)) return
+  const map: Record<number, number> = {}
+  rooms.forEach((room: NotificationSummaryRoom) => {
+    // 计算未读提及 + 回复总数
+    const total = (room.unread_mentions || 0) + (room.unread_replies || 0)
+    if (total > 0) map[room.room_id] = total
+  })
+  notificationBadgeMap.value = map
 }
+
+// 监听父组件传递的通知数据
+watch(
+  () => props.notificationRooms,
+  (rooms) => applyNotificationsRooms(rooms),
+)
 
 const loadGroupList = async (forceRefresh = false) => {
   if (groupLoading.value) return
@@ -113,16 +119,14 @@ const loadGroupList = async (forceRefresh = false) => {
       }
     }
 
-    // 始终请求 API 获取最新数据，不走缓存短路
-    const res = await getChatRoomsApi(1)
-    console.log('getChatRoomsApi', '====', res)
+    // 使用 preloadChatRoomsApi，与 SocialTab 共享缓存，避免重复请求
+    const res = await preloadChatRoomsApi(1, forceRefresh)
+    console.log('preloadChatRoomsApi', '====', res)
 
     if (res.code === 1 && res.data) {
       groupList.value = [...(res.data?.rooms || [])]
       // 同步更新缓存，保证后续 getCachedChatRoomsApi 返回最新数据
       setCachedChatRoomsApi(res.data)
-      // 群聊列表加载成功后，拉取未读通知摘要
-      void loadNotificationsSummary()
     } else if (!groupList.value.length) {
       uni.showToast({ title: res.msg || '加载失败', icon: 'none' })
     }
@@ -311,6 +315,7 @@ onUnmounted(() => {
 .join-btn-wrapper {
   position: relative;
   flex-shrink: 0;
+  overflow: visible;
 }
 
 .badge {
@@ -330,7 +335,8 @@ onUnmounted(() => {
   text-align: center;
   box-sizing: border-box;
   pointer-events: none;
-  border: 1px solid;
+  border: 1px solid #ffffff;
+  z-index: 10;
 }
 
 .join-button {

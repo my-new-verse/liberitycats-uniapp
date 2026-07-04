@@ -219,7 +219,11 @@
     <!-- 群聊 Tab -->
     <template v-if="socialFilter === 'groupChat'">
       <view :style="{ paddingTop: cntPaddingTop + 36 + 20 + 'rpx' }">
-        <group-chat v-if="groupChatReady" :key="groupChatRenderKey"></group-chat>
+        <group-chat
+          v-if="groupChatReady"
+          :key="groupChatRenderKey"
+          :notification-rooms="groupChatNotificationRooms"
+        ></group-chat>
       </view>
     </template>
   </view>
@@ -259,7 +263,7 @@ import {
   setSpecialFollowApi,
   adminRemovalApi,
 } from '@/service/api/community'
-import { preloadChatRoomsApi, getNotificationsSummaryApi } from '@/service/api/groupChat'
+import { getNotificationsSummaryApi, preloadChatRoomsApi } from '@/service/api/groupChat'
 import { getUnReadNotificationCountApi } from '@/service/api/user'
 import SharePopup from '@/components/SharePopup/SharePopup.vue'
 
@@ -338,6 +342,8 @@ const groupChatRenderKey = ref(0)
 const groupChatReady = ref(false)
 const msgUnreadCount = ref(0)
 const groupChatNotificationCount = ref(0)
+const groupChatNotificationRooms = ref<any[]>([])
+let groupChatNotificationsPromise: Promise<void> | null = null
 let groupChatReadyTimer: ReturnType<typeof setTimeout> | null = null
 const GROUP_CHAT_ROOMS_REFRESH_EVENT = 'refreshGroupChatRooms'
 const activeSocialCache = computed(() => {
@@ -354,14 +360,18 @@ const ensureGroupChatReady = () => {
   }, 80)
 }
 
-const refreshGroupChatRooms = (forceRefresh = false) => {
-  ensureGroupChatReady()
-  socialCacheMap.value.groupChat.state = 'finished'
-  if (socialFilter.value === 'groupChat') {
-    emit('update:state', 'finished')
+/** 刷新群聊数据：获取通知摘要 + 预加载房间列表 + 通知 groupChat 组件刷新 */
+const refreshSocialChatData = () => {
+  fetchGroupChatNotifications()
+  preloadChatRoomsApi(1, true)
+  if (withGroupChatUI) {
+    ensureGroupChatReady()
+    socialCacheMap.value.groupChat.state = 'finished'
+    if (socialFilter.value === 'groupChat') {
+      emit('update:state', 'finished')
+    }
   }
-  void preloadChatRoomsApi(1, forceRefresh)
-  uni.$emit(GROUP_CHAT_ROOMS_REFRESH_EVENT, forceRefresh)
+  uni.$emit(GROUP_CHAT_ROOMS_REFRESH_EVENT, true)
 }
 
 // 更新加载状态
@@ -429,6 +439,7 @@ const handleFilterChange = async (filter: SocialFilter) => {
     return
   }
   if (filter === 'groupChat') {
+    refreshSocialChatData()
     refreshGroupChatRooms(true)
     if (socialFilter.value === filter) return
   } else if (filter === 'message') {
@@ -727,23 +738,28 @@ function fetchUnreadCount() {
 /** 拉取群聊未读通知摘要 */
 function fetchGroupChatNotifications() {
   if (!userStore.isLogin) return
-  getNotificationsSummaryApi()
+  if (groupChatNotificationsPromise) return groupChatNotificationsPromise
+  groupChatNotificationsPromise = getNotificationsSummaryApi()
     .then((res) => {
       if (res?.code === 1 && res.data) {
         groupChatNotificationCount.value = res.data.total_important || 0
+        // 存储 rooms 数据，通过 prop 传递给 groupChat 组件
+        groupChatNotificationRooms.value = res.data.rooms || []
       }
     })
     .catch(() => {})
+    .finally(() => {
+      groupChatNotificationsPromise = null
+    })
+  return groupChatNotificationsPromise
 }
 onShow(() => {
   fetchUnreadCount()
-  fetchGroupChatNotifications()
 })
 // 初始加载
 onMounted(() => {
-  void preloadChatRoomsApi(1)
   fetchUnreadCount()
-  fetchGroupChatNotifications()
+  refreshSocialChatData()
   if (socialFilter.value !== 'groupChat') {
     syncActiveCache()
     if (!socialCacheMap.value[socialFilter.value as SocialCacheKey].hasInitialized) {
@@ -773,8 +789,8 @@ onMounted(() => {
     loadSocial(1, socialFilter.value)
   })
   uni.$on('discoverActiveTabChange', (tabName: string) => {
-    if (tabName === t('discover.tabs.social') && socialFilter.value === 'groupChat') {
-      refreshGroupChatRooms(true)
+    if (tabName === t('discover.tabs.social')) {
+      refreshSocialChatData()
     }
   })
   uni.$on('switchToChatGroup', () => {
