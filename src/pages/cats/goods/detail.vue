@@ -216,7 +216,7 @@
             custom-class="buyBtn soldBtn"
             @click="handleDisabledClick"
           >
-            {{ goodsDetail.reason || t('goods.detail.sold_out') }}
+            {{ goodsDetail.reason || t('goods.detail.sell_out') }}
           </wd-button>
         </template>
       </view>
@@ -358,13 +358,14 @@ const displayRemaining = computed(() => {
 })
 
 const saleStatus = computed(() => {
-  const inventory = goodsDetail.value.total_inventory
-  const startTime = goodsDetail.value.presale_info?.sale_start_time || 0
-  const endTime = goodsDetail.value.presale_info?.sale_end_time || 0
   const backendStatus = goodsDetail.value.sale_status
   const backendCanBuy = goodsDetail.value.can_buy
+  const inventory = goodsDetail.value.total_inventory
 
-  if (backendStatus === 'coming_soon' || (startTime > 0 && nowTimestamp.value < startTime)) {
+  // 以后端状态为准
+
+  if (backendStatus === 'coming_soon') {
+    const startTime = goodsDetail.value.presale_info?.sale_start_time || 0
     return {
       status: 'coming_soon',
       can_buy: false,
@@ -374,21 +375,12 @@ const saleStatus = computed(() => {
     }
   }
 
-  if (inventory <= 0 || backendStatus === 'sold_out') {
+  if (backendStatus === 'sold_out' || inventory <= 0) {
     return {
       status: 'sold_out',
       can_buy: false,
-      text: t('goods.detail.sold_out'),
-      tip: goodsDetail.value.reason || t('goods.detail.sold_out.tip'),
-    }
-  }
-
-  if (endTime > 0 && nowTimestamp.value >= endTime) {
-    return {
-      status: 'sold_out',
-      can_buy: false,
-      text: t('goods.detail.sold_out'),
-      tip: goodsDetail.value.reason || t('goods.detail.sale_ended'),
+      text: t('goods.detail.sell_out'),
+      tip: goodsDetail.value.reason || t('goods.detail.sell_out.tip'),
     }
   }
 
@@ -396,7 +388,7 @@ const saleStatus = computed(() => {
     return {
       status: 'sold_out',
       can_buy: false,
-      text: t('goods.detail.sold_out'),
+      text: t('goods.detail.sell_out'),
       tip: goodsDetail.value.reason || t('goods.detail.purchase_unavailable'),
     }
   }
