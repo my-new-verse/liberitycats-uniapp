@@ -441,8 +441,8 @@ const openMoreActions = () => {
     })
   }
 
-  actions.push({ name: '', type: 'divider', disabled: true })
-  actions.push({ name: t('social.index.user.block'), type: 'block' })
+  //   actions.push({ name: '', type: 'divider', disabled: true })
+  //   actions.push({ name: t('social.index.user.block'), type: 'block' })
   moreActions.value = actions
   showMoreActions.value = true
 }
