@@ -11,7 +11,11 @@ import { useSystemStore } from '@/store/system'
 import { getGameParamsApi } from '@/service/api/game'
 // import { scheduleDualGamePreload } from '@/utils/plusGameWebViewPool'
 import { useGameWebViewStore } from '@/store/gameWebview'
-import { downloadGameResources } from '@/utils/webviewResourceCache'
+import {
+  downloadGameResources,
+  resumeBackgroundDownloadIfNeeded,
+  handleAppBackgroundDownload,
+} from '@/utils/webviewResourceCache'
 
 // 扩展 Plus 对象类型，避免 TS 报错
 declare const plus: any
@@ -24,6 +28,10 @@ interface GameConfig {
 
 const systemStore = useSystemStore()
 const gameWebviewStore = useGameWebViewStore()
+
+// 平台类型（避免多次调用 getSystemInfoSync）
+const platform = uni.getSystemInfoSync().platform || ''
+const isAndroid = platform === 'android'
 const version = `${buildInfo.version}`
 const userStore = useUserStore()
 const systemReady = ref(false)
@@ -78,7 +86,17 @@ onLaunch(() => {
       uni.setStorageSync('agreements', res.data)
       systemStore.setAgreements(res.data)
     })
-    // downloadGameResources()
+    // #ifdef APP-PLUS
+    // Android: 预下载游戏资源（用于 overrideResourceRequest 重定向）
+    if (isAndroid) {
+      downloadGameResources()
+    } else {
+      // iOS: 预加载游戏 WebView
+      setTimeout(() => {
+        preloadGameWebViews()
+      }, 3000)
+    }
+    // #endif
   })
 
   // 请求并缓存广告
@@ -91,13 +109,6 @@ onLaunch(() => {
 
   // App启动时初始化WebView预加载（无token版本）
   // initializeGameWebviewPreload()
-
-  // 3s 后预加载游戏 WebView（MATCH_THREE -> 间隔3s -> JUMP）
-  // #ifdef APP-PLUS
-  setTimeout(() => {
-    preloadGameWebViews()
-  }, 3000)
-  // #endif
 
   // #ifdef APP-PLUS
   // 监听新的深链请求（App已在运行时，用户从浏览器再次点击链接）
@@ -130,10 +141,23 @@ onShow(() => {
     }
     localStorage.setItem('timeZone', res.data.timezone || 'Asia/Shanghai') // 缓存时区设置
   })
+
+  // 从后台切回前台时，恢复可能被中断的资源下载（仅 Android）
+  // #ifdef APP-PLUS
+  if (isAndroid) {
+    resumeBackgroundDownloadIfNeeded()
+  }
+  // #endif
 })
 
 onHide(() => {
   console.log('App Hide')
+  // App进入后台时，重置 downloading 状态为 pending，避免状态卡住（仅 Android）
+  // #ifdef APP-PLUS
+  if (isAndroid) {
+    handleAppBackgroundDownload()
+  }
+  // #endif
 })
 
 const handleSchemaArgs = (args) => {

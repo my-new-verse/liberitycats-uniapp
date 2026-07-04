@@ -119,7 +119,9 @@ const openGameUrl = debounce(
       // 把token拼接到url上，注意url本身可能带参数
       // const url = gameUrl + (gameUrl.includes('?') ? '&' : '?') + 'token=' + token
       const url = res.data.jumpUrl
-      toUrl('/pages/game/index?url=' + encodeURIComponent(url))
+      const platform = uni.getSystemInfoSync().platform || ''
+      const gamePage = platform === 'android' ? '/pages/game/androidIndex' : '/pages/game/index'
+      toUrl(gamePage + '?url=' + encodeURIComponent(url) + '&gameType=' + gameType)
     })
   },
   3000,

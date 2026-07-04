@@ -10,6 +10,7 @@ interface NavigateToOptions {
        "/pages/callback/app" |
        "/pages/demo/detail_demo" |
        "/pages/demo/list_demo" |
+       "/pages/game/androidIndex" |
        "/pages/game/index" |
        "/pages/tabbar/discover" |
        "/pages/tabbar/game" |
@@ -50,6 +51,7 @@ interface NavigateToOptions {
        "/pages/cats/pledge/index" |
        "/pages/cats/pledge/ranking" |
        "/pages/cats/posts/list" |
+       "/pages/cats/report/content" |
        "/pages/cats/settings/avatar" |
        "/pages/cats/settings/currency" |
        "/pages/cats/settings/index" |
@@ -65,6 +67,7 @@ interface NavigateToOptions {
        "/pages/cats/social/group_chat_new" |
        "/pages/cats/social/group_members" |
        "/pages/cats/social/inFocus-detail" |
+       "/pages/cats/social/post_search" |
        "/pages/cats/social/publish" |
        "/pages/cats/upload/upload" |
        "/pages/cats/user/home" |

@@ -17,6 +17,10 @@ import traceContext from '@/utils/traceContext'
 import { useSystemStore } from '@/store/system'
 import buildInfo from '@/../build-info.json'
 
+// 平台类型（避免多次调用 getSystemInfoSync）
+const platform = uni.getSystemInfoSync().platform || ''
+const isAndroid = platform === 'android'
+
 const initState = {
   nickname: '',
   avatar: '',
@@ -260,9 +264,14 @@ export const useUserStore = defineStore(
       // 通知 mall 页刷新数据
       uni.$emit('mall:refresh')
       uni.$emit('socialMessage:refresh')
-      // 登录成功后触发游戏资源预下载
-      // downloadGameResources()
-      preloadGameWebViews()
+      // 登录成功后触发游戏资源预加载
+      if (isAndroid) {
+        // Android: 预下载游戏资源（用于 overrideResourceRequest 重定向）
+        downloadGameResources()
+      } else {
+        // iOS: 预加载游戏 WebView
+        preloadGameWebViews()
+      }
     }
 
     return {
