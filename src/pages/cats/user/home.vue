@@ -443,16 +443,6 @@ const openMoreActions = () => {
 
   actions.push({ name: '', type: 'divider', disabled: true })
   actions.push({ name: t('social.index.user.block'), type: 'block' })
-  actions.push({
-    name: t('social.index.post.report'),
-    type: 'report',
-    color: '#ff6b03',
-  })
-
-  if (userStore.userInfo.community_permissions?.can_take_down === 1) {
-    actions.push({ name: t('report.admin.remove_post'), type: 'remove', color: '#FF3B30' })
-  }
-
   moreActions.value = actions
   showMoreActions.value = true
 }

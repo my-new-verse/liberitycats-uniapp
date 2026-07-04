@@ -102,6 +102,40 @@
       }
     },
     {
+      "path": "pages/game/androidIndex",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "游戏中心",
+        "app-plus": {
+          "titleNView": {
+            "titleText": "游戏中心",
+            "buttons": [
+              {
+                "text": "关闭",
+                "fontSize": "14px",
+                "width": "80rpx",
+                "onclick": "closeGame"
+              }
+            ]
+          },
+          "webView": {
+            "hardwareAccelerated": true,
+            "domStorage": true,
+            "database": true,
+            "mixedContent": "compatibility",
+            "allowFileAccess": true,
+            "allowContentAccess": true,
+            "allowFileAccessFromFileURLs": true,
+            "allowUniversalAccessFromFileURLs": true,
+            "useWideViewPort": true,
+            "loadWithOverviewMode": true,
+            "cacheMode": "LOAD_DEFAULT"
+          }
+        }
+      }
+    },
+    {
       "path": "pages/game/index",
       "type": "page",
       "style": {
