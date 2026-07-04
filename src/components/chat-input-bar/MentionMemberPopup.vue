@@ -45,8 +45,8 @@
       </view>
     </scroll-view>
     <scroll-view scroll-y class="mention-popup-scroll" @scrolltolower="handleScrollToLower">
-      <!-- 最常提醒区域 -->
-      <template v-if="smartMembers.length > 0">
+      <!-- 最常提醒区域（有搜索条件时隐藏） -->
+      <view v-show="!searchValue && smartMembers.length > 0">
         <view class="section-title">{{ t('group.chat.mention.smartMembers') || '最常提醒' }}</view>
         <template v-if="multiSelect">
           <view
@@ -81,11 +81,15 @@
             <text class="mention-nickname">{{ member.nickname }}</text>
           </view>
         </template>
-      </template>
+      </view>
 
       <!-- 全部人员区域 -->
-      <template v-if="allMembers.length > 0">
-        <view class="section-title">{{ t('group.chat.mention.allMembers') || '全部人员' }}</view>
+      <view class="section-title">{{ t('group.chat.mention.allMembers') || '全部人员' }}</view>
+      <!-- 无数据占位 -->
+      <view v-if="!loading && !loadingMore && allMembers.length === 0" class="mention-empty">
+        <text>{{ t('common.no_data') || '暂无数据' }}</text>
+      </view>
+      <template v-else-if="allMembers.length > 0">
         <template v-if="multiSelect">
           <view
             v-for="member in allMembers"
@@ -614,5 +618,16 @@ const handleConfirm = () => {
   text-align: center;
   color: #ccc;
   font-size: 24rpx;
+}
+
+.mention-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300rpx;
+  padding: 120rpx 32rpx;
+  color: #999;
+  font-size: 28rpx;
 }
 </style>
