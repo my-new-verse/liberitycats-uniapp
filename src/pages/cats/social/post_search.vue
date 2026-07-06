@@ -365,13 +365,16 @@
 
     <!-- ========== 举报/操作弹窗 ========== -->
     <wd-action-sheet
+      custom-class="reportSheet"
       v-model="reportShow"
       :actions="reportActions"
       :z-index="1100"
+      @close="reportSheetClose"
       @select="reportSheetSelect"
     />
 
-    <wd-message-box />
+    <wd-message-box selector="wd-message-box-slot" />
+    <wd-toast />
   </view>
 </template>
 
@@ -390,7 +393,7 @@ import {
   adminRemovalApi,
 } from '@/service/api/community'
 import { useUserStore } from '@/store/user'
-import { useMessage } from 'wot-design-uni'
+import { useMessage, useToast } from 'wot-design-uni'
 import { LoadMoreState } from 'wot-design-uni/components/wd-loadmore/types'
 import SharePopup from '@/components/SharePopup/SharePopup.vue'
 
@@ -539,6 +542,10 @@ const reportActions = ref<any[]>([])
 const reportActionIndex: any = { follow: -1, special: -1, report: -1, block: -1, remove: -1 }
 const reportPostItem = ref<any>({})
 
+function reportSheetClose() {
+  reportShow.value = false
+}
+
 const reportSheetSelect = ({ item, index }: any) => {
   if (index === reportActionIndex.follow) {
     const member = reportPostItem.value.member
@@ -662,22 +669,29 @@ const handleBlockUser = () => {
 }
 
 const handleRemovePost = () => {
-  uni.showModal({
-    title: t('report.admin.remove_post'),
-    content: t('social.index.post.remove_content'),
-    success: (r) => {
-      if (r.confirm) {
-        adminRemovalApi(reportPostItem.value.id, 'post').then((res) => {
+  message
+    .confirm({
+      title: t('report.admin.remove_post'),
+      msg: t('social.index.post.remove_content'),
+    })
+    .then(() => {
+      uni.showLoading()
+      adminRemovalApi(reportPostItem.value.id, 'post')
+        .then((res) => {
           if (res.data?.status === 0) {
             searchResult.value.posts = searchResult.value.posts.filter(
               (p) => p.id !== reportPostItem.value.id,
             )
-            uni.showToast({ title: t('common.operation_success'), icon: 'none' })
+            toast.success(t('common.operation_success'))
+          } else {
+            toast.show(res.msg || t('common.operationFailedRetry'))
           }
         })
-      }
-    },
-  })
+        .finally(() => {
+          uni.hideLoading()
+        })
+    })
+    .catch(() => {})
 }
 
 /** 跳转帖子详情 */
@@ -740,7 +754,8 @@ const onScrollToLower = () => {
 const GIF_LIKE = '/static/images/like_action.gif'
 const GIF_UNLIKE = '/static/images/unlike_action.gif'
 
-const message = useMessage()
+const message = useMessage('wd-message-box-slot')
+const toast = useToast()
 const shareRef = ref<any>(null)
 
 /** 帖子作者关注按钮信息 */

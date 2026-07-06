@@ -93,6 +93,14 @@
       </template>
       <template v-else>
         <template v-for="tab in tabNames" :key="tab">
+          <!-- 加载中：首次查询未完成时 -->
+          <view
+            class="emptyBox"
+            v-show="activeTab === tab"
+            v-if="isLoading && !isTabInitialized(tab)"
+          >
+            <wd-loadmore state="loading" />
+          </view>
           <!-- 消息列表 -->
           <view
             class="messageList"
