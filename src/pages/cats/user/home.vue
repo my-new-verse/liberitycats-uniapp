@@ -16,54 +16,66 @@
       </view>
 
       <view class="headCnt">
-        <view class="avatar">
-          <image
-            :src="
-              userInfo?.avatar
-                ? getImageUrl(userInfo.avatar + '?x-oss-process=style/jzcq')
-                : '/static/images/default_avatar.png'
-            "
-            mode="widthFix"
-          ></image>
-        </view>
-        <view class="info">
-          <!-- 名字 -->
-          <view class="name">
-            {{ formatNickname(userInfo?.nickname || '', 16) }}
+        <view class="topRow">
+          <view class="avatar">
+            <image
+              :src="
+                userInfo?.avatar
+                  ? getImageUrl(userInfo.avatar + '?x-oss-process=style/jzcq')
+                  : '/static/images/default_avatar.png'
+              "
+              mode="widthFix"
+            ></image>
           </view>
-          <!-- 等级 -->
-          <view
-            class="level"
-            :class="{
-              ['level' + userInfo.level.level]: userInfo.level.level > 0,
-            }"
-            @click="showMemberLevelPopup"
-            v-if="userInfo.level.level > 0"
-          >
-            <image :src="getImageUrl(userInfo?.level?.icon)" mode="widthFix" />
-          </view>
-          <!-- 猫粮 -->
-          <view class="points">
-            <view class="label">{{ t('my.asset.points') }}:</view>
-            <view class="amount">
-              {{ formatNumber(userInfo?.cat_food_balance || 0, 0) }}
+          <view class="info">
+            <!-- 名字 -->
+            <view class="name">
+              {{ formatNickname(userInfo?.nickname || '', 16) }}
             </view>
-            <view class="unit">g</view>
+            <!-- 等级 -->
+            <view
+              class="level"
+              :class="{
+                ['level' + userInfo.level.level]: userInfo.level.level > 0,
+              }"
+              @click="showMemberLevelPopup"
+              v-if="userInfo.level.level > 0"
+            >
+              <image :src="getImageUrl(userInfo?.level?.icon)" mode="widthFix" />
+            </view>
+            <view class="pointsRow">
+              <view class="label">{{ t('my.asset.points') }}:</view>
+              <view class="amount">
+                {{ formatNumber(userInfo?.cat_food_balance || 0, 0) }}
+              </view>
+              <view class="unit">g</view>
+              <view v-if="!userInfo.is_self" class="followActions">
+                <view class="followBtn" :class="followBtnInfo.style" @click="handleFollow">
+                  <wd-button plain custom-class="follow-btn" size="small">
+                    {{ followBtnInfo.text }}
+                  </wd-button>
+                </view>
+                <view class="moreActionsBtn" @click="openMoreActions"></view>
+              </view>
+            </view>
           </view>
         </view>
-      </view>
-
-      <view
-        v-if="!userInfo.is_self"
-        class="followActions"
-        :style="{ top: `calc(${kfBoxTop} + 176rpx + 48rpx)` }"
-      >
-        <view class="followBtn" :class="followBtnInfo.style" @click="handleFollow">
-          <wd-button plain custom-class="follow-btn" size="small">
-            {{ followBtnInfo.text }}
-          </wd-button>
+        <view class="whiteBox">
+          <view class="statItem">
+            <text class="statCount">{{ formatCount(stats?.following_count || 0) }}</text>
+            <text class="statLabel">{{ t('social.index.stats.following') }}</text>
+          </view>
+          <view class="statDivider">|</view>
+          <view class="statItem">
+            <text class="statCount">{{ formatCount(stats?.fans_count || 0) }}</text>
+            <text class="statLabel">{{ t('social.index.stats.fans') }}</text>
+          </view>
+          <view class="statDivider">|</view>
+          <view class="statItem">
+            <text class="statCount">{{ formatCount(stats?.special_following_count || 0) }}</text>
+            <text class="statLabel">{{ t('social.index.stats.special_following') }}</text>
+          </view>
         </view>
-        <view class="moreActionsBtn" @click="openMoreActions"></view>
       </view>
     </view>
 
@@ -266,6 +278,17 @@ const dataList = reactive([
 
 const memberId = ref(0)
 
+const stats = ref<{
+  following_count: number
+  fans_count: number
+  special_following_count: number
+} | null>(null)
+
+const formatCount = (count: number) => {
+  if (count >= 10000) return (count / 10000).toFixed(1) + '万'
+  return String(count)
+}
+
 // 用户主页数据
 const userInfo = ref({
   member_id: 0,
@@ -297,7 +320,7 @@ onShow(() => {
 
 onMounted(() => {
   // #ifdef H5
-  headBoxHeight.value = (safeAreaInsets?.top || 0) / uni.rpx2px(1) + 360 + 'rpx'
+  headBoxHeight.value = (safeAreaInsets?.top || 0) / uni.rpx2px(1) + 460 + 'rpx'
   kfBoxTop.value = (safeAreaInsets?.top || 0) / uni.rpx2px(1) + 36 + 'rpx'
   cntHeight.value = 'calc(100vh - ' + headBoxHeight.value + ' )'
   // #endif
@@ -350,6 +373,8 @@ const loadAllData = async () => {
     const userRes = await getMemberHomepageApi(memberId.value)
     if (userRes.code === 1) {
       userInfo.value = userRes.data.member
+      const data = userRes.data as any
+      if (data.stats) stats.value = data.stats
     }
 
     state.value = 'loading'
@@ -677,67 +702,114 @@ const doHandlePreview = (images: string[], currentIndex: number = 0, needDealImg
   }
   .headCnt {
     display: flex;
-    align-items: center;
-    justify-content: start;
+    flex-direction: column;
     width: 100%;
     height: 100%;
-    .avatar {
+    align-items: center;
+    justify-content: center;
+    .topRow {
       display: flex;
       align-items: center;
-      justify-content: center;
-      width: 176rpx;
-      height: 176rpx;
-      overflow: hidden;
-      background-color: #ffffff;
-      border-radius: 50%;
-      image {
-        width: 100%;
-        height: 100%;
-        border-radius: 50%;
-      }
-    }
-    .info {
-      margin-left: 32rpx;
-      .name {
-        font-size: 48rpx;
-        font-style: normal;
-        font-weight: 600;
-        line-height: 56rpx;
-        color: #ffffff;
-      }
-      .points {
-        font-size: 24rpx;
-        font-style: normal;
-        line-height: 56rpx;
-        color: #ffffff;
+      width: 100%;
+      .avatar {
         display: flex;
-        .amount {
-          margin: 0 12rpx;
-          font-weight: 600;
-        }
-        .unit {
-          font-weight: 600;
-        }
-      }
-      .level {
-        height: 56rpx;
-        margin: 8rpx 0;
+        align-items: center;
+        justify-content: center;
+        width: 176rpx;
+        height: 176rpx;
+        overflow: hidden;
+        background-color: #ffffff;
+        border-radius: 50%;
         image {
           width: 100%;
           height: 100%;
+          border-radius: 50%;
         }
       }
-      .level1 {
-        width: 112rpx;
+      .info {
+        flex: 1;
+        margin-left: 32rpx;
+        .name {
+          font-size: 48rpx;
+          font-style: normal;
+          font-weight: 600;
+          line-height: 56rpx;
+          color: #ffffff;
+        }
+        .pointsRow {
+          font-size: 24rpx;
+          font-style: normal;
+          line-height: 40rpx;
+          color: #ffffff;
+          display: flex;
+          align-items: center;
+          width: 100%;
+          .amount {
+            margin: 0 12rpx 0 4rpx;
+            font-weight: 600;
+          }
+          .unit {
+            margin-right: 24rpx;
+            font-weight: 600;
+          }
+          .followActions {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 12rpx;
+            flex-shrink: 0;
+          }
+        }
+        .level {
+          height: 56rpx;
+          margin: 8rpx 0;
+          image {
+            width: 100%;
+            height: 100%;
+          }
+        }
+        .level1 {
+          width: 112rpx;
+        }
+        .level2 {
+          width: 202rpx;
+        }
+        .level3 {
+          width: 182rpx;
+        }
+        .level4 {
+          width: 248rpx;
+        }
       }
-      .level2 {
-        width: 202rpx;
+    }
+    .whiteBox {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      width: 100%;
+      margin-top: 20rpx;
+      padding: 20rpx 0;
+      background: #fff;
+      border-radius: 16rpx;
+      .statItem {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        .statCount {
+          font-size: 32rpx;
+          font-weight: 700;
+          color: #333;
+          line-height: 36rpx;
+        }
+        .statLabel {
+          font-size: 22rpx;
+          color: #999;
+          line-height: 28rpx;
+        }
       }
-      .level3 {
-        width: 182rpx;
-      }
-      .level4 {
-        width: 248rpx;
+      .statDivider {
+        font-size: 28rpx;
+        color: #eee;
       }
     }
   }
@@ -794,25 +866,11 @@ const doHandlePreview = (images: string[], currentIndex: number = 0, needDealImg
     height: 36rpx;
   }
 }
-.followActions {
-  position: absolute;
-  z-index: 99;
-  right: 32rpx;
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
-}
 
 .followBtn {
-  line-height: 1.1;
-  text-align: center;
-  white-space: nowrap;
-  flex-shrink: 0;
-  box-sizing: border-box;
   display: flex;
   align-items: center;
-  justify-content: center;
-  min-height: 36rpx;
+  flex-shrink: 0;
   &.followed {
     :deep(.follow-btn) {
       background: #ffffff !important;
@@ -836,6 +894,8 @@ const doHandlePreview = (images: string[], currentIndex: number = 0, needDealImg
     color: #fff !important;
     // background-image: linear-gradient(90deg, rgba(232, 82, 18, 1) 0.00%, rgba(245, 148, 0, 1) 100.00%) !important;
     width: 140rpx;
+    height: 40rpx !important;
+    padding: 0 !important;
     border-color: rgba(255, 208, 86, 1) !important;
   }
 }

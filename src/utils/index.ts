@@ -752,9 +752,15 @@ export const formatWalletAddress = (address: string, prefixLength = 6, suffixLen
   return `${addr.slice(0, prefixLength)}...${addr.slice(-suffixLength)}`
 }
 
+const PAYMENT_LINK_FALLBACK_DELAY = 2000
+let cleanupExternalPaymentFallback: (() => void) | undefined
+
 export const openExternalPaymentLink = (link?: string | null, fallbackUrl?: string | null) => {
   const targetUrl = link || fallbackUrl
   if (!targetUrl) return
+
+  cleanupExternalPaymentFallback?.()
+  cleanupExternalPaymentFallback = undefined
 
   const openFallback = () => {
     if (!fallbackUrl || fallbackUrl === targetUrl) return
@@ -771,9 +777,43 @@ export const openExternalPaymentLink = (link?: string | null, fallbackUrl?: stri
   }
 
   // #ifdef APP-PLUS
+  let appFallbackTimer: ReturnType<typeof setTimeout> | undefined
+
+  const clearAppFallback = () => {
+    if (appFallbackTimer) {
+      clearTimeout(appFallbackTimer)
+      appFallbackTimer = undefined
+    }
+    ;(plus as any).globalEvent.removeEventListener('pause', clearAppFallback)
+    document.removeEventListener('visibilitychange', onAppVisibilityChange)
+    window.removeEventListener('pagehide', clearAppFallback)
+    window.removeEventListener('blur', clearAppFallback)
+    if (cleanupExternalPaymentFallback === clearAppFallback) {
+      cleanupExternalPaymentFallback = undefined
+    }
+  }
+
+  function onAppVisibilityChange() {
+    if (document.visibilityState === 'hidden') {
+      clearAppFallback()
+    }
+  }
+
+  if (fallbackUrl && fallbackUrl !== targetUrl) {
+    appFallbackTimer = setTimeout(() => {
+      clearAppFallback()
+      openFallback()
+    }, PAYMENT_LINK_FALLBACK_DELAY)
+
+    cleanupExternalPaymentFallback = clearAppFallback
+    ;(plus as any).globalEvent.addEventListener('pause', clearAppFallback)
+    document.addEventListener('visibilitychange', onAppVisibilityChange)
+    window.addEventListener('pagehide', clearAppFallback)
+    window.addEventListener('blur', clearAppFallback)
+  }
+
   plus.runtime.openURL(targetUrl, function (res) {
     console.log('plus.runtime.openURL failed', res)
-    openFallback()
   })
   // #endif
 
@@ -790,7 +830,7 @@ export const openExternalPaymentLink = (link?: string | null, fallbackUrl?: stri
           if (shouldFallback && document.visibilityState === 'visible') {
             window.location.href = fallbackUrl
           }
-        }, 1200)
+        }, PAYMENT_LINK_FALLBACK_DELAY)
       : undefined
 
   function clearFallback() {
