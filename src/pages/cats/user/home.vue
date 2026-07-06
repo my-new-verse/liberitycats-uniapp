@@ -326,7 +326,7 @@ onMounted(() => {
   // #endif
 
   // #ifdef APP-PLUS
-  headBoxHeight.value = (safeAreaInsets?.top || 0) + 360 + 'rpx'
+  headBoxHeight.value = (safeAreaInsets?.top || 0) + 460 + 'rpx'
   kfBoxTop.value = (safeAreaInsets?.top || 0) + 36 + 'rpx'
   cntHeight.value = 'calc(100vh - ' + headBoxHeight.value + ' + 64rpx)'
   // #endif

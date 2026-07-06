@@ -103,6 +103,21 @@
                   @click="handleDelPost(post.id)"
                 ></view>
                 <view class="jbBox" v-else @click="reportPost(post)"></view>
+                <view
+                  v-if="getMemberFollowInfo(post.member)"
+                  class="followBtn"
+                  :class="getMemberFollowInfo(post.member).style"
+                  @click.stop="handleFollowClick(post.member)"
+                >
+                  {{ getMemberFollowInfo(post.member).text }}
+                  <wd-icon
+                    custom-style="margin-left: 12rpx"
+                    name="star-on"
+                    size="22rpx"
+                    color="#ff6b03"
+                    v-if="post.member?.is_special_following === 1"
+                  ></wd-icon>
+                </view>
                 <view class="socialHead">
                   <view class="avatarBox" @click="toPostDetail(post)">
                     <image class="avatar" :src="post.member?.avatar" />
@@ -117,15 +132,6 @@
                   </view>
                   <view class="nameWrap">
                     <view class="name">{{ post.member?.nickname }}</view>
-                    <view
-                      v-if="getMemberFollowInfo(post.member)"
-                      class="followBtn"
-                      :class="getMemberFollowInfo(post.member).style"
-                      @click.stop="handleFollowClick(post.member)"
-                    >
-                      <!-- <text v-if="getMemberFollowInfo(post.member).icon" class="starIcon">★</text> -->
-                      {{ getMemberFollowInfo(post.member).text }}
-                    </view>
                   </view>
                   <view v-if="post.tag?.name" class="tag" :class="post.tag?.class">
                     {{ post.tag.name }}
@@ -342,6 +348,13 @@
                 @click.stop="handleFollow(user)"
               >
                 {{ getFollowButtonInfo(user).text }}
+                <wd-icon
+                  custom-style="margin-left: 12rpx"
+                  name="star-on"
+                  size="22rpx"
+                  color="#ff6b03"
+                  v-if="user.is_special_following === 1"
+                ></wd-icon>
               </view>
               <view class="memberCheck" v-if="tempSelectedUserIds.includes(user.member_id)">✓</view>
             </view>
@@ -636,7 +649,11 @@ const handleSpecialFollow = () => {
 const doSetSpecialFollow = (member: any, isSpecial: boolean) => {
   setSpecialFollowApi(member.id, isSpecial ? 0 : 1).then((res) => {
     if (res.code === 1) {
-      member.is_special_following = isSpecial ? 0 : 1
+      syncMemberFollowState(member.id, {
+        is_following: member.is_following,
+        is_mutual_following: member.is_mutual_following,
+        is_special_following: res.data.is_special_following,
+      })
       uni.showToast({
         title: isSpecial
           ? t('social.index.user.special.canceled')
@@ -762,11 +779,21 @@ const shareRef = ref<any>(null)
 const getMemberFollowInfo = (member: any) => {
   if (!member || member.is_self) return null
   if (member.is_special_following)
-    return { text: t('social.index.user.special.following'), style: 'special' }
+    return { text: t('social.index.user.special.following'), style: 'followed' }
   if (member.is_mutual_following) return { text: '互相关注', style: 'followed' }
   if (member.is_following) return { text: '已关注', style: 'followed' }
   if (member.is_following_me) return { text: '回关', style: 'follow' }
   return { text: '关注', style: 'follow' }
+}
+
+const syncMemberFollowState = (memberId: number, data: any) => {
+  searchResult.value.posts.forEach((post) => {
+    if (post.member_id === memberId) {
+      post.member.is_following = data.is_following
+      post.member.is_mutual_following = data.is_mutual_following
+      post.member.is_special_following = data.is_special_following
+    }
+  })
 }
 
 /** 操作面板的取消关注（直接完全取关） */
@@ -778,10 +805,7 @@ const handleActionSheetUnfollow = async (member: any) => {
   }
   const res = await deleteFollowApi(member.id)
   if (res.code === 1) {
-    const d = res.data
-    member.is_following = d.is_following
-    member.is_mutual_following = d.is_mutual_following
-    member.is_special_following = d.is_special_following
+    syncMemberFollowState(member.id, res.data)
     uni.showToast({ title: t('social.index.user.follow.canceled'), icon: 'none' })
   }
 }
@@ -803,7 +827,11 @@ const handleFollowClick = async (member: any) => {
       }
       const res = await setSpecialFollowApi(member.id, 0)
       if (res.code === 1) {
-        member.is_special_following = 0
+        syncMemberFollowState(member.id, {
+          is_following: member.is_following,
+          is_mutual_following: member.is_mutual_following,
+          is_special_following: 0,
+        })
         uni.showToast({ title: t('social.index.user.special.canceled'), icon: 'none' })
       }
     }
@@ -816,10 +844,7 @@ const handleFollowClick = async (member: any) => {
       }
       const res = await deleteFollowApi(member.id)
       if (res.code === 1) {
-        const d = res.data
-        member.is_following = d.is_following
-        member.is_mutual_following = d.is_mutual_following
-        member.is_special_following = d.is_special_following
+        syncMemberFollowState(member.id, res.data)
       }
       uni.showToast({ title: t('social.index.user.follow.canceled'), icon: 'none' })
     }
@@ -827,48 +852,12 @@ const handleFollowClick = async (member: any) => {
     else {
       const res = await createFollowApi(member.id)
       if (res.code === 1) {
-        const d = res.data
-        member.is_following = d.is_following
-        member.is_mutual_following = d.is_mutual_following
-        member.is_special_following = d.is_special_following
+        syncMemberFollowState(member.id, res.data)
       }
       uni.showToast({ title: t('social.index.user.follow.success'), icon: 'none' })
     }
   } catch (e) {
     console.error('handleFollowClick failed', e)
-  }
-}
-
-/** 帖子作者关注按钮 */
-const getPostFollowInfo = (member: any) => {
-  if (!member) return null
-  if (member.is_self) return null
-  if (member.is_mutual_following) return { text: '互相关注', style: 'mutual' }
-  if (member.is_following) return { text: '已关注', style: 'followed' }
-  if (member.is_following_me) return { text: '回关', style: 'follow' }
-  return { text: '关注', style: 'follow' }
-}
-
-const handlePostMemberFollow = async (member: any) => {
-  console.log('handlePostMemberFollow', member.member_id)
-  if (!userStore.isLogin) {
-    uni.navigateTo({ url: '/pages/cats/login/login' })
-    return
-  }
-  try {
-    if (member.is_following) {
-      await deleteFollowApi(member.member_id)
-      member.is_following = false
-      member.is_mutual_following = false
-      uni.showToast({ title: t('social.index.user.follow.canceled'), icon: 'none' })
-    } else {
-      await createFollowApi(member.member_id)
-      member.is_following = true
-      if (member.is_following_me) member.is_mutual_following = true
-      uni.showToast({ title: t('social.index.user.follow.success'), icon: 'none' })
-    }
-  } catch (e) {
-    console.error('handlePostMemberFollow failed', e)
   }
 }
 
@@ -1238,7 +1227,9 @@ const userStore = useUserStore()
 /** 获取关注按钮文案和样式 */
 const getFollowButtonInfo = (user: any) => {
   if (user.is_self) return null
-  if (user.is_mutual) return { text: '互相关注', style: 'mutual' }
+  if (user.is_special_following)
+    return { text: t('social.index.user.special.following'), style: 'followed' }
+  if (user.is_mutual) return { text: '互相关注', style: 'followed' }
   if (user.is_followed) return { text: '已关注', style: 'followed' }
   if (user.is_following_me) return { text: '回关', style: 'follow' }
   return { text: '关注', style: 'follow' }
@@ -1248,16 +1239,37 @@ const getFollowButtonInfo = (user: any) => {
 const handleFollow = async (user: any) => {
   console.log('handleFollow', user.member_id)
   try {
-    if (user.is_followed) {
-      await deleteFollowApi(user.member_id)
-      user.is_followed = false
-      user.is_mutual = false
-      uni.showToast({ title: t('social.index.user.follow.canceled'), icon: 'none' })
+    if (user.is_special_following) {
+      try {
+        await message.confirm({ msg: t('social.index.user.special.cancel.confirm') })
+      } catch {
+        return
+      }
+      const res = await setSpecialFollowApi(user.member_id, 0)
+      if (res.code === 1) {
+        user.is_special_following = 0
+        uni.showToast({ title: t('social.index.user.special.canceled'), icon: 'none' })
+      }
+    } else if (user.is_followed) {
+      try {
+        await message.confirm({ msg: t('social.index.user.follow.cancel') })
+      } catch {
+        return
+      }
+      const res = await deleteFollowApi(user.member_id)
+      if (res.code === 1) {
+        user.is_followed = false
+        user.is_mutual = false
+        user.is_special_following = 0
+        uni.showToast({ title: t('social.index.user.follow.canceled'), icon: 'none' })
+      }
     } else {
-      await createFollowApi(user.member_id)
-      user.is_followed = true
-      if (user.is_following_me) user.is_mutual = true
-      uni.showToast({ title: t('social.index.user.follow.success'), icon: 'none' })
+      const res = await createFollowApi(user.member_id)
+      if (res.code === 1) {
+        user.is_followed = true
+        if (user.is_following_me) user.is_mutual = true
+        uni.showToast({ title: t('social.index.user.follow.success'), icon: 'none' })
+      }
     }
   } catch (e) {
     console.error('handleFollow failed', e)
@@ -1872,33 +1884,45 @@ const handleLevelIconError = (member: any) => {
   display: flex;
   align-items: center;
   gap: 12rpx;
+}
+
+.followBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40rpx;
+  padding: 0 20rpx;
+  border-radius: 22rpx;
+  border: 1rpx solid transparent;
+  background-color: #ff6b03;
+  color: #fff;
+  font-size: 22rpx;
+  line-height: 1;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  &.followed {
+    background-color: #ffffff;
+    color: #999;
+    border-color: #ddd;
+  }
+  &.special {
+    background: linear-gradient(135deg, #fff7e5 0%, #fff0d6 100%);
+    color: #ff6b03;
+    border-color: #ff6b03;
+    font-weight: 600;
+  }
+}
+
+.socialItem {
+  position: relative;
 
   .followBtn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    height: 40rpx;
-    padding: 0 14rpx;
-    border-radius: 22rpx;
-    border: 1rpx solid transparent;
-    background-color: #ff6b03;
-    color: #fff;
-    font-size: 22rpx;
-    line-height: 1;
-    white-space: nowrap;
-    flex-shrink: 0;
-    box-sizing: border-box;
-    &.followed {
-      background-color: #ffffff;
-      color: #999;
-      border-color: #ddd;
-    }
-    &.special {
-      background: linear-gradient(135deg, #fff7e5 0%, #fff0d6 100%);
-      color: #ff6b03;
-      border-color: #ff6b03;
-      font-weight: 600;
-    }
+    position: absolute;
+    right: 48rpx;
+    top: 0;
+    align-items: self-start;
+    line-height: 42rpx;
   }
 }
 
