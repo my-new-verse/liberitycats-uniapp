@@ -361,6 +361,16 @@ const isFromContext = ref(false)
 const isFromHistory = ref(false)
 const contextAfterMessageId = ref<number | null>(null)
 const contextLoadingMore = ref(false)
+const contextLoadArmed = ref(false)
+const halfScreenHeight = uni.getSystemInfoSync().screenHeight * 1
+// 待发送消息暂存（isFromHistory 时先 reload 再发送）
+let pendingSendAfterReload: {
+  messageType: any
+  payload: any
+  mentioned_member_ids?: number[]
+  reply_to?: ChatMessageReplyTo
+  clientMessageId: string
+} | null = null
 const showFloatBtn = ref(false)
 const importantUnreadMessages = ref<Array<{ message_id: number }>>([])
 const currentUnreadIndex = ref(0)
@@ -409,7 +419,7 @@ onLoad((options: any) => {
     pendingScrollToMessageId.value = String(options.message_id)
   }
 })
-const scrollIntoViewById = async (id: string) => {
+const scrollIntoViewById = async (id: string, offset: number = 500) => {
   const targetId = Number(id)
   // 检查当前消息列表中是否已存在目标消息
   const findInCurrent = () => messages.value.some((m: any) => m.id === targetId)
@@ -434,7 +444,7 @@ const scrollIntoViewById = async (id: string) => {
 
   // 找到后滚动并高亮
   if (findInCurrent()) {
-    paging.value.scrollIntoViewById('msg-row-' + id, 500)
+    paging.value.scrollIntoViewById('msg-row-' + id, offset)
     highlightedMsgId.value = id
     setTimeout(() => {
       highlightedMsgId.value = ''
@@ -521,24 +531,31 @@ const loadRoomDetail = async () => {
 const scrollTopValue = ref(0)
 let lastScrollTop = 0
 
-const loadAfterContextMessages = (afterId: number) => {
+const loadAfterContextMessages = (afterId: number, limit: number = 50) => {
+  uni.showLoading()
   contextLoadingMore.value = true
   getChatMessageListApi({
     room_id: roomDetail.value?.room?.id || routeRoomId.value,
     after_message_id: afterId,
-    limit: 50,
+    limit,
   })
     .then((afterRes) => {
       if (afterRes.code === 1 && afterRes.data?.messages?.length > 0) {
         const afterMessages = [...afterRes.data.messages]
         paging.value?.addChatRecordData(afterMessages, false, false)
+        setTimeout(() => {
+          // scrollIntoViewById(String(afterId) ,25)
+          paging.value.scrollIntoViewById('msg-row-' + afterId, 50)
+          uni.hideLoading()
+        }, 10)
       }
       if (
         afterRes.code === 1 &&
         afterRes.data?.has_more_latest === 1 &&
         afterRes.data?.next_after_message_id
       ) {
-        loadAfterContextMessages(afterRes.data.next_after_message_id)
+        // 保存下一次调用的 after_message_id，等用户再次滚动到底部附近时触发
+        contextAfterMessageId.value = afterRes.data.next_after_message_id
       } else {
         contextAfterMessageId.value = null
       }
@@ -551,43 +568,20 @@ const loadAfterContextMessages = (afterId: number) => {
     })
 }
 
-/** 从历史记录页返回时，轮询获取新消息 */
-const pollNewMessagesAfterId = async (afterId: number) => {
-  const roomId = roomDetail.value?.room?.id || routeRoomId.value
-  if (!roomId) return
-  try {
-    const res = await getChatMessageListApi({
-      room_id: roomId,
-      after_message_id: afterId,
-      limit: 50,
-    })
-    if (res.code === 1 && res.data?.messages?.length > 0) {
-      const newMessages = [...res.data.messages]
-      paging.value?.addChatRecordData(newMessages, false, false)
-    }
-    // 继续轮询直到没有更多新消息
-    if (res.code === 1 && res.data?.has_more_latest === 1 && res.data?.next_after_message_id) {
-      await pollNewMessagesAfterId(res.data.next_after_message_id)
-    }
-  } catch (e) {
-    console.error('poll new messages failed', e)
-  }
-}
-
 const handleChatScroll = (e) => {
   const scrollTop = e.detail ? e.detail.scrollTop : e.contentOffset.y
   lastScrollTop = scrollTop
+  console.log('handleChatScroll', scrollTop)
   scrollTopValue.value = e.detail.scrollTop
-
-  // 上下文模式：检测到用户滚动时，加载 message_id 之后的新消息
-  if (contextAfterMessageId.value && !contextLoadingMore.value) {
-    const afterId = contextAfterMessageId.value
-    contextAfterMessageId.value = null
-    loadAfterContextMessages(afterId)
-  }
+  // return
+  // 上下文模式：scrollTop 小于 50vh 时加载一批 after_message_id 消息
 
   // 用户滚动到底部时，追加暂存的离屏消息并清除指示器
   if (isNearBottom()) {
+    if (contextAfterMessageId.value && !contextLoadingMore.value) {
+      const afterId = contextAfterMessageId.value
+      loadAfterContextMessages(afterId, 20)
+    }
     const hadPendingOffscreen = pendingOffscreenMessages.length > 0
     if (hadPendingOffscreen) {
       applyMessagesBatch(pendingOffscreenMessages, true)
@@ -1087,16 +1081,49 @@ const flushRealtimeMessages = () => {
   const shouldScrollToLatest = pendingRealtimeScrollToLatest
   pendingRealtimeScrollToLatest = false
 
-  // 自己发的消息：在底部则立即追加，不在底部也暂存（通常会被 filterExistingMessages 过滤因为 doSend 已添加）
+  // 自己发的消息：先尝试更新本地待确认消息，避免重复追加
   const selfMessages = queuedMessages.filter((msg) => msg.is_self)
   if (selfMessages.length > 0) {
-    if (isNearBottom()) {
-      applyMessagesBatch(selfMessages, shouldScrollToLatest)
-    } else {
-      const filtered = filterExistingMessages(messages.value, selfMessages)
-      if (filtered.length > 0) {
-        pendingOffscreenMessages.push(...filtered)
-        // 自己的消息不计入未读计数
+    const unmatchedSelfMessages: ChatMessage[] = []
+    for (const msg of selfMessages) {
+      let matched = false
+      // 1. 优先通过 client_message_id 匹配并更新本地待确认消息
+      if (msg.client_message_id) {
+        matched = updateChatMessageByClientMessageId(msg.client_message_id, {
+          ...msg,
+          local_status: 'sent',
+        })
+      }
+      // 2. WS 广播可能不含 client_message_id，查找本地 sending 状态的消息进行更新
+      if (!matched) {
+        const localPendingIndex = messages.value.findIndex(
+          (m) => m.is_self === 1 && m.local_status === 'sending',
+        )
+        if (localPendingIndex >= 0) {
+          messages.value.splice(localPendingIndex, 1, {
+            ...messages.value[localPendingIndex],
+            ...msg,
+            local_status: 'sent',
+          })
+          matched = true
+        }
+      }
+      // 3. 若 API 响应已先于 WS 更新了本地消息（id 已替换为服务端 id），直接跳过
+      if (!matched && messages.value.some((m) => m.id === msg.id)) {
+        matched = true
+      }
+      if (!matched) {
+        unmatchedSelfMessages.push(msg)
+      }
+    }
+    if (unmatchedSelfMessages.length > 0) {
+      if (isNearBottom()) {
+        applyMessagesBatch(unmatchedSelfMessages, shouldScrollToLatest)
+      } else {
+        const filtered = filterExistingMessages(messages.value, unmatchedSelfMessages)
+        if (filtered.length > 0) {
+          pendingOffscreenMessages.push(...filtered)
+        }
       }
     }
   }
@@ -1240,6 +1267,14 @@ const getNewMessageIndicatorText = () => {
   return count + '' + t('group.chat.newMessages')
 }
 const handleJumpToLatestMessage = () => {
+  // 从历史记录跳转过来的：直接清空，重新加载最新 50 条
+  if (isFromHistory.value) {
+    isFromHistory.value = false
+    contextAfterMessageId.value = null
+    contextLoadArmed.value = false
+    paging.value?.reload()
+    return
+  }
   // 先追加暂存的离屏消息
   if (pendingOffscreenMessages.length > 0) {
     applyMessagesBatch(pendingOffscreenMessages, true)
@@ -1380,10 +1415,8 @@ const queryList = async (pageNo, pageSize) => {
             await scrollIntoViewById(targetId)
             // 等 scrollIntoViewById 的滚动动画完全停止后，再设置 after_message_id
             // 这样只有用户后续手动滚动才会触发 loadAfterContextMessages
-            setTimeout(async () => {
-              contextAfterMessageId.value = Number(targetId)
-              // 立即轮询获取新消息（after_message_id）
-              await pollNewMessagesAfterId(Number(targetId))
+            setTimeout(() => {
+              contextAfterMessageId.value = Number(messages[0]?.id)
             }, 800)
           }, 500)
         }
@@ -1392,9 +1425,48 @@ const queryList = async (pageNo, pageSize) => {
       }
       return
     }
+    // 先取消 pending 的 WebSocket 刷新定时器，清空队列
+    // reload 期间的 WebSocket 消息不手动追加，直接由 getChatMessageList 接口返回
+    if (realtimeFlushTimer) {
+      clearTimeout(realtimeFlushTimer)
+      realtimeFlushTimer = null
+    }
+    pendingRealtimeMessages.clear()
+    pendingOffscreenMessages.length = 0
     await getChatMessageList()
+    const wasFromHistory = isFromHistory.value
+    isFromHistory.value = false
+    // reload 后重置滚动位置，确保 isNearBottom 返回 true
+    scrollTopValue.value = 0
+    // 如果有待发送的消息，先执行发送（先滚动到底部）
+    if (pendingSendAfterReload) {
+      const info = pendingSendAfterReload
+      pendingSendAfterReload = null
+      paging.value?.addChatRecordData(
+        createLocalPendingMessage(
+          info.clientMessageId,
+          info.messageType,
+          info.payload,
+          info.reply_to,
+        ),
+        true,
+        false,
+      )
+      sendChatMessageWithClientMessageId(
+        roomDetail.value.room.id,
+        info.messageType,
+        info.clientMessageId,
+        info.payload,
+        info.mentioned_member_ids,
+        info.reply_to,
+      ).catch((error: any) => {
+        markLocalMessageFailed(info.clientMessageId)
+        console.error('sendChatMessageWithClientMessageId error:', error)
+        toast.show(error?.errMsg || error?.message || t('group.chat.sendFailed'))
+      })
+    }
     setTimeout(() => {
-      if (hasMoreHistory.value) {
+      if (hasMoreHistory.value && !wasFromHistory) {
         getChatMessageList(lastestMessageId.value, true)
       }
     }, 5000)
@@ -1642,6 +1714,22 @@ const doSend = (messageType, payload, mentioned_member_ids?, reply_to?: ChatMess
     pendingOffscreenMessages.length = 0
   }
   clearPendingRealtimeMessageIndicator()
+  // 发送消息后不再触发 after_message_id 滚动加载
+  contextAfterMessageId.value = null
+  contextLoadArmed.value = false
+
+  // 从历史记录跳转过来的：先 reload 加载最新数据，queryList 完成后再发送
+  if (isFromHistory.value) {
+    pendingSendAfterReload = {
+      messageType,
+      payload,
+      mentioned_member_ids,
+      reply_to,
+      clientMessageId,
+    }
+    paging.value?.reload()
+    return
+  }
 
   // 乐观追加本地消息，立即展示并滚动到底部
   paging.value?.addChatRecordData(
