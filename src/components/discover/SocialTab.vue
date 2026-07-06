@@ -91,6 +91,21 @@
               @click="handleDelPost(item.id)"
             ></view>
             <view class="jbBox" v-else @click="reportPost(item)"></view>
+            <view
+              v-if="getMemberFollowInfo(item.member)"
+              class="followBtn"
+              :class="getMemberFollowInfo(item.member).style"
+              @click.stop="handleFollowClick(item.member)"
+            >
+              {{ getMemberFollowInfo(item.member).text }}
+              <wd-icon
+                custom-style="margin-left: 12rpx"
+                name="star-on"
+                size="22rpx"
+                color="#ff6b03"
+                v-if="item.member.is_special_following === 1"
+              ></wd-icon>
+            </view>
             <view class="socialHead">
               <view class="avatarBox" @click="toUserHome(item.member_id)">
                 <image
@@ -104,14 +119,15 @@
 
               <view class="nameWrap">
                 <view class="name">{{ formatNickname(item.member.nickname, 22) }}</view>
-                <view
+                <!-- <view
                   v-if="getMemberFollowInfo(item.member)"
                   class="followBtn"
                   :class="getMemberFollowInfo(item.member).style"
                   @click.stop="handleFollowClick(item.member)"
                 >
                   {{ getMemberFollowInfo(item.member).text }}
-                </view>
+                  <wd-icon custom-style="margin-left: 12rpx" name="star-on" size="22rpx" color="#ff6b03" v-if="item.member.is_special_following === 1"></wd-icon>
+                </view> -->
               </view>
 
               <view v-if="item.tag?.name" class="tag" :class="item.tag?.extend_json?.class">
@@ -540,7 +556,8 @@ const loadSocial = async (page = 1, filter = socialFilter.value) => {
 const getMemberFollowInfo = (member: any) => {
   if (!member || member.is_self) return null
   if (member.is_special_following)
-    return { text: t('social.index.user.special.following'), style: 'special' }
+    return { text: t('social.index.user.special.following'), style: 'followed' }
+  // return { text: t('social.index.user.special.following'), style: 'special' }
   if (member.is_mutual_following) return { text: '互相关注', style: 'followed' }
   if (member.is_following) return { text: '已关注', style: 'followed' }
   if (member.is_following_me) return { text: '回关', style: 'follow' }
@@ -1065,16 +1082,17 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
 
 .followBtn {
   display: inline-flex;
-  align-items: center;
+  // align-items: center;
+  align-items: self-start;
   justify-content: center;
   height: 40rpx;
-  padding: 0 14rpx;
+  padding: 0 20rpx;
   border-radius: 22rpx;
   border: 1rpx solid transparent;
   background-color: #ff6b03;
   color: #fff;
   font-size: 22rpx;
-  line-height: 1;
+  line-height: 42rpx;
   white-space: nowrap;
   flex-shrink: 0;
   box-sizing: border-box;
@@ -1088,6 +1106,12 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
     color: #ff6b03;
     border-color: #ff6b03;
     font-weight: 600;
+  }
+  position: absolute;
+  right: 48rpx;
+  top: 0;
+  .wd-icon-star-on {
+    line-height: 38rpx;
   }
 }
 .socialOpBox {

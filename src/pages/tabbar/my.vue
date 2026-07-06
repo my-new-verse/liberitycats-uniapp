@@ -92,7 +92,7 @@
         @refresherabort="onRefreshAbort"
       >
         <view class="scrollCnt">
-          <view class="NftBox" v-if="userStore.isLogin">
+          <!-- <view class="NftBox" v-if="userStore.isLogin">
             <view class="titleBox">
               <view class="titleLeft nftTitle">
                 <view class="icon2">
@@ -162,7 +162,7 @@
                 </view>
               </view>
             </view>
-          </view>
+          </view> -->
           <view class="checkinBox" v-if="userStore.isLogin">
             <view class="titleBox">
               <view class="titleLeft" style="font-size: 28rpx">
@@ -213,10 +213,12 @@
             <view class="titleBox">
               <view class="titleLeft nftTitle">
                 <view class="icon2">
-                  <image class="iconImg" src="@/static/images/nft.png" mode="widthFix" />
+                  <!-- <image class="iconImg" src="@/static/images/nft.png" mode="widthFix" /> -->
+                  <image class="iconImg" src="@/static/images/asset@2x.png" mode="widthFix" />
                 </view>
                 <view>
-                  {{ t('my.my_nft_title') }}
+                  <!-- {{ t('my.my_nft_title') }} -->
+                  我的资产
                 </view>
                 <!-- <image
                   class="refresh"
@@ -234,9 +236,68 @@
                 {{ nftList.length }}
               </view>
             </view>
+            <view class="assetBox">
+              <view
+                class="assetItem"
+                @click="toUrl('/pages/cats/asset/log?assetKey=pledge_point', true)"
+              >
+                <view class="amountBox">
+                  <view class="amount">
+                    {{ formatNumber(assetResp?.pledge_point.usable_balance || 0, 0) }}
+                  </view>
+                </view>
+                <view class="labelBox">
+                  <view class="leftBox">
+                    <view class="assetIcon assetPoint"></view>
+                    <view class="label">{{ t('my.asset.pledgePoints') }}</view>
+                  </view>
+                  <view class="moreIcon"></view>
+                </view>
+              </view>
+              <view class="assetItem" @click="toUrl('/pages/cats/asset/log?assetKey=point', true)">
+                <view class="amountBox">
+                  <view class="amount">
+                    {{ formatNumber(assetResp?.point.usable_balance || 0, 0) }}
+                  </view>
+                  <view class="unit">g</view>
+                </view>
+                <view class="labelBox">
+                  <view class="leftBox">
+                    <view class="assetIcon assetPledgePoint"></view>
+                    <view class="label">{{ t('my.asset.points') }}</view>
+                  </view>
+                  <view class="moreIcon"></view>
+                </view>
+              </view>
+              <view
+                class="assetItem"
+                @click="toUrl('/pages/cats/asset/log?assetKey=ccToken', true)"
+              >
+                <view class="amountBox">
+                  <view class="amount">
+                    {{
+                      formatNumber(
+                        assetResp?.cc_token?.usable_balance ||
+                          assetResp?.ccToken?.usable_balance ||
+                          0,
+                        0,
+                      )
+                    }}
+                  </view>
+                  <view class="unit">c</view>
+                </view>
+                <view class="labelBox">
+                  <view class="leftBox">
+                    <view class="assetIcon assetccPoint"></view>
+                    <view class="label">{{ t('my.asset.ccToken') }}</view>
+                  </view>
+                  <view class="moreIcon"></view>
+                </view>
+              </view>
+            </view>
             <view class="nftValuation" v-if="nftList.length > 0">
               <view class="summaryHero">
-                <view class="heroLabel">{{ t('my.nft.valuation.total_value') }}</view>
+                <view class="heroLabel">NFT {{ t('my.nft.valuation.total_value') }}</view>
                 <view class="heroValue">
                   <text class="currency">{{ nftCurrencySymbol }}</text>
                   <text class="amount">{{ nftTotalValue }}</text>
@@ -1139,7 +1200,7 @@ const bindArGame = () => {
         width: 100%;
 
         .titleRight {
-          padding: 5rpx 26rpx;
+          padding: 5rpx 32rpx;
           font-size: 28rpx;
           font-style: normal;
           font-weight: 600;
@@ -1363,7 +1424,7 @@ const bindArGame = () => {
           align-items: center;
           justify-content: center;
           height: 28rpx;
-          padding: 10rpx 16rpx;
+          padding: 10rpx 26rpx;
 
           font-size: 24rpx;
           font-style: normal;

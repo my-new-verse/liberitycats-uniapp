@@ -155,7 +155,8 @@ onMounted(() => {
   const paddingPx = PADDING_RPX * rpxToPx
   //   x.value = sysInfo.screenWidth - iconSizePx - paddingPx
   x.value = paddingPx // 默认靠左
-  y.value = sysInfo.screenHeight * 0.7
+  x.value = sysInfo.screenWidth - 20
+  y.value = sysInfo.screenHeight * 0.4
   lastX.value = x.value
   lastY.value = y.value
 })

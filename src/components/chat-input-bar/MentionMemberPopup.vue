@@ -618,14 +618,15 @@ const handleConfirm = () => {
   text-align: center;
   color: #ccc;
   font-size: 24rpx;
+  height: 40vh;
 }
 
 .mention-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  min-height: 300rpx;
+  // justify-content: center;
+  min-height: 50vh;
   padding: 120rpx 32rpx;
   color: #999;
   font-size: 28rpx;
