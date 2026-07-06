@@ -61,7 +61,7 @@ const lastY = ref(0)
 const isDragging = ref(false)
 const hasMoved = ref(false)
 
-const currentImgName = ref('01')
+const currentImgName = ref('02')
 
 const onTouchStart = () => {
   hasMoved.value = false
