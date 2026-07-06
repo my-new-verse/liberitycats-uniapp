@@ -53,6 +53,13 @@
                 <view class="followBtn" :class="followBtnInfo.style" @click="handleFollow">
                   <wd-button plain custom-class="follow-btn" size="small">
                     {{ followBtnInfo.text }}
+                    <wd-icon
+                      custom-style="margin-left: 8rpx"
+                      name="star-on"
+                      size="22rpx"
+                      color="#ff6b03"
+                      v-if="userInfo.is_special_following === 1"
+                    ></wd-icon>
                   </wd-button>
                 </view>
                 <view class="moreActionsBtn" @click="openMoreActions"></view>
@@ -433,7 +440,8 @@ const moreActions = ref<any[]>([])
 const followBtnInfo = computed(() => {
   const u: any = userInfo.value || {}
   if (u.is_special_following)
-    return { text: t('social.index.user.special.following'), style: 'special' }
+    return { text: t('social.index.user.special.following'), style: 'followed' }
+  // return { text: t('social.index.user.special.following'), style: 'special' }
   if (u.is_mutual_following) return { text: '互相关注', style: 'followed' }
   if (u.is_following === 1) return { text: '已关注', style: 'followed' }
   if (u.is_following_me) return { text: '回关', style: 'follow' }
@@ -871,6 +879,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0, needDealImg
   display: flex;
   align-items: center;
   flex-shrink: 0;
+
   &.followed {
     :deep(.follow-btn) {
       background: #ffffff !important;
@@ -893,9 +902,9 @@ const doHandlePreview = (images: string[], currentIndex: number = 0, needDealImg
     border-color: #fff !important;
     color: #fff !important;
     // background-image: linear-gradient(90deg, rgba(232, 82, 18, 1) 0.00%, rgba(245, 148, 0, 1) 100.00%) !important;
-    width: 140rpx;
+    // width: 140rpx;
     height: 40rpx !important;
-    padding: 0 !important;
+    padding: 0 20rpx !important;
     border-color: rgba(255, 208, 86, 1) !important;
   }
 }
