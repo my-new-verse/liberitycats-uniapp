@@ -58,7 +58,7 @@
               </view>
               <view class="unit">g</view>
             </view> -->
-            <view class="asset-resps" style="display: flex">
+            <!-- <view class="asset-resps" style="display: flex">
               <view
                 v-if="assetResp"
                 v-for="(item, key) in assetResp"
@@ -67,12 +67,6 @@
                 @click="toUrl(`/pages/cats/asset/log?assetKey=${key}`, true)"
               >
                 <template v-if="key !== 'pledge_point'">
-                  <!-- <wd-img
-                    mode="aspectFit"
-                    width="28rpx"
-                    height="28rpx"
-                    :src="iconMap[key]"
-                  ></wd-img> -->
                   <view class="label">{{ item.name }}:</view>
                   <view class="amount">
                     {{ formatNumber(item.usable_balance || 0, 0) }}
@@ -80,7 +74,7 @@
                   <view class="unit">{{ item.unit || '' }}</view>
                 </template>
               </view>
-            </view>
+            </view> -->
           </template>
         </view>
       </view>
@@ -98,53 +92,6 @@
         @refresherabort="onRefreshAbort"
       >
         <view class="scrollCnt">
-          <view class="checkinBox" v-if="userStore.isLogin">
-            <view class="titleBox">
-              <view class="titleLeft" style="font-size: 28rpx">
-                {{ t('my.check_in_prefix') }}
-                <text class="checkinDays">{{ checkinData.continuous_days }}</text>
-                {{ t('my.check_in_suffix') }}
-              </view>
-              <view
-                v-if="checkinData.today.date !== ''"
-                class="titleRight"
-                :class="{ active: checkinData.today.is_check === false }"
-                @click="handleCheckIn"
-              >
-                {{
-                  checkinData.today.is_check === false
-                    ? t('my.check_in_btn')
-                    : t('my.checkin_checked')
-                }}
-              </view>
-            </view>
-            <view class="checkinCnt">
-              <view class="scrollOp"><view class="opl"></view></view>
-              <scroll-view class="checkinDateBox" :scroll-x="true">
-                <template v-if="checkinData.list.length > 0">
-                  <view class="checkinDateBox">
-                    <view
-                      class="checkinDateItem"
-                      :class="{ active: item.is_check }"
-                      v-for="(item, index) in checkinData.list"
-                      :key="index"
-                    >
-                      <view class="pointBox">
-                        <view class="point">+{{ item.reward_amount }}</view>
-                        <view class="gift"></view>
-                      </view>
-                      <view class="date">{{ item.date }}</view>
-                    </view>
-                  </view>
-                </template>
-                <template v-else>
-                  <view class="checkinDateBox"></view>
-                </template>
-              </scroll-view>
-              <view class="scrollOp"><view class="opr"></view></view>
-            </view>
-          </view>
-          <!--
           <view class="NftBox" v-if="userStore.isLogin">
             <view class="titleBox">
               <view class="titleLeft nftTitle">
@@ -195,7 +142,14 @@
               >
                 <view class="amountBox">
                   <view class="amount">
-                    {{ formatNumber(assetResp?.ccToken?.usable_balance || 0, 0) }}
+                    {{
+                      formatNumber(
+                        assetResp?.cc_token?.usable_balance ||
+                          assetResp?.ccToken?.usable_balance ||
+                          0,
+                        0,
+                      )
+                    }}
                   </view>
                   <view class="unit">c</view>
                 </view>
@@ -208,8 +162,53 @@
                 </view>
               </view>
             </view>
-          </view> -->
-
+          </view>
+          <view class="checkinBox" v-if="userStore.isLogin">
+            <view class="titleBox">
+              <view class="titleLeft" style="font-size: 28rpx">
+                {{ t('my.check_in_prefix') }}
+                <text class="checkinDays">{{ checkinData.continuous_days }}</text>
+                {{ t('my.check_in_suffix') }}
+              </view>
+              <view
+                v-if="checkinData.today.date !== ''"
+                class="titleRight"
+                :class="{ active: checkinData.today.is_check === false }"
+                @click="handleCheckIn"
+              >
+                {{
+                  checkinData.today.is_check === false
+                    ? t('my.check_in_btn')
+                    : t('my.checkin_checked')
+                }}
+              </view>
+            </view>
+            <view class="checkinCnt">
+              <view class="scrollOp"><view class="opl"></view></view>
+              <scroll-view class="checkinDateBox" :scroll-x="true">
+                <template v-if="checkinData.list.length > 0">
+                  <view class="checkinDateBox">
+                    <view
+                      class="checkinDateItem"
+                      :class="{ active: item.is_check }"
+                      v-for="(item, index) in checkinData.list"
+                      :key="index"
+                    >
+                      <view class="pointBox">
+                        <view class="point">+{{ item.reward_amount }}</view>
+                        <view class="gift"></view>
+                      </view>
+                      <view class="date">{{ item.date }}</view>
+                    </view>
+                  </view>
+                </template>
+                <template v-else>
+                  <view class="checkinDateBox"></view>
+                </template>
+              </scroll-view>
+              <view class="scrollOp"><view class="opr"></view></view>
+            </view>
+          </view>
           <view class="NftBox" v-if="userStore.isLogin && getServerOnOff('enable_nft')">
             <view class="titleBox">
               <view class="titleLeft nftTitle">
@@ -1534,13 +1533,13 @@ const bindArGame = () => {
 
 .assetBox {
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16rpx;
   padding-top: 24rpx;
   .assetItem {
     display: flex;
     flex-direction: column;
-    width: 131rpx;
-    height: 74rpx;
+    width: calc(50% - 42rpx);
     padding: 16rpx;
     background-color: #f9f9f9;
     border-radius: 16rpx;
@@ -1623,7 +1622,7 @@ const bindArGame = () => {
     }
   }
   .assetItem:nth-child(3) {
-    width: 216rpx;
+    width: 100%;
   }
 }
 </style>
