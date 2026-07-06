@@ -1096,6 +1096,9 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   white-space: nowrap;
   flex-shrink: 0;
   box-sizing: border-box;
+  position: absolute;
+  right: 48rpx;
+  top: 0;
   &.followed {
     background-color: #ffffff;
     color: #999;
@@ -1107,9 +1110,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
     border-color: #ff6b03;
     font-weight: 600;
   }
-  position: absolute;
-  right: 48rpx;
-  top: 0;
+
   .wd-icon-star-on {
     line-height: 38rpx;
   }

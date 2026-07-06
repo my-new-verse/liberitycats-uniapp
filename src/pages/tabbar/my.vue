@@ -228,13 +228,13 @@
                   @click="handleRefreshNftList"
                 /> -->
               </view>
-              <view
+              <!-- <view
                 @click="toUrl('/pages/cats/pledge/index', true)"
                 class="titleRight"
                 v-if="userStore.isLogin"
               >
                 {{ nftList.length }}
-              </view>
+              </view> -->
             </view>
             <view class="assetBox">
               <view
@@ -311,7 +311,7 @@
                     <text class="amount">{{ nftFloorPrice }}</text>
                   </view>
                 </view>
-                <view class="statItem">
+                <view class="statItem" @click="toUrl('/pages/cats/pledge/index', true)">
                   <view class="statLabel">{{ t('my.nft.valuation.quantity') }}</view>
                   <view class="statValue">{{ nftTotalCount }}</view>
                 </view>
@@ -1351,7 +1351,7 @@ const bindArGame = () => {
             }
 
             .amount {
-              font-size: 56rpx;
+              font-size: 50rpx;
               font-weight: 700;
               color: #ff6b03;
               line-height: 1.2;
