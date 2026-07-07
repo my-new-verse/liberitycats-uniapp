@@ -99,6 +99,7 @@
   "my.menu.update.popup.download_failed_hint": "Please retry or open in browser.",
   "my.menu.update.popup.retry": "Retry Download",
   "my.menu.update.popup.open_in_browser": "Open in browser",
+  "my.menu.update.popup.install": "Install Now",
   "my.menu.messageCenter": "Message Center",
   "my.refreshNftList.confirm": "You can only refresh once a day. Are you sure you want to refresh?",
   "my.checkin_checked": "checked",

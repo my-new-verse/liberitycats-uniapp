@@ -100,6 +100,7 @@
   "my.menu.update.popup.download_failed_hint": "请点击按钮重试或使用浏览器打开",
   "my.menu.update.popup.retry": "重新下载",
   "my.menu.update.popup.open_in_browser": "浏览器打开",
+  "my.menu.update.popup.install": "立即安装",
   "my.menu.messageCenter": "消息中心",
   "my.refreshNftList.confirm": "每天只能刷新一次。确定要刷新吗？",
   "my.checkin_checked": "已签到",
