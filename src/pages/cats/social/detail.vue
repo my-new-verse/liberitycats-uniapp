@@ -2071,7 +2071,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
         font-weight: 400;
         line-height: 36rpx;
         color: #999999;
-        margin-bottom: 6rpx;
+        // margin-bottom: 6rpx;
       }
       .commentCnt {
         font-size: 28rpx;
@@ -2329,6 +2329,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   display: flex;
   align-items: center;
   gap: 12rpx;
+  margin-bottom: 6rpx;
   .followBtn {
     display: inline-flex;
     align-items: center;
