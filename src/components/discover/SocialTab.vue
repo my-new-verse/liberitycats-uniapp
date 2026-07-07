@@ -91,7 +91,7 @@
               @click="handleDelPost(item.id)"
             ></view>
             <view class="jbBox" v-else @click="reportPost(item)"></view>
-            <view
+            <!-- <view
               v-if="getMemberFollowInfo(item.member)"
               class="followBtn"
               :class="getMemberFollowInfo(item.member).style"
@@ -105,7 +105,7 @@
                 color="#ff6b03"
                 v-if="item.member.is_special_following === 1"
               ></wd-icon>
-            </view>
+            </view> -->
             <view class="socialHead">
               <view class="avatarBox" @click="toUserHome(item.member_id)">
                 <image

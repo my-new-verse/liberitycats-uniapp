@@ -22,6 +22,21 @@
                 @click="handleDelMainPost"
               ></view>
               <view class="jbBox" v-else @click="reportPost(postDetail)"></view>
+              <view
+                v-if="getMemberFollowInfo(postDetail?.member)"
+                class="followBtn"
+                :class="getMemberFollowInfo(postDetail?.member).style"
+                @click.stop="handleFollowClick(postDetail?.member)"
+              >
+                {{ getMemberFollowInfo(postDetail?.member).text }}
+                <wd-icon
+                  custom-style="margin-left: 12rpx"
+                  name="star-on"
+                  size="22rpx"
+                  color="#ff6b03"
+                  v-if="postDetail.member.is_special_following === 1"
+                ></wd-icon>
+              </view>
               <view class="socialHead">
                 <view class="avatarBox" @click="debouncedToUserHomeRef?.(postDetail?.member_id)">
                   <image
@@ -38,7 +53,7 @@
                 </view>
                 <view class="nameWrap">
                   <view class="name">{{ formatNickname(postDetail?.member?.nickname, 22) }}</view>
-                  <view
+                  <!-- <view
                     v-if="getMemberFollowInfo(postDetail?.member)"
                     class="followBtn"
                     :class="getMemberFollowInfo(postDetail?.member).style"
@@ -52,7 +67,7 @@
                       color="#ff6b03"
                       v-if="postDetail.member.is_special_following === 1"
                     ></wd-icon>
-                  </view>
+                  </view> -->
                 </view>
                 <view
                   v-if="postDetail.tag?.name"
@@ -177,7 +192,7 @@
                       {{ t('social.detail.authorTag') }}
                     </text>
                     <!-- <wd-button v-if="item.member_id === postDetail.member_id" size="small">{{ t('social.detail.authorTag') }}</wd-button> -->
-                    <view
+                    <!-- <view
                       v-if="getMemberFollowInfo(item.member)"
                       class="followBtn"
                       :class="getMemberFollowInfo(item.member).style"
@@ -191,7 +206,7 @@
                         color="#ff6b03"
                         v-if="item.member.is_special_following === 1"
                       ></wd-icon>
-                    </view>
+                    </view> -->
                   </view>
                   <view class="commentCnt">
                     <view class="socialTips" v-if="item.is_approved === 0">
@@ -279,7 +294,7 @@
                             <text class="authorTag" v-if="reply.member_id === postDetail.member_id">
                               {{ t('social.detail.authorTag') }}
                             </text>
-                            <view
+                            <!-- <view
                               v-if="getMemberFollowInfo(reply.member)"
                               class="followBtn"
                               :class="getMemberFollowInfo(reply.member).style"
@@ -293,7 +308,7 @@
                                 color="#ff6b03"
                                 v-if="reply.member.is_special_following === 1"
                               ></wd-icon>
-                            </view>
+                            </view> -->
                           </view>
                         </view>
 
@@ -2330,32 +2345,35 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   align-items: center;
   gap: 12rpx;
   margin-bottom: 6rpx;
-  .followBtn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    height: 40rpx;
-    padding: 0 14rpx;
-    border-radius: 22rpx;
-    font-size: 22rpx;
-    line-height: 1;
-    white-space: nowrap;
-    flex-shrink: 0;
-    box-sizing: border-box;
-    border: 1rpx solid transparent;
-    background-color: #ff6b03;
-    color: #fff;
-    &.followed {
-      background-color: #ffffff;
-      color: #999;
-      border-color: #ddd;
-    }
-    &.special {
-      background: linear-gradient(135deg, #fff7e5 0%, #fff0d6 100%);
-      color: #ff6b03;
-      border-color: #ff6b03;
-      font-weight: 600;
-    }
+}
+.followBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40rpx;
+  padding: 0 20rpx;
+  border-radius: 22rpx;
+  font-size: 22rpx;
+  line-height: 1;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  border: 1rpx solid transparent;
+  background-color: #ff6b03;
+  color: #fff;
+  position: absolute;
+  right: 48rpx;
+  top: 0;
+  &.followed {
+    background-color: #ffffff;
+    color: #999;
+    border-color: #ddd;
+  }
+  &.special {
+    background: linear-gradient(135deg, #fff7e5 0%, #fff0d6 100%);
+    color: #ff6b03;
+    border-color: #ff6b03;
+    font-weight: 600;
   }
 }
 </style>
