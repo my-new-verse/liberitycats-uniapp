@@ -235,7 +235,7 @@
   "social.index.user.follow.success": "关注成功",
   "social.index.user.follow.cancel": "不再关注该用户？",
   "social.index.user.follow.canceled": "已取消关注",
-  "social.index.user.special.following": "已特别关注",
+  "social.index.user.special.following": "特别关注中",
   "social.index.user.special.set": "设为特别关注",
   "social.index.stats.following": "关注",
   "social.index.stats.fans": "粉丝",

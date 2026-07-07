@@ -251,7 +251,7 @@
   "social.index.user.follow.success": "Followed successfully",
   "social.index.user.follow.cancel": "Unfollow this user?",
   "social.index.user.follow.canceled": "Unfollowed",
-  "social.index.user.special.following": "Special followed",
+  "social.index.user.special.following": "Special Following",
   "social.index.user.special.set": "Set special follow",
   "social.index.stats.following": "Following",
   "social.index.stats.fans": "Followers",
