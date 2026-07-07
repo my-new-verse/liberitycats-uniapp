@@ -494,7 +494,7 @@ const search = async () => {
   isLoading.value = true
   hasSearched.value = true
   loadMoreState.value = 'loading'
-
+  uni.showLoading()
   try {
     const res = await searchPostsApi(buildSearchParams(1))
     if (res.code === 1 && res.data) {
@@ -507,6 +507,7 @@ const search = async () => {
     loadMoreState.value = 'error'
   } finally {
     isLoading.value = false
+    uni.hideLoading()
   }
 }
 
