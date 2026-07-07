@@ -138,11 +138,18 @@
               class="socialCntBox"
               @click="toUrl('/pages/cats/social/detail?id=' + item.id, false)"
             >
-              <view class="socialCnt">
+              <view class="socialCnt" :class="{ clamped: !expandedPostIds.has(item.id) }">
                 <view class="socialTips" v-if="item.is_approved === 0">
                   {{ t('social.detail.content.not_audit_seed_myself') }}
                 </view>
                 {{ item.content }}
+                <view
+                  v-if="!expandedPostIds.has(item.id)"
+                  class="expandArrow"
+                  @click.stop="expandedPostIds.add(item.id)"
+                >
+                  <text class="expandArrowIcon">&#x25BE;</text>
+                </view>
               </view>
               <view
                 class="socialMedia"
@@ -1080,6 +1087,9 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   images = images.map((item) => (item = item + '?x-oss-process=style/sqdt'))
   handlePreview(images, currentIndex)
 }
+
+/** 文本展开状态 */
+const expandedPostIds = ref(new Set<number>())
 </script>
 
 <style lang="scss" scoped>
@@ -1206,6 +1216,36 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
     top: 0 !important;
     display: block !important;
     pointer-events: none !important;
+  }
+}
+
+.socialCnt {
+  position: relative;
+
+  &.clamped {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.expandArrow {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 60rpx;
+  height: 36rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(to right, rgba(255, 255, 255, 0) 0%, #ffffff 40%);
+
+  .expandArrowIcon {
+    font-size: 28rpx;
+    color: #999;
+    line-height: 1;
   }
 }
 </style>
