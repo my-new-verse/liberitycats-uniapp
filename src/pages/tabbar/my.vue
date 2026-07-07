@@ -217,8 +217,7 @@
                   <image class="iconImg" src="@/static/images/asset@2x.png" mode="widthFix" />
                 </view>
                 <view>
-                  <!-- {{ t('my.my_nft_title') }} -->
-                  我的资产
+                  {{ t('my.my_assets_title') }}
                 </view>
                 <!-- <image
                   class="refresh"
