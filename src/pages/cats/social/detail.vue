@@ -45,6 +45,13 @@
                     @click.stop="handleFollowClick(postDetail?.member)"
                   >
                     {{ getMemberFollowInfo(postDetail?.member).text }}
+                    <wd-icon
+                      custom-style="margin-left: 12rpx"
+                      name="star-on"
+                      size="22rpx"
+                      color="#ff6b03"
+                      v-if="postDetail.member.is_special_following === 1"
+                    ></wd-icon>
                   </view>
                 </view>
                 <view
@@ -169,6 +176,7 @@
                     <text class="authorTag" v-if="item.member_id === postDetail.member_id">
                       {{ t('social.detail.authorTag') }}
                     </text>
+                    <!-- <wd-button v-if="item.member_id === postDetail.member_id" size="small">{{ t('social.detail.authorTag') }}</wd-button> -->
                     <view
                       v-if="getMemberFollowInfo(item.member)"
                       class="followBtn"
@@ -176,6 +184,13 @@
                       @click.stop="handleFollowClick(item.member)"
                     >
                       {{ getMemberFollowInfo(item.member).text }}
+                      <wd-icon
+                        custom-style="margin-left: 12rpx"
+                        name="star-on"
+                        size="22rpx"
+                        color="#ff6b03"
+                        v-if="item.member.is_special_following === 1"
+                      ></wd-icon>
                     </view>
                   </view>
                   <view class="commentCnt">
@@ -271,6 +286,13 @@
                               @click.stop="handleFollowClick(reply.member)"
                             >
                               {{ getMemberFollowInfo(reply.member).text }}
+                              <wd-icon
+                                custom-style="margin-left: 12rpx"
+                                name="star-on"
+                                size="22rpx"
+                                color="#ff6b03"
+                                v-if="reply.member.is_special_following === 1"
+                              ></wd-icon>
                             </view>
                           </view>
                         </view>
@@ -720,6 +742,8 @@ onPageScroll((e) => {
 })
 
 const commentPopupVisible = ref(false)
+// 用于取消 shouldFocus 延迟设置的定时器（弹窗已关闭时旧定时器不应再触发）
+let pendingFocusTimer: ReturnType<typeof setTimeout> | null = null
 // const handleCloseCommentPopup = () => {
 //   commentPopupVisible.value = false
 // }
@@ -846,6 +870,8 @@ const showCommentPopup = (type: 'post' | 'l1' = 'post', targetItem?: any) => {
     }
   }
 
+  // 重置键盘高度，避免上次残留值导致 commentHidden 占位过高输入框弹飞
+  keyboardHeight.value = 0
   commentPopupVisible.value = true
   // 重置焦点状态
   shouldFocus.value = false
@@ -853,19 +879,31 @@ const showCommentPopup = (type: 'post' | 'l1' = 'post', targetItem?: any) => {
   currentOpBtn.value = 'keyboard'
   expressionCategory.value = -1
 
+  // 取消旧的 focus 定时器，设置新的
+  if (pendingFocusTimer) clearTimeout(pendingFocusTimer)
   // 使用nextTick确保DOM更新
   nextTick(() => {
     // 使用setTimeout确保在下一个事件循环中设置焦点
-    setTimeout(() => {
-      shouldFocus.value = true
+    pendingFocusTimer = setTimeout(() => {
+      pendingFocusTimer = null
+      // 仅在弹窗仍打开时才聚焦
+      if (commentPopupVisible.value) {
+        shouldFocus.value = true
+      }
     }, 100)
   })
 }
 
 // 修改handleCloseCommentPopup方法
 const handleCloseCommentPopup = () => {
+  // 取消 focus 延迟定时器
+  if (pendingFocusTimer) {
+    clearTimeout(pendingFocusTimer)
+    pendingFocusTimer = null
+  }
   commentPopupVisible.value = false
   shouldFocus.value = false
+  keyboardHeight.value = 0
   commentContent.value = ''
 }
 
@@ -1269,10 +1307,14 @@ onMounted(() => {
     )
   }
 })
-// 在组件卸载时清理防抖函数
+// 在组件卸载时清理防抖函数和定时器
 onUnmounted(() => {
   if (debouncedCreateComment.value) {
     ;(debouncedCreateComment.value as any).cancel()
+  }
+  if (pendingFocusTimer) {
+    clearTimeout(pendingFocusTimer)
+    pendingFocusTimer = null
   }
 })
 
@@ -1504,7 +1546,8 @@ const syncMemberFollowState = (memberId: number, data: any) => {
 const getMemberFollowInfo = (member: any) => {
   if (!member || member.is_self) return null
   if (member.is_special_following)
-    return { text: t('social.index.user.special.following'), style: 'special' }
+    return { text: t('social.index.user.special.following'), style: 'followed' }
+  // return { text: t('social.index.user.special.following'), style: 'special' }
   if (member.is_mutual_following) return { text: '互相关注', style: 'followed' }
   if (member.is_following) return { text: '已关注', style: 'followed' }
   if (member.is_following_me) return { text: '回关', style: 'follow' }
@@ -1622,6 +1665,9 @@ const handleReplyL2 = (replyItem: any, parentItem: any) => {
     parentId: parentItem.id,
   }
   currentRequestId.value = generateUUID()
+
+  // 重置键盘高度，避免上次残留值导致 commentHidden 占位过高输入框弹飞
+  keyboardHeight.value = 0
   commentPopupVisible.value = true
 
   shouldFocus.value = false
@@ -1629,9 +1675,14 @@ const handleReplyL2 = (replyItem: any, parentItem: any) => {
   currentOpBtn.value = 'keyboard'
   expressionCategory.value = -1
 
+  // 取消旧的 focus 定时器，设置新的
+  if (pendingFocusTimer) clearTimeout(pendingFocusTimer)
   nextTick(() => {
-    setTimeout(() => {
-      shouldFocus.value = true
+    pendingFocusTimer = setTimeout(() => {
+      pendingFocusTimer = null
+      if (commentPopupVisible.value) {
+        shouldFocus.value = true
+      }
     }, 100)
   })
 }
@@ -2140,15 +2191,18 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   margin-top: 12rpx;
 }
 .authorTag {
-  padding: 6rpx 10rpx;
-  font-size: 16rpx;
+  padding: 0 18rpx;
+  font-size: 22rpx;
   margin-left: 8rpx;
   font-weight: 400;
   line-height: 1;
+  height: 40rpx;
   color: #ff6b03;
   background: #fff1e5;
-  border-radius: 32rpx;
+  border-radius: 16px;
   vertical-align: middle;
+  display: flex;
+  align-items: center;
 }
 .replyItem {
   margin-bottom: 16rpx;
