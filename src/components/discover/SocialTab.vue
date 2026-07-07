@@ -681,6 +681,36 @@ watch(
   { immediate: true },
 )
 
+// 监听登录状态变化：登录后重置缓存并重新加载当前列表
+watch(
+  () => userStore.isLogin,
+  (isLogin, wasLogin) => {
+    if (isLogin && !wasLogin) {
+      // 重置所有社交缓存
+      const keys: SocialCacheKey[] = ['hot', 'latest', 'following']
+      keys.forEach((key) => {
+        const cache = socialCacheMap.value[key]
+        cache.list = createSocialList()
+        cache.state = 'loading'
+        cache.scrollTop = 0
+        cache.hasInitialized = false
+        cache.isLoading = false
+      })
+      // 刷新群聊数据
+      refreshSocialChatData()
+      // 重新加载当前 tab
+      if (socialFilter.value === 'groupChat') {
+        refreshGroupChatRooms(true)
+      } else if (socialFilter.value === 'inFocus') {
+        // inFocusTabRef.value?.refresh()
+      } else {
+        syncActiveCache()
+        loadSocial(1, socialFilter.value)
+      }
+    }
+  },
+)
+
 const GIF_LIKE = '/static/images/like_action.gif'
 const GIF_UNLIKE = '/static/images/unlike_action.gif'
 
