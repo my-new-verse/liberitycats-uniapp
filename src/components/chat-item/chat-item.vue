@@ -539,6 +539,10 @@ const handleAvatarClick = (memberId: number | undefined) => {
   :deep(*) {
     font-family: Alibaba PuHuiTi2 !important;
   }
+  // 恢复 wd-icon 的图标字体，避免被 :deep(*) 覆盖导致图标不显示
+  :deep(.wd-icon) {
+    font-family: wd-icons !important;
+  }
 }
 .chat-time {
   padding: 4rpx 0rpx;
