@@ -348,7 +348,7 @@ const toChatGroup = () => {
     url: '/pages/tabbar/discover',
   })
   // 同时 emit 事件，覆盖 SocialTab 已挂载的场景
-  uni.$emit('switchToSocialTab')
+  // uni.$emit('switchToSocialTab')
   uni.$emit('switchToChatGroup')
 }
 </script>
