@@ -149,7 +149,7 @@ import { debounce } from 'lodash-es'
 import { getImageUrl, toUrl, formatRelativeTime, getChatImageUrl } from '@/utils'
 import { ChatMessagePayload, ChatMember, ChatMessageReplyTo } from '@/service/api/groupChat'
 import MentionMemberPopup from './MentionMemberPopup.vue'
-import { useI18n } from 'vue-i18n'
+import { t } from '@/locale'
 import { useUserStore } from '@/store'
 import {
   getCommunityEmotionListItem,
@@ -162,7 +162,6 @@ import { initEmotionTool } from '@/utils/emotionTool'
 import { useToast } from 'wot-design-uni'
 
 const emit = defineEmits(['sendMsg'])
-const { t } = useI18n()
 const userStore = useUserStore()
 const commentPopupVisible = ref(false)
 const canspeak = ref(1)
@@ -726,6 +725,9 @@ const uploadImageToOss = async (filePath: string, mimeType: string, fileName: st
   }
 }
 
+/** @提及人数上限 */
+const MAX_MENTION_COUNT = 10
+
 let lastSendTriggerAt = 0
 const handleSendButtonClick = () => {
   if (commentContent.value.trim() === '') {
@@ -736,8 +738,14 @@ const handleSendButtonClick = () => {
   if (now - lastSendTriggerAt < 200) return
   lastSendTriggerAt = now
 
+  // 去重后检查 @提及人数是否超过上限
   const mentionedIds =
     mentionedUsers.value.size > 0 ? Array.from(mentionedUsers.value.keys()) : undefined
+  if (mentionedIds && mentionedIds.length > MAX_MENTION_COUNT) {
+    toast.show(t('group.chat.mention.maxSelectedLimit', { count: MAX_MENTION_COUNT }))
+    return
+  }
+
   const payload: any = { text: commentContent.value.trim() }
 
   doSend('text', payload, mentionedIds)
