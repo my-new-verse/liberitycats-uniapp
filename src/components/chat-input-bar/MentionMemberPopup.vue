@@ -139,7 +139,7 @@ import { ref, computed, watch } from 'vue'
 import type { ChatMember } from '@/service/api/groupChat'
 import { getChatRoomMembersApi, getSmartMembersApi } from '@/service/api/groupChat'
 import { getLevelBadgeStyle, getCachedMemberAvatar, cacheMemberAvatars } from '@/utils/avatarCache'
-import { useI18n } from 'vue-i18n'
+import { t } from '@/locale'
 
 const props = withDefaults(
   defineProps<{
@@ -162,7 +162,6 @@ const props = withDefaults(
     recommendMode: 'smart',
   },
 )
-const { t } = useI18n()
 
 const emit = defineEmits<{
   (e: 'update:visible', val: boolean): void
