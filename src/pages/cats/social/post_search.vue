@@ -138,7 +138,7 @@
                   </view>
                 </view>
                 <view class="socialCntBox" @click="toPostDetail(post)">
-                  <view class="socialCnt">{{ post.content }}</view>
+                  <view class="socialCnt text-clamp-4">{{ post.content }}</view>
                   <view
                     class="socialMedia"
                     v-if="post.images.length > 0"

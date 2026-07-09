@@ -128,7 +128,7 @@
                   class="socialCntBox"
                   @click="toUrl('/pages/cats/social/detail?id=' + item.id, false)"
                 >
-                  <view class="socialCnt">
+                  <view class="socialCnt text-clamp-4">
                     <view class="socialTips" v-if="item.is_approved === 0">
                       {{ t('social.detail.content.not_audit_seed_myself') }}
                     </view>

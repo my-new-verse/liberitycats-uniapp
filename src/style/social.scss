@@ -179,6 +179,14 @@
         // 自动换行
         word-break: break-all;
         white-space: pre-line;
+        display: -webkit-box;
+      }
+      .text-clamp-4{
+        line-clamp: 4;
+        -webkit-line-clamp: 4;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
       .socialMedia {
         display: grid;
