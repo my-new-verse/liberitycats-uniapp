@@ -19,7 +19,10 @@
 </route>
 <template>
   <view class="bg-white overflow-hidden page3" :class="[locale]">
-    <view class="icon3"></view>
+    <view class="icon3">
+      <view class="first icon4" @click="openMiniProgram"></view>
+      <view class="second icon4"></view>
+    </view>
     <view class="gameBox gameBox1" @click="openGameUrl('MATCH_THREE')">
       <view class="gameInfo">
         <view class="name">消消乐</view>
@@ -90,6 +93,17 @@ onMounted(() => {
   console.log('navHeaderPaddingTop.value', navHeaderPaddingTop.value)
   console.log('cntPaddingTop.value', cntPaddingTop.value)
 })
+
+/** 跳转微信小程序 */
+const openMiniProgram = () => {
+  // #ifdef APP-PLUS
+  const schemeUrl =
+    'weixin://dl/business/?appid=wx65ef2b125167db43&path=pages/landing/landing&query=project_id=99&env_version=release'
+  plus.runtime.openURL(schemeUrl, () => {
+    uni.showToast({ title: '请先安装微信', icon: 'none' })
+  })
+  // #endif
+}
 
 const openGameUrl = debounce(
   (gameType: string) => {
@@ -260,10 +274,23 @@ const openGameUrl = debounce(
   position: absolute;
   top: 10%;
   right: 50rpx;
-  width: 80rpx;
-  height: 80rpx;
-  background-image: url('/static/images/game/ar@2x.png');
-  background-repeat: no-repeat;
-  background-size: cover;
+  gap: 20rpx;
+  display: flex;
+  flex-direction: column;
+
+  .icon4 {
+    width: 80rpx;
+    height: 80rpx;
+    background-repeat: no-repeat;
+    background-size: cover;
+  }
+
+  .first {
+    background-image: url('/static/images/game/ar@2x.png');
+  }
+
+  .second {
+    background-image: url('/static/images/game/withdraw.svg');
+  }
 }
 </style>
