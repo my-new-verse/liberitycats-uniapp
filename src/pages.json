@@ -672,10 +672,10 @@
     {
       "path": "pages/cats/social/publish",
       "type": "page",
-      "layout": "default",
       "style": {
         "navigationStyle": "custom",
-        "navigationBarTitleText": "Publish"
+        "navigationBarTitleText": "Publish",
+        "backgroundColor": "#f7f6f4"
       }
     },
     {

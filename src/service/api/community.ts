@@ -103,6 +103,26 @@ export const createPostApi = (content: string, images: string[]) => {
   })
 }
 
+// 推广类型
+export type PromotionType = 'cooperation' | 'interaction' | 'product' | 'service' | 'other'
+// 推广有效期
+export type PromotionValidity = 7 | 30 | 0 // 0 表示长期
+
+// 创建推广帖子
+export const createPromotionPostApi = (params: {
+  content: string
+  images: string[]
+  promotion_type: PromotionType
+  contact_email?: string
+  contact_wechat?: string
+  validity_days: PromotionValidity
+}) => {
+  return http.post('/v1/community/post/create', {
+    ...params,
+    is_promotion: 1,
+  })
+}
+
 type emotionDetail = {
   id: number
   name: string
