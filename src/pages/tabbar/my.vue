@@ -735,15 +735,15 @@ const nftValuation = ref<NftValuation>({ ...DEFAULT_VALUATION })
 const nftCurrencySymbol = computed(() => nftValuation.value.currency_symbol)
 
 const nftFloorPrice = computed(() => {
-  const price = parseFloat(nftValuation.value.floor_price)
-  return isNaN(price) ? '0.0000' : price.toFixed(4)
+  const price = nftValuation.value.floor_price
+  return isNaN(price) ? '0.0000' : price
 })
 
 const nftTotalCount = computed(() => nftValuation.value.quantity)
 
 const nftTotalValue = computed(() => {
-  const value = parseFloat(nftValuation.value.total_value)
-  return isNaN(value) ? '0.00' : value.toFixed(2)
+  const value = nftValuation.value.total_value
+  return isNaN(value) ? '0.00' : value
 })
 
 const nftList = ref<getMemberNftsApiResponse['data']>([])
