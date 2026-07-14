@@ -572,6 +572,14 @@
       }
     },
     {
+      "path": "pages/cats/social/ad_detail",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f7f6f4"
+      }
+    },
+    {
       "path": "pages/cats/social/detail",
       "type": "page",
       "style": {

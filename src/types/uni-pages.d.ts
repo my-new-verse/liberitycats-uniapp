@@ -58,6 +58,7 @@ interface NavigateToOptions {
        "/pages/cats/settings/language" |
        "/pages/cats/settings/nickname" |
        "/pages/cats/settings/virtual_account" |
+       "/pages/cats/social/ad_detail" |
        "/pages/cats/social/detail" |
        "/pages/cats/social/detail_sktiy_comment" |
        "/pages/cats/social/group_announcement_detail" |

@@ -15,6 +15,13 @@ export interface getPostDetailResponse {
   is_liked: number
   is_approved: number
   tag: tagDetail
+  // 推广相关字段
+  title?: string
+  ad_type_id?: number | string
+  ad_type_name?: string
+  contact_email?: string
+  contact_wechat?: string
+  ad_tags?: { id: number; display_name: string }[]
 }
 
 type tagDetail = {
@@ -45,7 +52,7 @@ export interface getCommunityPostListApiResponse {
 
 // 社区帖子列表
 export const getCommunityPostListApi = (page: number, search?: any) => {
-  return http.get<getCommunityPostListApiResponse>('/v1/community/post/list', {
+  return http.get<getCommunityPostListApiResponse>('/v1/community/ad-post/list', {
     page,
     ...search,
   })
@@ -104,22 +111,51 @@ export const createPostApi = (content: string, images: string[]) => {
 }
 
 // 推广类型
-export type PromotionType = 'cooperation' | 'interaction' | 'product' | 'service' | 'other'
+export type PromotionType = string
 // 推广有效期
 export type PromotionValidity = 7 | 30 | 0 // 0 表示长期
+
+// 推广类型列表项
+export interface AdTypeItem {
+  id: number
+  name: string
+  value: string
+}
+
+// 获取推广类型列表
+export const getAdTypeListApi = () => {
+  return http.get<AdTypeItem[]>('/v1/community/ad-type/list')
+}
+
+// 热门标签项
+export interface AdTagItem {
+  id: number
+  name: string
+}
+
+// 获取热门标签
+export const getHotAdTagsApi = () => {
+  return http.get<AdTagItem[]>('/v1/community/ad-tag/hot')
+}
+
+// 搜索标签
+export const searchAdTagsApi = (keyword: string) => {
+  return http.get<AdTagItem[]>('/v1/community/ad-tag/search', { keyword })
+}
 
 // 创建推广帖子
 export const createPromotionPostApi = (params: {
   content: string
   images: string[]
-  promotion_type: PromotionType
+  ad_type: PromotionType
   contact_email?: string
   contact_wechat?: string
   validity_days: PromotionValidity
+  publish_status: 1
+  tags?: number[]
 }) => {
-  return http.post('/v1/community/post/create', {
+  return http.post('/v1/community/ad-post/create', {
     ...params,
-    is_promotion: 1,
   })
 }
 
