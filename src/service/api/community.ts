@@ -52,7 +52,7 @@ export interface getCommunityPostListApiResponse {
 
 // 社区帖子列表
 export const getCommunityPostListApi = (page: number, search?: any) => {
-  return http.get<getCommunityPostListApiResponse>('/v1/community/ad-post/list', {
+  return http.get<getCommunityPostListApiResponse>('/v1/community/post/list', {
     page,
     ...search,
   })
