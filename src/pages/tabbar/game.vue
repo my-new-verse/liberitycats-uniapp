@@ -21,7 +21,8 @@
   <view class="bg-white overflow-hidden page3" :class="[locale]">
     <view class="icon3">
       <view class="first icon4" @click="openMiniProgram"></view>
-      <view class="second icon4"></view>
+      <wd-img src="/static/images/game/game-05.svg" width="80rpx" height="80rpx" />
+      <wd-img src="/static/images/game/game-02.svg" width="80rpx" height="80rpx" />
     </view>
     <view class="gameBox gameBox1" @click="openGameUrl('MATCH_THREE')">
       <view class="gameInfo">
@@ -174,48 +175,58 @@ const openGameUrl = debounce(
     align-items: center;
     justify-content: start;
     height: 100%;
+
     .name {
       font-size: 48rpx;
       font-weight: 600;
       color: #333333;
     }
+
     .memo {
       font-size: 22rpx;
       font-weight: 400;
       color: rgba(0, 0, 0, 0.3);
     }
   }
+
   .icon {
     width: 72rpx;
     height: 72rpx;
     margin-left: 30rpx;
   }
+
   .icon1 {
     background-image: url('/static/images/game/xxl@2x.png');
     background-repeat: no-repeat;
     background-size: cover;
   }
+
   .icon2 {
     background-image: url('/static/images/game/tyt@2x.png');
     background-repeat: no-repeat;
     background-size: cover;
   }
 }
+
 @keyframes shake {
   0%,
   100% {
     transform: translateX(0);
   }
+
   25% {
     transform: translateX(-2px) rotate(-1deg);
   }
+
   50% {
     transform: translateX(2px) rotate(1deg);
   }
+
   75% {
     transform: translateX(-2px) rotate(1deg);
   }
 }
+
 .gameBox1 {
   top: 19%;
   left: 70rpx;
@@ -230,33 +241,40 @@ const openGameUrl = debounce(
     transform: translateX(0) translateY(0) scale(1);
     animation-timing-function: ease-in-out;
   }
+
   20%,
   60% {
     transform: translateX(-5rpx) translateY(0) scale(1);
     animation-timing-function: ease-in-out;
   }
+
   40%,
   80% {
     transform: translateX(5rpx) translateY(0) scale(1);
     animation-timing-function: ease-in-out;
   }
+
   /* 后20%的时间：跳一下 */
   85% {
     transform: translateY(0) scale(1);
     animation-timing-function: ease-out;
   }
+
   90% {
     transform: translateY(-30rpx) scale(1.1);
     animation-timing-function: ease-in;
   }
+
   95% {
     transform: translateY(0) scale(0.95);
     animation-timing-function: ease-out;
   }
+
   97% {
     transform: translateY(-10rpx) scale(1.05);
     animation-timing-function: ease-in;
   }
+
   100% {
     transform: translateY(0) scale(1);
     animation-timing-function: ease-out;
@@ -287,10 +305,6 @@ const openGameUrl = debounce(
 
   .first {
     background-image: url('/static/images/game/ar@2x.png');
-  }
-
-  .second {
-    background-image: url('/static/images/game/withdraw.svg');
   }
 }
 </style>
