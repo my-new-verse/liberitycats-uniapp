@@ -1077,15 +1077,7 @@ const goSearch = () => {
 }
 
 const doHandlePreview = (images: string[], currentIndex: number = 0) => {
-  // images = images.map((item) => (item = item + '?x-oss-process=style/sqdt'))
-  const ext = 'webp' // 或其他
-  // images = `${path.split('?')[0]}?x-oss-process=image/auto-orient,1/resize,w_600,m_lfit/quality,q_100/format,${ext}`;
-  images = images.map(
-    (item) =>
-      (item =
-        item +
-        `?x-oss-process=image/auto-orient,1/resize,w_600,m_lfit/quality,q_100/format,${ext}`),
-  )
+  images = images.map((item) => (item = item + '?x-oss-process=style/sqdt'))
   handlePreview(images, currentIndex)
 }
 </script>
