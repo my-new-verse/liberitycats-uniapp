@@ -895,7 +895,6 @@ $minor-color: #666666;
 .typeChip {
   padding: 14rpx 36rpx;
   border-radius: $border-radius;
-  border: 1px solid $border-color;
   font-size: 26rpx;
   color: $minor-color;
   transition: all 0.2s ease;
@@ -906,6 +905,7 @@ $minor-color: #666666;
     color: #ffffff;
     font-weight: 600;
   }
+  border: 1px solid $border-color;
 }
 
 .validityGrid {
@@ -918,7 +918,6 @@ $minor-color: #666666;
   text-align: center;
   padding: 20rpx 0;
   border-radius: $border-radius;
-  border: 1px solid $border-color;
   font-size: 26rpx;
   color: #666;
   transition: all 0.2s ease;
@@ -929,6 +928,7 @@ $minor-color: #666666;
     color: #ffffff;
     font-weight: 600;
   }
+  border: 1px solid $border-color;
 }
 
 .adBtn {
@@ -947,12 +947,12 @@ $minor-color: #666666;
 .draftBtn {
   background-color: #fff;
   color: $minor-color;
-  border: 1px solid $border-color;
   &.disabled {
     background-color: #fafafa;
     color: #cccccc;
     border: 0;
   }
+  border: 1px solid $border-color;
 }
 
 /* 发布按钮 */
@@ -996,7 +996,6 @@ $minor-color: #666666;
   width: 32rpx;
   height: 32rpx;
   margin-right: 12rpx;
-  border: 1px solid $border-color;
   border-radius: 50%;
   background-color: #ffffff;
   transition: all 0.2s ease;
@@ -1004,6 +1003,7 @@ $minor-color: #666666;
   &.checked {
     border-color: #ff6b03;
   }
+  border: 1px solid $border-color;
 }
 
 .radioDot {
@@ -1046,7 +1046,6 @@ $minor-color: #666666;
   width: 32rpx;
   height: 32rpx;
   margin-right: 12rpx;
-  border: 1px solid $border-color;
   border-radius: $border-radius;
   background-color: #ffffff;
   transition: all 0.2s ease;
@@ -1055,6 +1054,7 @@ $minor-color: #666666;
     background-color: #ff6b03;
     border-color: #ff6b03;
   }
+  border: 1px solid $border-color;
 }
 
 .agreementText {
