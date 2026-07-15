@@ -20,9 +20,20 @@
 <template>
   <view class="bg-white overflow-hidden page3" :class="[locale]">
     <view class="icon3">
-      <view class="first icon4" @click="openMiniProgram"></view>
-      <wd-img src="/static/images/game/game-05.svg" width="80rpx" height="80rpx" />
-      <wd-img src="/static/images/game/game-02.svg" width="80rpx" height="80rpx" />
+      <view class="first icon4" @click="toUrl('/pages/game/extract_coin_guide')"></view>
+      <wd-img
+        src="/static/images/game/game-05.svg"
+        width="80rpx"
+        height="80rpx"
+        v-if="getServerOnOff('ar_enable', 'common')"
+        @click="bindArGame"
+      />
+      <wd-img
+        src="/static/images/game/game-02.svg"
+        width="80rpx"
+        height="80rpx"
+        @click="openMiniProgram"
+      />
     </view>
     <view class="gameBox gameBox1" @click="openGameUrl('MATCH_THREE')">
       <view class="gameInfo">
@@ -38,6 +49,7 @@
       </view>
       <view class="icon icon2"></view>
     </view>
+    <wd-message-box selector="wd-message-box-slot2"></wd-message-box>
   </view>
 </template>
 
@@ -46,14 +58,16 @@ import i18n, { t } from '@/locale/index'
 import { getImageUrl, getServerOnOff, toUrl } from '@/utils'
 
 import { useUserStore } from '@/store/user'
-import { useToast } from 'wot-design-uni'
+import { useMessage, useToast } from 'wot-design-uni'
 import { getGameParamsApi } from '@/service/api/game'
+import { bindArGameApi } from '@/service/api/user'
 import { debounce } from 'lodash-es'
 // import { updateGameConfigUrl } from '@/utils/plusGameWebViewPool'
 // import { buildGameUrlWithToken } from '@/utils/gameUrl'
 uni.hideTabBar()
 const userStore = useUserStore()
 const toast = useToast()
+const message2 = useMessage('wd-message-box-slot2')
 
 // 语言
 const locale = uni.getLocale()
@@ -104,6 +118,79 @@ const openMiniProgram = () => {
     uni.showToast({ title: '请先安装微信', icon: 'none' })
   })
   // #endif
+}
+
+// 绑定/换绑的公共请求逻辑
+const doBindArGame = (code: string) => {
+  bindArGameApi(code).then((res) => {
+    console.log('bind Ar Game', res)
+    if (res.code === 1) {
+      toast.show(res.msg && res.msg.length ? res.msg : t('my.game.bind_ar.msgbox.success.msg'))
+      userStore.getUserInfo()
+    }
+  })
+}
+
+// 弹出输入框让用户输入绑定口令
+const showBindArPrompt = () => {
+  return message2.prompt({
+    title: t('my.game.bind_ar.msgbox.title'),
+    inputValue: '',
+    inputPlaceholder: t('my.game.bind_ar.msgbox.placeholder'),
+    inputPattern: /^[a-zA-Z0-9]{6,12}$/,
+    inputError: t('my.game.bind_ar.msgbox.inputError'),
+    cancelButtonText: t('common.cancel'),
+    confirmButtonText: t('common.confirm'),
+  })
+}
+
+const bindArGame = () => {
+  const hasValue = !!userStore?.userInfo?.bind_ar?.bind_status
+  if (hasValue) {
+    const canRebind = !!userStore?.userInfo?.bind_ar?.can_rebind
+    if (canRebind) {
+      // 已绑定且允许换绑：confirm 提示是否换绑
+      message2
+        .confirm({
+          title: t('my.game.bind_ar.msgbox.was_bond.title'),
+          msg:
+            t('my.game.bind_ar.msgbox.was_bond.msg', {
+              0: userStore?.userInfo?.bind_ar?.third_open_id,
+            }) +
+            '\n\n' +
+            t('my.game.bind_ar.msgbox.change_bind.confirm_msg'),
+          cancelButtonText: t('common.cancel'),
+          confirmButtonText: t('common.confirm'),
+        })
+        .then(() => {
+          showBindArPrompt()
+            .then((resp) => {
+              doBindArGame(resp.value)
+            })
+            .catch((error) => {
+              console.log(error)
+            })
+        })
+        .catch(() => {})
+    } else {
+      // 已绑定但不允许换绑：仅提示已绑定信息
+      message2.alert({
+        title: t('my.game.bind_ar.msgbox.was_bond.title'),
+        msg: t('my.game.bind_ar.msgbox.was_bond.msg', {
+          0: userStore?.userInfo?.bind_ar?.third_open_id,
+        }),
+      })
+    }
+  } else {
+    // 未绑定：直接弹出输入框
+    showBindArPrompt()
+      .then((resp) => {
+        doBindArGame(resp.value)
+      })
+      .catch((error) => {
+        console.log(error)
+      })
+  }
 }
 
 const openGameUrl = debounce(

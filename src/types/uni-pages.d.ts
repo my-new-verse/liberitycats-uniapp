@@ -11,6 +11,7 @@ interface NavigateToOptions {
        "/pages/demo/detail_demo" |
        "/pages/demo/list_demo" |
        "/pages/game/androidIndex" |
+       "/pages/game/extract_coin_guide" |
        "/pages/game/index" |
        "/pages/tabbar/discover" |
        "/pages/tabbar/game" |
