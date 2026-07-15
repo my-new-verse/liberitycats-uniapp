@@ -35,7 +35,7 @@
 <script lang="ts" setup>
 import i18n, { t } from '@/locale/index'
 import { useToast } from 'wot-design-uni'
-import { getImageUrl } from '@/utils'
+import { getImageUrl, getServerOnOff } from '@/utils'
 
 import CustomNav from '@/components/CustomNav/CustomNav.vue'
 
@@ -65,7 +65,10 @@ onPageScroll((e) => {
 
 onLoad(() => {
   // 预加载：重新获取缓存路径（首次访问会触发异步下载，后续直接用本地缓存）
-  //   guideImgUrl.value = getImageUrl(GUIDE_IMG_URL, true)
+  const ar_withdraw_process_image_url =
+    getServerOnOff('ar_withdraw_process_image_url', 'common', true) || GUIDE_IMG_URL
+  guideImgUrl.value = ar_withdraw_process_image_url + '?x-oss-process=style/sqdt'
+  console.log(guideImgUrl.value)
 })
 </script>
 
