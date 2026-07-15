@@ -99,69 +99,122 @@
         @scrolltolower="onScrollToLower"
       >
         <view class="scrollCnt">
+          <!-- 帖子筛选 tab -->
+          <view class="postFilterBar">
+            <view
+              v-for="tab in postFilterTabs"
+              :key="tab.key"
+              class="postFilterTab"
+              :class="{ active: activePostFilter === tab.key }"
+              @click="handlePostFilterChange(tab.key)"
+            >
+              <text class="postFilterTabText">{{ tab.label }}</text>
+            </view>
+            <view class="postFilterSlider" :class="'slider--' + activePostFilter"></view>
+          </view>
+
           <template v-if="socialList.data?.length > 0">
-            <view class="cell socialBox" v-for="item in socialList.data" :key="item.id">
-              <view class="socialItem">
-                <view class="socialHead">
-                  <view class="avatarBox">
-                    <image
-                      class="avatar"
-                      :src="getImageUrl(item.member.avatar + '?x-oss-process=style/jzcq')"
-                    />
-                    <view class="levelIcon">
+            <!-- 普通帖：社交卡片 -->
+            <template v-if="activePostFilter === 'normal'">
+              <view class="cell socialBox" v-for="item in socialList.data" :key="item.id">
+                <view class="socialItem">
+                  <view class="socialHead">
+                    <view class="avatarBox">
                       <image
-                        :src="`/static/images/level/${item.member.level}.png`"
-                        mode="widthFix"
+                        class="avatar"
+                        :src="getImageUrl(item.member.avatar + '?x-oss-process=style/jzcq')"
                       />
+                      <view class="levelIcon">
+                        <image
+                          :src="`/static/images/level/${item.member.level}.png`"
+                          mode="widthFix"
+                        />
+                      </view>
                     </view>
-                  </view>
-
-                  <view class="nameWrap">
-                    <view class="name">{{ formatNickname(item.member.nickname, 22) }}</view>
-                  </view>
-
-                  <view v-if="item.tag?.name" class="tag" :class="item.tag?.extend_json?.class">
-                    {{ item.tag?.name }}
-                  </view>
-                </view>
-                <view
-                  class="socialCntBox"
-                  @click="toUrl('/pages/cats/social/detail?id=' + item.id, false)"
-                >
-                  <view class="socialCnt text-clamp-4">
-                    <view class="socialTips" v-if="item.is_approved === 0">
-                      {{ t('social.detail.content.not_audit_seed_myself') }}
+                    <view class="nameWrap">
+                      <view class="name">{{ formatNickname(item.member.nickname, 22) }}</view>
                     </view>
-                    {{ item.content }}
+                    <view v-if="item.tag?.name" class="tag" :class="item.tag?.extend_json?.class">
+                      {{ item.tag?.name }}
+                    </view>
                   </view>
                   <view
-                    class="socialMedia"
-                    v-if="item.images.length > 0"
-                    :class="{
-                      mediaImg4: item.images.length === 4,
-                      singleImg: item.images.length === 1,
-                    }"
+                    class="socialCntBox"
+                    @click="toUrl('/pages/cats/social/detail?id=' + item.id, false)"
                   >
-                    <view
-                      v-for="(image, index) in item.images"
-                      :key="index"
-                      @tap.stop="doHandlePreview(item.images, index)"
-                    >
-                      <wd-img
-                        :radius="5"
-                        custom-class="mediaImgItem"
-                        :mode="item.images.length === 1 ? 'widthFix' : 'aspectFill'"
-                        :src="getImageUrl(image + '?x-oss-process=style/sqdt')"
-                        :enable-preview="false"
-                      />
+                    <view class="socialCnt text-clamp-4">
+                      <view class="socialTips" v-if="item.is_approved === 0">
+                        {{ t('social.detail.content.not_audit_seed_myself') }}
+                      </view>
+                      {{ item.content }}
                     </view>
-                  </view>
-                  <view class="socialTime">
-                    {{ formatRelativeTime(item.create_time) }}
+                    <view
+                      class="socialMedia"
+                      v-if="item.images.length > 0"
+                      :class="{
+                        mediaImg4: item.images.length === 4,
+                        singleImg: item.images.length === 1,
+                      }"
+                    >
+                      <view
+                        v-for="(image, index) in item.images"
+                        :key="index"
+                        @tap.stop="doHandlePreview(item.images, index)"
+                      >
+                        <wd-img
+                          :radius="5"
+                          custom-class="mediaImgItem"
+                          :mode="item.images.length === 1 ? 'widthFix' : 'aspectFill'"
+                          :src="getImageUrl(image + '?x-oss-process=style/sqdt')"
+                          :enable-preview="false"
+                        />
+                      </view>
+                    </view>
+                    <view class="socialTime">{{ formatRelativeTime(item.create_time) }}</view>
                   </view>
                 </view>
               </view>
-            </view>
+            </template>
+            <!-- 推广帖：推广卡片 -->
+            <template v-if="activePostFilter === 'promotion'">
+              <view class="cell socialBox" v-for="item in socialList.data" :key="item.id">
+                <view class="socialItem">
+                  <view class="promoTypeTag" :class="'promoType--' + item.ad_type?.id">
+                    {{ item.ad_type?.name }}
+                  </view>
+                  <view class="promoBody">
+                    <view
+                      class="avatarBox"
+                      @click="toUrl('/pages/cats/user/home?member_id=' + item.member_id, false)"
+                    >
+                      <image
+                        class="promoAvatar"
+                        :src="getImageUrl(item.member?.avatar + '?x-oss-process=style/jzcq')"
+                        mode="aspectFill"
+                      />
+                      <view class="levelIcon">
+                        <image
+                          :src="`/static/images/level/${item.member.level}.png`"
+                          mode="widthFix"
+                        />
+                      </view>
+                    </view>
+                    <view class="promoText">
+                      <text class="promoTitle">{{ item.title }}</text>
+                      <text class="promoContent text-clamp-1">{{ item.content }}</text>
+                    </view>
+                  </view>
+                  <view class="promoTags" v-if="item.ad_tags?.length">
+                    <text class="promoTag" v-for="tag in item.ad_tags" :key="tag.id">
+                      #{{ tag.display_name }}
+                    </text>
+                  </view>
+                  <view class="socialCntBox">
+                    <view class="socialTime">{{ formatRelativeTime(item.create_time) }}</view>
+                  </view>
+                </view>
+              </view>
+            </template>
           </template>
           <template v-else>
             <view class="emptyBox">
@@ -247,7 +300,6 @@ const locale = uni.getLocale()
 const message = useMessage('wd-message-box-slot')
 const message2 = useMessage('wd-message-box-slot2')
 // 加载状态
-const state = ref<LoadMoreState>('loading')
 // 滚动
 const scrollTop = ref(0)
 onPageScroll((e) => {
@@ -309,11 +361,50 @@ const userInfo = ref({
   is_following: 0,
 })
 
-const socialList = ref<getCommunityPostListApiResponse>({
-  current_page: 0,
-  data: [],
-  last_page: 1,
+type PostFilterCache = {
+  list: getCommunityPostListApiResponse
+  state: string
+  loaded: boolean
+  loading: boolean
+}
+
+const createPostFilterCache = (): PostFilterCache => ({
+  list: { current_page: 0, data: [], last_page: 1 },
+  state: 'loading',
+  loaded: false,
+  loading: false,
 })
+
+const postFilterCache = ref<Record<string, PostFilterCache>>({
+  normal: createPostFilterCache(),
+  promotion: createPostFilterCache(),
+})
+
+const activePostFilter = ref('normal')
+const postFilterTabs = [
+  { key: 'normal', label: '普通帖' },
+  { key: 'promotion', label: '推广帖' },
+]
+
+/** 当前分类对应的 post_category 接口参数 */
+const getPostCategoryParam = (filter: string) => {
+  if (filter === 'normal') return 'social'
+  if (filter === 'promotion') return 'advertisement'
+  return undefined
+}
+
+const state = computed(() => postFilterCache.value[activePostFilter.value]?.state || 'loading')
+
+/** 当前展示的帖子列表（同步自当前分类缓存） */
+const socialList = ref<getCommunityPostListApiResponse>(
+  postFilterCache.value[activePostFilter.value].list,
+)
+
+/** 同步当前分类缓存到 socialList 和 state */
+const syncCurrentCache = () => {
+  const cache = postFilterCache.value[activePostFilter.value]
+  socialList.value = cache.list
+}
 
 const isRefreshing = ref(false)
 
@@ -339,39 +430,70 @@ onMounted(() => {
   // #endif
 })
 
+const getCurrentCache = () => postFilterCache.value[activePostFilter.value]
+
+const handlePostFilterChange = (key: string) => {
+  if (activePostFilter.value === key) return
+  activePostFilter.value = key
+  syncCurrentCache()
+  const cache = getCurrentCache()
+  if (!cache.loaded) loadMoreData()
+}
+
 const onScrollToLower = () => {
-  if (state.value === 'finished') return
-  if (state.value === 'loading') return
+  const cache = getCurrentCache()
+  if (cache.state === 'finished') return
+  if (cache.loading) return
   loadMoreData()
 }
 
-const loadMoreData = async () => {
-  if (socialList.value.current_page >= socialList.value.last_page) {
-    state.value = 'finished'
+const loadMoreData = async (refresh = false) => {
+  const cache = getCurrentCache()
+  if (cache.loading) return
+  if (refresh) {
+    cache.list = { current_page: 0, data: [], last_page: 1 }
+    cache.loaded = false
+  }
+  if (cache.list.current_page >= cache.list.last_page && !refresh) {
+    cache.state = 'finished'
+    syncCurrentCache()
     return
   }
 
-  state.value = 'loading'
+  cache.loading = true
+  cache.state = 'loading'
 
   try {
-    const postRes = await getMyPostListApi(socialList.value.current_page + 1, {
+    const params: any = {
       limit: 20,
       member_id: memberId.value,
-    })
+    }
+    const category = getPostCategoryParam(activePostFilter.value)
+    if (category) params.post_category = category
+
+    const postRes = await getMyPostListApi(cache.list.current_page + 1, params)
 
     if (postRes.data) {
-      socialList.value.data = socialList.value.data.concat(postRes.data.data)
-      socialList.value.current_page = postRes.data.current_page
-      socialList.value.last_page = postRes.data.last_page
-
-      if (socialList.value.current_page === socialList.value.last_page) {
-        state.value = 'finished'
+      if (postRes.data.current_page === 1) {
+        cache.list.data = postRes.data.data
       } else {
-        state.value = 'success'
+        cache.list.data = cache.list.data.concat(postRes.data.data)
+      }
+      cache.list.current_page = postRes.data.current_page
+      cache.list.last_page = postRes.data.last_page
+      cache.loaded = true
+
+      if (cache.list.current_page === cache.list.last_page) {
+        cache.state = 'finished'
+      } else {
+        cache.state = 'success'
       }
     }
   } catch (err) {
-    state.value = 'error'
+    cache.state = 'error'
+  } finally {
+    cache.loading = false
+    syncCurrentCache()
   }
 }
 
@@ -384,26 +506,10 @@ const loadAllData = async () => {
       if (data.stats) stats.value = data.stats
     }
 
-    state.value = 'loading'
-
-    const postRes = await getMyPostListApi(1, {
-      limit: 20,
-      member_id: memberId.value,
-    })
-
-    if (postRes.data) {
-      socialList.value.data = postRes.data.data
-      socialList.value.current_page = postRes.data.current_page
-      socialList.value.last_page = postRes.data.last_page
-
-      if (socialList.value.current_page === socialList.value.last_page) {
-        state.value = 'finished'
-      } else {
-        state.value = 'success'
-      }
-    }
+    await loadMoreData(true)
   } catch (e) {
-    state.value = 'error'
+    getCurrentCache().state = 'error'
+    syncCurrentCache()
   }
 }
 
@@ -417,14 +523,7 @@ const showMemberLevelPopup = () => {
 
 const onRefresh = async () => {
   isRefreshing.value = true
-  socialList.value = {
-    current_page: 0,
-    data: [],
-    last_page: 1,
-  }
-  state.value = ''
-
-  await loadAllData()
+  await loadMoreData(true)
   isRefreshing.value = false
 }
 
@@ -697,17 +796,6 @@ const doHandlePreview = (images: string[], currentIndex: number = 0, needDealImg
   padding-right: 48rpx;
   padding-left: 48rpx;
   background: linear-gradient(329deg, #ff6b03 0%, #ee941a 100%);
-  .kf {
-    position: absolute;
-    top: 36rpx;
-    right: 32rpx;
-    width: 48rpx;
-    height: 48rpx;
-    background-image: url('~@/static/images/kf.png');
-    background-repeat: no-repeat;
-    background-position: 100%;
-    background-size: 100%;
-  }
   .headCnt {
     display: flex;
     flex-direction: column;
@@ -842,6 +930,55 @@ const doHandlePreview = (images: string[], currentIndex: number = 0, needDealImg
   }
 }
 
+.postFilterBar {
+  position: relative;
+  display: flex;
+  background: #fff;
+  border-radius: 32rpx;
+  padding: 6rpx;
+  margin-bottom: 20rpx;
+
+  .postFilterTab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 64rpx;
+    position: relative;
+    z-index: 1;
+
+    .postFilterTabText {
+      font-size: 28rpx;
+      color: #333;
+      position: relative;
+      z-index: 2;
+    }
+
+    &.active .postFilterTabText {
+      color: #fff;
+      font-weight: 500;
+    }
+  }
+
+  .postFilterSlider {
+    position: absolute;
+    top: 6rpx;
+    height: 64rpx;
+    width: calc((100% - 12rpx) / 2);
+    background: #ff6b03;
+    border-radius: 26rpx;
+    transition: left 0.15s ease;
+    z-index: 0;
+
+    &.slider--normal {
+      left: 6rpx;
+    }
+    &.slider--promotion {
+      left: calc((100% - 12rpx) / 2 + 6rpx);
+    }
+  }
+}
+
 :deep(.table-level-icon) {
   height: 56rpx;
   .table-level-img {
@@ -933,6 +1070,120 @@ const doHandlePreview = (images: string[], currentIndex: number = 0, needDealImg
 
   .wd-action-sheet__name {
     display: none;
+  }
+}
+
+.promoTypeTag {
+  display: inline-block;
+  padding: 1rpx 12rpx;
+  font-size: 22rpx;
+  line-height: 32rpx;
+  text-align: center;
+  background: transparent;
+  border: 1rpx solid;
+  border-radius: 16rpx;
+  margin-bottom: 16rpx;
+  &.promoType--1 {
+    color: #2979ff;
+    border-color: #2979ff;
+  }
+  &.promoType--4 {
+    color: #22c55e;
+    border-color: #22c55e;
+  }
+  &.promoType--3 {
+    color: #7c4dff;
+    border-color: #7c4dff;
+  }
+  &.promoType--2,
+  &.promoType--5 {
+    color: #ffb020;
+    border-color: #ffb020;
+  }
+}
+
+.promoBody {
+  display: flex;
+  align-items: flex-start;
+  gap: 16rpx;
+  .avatarBox {
+    position: relative;
+    width: 64rpx;
+    height: 64rpx;
+    flex-shrink: 0;
+  }
+  .levelIcon {
+    position: absolute;
+    right: -4rpx;
+    bottom: 4rpx;
+    z-index: 9;
+    width: 28rpx;
+    height: 28rpx;
+    image {
+      width: 100%;
+      height: 100%;
+    }
+  }
+  .promoAvatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+  }
+  .promoText {
+    flex: 1;
+    min-width: 0;
+  }
+  .promoTitle {
+    display: block;
+    font-size: 30rpx;
+    font-weight: 600;
+    color: #1d1d1f;
+    line-height: 40rpx;
+    margin-bottom: 8rpx;
+  }
+  .promoContent {
+    display: block;
+    font-size: 26rpx;
+    color: #333;
+    line-height: 36rpx;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.promoTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 16rpx;
+}
+.promoTag {
+  font-size: 22rpx;
+  color: #2979ff;
+  margin-right: 16rpx;
+}
+
+.zanWrapper {
+  width: 85rpx !important;
+  height: 85rpx !important;
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0 !important;
+  vertical-align: middle;
+  margin: 0 -22rpx !important;
+  overflow: visible !important;
+
+  .Icon {
+    position: absolute !important;
+    width: 100% !important;
+    height: 100% !important;
+    left: 0 !important;
+    top: 0 !important;
+    display: block !important;
+    pointer-events: none !important;
   }
 }
 </style>

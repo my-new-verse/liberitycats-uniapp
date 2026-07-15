@@ -73,6 +73,7 @@ import NewsTab from '@/components/discover/NewsTab.vue'
 import QuotesTab from '@/components/discover/QuotesTab.vue'
 import FiatTab from '@/components/discover/FiatTab.vue'
 import SocialTab from '@/components/discover/SocialTab.vue'
+import PromotionTab from '@/components/discover/PromotionTab.vue'
 import SharePopup from '@/components/SharePopup/SharePopup.vue'
 const shareRef = ref<any>(null)
 uni.hideTabBar()
@@ -151,6 +152,7 @@ const tabs = computed(() => [
   t('discover.tabs.news'),
   t('discover.tabs.quotes'),
   t('discover.tabs.fiat'),
+  t('discover.tabs.promotion'),
 ])
 const activeTab = ref(t('discover.tabs.social'))
 const activatedTabs = ref<string[]>([activeTab.value])
@@ -161,6 +163,7 @@ const tabComponents = computed(() => ({
   [t('discover.tabs.news')]: NewsTab,
   [t('discover.tabs.quotes')]: QuotesTab,
   [t('discover.tabs.fiat')]: FiatTab,
+  [t('discover.tabs.promotion')]: PromotionTab,
 }))
 
 const tabComponentNameMaps = computed(() => ({
@@ -168,6 +171,7 @@ const tabComponentNameMaps = computed(() => ({
   [t('discover.tabs.news')]: 'NewsTab',
   [t('discover.tabs.quotes')]: 'QuotesTab',
   [t('discover.tabs.fiat')]: 'FiatTab',
+  [t('discover.tabs.promotion')]: 'PromotionTab',
 }))
 
 // 按 tab 缓存加载状态，避免切换后触发重复请求

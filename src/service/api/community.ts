@@ -220,6 +220,25 @@ export const adminRemovalApi = (
   })
 }
 
+/** 查询用户发帖禁言状态 */
+export const getPostBanStatusApi = (memberId: number) => {
+  return http.get('/v1/member/admin/post-ban/check-status', { member_id: memberId } as any)
+}
+
+/** 禁止用户发帖 */
+export const banPostApi = (memberId: number, days: number, reason?: string) => {
+  return http.post('/v1/member/admin/post-ban/ban', {
+    member_id: memberId,
+    days,
+    ...(reason ? { reason } : {}),
+  })
+}
+
+/** 解除用户发帖禁止 */
+export const unbanPostApi = (memberId: number) => {
+  return http.post('/v1/member/admin/post-ban/unban', { member_id: memberId })
+}
+
 // 关注
 export const createFollowApi = (memberId: number) => {
   return http.post('/v1/community/follow/create', {
@@ -237,6 +256,14 @@ export const deleteFollowApi = (memberId: number) => {
 // 我的帖子列表
 export const getMyPostListApi = (page: number, search?: any) => {
   return http.get<getCommunityPostListApiResponse>('/v1/community/post/member-posts', {
+    page,
+    ...search,
+  })
+}
+
+/** 我的帖子列表 */
+export const getMyPostsApi = (page: number, search?: any) => {
+  return http.get<getCommunityPostListApiResponse>('/v1/community/post/my-posts', {
     page,
     ...search,
   })
@@ -355,6 +382,11 @@ export interface SearchPostsParams {
   end_time?: number
   page?: number
   limit?: number
+  sort?: string
+  post_category?: string
+  ad_type_id?: number
+  tag_id?: number
+  [key: string]: any
 }
 
 /** 帖子搜索响应 */
