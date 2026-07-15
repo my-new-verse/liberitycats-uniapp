@@ -678,6 +678,13 @@
       }
     },
     {
+      "path": "pages/cats/social/promotion_search",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/cats/social/publish",
       "type": "page",
       "style": {

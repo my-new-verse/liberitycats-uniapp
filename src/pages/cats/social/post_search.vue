@@ -374,19 +374,32 @@
       </view>
     </wd-action-sheet>
 
-    <SharePopup ref="shareRef" />
+    <!-- 禁言弹窗 -->
+    <wd-message-box selector="wd-message-box-ban" :title="t('report.admin.ban_post')">
+      <view class="banDialog">
+        <view class="banLabel">
+          {{ t('report.admin.ban_post.label', { name: banTargetMemberName }) }}
+        </view>
+        <view class="banDaysTitle">{{ t('report.admin.ban_post.days') }}</view>
+        <view class="banDaysRow">
+          <view class="banDayItem" :class="{ active: banDays === 1 }" @click="banDays = 1">
+            1天
+          </view>
+          <view class="banDayItem" :class="{ active: banDays === 3 }" @click="banDays = 3">
+            3天
+          </view>
+          <view class="banDayItem" :class="{ active: banDays === 7 }" @click="banDays = 7">
+            7天
+          </view>
+        </view>
+        <wd-input
+          v-model="banReason"
+          :placeholder="t('report.admin.ban_post.reason_placeholder')"
+          custom-class="banReasonInput"
+        />
+      </view>
+    </wd-message-box>
 
-    <!-- ========== 举报/操作弹窗 ========== -->
-    <wd-action-sheet
-      custom-class="reportSheet"
-      v-model="reportShow"
-      :actions="reportActions"
-      :z-index="1100"
-      @close="reportSheetClose"
-      @select="reportSheetSelect"
-    />
-
-    <wd-message-box selector="wd-message-box-slot" />
     <wd-toast />
   </view>
 </template>
@@ -404,6 +417,9 @@ import {
   setSpecialFollowApi,
   blockUserApi,
   adminRemovalApi,
+  getPostBanStatusApi,
+  banPostApi,
+  unbanPostApi,
 } from '@/service/api/community'
 import { useUserStore } from '@/store/user'
 import { useMessage, useToast } from 'wot-design-uni'
@@ -553,8 +569,69 @@ const handleDelPost = (id: number) => {
 // ========== 举报/操作弹窗 ==========
 const reportShow = ref(false)
 const reportActions = ref<any[]>([])
-const reportActionIndex: any = { follow: -1, special: -1, report: -1, block: -1, remove: -1 }
+const reportActionIndex: any = {
+  follow: -1,
+  special: -1,
+  report: -1,
+  block: -1,
+  remove: -1,
+  ban: -1,
+  unban: -1,
+}
 const reportPostItem = ref<any>({})
+
+const banDays = ref(1)
+const banReason = ref('')
+const banTargetMemberId = ref(0)
+const banTargetMemberName = ref('')
+
+const updateBanAction = (isBanned: boolean) => {
+  const actions = reportActions.value
+  const banIdx = reportActionIndex.ban
+  const unbanIdx = reportActionIndex.unban
+  if (banIdx > -1) {
+    actions.splice(banIdx, 1)
+    reportActionIndex.ban = -1
+  }
+  if (unbanIdx > -1) {
+    actions.splice(unbanIdx, 1)
+    reportActionIndex.unban = -1
+  }
+  if (isBanned) {
+    actions.push({ name: t('report.admin.unban_post.action'), type: 'unban', color: '#333' })
+    reportActionIndex.unban = actions.length - 1
+  } else {
+    actions.push({ name: t('report.admin.ban_post.action'), type: 'ban', color: '#FF3B30' })
+    reportActionIndex.ban = actions.length - 1
+  }
+  reportActions.value = actions
+}
+
+const handleBan = () => {
+  banDays.value = 1
+  banReason.value = ''
+  messageBan
+    .confirm({})
+    .then(() => confirmBan())
+    .catch(() => {})
+}
+const confirmBan = () => {
+  banPostApi(banTargetMemberId.value, banDays.value, banReason.value || undefined).then((res) => {})
+}
+const handleUnban = () => {
+  message
+    .confirm({
+      title: t('report.admin.unban_post'),
+      msg: `t('report.admin.unban_post.confirm', { name: banTargetMemberName.value })`,
+    })
+    .then(() => {
+      unbanPostApi(banTargetMemberId.value).then((res) => {
+        if (res.code === 1)
+          uni.showToast({ title: res.msg || t('common.operation_success'), icon: 'none' })
+      })
+    })
+    .catch(() => {})
+}
 
 function reportSheetClose() {
   reportShow.value = false
@@ -585,10 +662,20 @@ const reportSheetSelect = ({ item, index }: any) => {
   }
   if (index === reportActionIndex.remove) {
     handleRemovePost()
+    return
+  }
+  if (index === reportActionIndex.ban) {
+    reportShow.value = false
+    handleBan()
+    return
+  }
+  if (index === reportActionIndex.unban) {
+    handleUnban()
+    return
   }
 }
 
-const reportPost = (post: any) => {
+const reportPost = async (post: any) => {
   if (!userStore.isLogin) {
     uni.navigateTo({ url: '/pages/cats/login/login' })
     return
@@ -631,6 +718,16 @@ const reportPost = (post: any) => {
   reportActions.value = actions
   reportShow.value = true
   reportPostItem.value = post
+  banTargetMemberId.value = member.id
+  banTargetMemberName.value = member.nickname || ''
+  if (userStore.userInfo.community_permissions?.can_take_down === 1) {
+    try {
+      const statusRes = await getPostBanStatusApi(member.id)
+      updateBanAction(statusRes.code === 1 && statusRes.data?.is_banned)
+    } catch (e) {
+      /* ignore */
+    }
+  }
 }
 
 const handleSpecialFollow = () => {
@@ -772,6 +869,7 @@ const onScrollToLower = () => {
 const GIF_LIKE = '/static/images/like_action.gif'
 const GIF_UNLIKE = '/static/images/unlike_action.gif'
 
+const messageBan = useMessage('wd-message-box-ban')
 const message = useMessage('wd-message-box-slot')
 const toast = useToast()
 const shareRef = ref<any>(null)
@@ -1962,6 +2060,38 @@ const handleLevelIconError = (member: any) => {
 
   .wd-action-sheet__name {
     display: none;
+  }
+}
+
+.banDialog {
+  padding: 16rpx 0;
+  .banLabel {
+    font-size: 28rpx;
+    color: #333;
+    margin-bottom: 24rpx;
+  }
+  .banDaysTitle {
+    font-size: 26rpx;
+    color: #666;
+    margin-bottom: 12rpx;
+  }
+  .banDaysRow {
+    display: flex;
+    gap: 16rpx;
+    margin-bottom: 20rpx;
+    .banDayItem {
+      flex: 1;
+      padding: 16rpx 0;
+      text-align: center;
+      font-size: 28rpx;
+      color: #333;
+      background: #f5f5f5;
+      border-radius: 12rpx;
+      &.active {
+        color: #fff;
+        background: #ff6b03;
+      }
+    }
   }
 }
 
