@@ -8,7 +8,7 @@
 
 <template>
   <view class="page" :class="[locale]">
-    <!-- 自定义导航栏 + 搜索框 -->
+    <!-- ========== 自定义导航栏 + 搜索框 ========== -->
     <view class="customNav" :style="{ height: navHeight + 'rpx' }">
       <view class="navHeaderBg" :style="{ paddingTop: navHeaderPaddingTop + 'rpx' }">
         <view class="navCnt">
@@ -19,7 +19,7 @@
             <wd-input
               type="text"
               v-model="searchText"
-              placeholder="搜索推广内容"
+              :placeholder="t('social.search.searchInput.placeholder')"
               :no-border="true"
               custom-class="searchInput"
               confirm-type="search"
@@ -36,15 +36,19 @@
       </view>
     </view>
 
-    <!-- 筛选栏 -->
+    <!-- ========== 筛选栏：用户 + 时间 + 类型 + 标签（fixed，在 scroll-view 外） ========== -->
     <view class="filterSticky" :style="{ top: cntPaddingTop + 'rpx' }">
       <view class="filterBar">
         <view class="filterItem" @click="showUserFilter = true">
-          <text class="filterLabel">{{ selectedUserLabel || t('social.search.filter.user') }}</text>
+          <text class="filterLabel">
+            {{ selectedUserLabel || t('social.search.filter.user') }}
+          </text>
           <text class="filterArrow">▼</text>
         </view>
         <view class="filterItem" @click="showTimeFilter = true">
-          <text class="filterLabel">{{ selectedTimeLabel || t('social.search.filter.time') }}</text>
+          <text class="filterLabel">
+            {{ selectedTimeLabel || t('social.search.filter.time') }}
+          </text>
           <text class="filterArrow">▼</text>
         </view>
         <view class="filterItem" @click="showAdTypeFilter = true">
@@ -56,6 +60,7 @@
           <text class="filterArrow">▼</text>
         </view>
       </view>
+
       <view class="selectedUsersBar" v-if="confirmedUserIds.length > 0">
         <scroll-view scroll-x class="selectedUsersScroll">
           <view class="selectedUserItem" v-for="uid in confirmedUserIds" :key="uid">
@@ -76,7 +81,7 @@
       </view>
     </view>
 
-    <!-- 滚动内容区 -->
+    <!-- ========== 滚动内容区 ========== -->
     <view class="cntScrollWrap" :style="{ top: scrollViewTop, height: scrollViewHeight }">
       <scroll-view
         class="cntScroll"
@@ -90,56 +95,100 @@
         @refresherabort="onRefreshAbort"
         @scrolltolower="onScrollToLower"
       >
+        <!-- ========== 搜索状态：初始提示 / 结果列表（暂无数据） ========== -->
         <template v-if="!hasSearched">
           <view class="emptyBox">
-            <view class="emptyText">输入关键词搜索推广内容</view>
+            <view class="emptyText">{{ t('social.search.hint') }}</view>
           </view>
         </template>
-        <template v-else-if="searchResult.length > 0">
-          <view class="promoList socialBox">
-            <view class="cell" v-for="item in searchResult" :key="item.id">
+        <template v-else-if="searchResult.posts.length > 0">
+          <view class="socialBox">
+            <view class="cell" v-for="item in searchResult.posts" :key="item.id">
               <view class="socialItem">
-                <view class="promoTypeTag" :class="'promoType--' + item.ad_type?.id">
-                  {{ item.ad_type?.name }}
-                </view>
-                <view class="promoBody">
+                <view
+                  class="delBox"
+                  v-if="item.member_id === userStore.userInfo?.member_id"
+                  @click="handleDelPost(item.id)"
+                ></view>
+                <view class="jbBox" v-else @click="reportPost(item)"></view>
+                <view class="socialHead">
                   <view class="avatarBox" @click="toUserHome(item.member_id)">
                     <image
-                      class="promoAvatar"
-                      :src="getImageUrl(item.member?.avatar + '?x-oss-process=style/jzcq')"
-                      mode="aspectFill"
+                      class="avatar"
+                      :src="getImageUrl(item.member.avatar + '?x-oss-process=style/jzcq')"
                     />
-                    <view class="levelIcon">
+                    <view class="levelIcon" v-if="getLevelValue(item.member)">
                       <image
-                        :src="`/static/images/level/${item.member.level}.png`"
-                        mode="widthFix"
+                        :src="getLevelIcon(item.member)"
+                        mode="aspectFit"
+                        @error="handleLevelIconError(item.member)"
+                        @load="handleLevelIconLoad(item.member)"
                       />
                     </view>
                   </view>
-                  <view class="promoText">
-                    <text class="promoTitle">{{ item.title }}</text>
-                    <text class="promoContent text-clamp-1">{{ item.content }}</text>
+                  <view class="nameWrap">
+                    <view class="name">{{ formatNickname(item.member.nickname, 22) }}</view>
                   </view>
                 </view>
-                <view class="promoTags" v-if="item.ad_tags?.length">
-                  <text class="promoTag" v-for="tag in item.ad_tags" :key="tag.id">
-                    #{{ tag.display_name }}
-                  </text>
-                </view>
-                <view class="socialCntBox">
+                <view
+                  class="socialCntBox"
+                  @click.capture.stop="toUrl('/pages/cats/social/ad_detail?id=' + item.id, false)"
+                >
+                  <view class="titleRow" v-if="item.title">
+                    <view v-if="item.ad_type?.name" class="tag tag1">
+                      {{ item.ad_type?.name }}
+                    </view>
+                    <view class="socialCnt text-clamp-4 title">{{ item.title }}</view>
+                  </view>
+                  <view class="socialCnt text-clamp-4 content" v-if="item.content">
+                    {{ item.content }}
+                  </view>
+                  <view class="adTagsRow" v-if="item.ad_tags?.length">
+                    <text v-for="tag in item.ad_tags" :key="tag.id" class="adTagChip">
+                      # {{ tag.display_name }}
+                    </text>
+                  </view>
+                  <view
+                    class="socialMedia"
+                    v-if="item.images.length > 0"
+                    :class="{
+                      mediaImg4: item.images.length === 4,
+                      singleImg: item.images.length === 1,
+                    }"
+                  >
+                    <view
+                      v-for="(image, index) in item.images"
+                      :key="index"
+                      @tap.stop="doHandlePreview(item.images, index)"
+                    >
+                      <wd-img
+                        :radius="5"
+                        custom-class="mediaImgItem"
+                        :mode="item.images.length === 1 ? 'widthFix' : 'aspectFill'"
+                        :src="getImageUrl(image + '?x-oss-process=style/sqdt')"
+                        :enable-preview="false"
+                      />
+                    </view>
+                  </view>
                   <view class="socialTime">{{ formatRelativeTime(item.create_time) }}</view>
                 </view>
                 <view class="socialFoot">
-                  <view class="socialBtnBox">
+                  <view
+                    class="socialBtnBox"
+                    @click.capture.stop="toUrl('/pages/cats/social/ad_detail?id=' + item.id, false)"
+                  >
                     <view class="socialBtnIcon view"></view>
-                    <view class="socialBtn">{{ item.view_count }}</view>
+                    <view class="socialBtn">{{ item.view_count || 0 }}</view>
                   </view>
-                  <view class="socialBtnBox">
+                  <view
+                    class="socialBtnBox"
+                    @click.capture.stop="toUrl('/pages/cats/social/ad_detail?id=' + item.id, false)"
+                  >
                     <view class="socialBtnIcon quote"></view>
-                    <view class="socialBtn">{{ item.commit_count }}</view>
+                    <view class="socialBtn">{{ item.commit_count || 0 }}</view>
                   </view>
                   <view class="socialBtnBox">
-                    <view class="zanWrapper" @click.stop="likePost(item.id)">
+                    <view class="zanWrapper" @click.stop="likeSearchPost(item)">
                       <image
                         class="Icon"
                         :src="
@@ -150,19 +199,19 @@
                         mode="aspectFit"
                         :style="{ opacity: item.currentGif ? 0 : 1 }"
                       />
-                      <image :src="item.currentGif" class="Icon" mode="aspectFit" />
+                      <image
+                        v-if="item.currentGif"
+                        :src="item.currentGif"
+                        class="Icon"
+                        mode="aspectFit"
+                      />
                     </view>
-                    <view class="socialBtn" style="margin-left: 10rpx">{{ item.like_count }}</view>
+                    <view class="socialBtn" style="margin-left: 10rpx">
+                      {{ item.like_count || 0 }}
+                    </view>
                   </view>
-                  <view
-                    class="socialBtnBox"
-                    v-if="item.member_id === userStore.userInfo?.member_id"
-                    @click="handleDelPost(item.id)"
-                  >
-                    <view class="socialBtnIcon del"></view>
-                  </view>
-                  <view class="socialBtnBox" v-else @click="reportPost(item)">
-                    <view class="socialBtnIcon more"></view>
+                  <view class="socialBtnBox" @click.stop="handleShare(item)">
+                    <view class="socialBtnIcon share"></view>
                   </view>
                 </view>
               </view>
@@ -177,7 +226,7 @@
       </scroll-view>
     </view>
 
-    <!-- 时间筛选弹窗 -->
+    <!-- ========== 时间筛选弹窗 ========== -->
     <wd-action-sheet
       v-model="showTimeFilter"
       :title="t('social.search.filter.time')"
@@ -232,7 +281,7 @@
       </view>
     </wd-action-sheet>
 
-    <!-- 用户筛选弹窗 -->
+    <!-- ========== 用户筛选弹窗 ========== -->
     <wd-action-sheet
       v-model="showUserFilter"
       :title="t('social.search.filter.user')"
@@ -323,7 +372,7 @@
       </view>
     </wd-action-sheet>
 
-    <!-- 类型筛选 -->
+    <!-- ========== 类型筛选 ========== -->
     <wd-action-sheet v-model="showAdTypeFilter" title="类型" :z-index="1100">
       <view class="filterContent">
         <view class="filterItem" @click="selectAdType({ id: 0 })">全部</view>
@@ -341,7 +390,7 @@
       </view>
     </wd-action-sheet> -->
 
-    <!-- 标签筛选 -->
+    <!-- ========== 标签筛选 ========== -->
     <wd-action-sheet v-model="showTagFilter" title="标签" :z-index="1100">
       <view class="filterContent">
         <view class="searchMember">
@@ -358,7 +407,7 @@
       </view>
     </wd-action-sheet>
 
-    <!-- 操作面板 -->
+    <!-- ========== 操作面板 ========== -->
     <wd-action-sheet
       custom-class="reportSheet"
       v-model="reportShow"
@@ -369,7 +418,7 @@
 
     <wd-message-box selector="wd-message-box-slot" />
 
-    <!-- 禁言弹窗 -->
+    <!-- ========== 禁言弹窗 ========== -->
     <wd-message-box selector="wd-message-box-ban" :title="t('report.admin.ban_post')">
       <view class="banDialog">
         <view class="banLabel">
@@ -394,13 +443,16 @@
         />
       </view>
     </wd-message-box>
+
+    <wd-toast />
+    <SharePopup ref="shareRef" />
   </view>
 </template>
 
 <script lang="ts" setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { t } from '@/locale/index'
-import { formatRelativeTime, getImageUrl, toUrl } from '@/utils'
+import { formatRelativeTime, getImageUrl, toUrl, formatNickname, handlePreview } from '@/utils'
 import { getAdTypeListApi, getAdTagHotApi, getAdTagSearchApi } from '@/service/api/promotion'
 import {
   searchPostsApi,
@@ -418,23 +470,19 @@ import {
 } from '@/service/api/community'
 import { useUserStore } from '@/store/user'
 import { useMessage, useToast } from 'wot-design-uni'
+import { LoadMoreState } from 'wot-design-uni/components/wd-loadmore/types'
+import SharePopup from '@/components/SharePopup/SharePopup.vue'
 
-const messageBan = useMessage('wd-message-box-ban')
-const message = useMessage('wd-message-box-slot')
-
-const userStore = useUserStore()
-const toast = useToast()
-
-const GIF_LIKE = '/static/images/like_action.gif'
-const GIF_UNLIKE = '/static/images/unlike_action.gif'
-
+// ============================================================
+// 导航栏布局
+// ============================================================
 const locale = uni.getLocale()
 
 const { safeAreaInsets } = uni.getSystemInfoSync()
-const safeTopRpx = ref(0)
-const navHeight = ref(0)
-const navHeaderPaddingTop = ref(0)
-const cntPaddingTop = ref(0)
+const safeTopRpx = ref<number>(0)
+const navHeight = ref<number>(0)
+const navHeaderPaddingTop = ref<number>(0)
+const cntPaddingTop = ref<number>(0)
 
 onMounted(() => {
   const systemInfo = uni.getSystemInfoSync()
@@ -445,12 +493,49 @@ onMounted(() => {
   navHeight.value = safeTopRpx.value + 40 + 104
   navHeaderPaddingTop.value = safeTopRpx.value
   cntPaddingTop.value = navHeight.value - 20
+
+  // 加载最近选择的成员
+  loadRecentMembers()
 })
 
-const navigateBack = () => uni.navigateBack({ delta: 1 })
+const navigateBack = () => {
+  uni.navigateBack({ delta: 1 })
+}
 const toUserHome = (memberId: number) => {
   uni.navigateTo({ url: `/pages/cats/user/home?member_id=${memberId}` })
 }
+
+// ============================================================
+// 搜索
+// ============================================================
+const messageBan = useMessage('wd-message-box-ban')
+const message = useMessage('wd-message-box-slot')
+const toast = useToast()
+const shareRef = ref<any>(null)
+
+const userStore = useUserStore()
+
+const GIF_LIKE = '/static/images/like_action.gif'
+const GIF_UNLIKE = '/static/images/unlike_action.gif'
+
+const searchText = ref('')
+/** 是否已执行过搜索，控制初始提示 / 搜索结果切换 */
+const hasSearched = ref(false)
+const isLoading = ref(false)
+const loadMoreState = ref<LoadMoreState>('loading')
+
+/** 搜索结果 */
+const searchResult = ref<{
+  posts: any[]
+  total: number
+  page: number
+  limit: number
+}>({
+  posts: [],
+  total: 0,
+  page: 0,
+  limit: 20,
+})
 
 // ========== 用户筛选 ==========
 const showUserFilter = ref(false)
@@ -537,7 +622,7 @@ const onUserFilterClosed = () => {
 watch(
   confirmedUserIds,
   () => {
-    doSearch(true)
+    search()
   },
   { deep: true },
 )
@@ -560,31 +645,6 @@ const handleFollow = async (user: any) => {
     if (user.is_following_me) user.is_mutual = true
   }
 }
-
-const getLevelValue = (member: any): number | null => {
-  if (member?.level_id !== undefined) {
-    const num = Number(member.level_id)
-    return isNaN(num) || num <= 0 ? null : num
-  }
-  const level = member?.level
-  if (!level) return null
-  const levelNum = level.level !== undefined ? level.level : level
-  const num = Number(levelNum)
-  return isNaN(num) || num <= 0 ? null : num
-}
-const getLevelIcon = (member: any): string => {
-  const levelId = getLevelValue(member)
-  if (!levelId) return ''
-  return `/static/images/level/${levelId}.png`
-}
-
-// 搜索
-const searchText = ref('')
-const hasSearched = ref(false)
-const isLoading = ref(false)
-const searchResult = ref<any[]>([])
-const currentPage = ref(0)
-const lastPage = ref(1)
 
 // 筛选
 const adTypes = ref<any[]>([])
@@ -696,7 +756,7 @@ const getTimeRange = () => {
   }
 }
 watch([confirmedTimeRange, confirmedStartTime, confirmedEndTime], () => {
-  doSearch(true)
+  search()
 })
 
 const selectedTagId = ref(0)
@@ -744,98 +804,191 @@ const loadHotTags = async () => {
 const selectAdType = (t: any) => {
   selectedAdTypeId.value = t.id
   showAdTypeFilter.value = false
-  doSearch(true)
+  search()
 }
 const selectSort = (name: string) => {
   selectedSortName.value = name
   showSortFilter.value = false
-  doSearch(true)
+  search()
 }
 const selectTag = (id: number) => {
   selectedTagId.value = id
   showTagFilter.value = false
-  doSearch(true)
+  search()
 }
 
-const doSearch = async (refresh = false) => {
+/** 构建搜索参数 */
+const buildSearchParams = (page: number) => {
+  const params: any = {
+    page,
+    limit: 20,
+    post_category: 'advertisement',
+    sort: selectedSortName.value,
+  }
+
+  const keyword = searchText.value.trim()
+  if (keyword) params.keyword = keyword
+
+  if (confirmedUserIds.value.length > 0) params.member_ids = confirmedUserIds.value
+
+  const timeRange = getTimeRange()
+  if (timeRange.start_time) params.start_time = timeRange.start_time
+  if (timeRange.end_time) params.end_time = timeRange.end_time
+
+  if (selectedAdTypeId.value !== 0) params.ad_type_id = selectedAdTypeId.value
+  if (selectedTagId.value !== 0) params.tag_id = selectedTagId.value
+
+  return params
+}
+
+const search = async () => {
+  const hasKeyword = searchText.value.trim() !== ''
+  const hasUser = confirmedUserIds.value.length > 0
+  if (!hasKeyword && !hasUser) {
+    uni.showToast({ title: t('social.search.requireKeywordOrUser'), icon: 'none' })
+    return
+  }
+
   if (isLoading.value) return
   isLoading.value = true
   hasSearched.value = true
-  if (refresh) {
-    currentPage.value = 0
-    lastPage.value = 1
-    searchResult.value = []
-  }
-
+  loadMoreState.value = 'loading'
+  uni.showLoading()
   try {
-    const params: any = {
-      page: currentPage.value + 1,
-      limit: 20,
-      post_category: 'advertisement',
-      sort: selectedSortName.value,
-    }
-    if (searchText.value.trim()) params.keyword = searchText.value.trim()
-    if (confirmedUserIds.value.length > 0) params.member_ids = confirmedUserIds.value
-    Object.assign(params, getTimeRange())
-    if (selectedAdTypeId.value !== 0) params.ad_type_id = selectedAdTypeId.value
-    if (selectedTagId.value !== 0) params.tag_id = selectedTagId.value
-
-    const res = await searchPostsApi(params)
+    const res = await searchPostsApi(buildSearchParams(1))
     if (res.code === 1 && res.data) {
-      if (res.data.page === 1) {
-        searchResult.value = res.data.posts
-      } else {
-        searchResult.value = searchResult.value.concat(res.data.posts)
-      }
-      currentPage.value = res.data.page
-      lastPage.value = Math.ceil(res.data.total / 20)
+      searchResult.value = res.data
+      loadMoreState.value =
+        res.data.page * res.data.limit >= res.data.total ? 'finished' : 'loading'
     }
   } catch (e) {
     console.error('search failed', e)
+    loadMoreState.value = 'error'
+  } finally {
+    isLoading.value = false
+    uni.hideLoading()
+  }
+}
+
+const loadMore = async () => {
+  if (isLoading.value) return
+  if (loadMoreState.value === 'finished' || loadMoreState.value === 'error') return
+  isLoading.value = true
+  loadMoreState.value = 'loading'
+  try {
+    const res = await searchPostsApi(buildSearchParams(searchResult.value.page + 1))
+    if (res.code === 1 && res.data) {
+      searchResult.value.posts = searchResult.value.posts.concat(res.data.posts)
+      searchResult.value.page = res.data.page
+      loadMoreState.value =
+        res.data.page * res.data.limit >= res.data.total ? 'finished' : 'loading'
+    }
+  } catch (e) {
+    console.error('loadMore failed', e)
+    loadMoreState.value = 'error'
   } finally {
     isLoading.value = false
   }
 }
 
-const search = () => doSearch(true)
+// ========== 滚动区域定位 ==========
+const filterStickyHeight = computed(() => (confirmedUserIds.value.length > 0 ? 260 : 110))
+const scrollViewTop = computed(() => cntPaddingTop.value + filterStickyHeight.value + 'rpx')
+const scrollViewHeight = computed(
+  () => `calc(100vh - ${cntPaddingTop.value + filterStickyHeight.value}rpx)`,
+)
 
-// 上拉加载更多
-const onScrollToLower = () => {
-  if (currentPage.value < lastPage.value) doSearch()
-}
-
-// 下拉刷新
+// ========== scroll-view 下拉刷新 ==========
 const isRefreshing = ref(false)
+
 const onRefresh = () => {
-  isRefreshing.value = true
-  doSearch(true).finally(() => {
+  if (!hasSearched.value) {
     isRefreshing.value = false
-  })
-}
-// 点赞
-const likePost = (id: number) => {
-  if (!userStore.isLogin) {
-    toUrl('/pages/cats/login', true)
     return
   }
-  likePostApi(id).then((res) => {
-    if (res.code === 1) {
-      const targetItem = searchResult.value.find((item) => item.id === id)
-      if (targetItem) {
-        targetItem.like_count = res.data.like_count || 0
-        targetItem.is_liked = res.data.is_liked || 0
-        const timestamp = new Date().getTime()
-        if (targetItem.is_liked === 1) {
-          targetItem.currentGif = `${GIF_LIKE}?t=${timestamp}`
-        } else {
-          targetItem.currentGif = `${GIF_UNLIKE}?t=${timestamp}`
-        }
-        setTimeout(() => {
-          targetItem.currentGif = ''
-        }, 800)
-      }
+  isRefreshing.value = true
+  refreshData()
+}
+
+const onRefreshRestore = () => {}
+
+const onRefreshAbort = () => {
+  isRefreshing.value = false
+}
+
+const refreshData = async () => {
+  if (isLoading.value) return
+  isLoading.value = true
+  loadMoreState.value = 'loading'
+  try {
+    const res = await searchPostsApi(buildSearchParams(1))
+    if (res.code === 1 && res.data) {
+      searchResult.value = res.data
+      loadMoreState.value =
+        res.data.page * res.data.limit >= res.data.total ? 'finished' : 'loading'
     }
-  })
+  } catch (e) {
+    console.error('refreshData failed', e)
+    loadMoreState.value = 'error'
+  } finally {
+    isLoading.value = false
+    isRefreshing.value = false
+  }
+}
+
+// ========== scroll-view 触底加载更多 ==========
+const onScrollToLower = () => {
+  if (loadMoreState.value !== 'finished' && loadMoreState.value !== 'error') {
+    loadMore()
+  }
+}
+
+// ========== 点赞 ==========
+const likeSearchPost = async (post: any) => {
+  if (!userStore.isLogin) {
+    uni.navigateTo({ url: '/pages/cats/login/login' })
+    return
+  }
+  try {
+    const res = await likePostApi(post.id)
+    if (res.code === 1) {
+      post.like_count = res.data.like_count
+      post.is_liked = res.data.is_liked
+      const ts = Date.now()
+      post.currentGif = post.is_liked === 1 ? `${GIF_LIKE}?t=${ts}` : `${GIF_UNLIKE}?t=${ts}`
+      setTimeout(() => {
+        post.currentGif = ''
+      }, 800)
+    }
+  } catch (e) {
+    console.error('likeSearchPost failed', e)
+  }
+}
+
+const handleShare = (post: any) => {
+  console.log(shareRef.value)
+  shareRef.value?.openSharePopup(post)
+}
+
+const doHandlePreview = (images: string[], currentIndex: number = 0) => {
+  images = images.map((item) => (item = item + '?x-oss-process=style/sqdt'))
+  handlePreview(images, currentIndex)
+}
+
+/** 删除帖子 */
+const handleDelPost = (id: number) => {
+  message
+    .confirm({ msg: t('social.index.del_post_confirm_txt') })
+    .then(() => {
+      deletePostApi(id).then((res) => {
+        if (res.data?.result == 1) {
+          toast.success(t('common.operation_success'))
+
+          searchResult.value.posts = searchResult.value.posts.filter((p) => p.id !== id)
+        }
+      })
+    })
+    .catch(() => {})
 }
 
 // ========== 操作面板 ==========
@@ -936,7 +1089,6 @@ const reportSheetSelect = ({ item, index }: any) => {
   }
   if (index === reportActionIndex.unban) {
     handleUnban()
-    return
   }
 }
 
@@ -1013,6 +1165,8 @@ const doSetSpecialFollow = (member: any, isSpecial: boolean) => {
           : t('social.index.user.special.success'),
         icon: 'none',
       })
+    } else {
+      toast.show(res.msg || t('common.error'))
     }
   })
 }
@@ -1027,7 +1181,7 @@ const handleBlockUser = () => {
     .then(() => {
       blockUserApi(reportPostItem.value.id).then((res) => {
         if (res.data?.result === 1) {
-          searchResult.value = searchResult.value.filter(
+          searchResult.value.posts = searchResult.value.posts.filter(
             (p) => p.member_id !== reportPostItem.value.member_id,
           )
         }
@@ -1043,12 +1197,21 @@ const handleRemovePost = () => {
       msg: t('social.index.post.remove_content'),
     })
     .then(() => {
-      adminRemovalApi(reportPostItem.value.id, 'post').then((res) => {
-        if (res.data?.status === 0) {
-          searchResult.value = searchResult.value.filter((p) => p.id !== reportPostItem.value.id)
-          toast.success(t('common.operation_success'))
-        }
-      })
+      uni.showLoading()
+      adminRemovalApi(reportPostItem.value.id, 'post')
+        .then((res) => {
+          if (res.data?.status === 0) {
+            searchResult.value.posts = searchResult.value.posts.filter(
+              (p) => p.id !== reportPostItem.value.id,
+            )
+            toast.success(t('common.operation_success'))
+          } else {
+            toast.show(res.msg || t('common.operationFailedRetry'))
+          }
+        })
+        .finally(() => {
+          uni.hideLoading()
+        })
     })
     .catch(() => {})
 }
@@ -1098,30 +1261,56 @@ const handleFollowClick = async (member: any) => {
   }
 }
 
-const handleDelPost = (id: number) => {
-  message
-    .confirm({ msg: t('social.index.del_post_confirm_txt') })
-    .then(() => {
-      deletePostApi(id).then((res) => {
-        if (res.data?.result == 1) {
-          searchResult.value = searchResult.value.filter((p) => p.id !== id)
-        }
-      })
-    })
-    .catch(() => {})
+// ============================================================
+// Level 等级处理工具函数
+// ============================================================
+/** 获取 level_id 的值（优先使用 level_id，兼容旧的 level 字段） */
+const getLevelValue = (member: any): number | null => {
+  // 优先使用 level_id
+  if (member?.level_id !== undefined) {
+    const num = Number(member.level_id)
+    return isNaN(num) || num <= 0 ? null : num
+  }
+
+  // 兼容旧的 level 字段
+  const level = member?.level
+  if (!level) return null
+
+  // Vue 3 的响应式对象也是 object，先尝试取 level 属性
+  const levelNum = level.level !== undefined ? level.level : level
+
+  // 转换为数字
+  const num = Number(levelNum)
+  return isNaN(num) || num <= 0 ? null : num
 }
 
-const onRefreshRestore = () => {}
-const onRefreshAbort = () => {
-  isRefreshing.value = false
+/** 获取 level 图标路径（使用 level_id） */
+const getLevelIcon = (member: any): string => {
+  const levelId = getLevelValue(member)
+  if (!levelId) return ''
+  return `/static/images/level/${levelId}.png`
 }
 
-// 滚动区域定位
-const filterStickyHeight = computed(() => (confirmedUserIds.value.length > 0 ? 260 : 110))
-const scrollViewTop = computed(() => cntPaddingTop.value + filterStickyHeight.value + 'rpx')
-const scrollViewHeight = computed(
-  () => `calc(100vh - ${cntPaddingTop.value + filterStickyHeight.value}rpx)`,
-)
+/** 图片加载成功 */
+const handleLevelIconLoad = (member: any) => {
+  console.log('Level icon loaded:', {
+    nickname: member?.nickname,
+    level_id: member?.level_id,
+    level: member?.level,
+    icon: getLevelIcon(member),
+  })
+}
+
+/** 图片加载失败 */
+const handleLevelIconError = (member: any) => {
+  console.error('Level icon load failed:', {
+    nickname: member?.nickname,
+    level_id: member?.level_id,
+    level: member?.level,
+    levelValue: getLevelValue(member),
+    icon: getLevelIcon(member),
+  })
+}
 
 // 加载筛选选项
 onMounted(async () => {
@@ -1133,7 +1322,6 @@ onMounted(async () => {
   } catch (e) {
     /* ignore */
   }
-  loadRecentMembers()
   loadHotTags()
 })
 </script>
@@ -1142,11 +1330,13 @@ onMounted(async () => {
 @import '/src/style/base';
 @import '/src/style/social';
 
+/* ========== 页面容器 ========== */
 .page {
   min-height: 100vh;
   background-color: var(--liberty-cats-page-background-color);
 }
 
+/* ========== 自定义导航栏 ========== */
 .customNav {
   position: fixed;
   top: 0;
@@ -1186,7 +1376,7 @@ onMounted(async () => {
       width: calc(100% - 44rpx - 16rpx);
       height: 56rpx;
       padding: 6rpx;
-      background-color: #fff;
+      background-color: #ffffff;
       border-radius: 34rpx;
     }
 
@@ -1248,6 +1438,7 @@ onMounted(async () => {
   }
 }
 
+/* ========== 滚动内容区 ========== */
 .cntScrollWrap {
   position: fixed;
   left: 0;
@@ -1264,8 +1455,18 @@ onMounted(async () => {
   box-sizing: border-box;
 }
 
+/* ========== 橙色下拉刷新 ========== */
+:deep(.uni-scroll-view-refresh__spinner > circle) {
+  color: #ff6b03 !important;
+}
+:deep(.uni-scroll-view-refresh-inner > svg) {
+  fill: #ff6b03 !important;
+}
+
+/* ========== 筛选栏 ========== */
 .filterSticky {
   position: fixed;
+  top: 0;
   left: 0;
   right: 0;
   z-index: 98;
@@ -1274,66 +1475,88 @@ onMounted(async () => {
 
 .selectedUsersBar {
   padding: 16rpx 32rpx;
+
   .selectedUsersScroll {
     white-space: nowrap;
-  }
-  .selectedUserItem {
-    display: inline-flex;
-    flex-direction: column;
-    align-items: center;
-    width: 110rpx;
-    margin-right: 16rpx;
-    vertical-align: top;
-    .userAvatarWrap {
-      position: relative;
-      width: 80rpx;
-      height: 80rpx;
-      margin: 0 auto 15rpx;
-      .userAvatar {
+
+    .selectedUserItem {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      width: 110rpx;
+      margin-right: 16rpx;
+      vertical-align: top;
+
+      .userAvatarWrap {
+        position: relative;
+        width: 80rpx;
+        height: 80rpx;
+        margin: 0 auto 15rpx;
+        cursor: pointer;
+
+        .userAvatar {
+          width: 100%;
+          height: 100%;
+          border-radius: 50%;
+          border: 2rpx solid var(--liberty-cats-primary-color);
+        }
+
+        .levelIcon {
+          position: absolute;
+          right: -4rpx;
+          bottom: 4rpx;
+          z-index: 1;
+          width: 28rpx;
+          height: 28rpx;
+          pointer-events: none;
+
+          image {
+            width: 100%;
+            height: 100%;
+          }
+        }
+
+        .removeIcon {
+          position: absolute;
+          top: 0;
+          right: 0;
+          width: 32rpx;
+          height: 32rpx;
+          background-color: rgba(0, 0, 0, 0.7);
+          color: #fff;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 22rpx;
+          font-weight: bold;
+          line-height: 1;
+          z-index: 2;
+          backdrop-filter: blur(4rpx);
+          box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15);
+          pointer-events: none;
+
+          &::before {
+            content: '';
+            position: absolute;
+            top: -8rpx;
+            right: -8rpx;
+            bottom: -8rpx;
+            left: -8rpx;
+            pointer-events: auto;
+          }
+        }
+      }
+
+      .userName {
+        font-size: 24rpx;
+        color: #666;
         width: 100%;
-        height: 100%;
-        border-radius: 50%;
-        border: 2rpx solid var(--liberty-cats-primary-color);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        text-align: center;
       }
-      .levelIcon {
-        position: absolute;
-        right: -4rpx;
-        bottom: 4rpx;
-        z-index: 1;
-        width: 28rpx;
-        height: 28rpx;
-        pointer-events: none;
-      }
-      .levelIcon image {
-        width: 100%;
-        height: 100%;
-      }
-      .removeIcon {
-        position: absolute;
-        top: 0;
-        right: 0;
-        width: 32rpx;
-        height: 32rpx;
-        background: rgba(0, 0, 0, 0.7);
-        color: #fff;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 22rpx;
-        font-weight: bold;
-        line-height: 1;
-        z-index: 2;
-      }
-    }
-    .userName {
-      font-size: 24rpx;
-      color: #666;
-      width: 100%;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      text-align: center;
     }
   }
 }
@@ -1353,64 +1576,72 @@ onMounted(async () => {
     color: var(--liberty-cats-primary-color);
     border: 1rpx solid var(--liberty-cats-primary-color);
     border-radius: 34rpx;
-    flex-shrink: 0;
 
     .filterLabel {
-      max-width: 100rpx;
+      max-width: 200rpx;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+
     .filterArrow {
       font-size: 20rpx;
     }
   }
 }
 
+/* ========== 时间筛选弹窗内容 ========== */
 .filterContent {
   padding: 24rpx 24rpx;
 
   .timePresetRow {
     display: flex;
     gap: 16rpx;
-  }
-  .timePresetItem {
-    flex: 1;
-    padding: 16rpx 0;
-    font-size: 28rpx;
-    color: #333;
-    text-align: center;
-    background: #f5f5f5;
-    border-radius: 12rpx;
-    &.active {
-      color: #fff;
-      background: var(--liberty-cats-primary-color);
+
+    .timePresetItem {
+      flex: 1;
+      padding: 16rpx 0;
+      font-size: 28rpx;
+      color: #333;
+      text-align: center;
+      background: #f5f5f5;
+      border-radius: 12rpx;
+
+      &.active {
+        color: #fff;
+        background: var(--liberty-cats-primary-color);
+      }
     }
   }
+
   .customTimeSection {
     margin-top: 32rpx;
     padding-top: 24rpx;
     border-top: 2rpx solid #f0f0f0;
-  }
-  .sectionTitle {
-    font-size: 30rpx;
-    font-weight: 500;
-    color: #333;
-    margin-bottom: 16rpx;
-  }
-  .timeRow {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 18rpx 0;
-  }
-  .timeRowLabel {
-    font-size: 28rpx;
-    color: #333;
-  }
-  .timeDivider {
-    height: 1rpx;
-    background: #f0f0f0;
+
+    .sectionTitle {
+      font-size: 30rpx;
+      font-weight: 500;
+      color: #333333;
+      margin-bottom: 16rpx;
+    }
+
+    .timeRow {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18rpx 0;
+
+      .timeRowLabel {
+        font-size: 28rpx;
+        color: #333;
+      }
+    }
+
+    .timeDivider {
+      height: 1rpx;
+      background: #f0f0f0;
+    }
   }
 
   .searchMember {
@@ -1419,9 +1650,11 @@ onMounted(async () => {
     gap: 16rpx;
     margin-bottom: 24rpx;
     width: 100%;
+
     :deep(.wd-input) {
       flex: 1;
     }
+
     :deep(.searchMemberBtn) {
       flex-shrink: 0;
     }
@@ -1431,77 +1664,90 @@ onMounted(async () => {
     margin-bottom: 24rpx;
     padding-bottom: 24rpx;
     border-bottom: 2rpx solid #f0f0f0;
+
     .recentTitle {
       font-size: 28rpx;
       font-weight: 500;
       color: #666;
       margin-bottom: 20rpx;
     }
+
     .recentMemberList {
       display: flex;
       flex-direction: column;
       gap: 12rpx;
-    }
-    .recentMemberItem {
-      display: flex;
-      align-items: center;
-      gap: 16rpx;
-      padding: 16rpx;
-      background: #f7f7f7;
-      border-radius: 12rpx;
-      &:active {
-        background: #efefef;
-        transform: scale(0.98);
-      }
-      .recentAvatarWrap {
-        position: relative;
-        width: 64rpx;
-        height: 64rpx;
-        flex-shrink: 0;
-      }
-      .recentAvatar {
-        width: 100%;
-        height: 100%;
-        border-radius: 50%;
-      }
-      .recentAvatarWrap .levelIcon {
-        position: absolute;
-        right: -4rpx;
-        bottom: 2rpx;
-        z-index: 9;
-        width: 26rpx;
-        height: 26rpx;
-      }
-      .recentAvatarWrap .levelIcon image {
-        width: 100%;
-        height: 100%;
-      }
-      .recentMemberInfo {
-        flex: 1;
+
+      .recentMemberItem {
         display: flex;
-        flex-direction: column;
-        gap: 6rpx;
-        min-width: 0;
-      }
-      .recentName {
-        font-size: 28rpx;
-        font-weight: 500;
-        color: #333;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-      .recentId {
-        font-size: 24rpx;
-        color: #999;
-      }
-      .recentCheck {
-        font-size: 32rpx;
-        color: var(--liberty-cats-primary-color);
-        font-weight: bold;
-        width: 48rpx;
-        text-align: center;
-        flex-shrink: 0;
+        align-items: center;
+        gap: 16rpx;
+        padding: 16rpx;
+        background: #f7f7f7;
+        border-radius: 12rpx;
+        transition: all 0.2s ease;
+
+        &:active {
+          background: #efefef;
+          transform: scale(0.98);
+        }
+
+        .recentAvatarWrap {
+          position: relative;
+          width: 64rpx;
+          height: 64rpx;
+          flex-shrink: 0;
+
+          .recentAvatar {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+          }
+
+          .levelIcon {
+            position: absolute;
+            right: -4rpx;
+            bottom: 2rpx;
+            z-index: 9;
+            width: 26rpx;
+            height: 26rpx;
+
+            image {
+              width: 100%;
+              height: 100%;
+            }
+          }
+        }
+
+        .recentMemberInfo {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 6rpx;
+          min-width: 0;
+
+          .recentName {
+            font-size: 28rpx;
+            font-weight: 500;
+            color: #333;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+
+          .recentId {
+            font-size: 24rpx;
+            color: #999;
+          }
+        }
+
+        .recentCheck {
+          font-size: 32rpx;
+          color: var(--liberty-cats-primary-color);
+          font-weight: bold;
+          width: 48rpx;
+          text-align: center;
+          flex-shrink: 0;
+        }
       }
     }
   }
@@ -1509,81 +1755,91 @@ onMounted(async () => {
   .memberList {
     max-height: 600rpx;
     margin-bottom: 24rpx;
-  }
-  .memberItem {
-    display: flex;
-    align-items: center;
-    gap: 16rpx;
-    padding: 20rpx 0;
-    border-bottom: 1rpx solid #f0f0f0;
-    .memberAvatarWrap {
-      position: relative;
-      width: 72rpx;
-      height: 72rpx;
-      flex-shrink: 0;
-    }
-    .memberAvatar {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-    }
-    .memberAvatarWrap .levelIcon {
-      position: absolute;
-      right: -4rpx;
-      bottom: 4rpx;
-      z-index: 9;
-      width: 28rpx;
-      height: 28rpx;
-    }
-    .memberAvatarWrap .levelIcon image {
-      width: 100%;
-      height: 100%;
-    }
-    .memberInfo {
-      flex: 1;
-    }
-    .memberName {
-      font-size: 28rpx;
-      color: #333;
-      margin-right: 12rpx;
-    }
-    .memberId {
-      font-size: 24rpx;
-      color: #999;
-      margin-top: 4rpx;
-    }
-    .memberActions {
+
+    .memberItem {
       display: flex;
       align-items: center;
       gap: 16rpx;
-      flex-shrink: 0;
-    }
-    .memberActions .followBtn {
-      padding: 8rpx 24rpx;
-      border-radius: 34rpx;
-      font-size: 24rpx;
-      white-space: nowrap;
-    }
-    .memberActions .followBtn.follow {
-      background: var(--liberty-cats-primary-color);
-      color: #fff;
-      border: 1rpx solid var(--liberty-cats-primary-color);
-    }
-    .memberActions .followBtn.followed {
-      background: #fff;
-      color: #999;
-      border: 1rpx solid #d9d9d9;
-    }
-    .memberActions .followBtn.mutual {
-      background: #fff;
-      color: var(--liberty-cats-primary-color);
-      border: 1rpx solid var(--liberty-cats-primary-color);
-    }
-    .memberCheck {
-      font-size: 32rpx;
-      color: var(--liberty-cats-primary-color);
-      width: 48rpx;
-      text-align: center;
+      padding: 20rpx 0;
+      border-bottom: 1rpx solid #f0f0f0;
+
+      .memberAvatarWrap {
+        position: relative;
+        width: 72rpx;
+        height: 72rpx;
+        flex-shrink: 0;
+
+        .memberAvatar {
+          width: 100%;
+          height: 100%;
+          border-radius: 50%;
+        }
+
+        .levelIcon {
+          position: absolute;
+          right: -4rpx;
+          bottom: 4rpx;
+          z-index: 9;
+          width: 28rpx;
+          height: 28rpx;
+
+          image {
+            width: 100%;
+            height: 100%;
+          }
+        }
+      }
+
+      .memberInfo {
+        flex: 1;
+        .memberName {
+          font-size: 28rpx;
+          color: #333;
+          margin-right: 12rpx;
+        }
+        .memberId {
+          font-size: 24rpx;
+          color: #999;
+          margin-top: 4rpx;
+        }
+      }
+
+      .memberActions {
+        display: flex;
+        align-items: center;
+        gap: 16rpx;
+        flex-shrink: 0;
+
+        .followBtn {
+          padding: 8rpx 24rpx;
+          border-radius: 34rpx;
+          font-size: 24rpx;
+          white-space: nowrap;
+
+          &.follow {
+            background: var(--liberty-cats-primary-color);
+            color: #fff;
+            border: 1rpx solid var(--liberty-cats-primary-color);
+          }
+          &.followed {
+            background: #fff;
+            color: #999;
+            border: 1rpx solid #d9d9d9;
+          }
+          &.mutual {
+            background: #fff;
+            color: var(--liberty-cats-primary-color);
+            border: 1rpx solid var(--liberty-cats-primary-color);
+          }
+        }
+
+        .memberCheck {
+          font-size: 32rpx;
+          color: var(--liberty-cats-primary-color);
+          width: 48rpx;
+          text-align: center;
+        }
+      }
     }
   }
 
@@ -1599,6 +1855,7 @@ onMounted(async () => {
     flex-direction: column;
     gap: 16rpx;
     margin-top: 24rpx;
+
     :deep(.cancelBtn) {
       background: #f5f5f5 !important;
       color: #333 !important;
@@ -1614,6 +1871,7 @@ onMounted(async () => {
     font-size: 28rpx;
     color: #333;
     border-bottom: 1rpx solid #f0f0f0;
+
     .tagCount {
       font-size: 24rpx;
       color: #999;
@@ -1621,21 +1879,88 @@ onMounted(async () => {
   }
 }
 
-.emptyBox {
+.nameWrap {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.followBtn {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex: 1;
-  padding-bottom: 200rpx;
-  .emptyText {
-    font-size: 28rpx;
+  height: 40rpx;
+  padding: 0 20rpx;
+  border-radius: 22rpx;
+  border: 1rpx solid transparent;
+  background-color: #ff6b03;
+  color: #fff;
+  font-size: 22rpx;
+  line-height: 1;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  &.followed {
+    background-color: #ffffff;
     color: #999;
+    border-color: #ddd;
+  }
+  &.special {
+    background: linear-gradient(135deg, #fff7e5 0%, #fff0d6 100%);
+    color: #ff6b03;
+    border-color: #ff6b03;
+    font-weight: 600;
   }
 }
 
-.promoList {
-  margin-top: 24rpx;
+.socialItem {
+  position: relative;
+
+  .followBtn {
+    position: absolute;
+    right: 48rpx;
+    top: 0;
+    align-items: self-start;
+    line-height: 42rpx;
+  }
+}
+
+.zanWrapper {
+  width: 85rpx !important;
+  height: 85rpx !important;
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0 !important;
+  vertical-align: middle;
+  margin: 0 -22rpx !important;
+  overflow: visible !important;
+
+  .Icon {
+    position: absolute !important;
+    width: 100% !important;
+    height: 100% !important;
+    left: 0 !important;
+    top: 0 !important;
+    display: block !important;
+    pointer-events: none !important;
+  }
+}
+
+:deep(.wd-action-sheet__action--disabled) {
+  height: 2rpx !important;
+  min-height: 2rpx !important;
+  margin: 16rpx 0;
+  padding: 0 !important;
+  background: #f0f0f0;
+  pointer-events: none;
+  border: none !important;
+  overflow: hidden;
+
+  .wd-action-sheet__name {
+    display: none;
+  }
 }
 
 .banDialog {
@@ -1670,151 +1995,69 @@ onMounted(async () => {
   }
 }
 
-.socialBtnIcon.more {
-  background-image: url('@/static/images/more.png');
-}
-
-.socialBtnIcon.del {
-  background-image: url('@/static/images/trush@2x.png');
-}
-
-:deep(.reportSheet) {
-  margin-bottom: calc(env(safe-area-inset-bottom) + 120rpx) !important;
-
-  .wd-action-sheet__action--disabled {
-    height: 2rpx !important;
-    min-height: 2rpx !important;
-    margin: 16rpx 0;
-    padding: 0 !important;
-    background: #f0f0f0;
-    pointer-events: none;
-    border: none !important;
-    overflow: hidden;
-
-    .wd-action-sheet__name {
-      display: none;
-    }
-  }
-}
-
-.zanWrapper {
-  width: 85rpx !important;
-  height: 85rpx !important;
-  position: relative !important;
-  display: inline-flex !important;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0 !important;
-  vertical-align: middle;
-  margin: 0 -22rpx !important;
-  overflow: visible !important;
-
-  .Icon {
-    position: absolute !important;
-    width: 100% !important;
-    height: 100% !important;
-    left: 0 !important;
-    top: 0 !important;
-    display: block !important;
-    pointer-events: none !important;
-  }
-}
-
-.promoTypeTag {
-  display: inline-block;
-  padding: 1rpx 12rpx;
-  font-size: 22rpx;
-  line-height: 32rpx;
-  text-align: center;
-  background: transparent;
-  border: 1rpx solid;
-  border-radius: 16rpx;
-  margin-bottom: 16rpx;
-
-  &.promoType--1 {
-    color: #2979ff;
-    border-color: #2979ff;
-  }
-  &.promoType--4 {
-    color: #22c55e;
-    border-color: #22c55e;
-  }
-  &.promoType--3 {
-    color: #7c4dff;
-    border-color: #7c4dff;
-  }
-  &.promoType--2,
-  &.promoType--5 {
-    color: #ffb020;
-    border-color: #ffb020;
-  }
-}
-
-.promoBody {
-  display: flex;
-  align-items: flex-start;
-  gap: 16rpx;
-
-  .avatarBox {
-    position: relative;
-    width: 64rpx;
-    height: 64rpx;
-    flex-shrink: 0;
-  }
-
-  .promoAvatar {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-  }
-
-  .promoText {
-    flex: 1;
-    min-width: 0;
-
-    .promoTitle {
-      display: block;
-      font-size: 30rpx;
-      font-weight: 600;
-      color: #1d1d1f;
-      line-height: 40rpx;
-      margin-bottom: 8rpx;
-    }
-
-    .promoContent {
-      display: block;
-      font-size: 26rpx;
-      color: #333;
-      line-height: 36rpx;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-  }
-}
-
-.promoTags {
+/* ========== 推广专属样式 ========== */
+.adTagsRow {
   display: flex;
   flex-wrap: wrap;
   gap: 12rpx;
   margin-top: 16rpx;
+}
 
-  .promoTag {
-    font-size: 22rpx;
-    color: #2979ff;
-    margin-right: 16rpx;
+.adTagChip {
+  font-size: 22rpx;
+  color: var(--liberty-cats-primary-color);
+  padding: 4rpx 0;
+  border-radius: 8rpx;
+  margin-right: 12rpx;
+}
+
+.socialCntBox {
+  .titleRow {
+    display: flex;
+    align-items: center;
+    gap: 8rpx;
+    margin-bottom: 8rpx;
+    .tag {
+      padding: 4rpx 16rpx;
+      font-size: 24rpx;
+      text-transform: uppercase;
+      border-radius: 8rpx;
+      line-height: 1.4;
+    }
+    .tag1 {
+      color: #fff;
+      background: var(--wot-color-primary);
+    }
+    .tag2 {
+      color: #ac59ff;
+      background: #ece8f6;
+    }
+    .tag3 {
+      color: #ff0303;
+      background: #ffeaea;
+    }
+  }
+  .title {
+    flex: 1;
+    color: #1d1d1f !important;
+  }
+  .content {
+    color: #666666 !important;
   }
 }
-.levelIcon {
-  position: absolute;
-  right: -4rpx;
-  bottom: 4rpx;
-  z-index: 9;
-  width: 28rpx;
-  height: 28rpx;
-  image {
-    width: 100%;
-    height: 100%;
+
+/* ========== 空状态 ========== */
+.emptyBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding-bottom: 200rpx;
+
+  .emptyText {
+    font-size: 28rpx;
+    color: #999999;
   }
 }
 </style>

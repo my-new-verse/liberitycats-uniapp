@@ -49,71 +49,107 @@
 
       <!-- 推广卡片列表 -->
       <template v-if="promoList.length > 0 || !cacheLoaded">
-        <view class="promoList">
-          <view class="cell" v-for="item in promoList" :key="item.id">
-            <view class="socialItem">
-              <view class="promoTypeTag" :class="'promoType--' + item.ad_type?.id">
-                {{ item.ad_type?.name }}
-              </view>
-              <view class="promoBody">
-                <view class="avatarBox" @click="toUserHome(item.member_id)">
-                  <image
-                    class="promoAvatar"
-                    :src="getImageUrl(item.member?.avatar + '?x-oss-process=style/jzcq')"
-                    mode="aspectFill"
-                  />
-                  <view class="levelIcon">
-                    <image :src="`/static/images/level/${item.member.level}.png`" mode="widthFix" />
-                  </view>
-                </view>
-                <view class="promoText">
-                  <text class="promoTitle">{{ item.title }}</text>
-                  <text class="promoContent text-clamp-1">{{ item.content }}</text>
+        <view class="cell" v-for="item in promoList" :key="item.id">
+          <view class="socialItem">
+            <view
+              class="delBox"
+              v-if="item.member_id === userStore.userInfo?.member_id"
+              @click="handleDelPost(item.id)"
+            ></view>
+            <view class="jbBox" v-else @click="reportPost(item)"></view>
+            <view class="socialHead">
+              <view class="avatarBox" @click="toUserHome(item.member_id)">
+                <image
+                  class="avatar"
+                  :src="getImageUrl(item.member?.avatar + '?x-oss-process=style/jzcq')"
+                />
+                <view class="levelIcon">
+                  <image :src="`/static/images/level/${item.member.level}.png`" mode="widthFix" />
                 </view>
               </view>
-              <view class="promoTags" v-if="item.ad_tags?.length">
-                <text class="promoTag" v-for="tag in item.ad_tags" :key="tag.id">
-                  #{{ tag.display_name }}
+              <view class="nameWrap">
+                <view class="name">{{ formatNickname(item.member?.nickname, 22) }}</view>
+              </view>
+            </view>
+            <view
+              class="socialCntBox"
+              @click="toUrl('/pages/cats/social/ad_detail?id=' + item.id, false)"
+            >
+              <view class="titleRow" v-if="item.title">
+                <view v-if="item.ad_type?.name" class="tag tag1">
+                  {{ item.ad_type?.name }}
+                </view>
+                <view class="socialCnt text-clamp-4 title">{{ item.title }}</view>
+              </view>
+              <view class="socialCnt text-clamp-4 content" v-if="item.content">
+                {{ item.content }}
+              </view>
+              <view class="adTagsRow" v-if="item.ad_tags?.length">
+                <text v-for="tag in item.ad_tags" :key="tag.id" class="adTagChip">
+                  # {{ tag.display_name }}
                 </text>
               </view>
-              <view class="socialCntBox">
-                <view class="socialTime">{{ formatRelativeTime(item.create_time) }}</view>
-              </view>
-              <view class="socialFoot">
-                <view class="socialBtnBox">
-                  <view class="socialBtnIcon view"></view>
-                  <view class="socialBtn">{{ item.view_count }}</view>
-                </view>
-                <view class="socialBtnBox">
-                  <view class="socialBtnIcon quote"></view>
-                  <view class="socialBtn">{{ item.commit_count }}</view>
-                </view>
-                <view class="socialBtnBox">
-                  <view class="zanWrapper" @click.stop="likePost(item.id)">
-                    <image
-                      class="Icon"
-                      :src="
-                        item.is_liked === 1
-                          ? '/static/images/unlike.png'
-                          : '/static/images/zan0.33.png'
-                      "
-                      mode="aspectFit"
-                      :style="{ opacity: item.currentGif ? 0 : 1 }"
-                    />
-                    <image :src="item.currentGif" class="Icon" mode="aspectFit" />
-                  </view>
-                  <view class="socialBtn" style="margin-left: 10rpx">{{ item.like_count }}</view>
-                </view>
+              <view
+                class="socialMedia"
+                v-if="item.images?.length > 0"
+                :class="{
+                  mediaImg4: item.images.length === 4,
+                  singleImg: item.images.length === 1,
+                }"
+              >
                 <view
-                  class="socialBtnBox"
-                  v-if="item.member_id === userStore.userInfo?.member_id"
-                  @click="handleDelPost(item.id)"
+                  v-for="(image, index) in item.images"
+                  :key="index"
+                  @tap.stop="doHandlePreview(item.images, index)"
                 >
-                  <view class="socialBtnIcon del"></view>
+                  <wd-img
+                    :radius="5"
+                    custom-class="mediaImgItem"
+                    :mode="item.images.length === 1 ? 'widthFix' : 'aspectFill'"
+                    :src="getImageUrl(image + '?x-oss-process=style/sqdt')"
+                    :enable-preview="false"
+                  />
                 </view>
-                <view class="socialBtnBox" v-else @click="reportPost(item)">
-                  <view class="socialBtnIcon more"></view>
+              </view>
+              <view class="socialTime">
+                {{ formatRelativeTime(item.create_time) }}
+              </view>
+            </view>
+            <view class="socialFoot">
+              <view
+                class="socialBtnBox"
+                @click="toUrl('/pages/cats/social/ad_detail?id=' + item.id, false)"
+              >
+                <view class="socialBtnIcon view"></view>
+                <view class="socialBtn">{{ item.view_count }}</view>
+              </view>
+              <view
+                class="socialBtnBox"
+                @click="
+                  toUrl('/pages/cats/social/ad_detail?id=' + item.id + '&showComment=false', false)
+                "
+              >
+                <view class="socialBtnIcon quote"></view>
+                <view class="socialBtn">{{ item.commit_count }}</view>
+              </view>
+              <view class="socialBtnBox">
+                <view class="zanWrapper" @click.stop="likePost(item.id)">
+                  <image
+                    class="Icon"
+                    :src="
+                      item.is_liked === 1
+                        ? '/static/images/unlike.png'
+                        : '/static/images/zan0.33.png'
+                    "
+                    mode="aspectFit"
+                    :style="{ opacity: item.currentGif ? 0 : 1 }"
+                  />
+                  <image :src="item.currentGif" class="Icon" mode="aspectFit" />
                 </view>
+                <view class="socialBtn" style="margin-left: 10rpx">{{ item.like_count }}</view>
+              </view>
+              <view class="socialBtnBox" @click="handleOpenShare(item)">
+                <view class="socialBtnIcon share"></view>
               </view>
             </view>
           </view>
@@ -166,7 +202,7 @@
 <script lang="ts" setup>
 import { ref, onMounted, watch, computed } from 'vue'
 import { t } from '@/locale/index'
-import { formatRelativeTime, getImageUrl, toUrl } from '@/utils'
+import { formatNickname, formatRelativeTime, getImageUrl, toUrl, handlePreview } from '@/utils'
 import { getAdPostListApi, getAdTypeListApi, AdPostItem } from '@/service/api/promotion'
 import {
   likePostApi,
@@ -200,7 +236,12 @@ const emit = defineEmits<{
   'update:state': [state: string]
   'refresh-complete': []
   'refresh-error': []
+  'open-share': [item: any]
 }>()
+
+const handleOpenShare = (item: any) => {
+  emit('open-share', item)
+}
 
 const activeFilter = ref('latest')
 
@@ -637,6 +678,11 @@ const goSearch = () => {
   toUrl('/pages/cats/social/promotion_search', true)
 }
 
+const doHandlePreview = (images: string[], currentIndex: number = 0) => {
+  images = images.map((item) => (item = item + '?x-oss-process=style/sqdt'))
+  handlePreview(images, currentIndex)
+}
+
 /** 同步列表中同一作者的关注状态 */
 const syncMemberFollowState = (memberId: number, data: any) => {
   Object.values(adListCache.value).forEach((cache) => {
@@ -754,6 +800,7 @@ onMounted(async () => {
 .cardRow {
   display: flex;
   gap: 16rpx;
+  margin-bottom: 24rpx;
 
   .cardItem {
     flex: 1;
@@ -783,18 +830,6 @@ onMounted(async () => {
       margin-top: 16rpx;
     }
   }
-}
-
-.promoList {
-  margin-top: 24rpx;
-}
-
-.socialBtnIcon.more {
-  background-image: url('@/static/images/more.png');
-}
-
-.socialBtnIcon.del {
-  background-image: url('@/static/images/trush@2x.png');
 }
 
 :deep(.reportSheet) {
@@ -839,101 +874,61 @@ onMounted(async () => {
   }
 }
 
-.promoTypeTag {
-  display: inline-block;
-  padding: 1rpx 12rpx;
-  font-size: 22rpx;
-  line-height: 32rpx;
-  text-align: center;
-  background: transparent;
-  border: 1rpx solid;
-  border-radius: 16rpx;
-  margin-bottom: 16rpx;
-
-  &.promoType--1 {
-    color: #2979ff;
-    border-color: #2979ff;
-  }
-  &.promoType--4 {
-    color: #22c55e;
-    border-color: #22c55e;
-  }
-  &.promoType--3 {
-    color: #7c4dff;
-    border-color: #7c4dff;
-  }
-  &.promoType--2,
-  &.promoType--5 {
-    color: #ffb020;
-    border-color: #ffb020;
-  }
-}
-
-.promoBody {
+.nameWrap {
   display: flex;
-  align-items: flex-start;
-  gap: 16rpx;
-
-  .avatarBox {
-    position: relative;
-    width: 64rpx;
-    height: 64rpx;
-    flex-shrink: 0;
-  }
-
-  .promoAvatar {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-  }
-
-  .promoText {
-    flex: 1;
-    min-width: 0;
-
-    .promoTitle {
-      display: block;
-      font-size: 30rpx;
-      font-weight: 600;
-      color: #1d1d1f;
-      line-height: 40rpx;
-      margin-bottom: 8rpx;
-    }
-
-    .promoContent {
-      display: block;
-      font-size: 26rpx;
-      color: #333;
-      line-height: 36rpx;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-  }
+  align-items: center;
+  gap: 14rpx;
 }
 
-.promoTags {
+.adTagsRow {
   display: flex;
   flex-wrap: wrap;
   gap: 12rpx;
   margin-top: 16rpx;
-
-  .promoTag {
-    font-size: 22rpx;
-    color: #2979ff;
-    margin-right: 16rpx;
-  }
 }
-.levelIcon {
-  position: absolute;
-  right: -4rpx;
-  bottom: 4rpx;
-  z-index: 9;
-  width: 28rpx;
-  height: 28rpx;
-  image {
-    width: 100%;
-    height: 100%;
+
+.adTagChip {
+  font-size: 22rpx;
+  color: var(--liberty-cats-primary-color);
+  // background: rgba(255, 107, 3, 0.08);
+  padding: 4rpx 0;
+  border-radius: 8rpx;
+  margin-right: 12rpx;
+}
+.socialCntBox {
+  .titleRow {
+    display: flex;
+    align-items: center;
+    gap: 8rpx;
+    margin-bottom: 8rpx;
+    .tag {
+      padding: 4rpx 16rpx;
+      // margin-left: 12rpx;
+      font-size: 24rpx;
+      // font-weight: 600;
+      text-transform: uppercase;
+      border-radius: 8rpx;
+      line-height: 1.4;
+    }
+    .tag1 {
+      color: #fff;
+      background: var(--wot-color-primary);
+    }
+    .tag2 {
+      color: #ac59ff;
+      background: #ece8f6;
+    }
+    .tag3 {
+      color: #ff0303;
+      background: #ffeaea;
+    }
+  }
+  .title {
+    flex: 1;
+    color: #1d1d1f !important;
+  }
+  .content {
+    color: #666666 !important;
   }
 }
 </style>

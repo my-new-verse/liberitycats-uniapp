@@ -15,6 +15,7 @@ export interface getPostDetailResponse {
   is_liked: number
   is_approved: number
   tag: tagDetail
+  post_category?: string
   // 推广相关字段
   title?: string
   ad_type_id?: number | string
@@ -110,6 +111,18 @@ export const createPostApi = (content: string, images: string[]) => {
   })
 }
 
+// 发帖状态检查响应
+export interface CheckPostStatusResponse {
+  can_post: boolean
+  ban_reason?: string
+  ban_until_date?: string
+}
+
+// 检查发帖状态
+export const checkPostStatusApi = (post_category: string = 'social') => {
+  return http.get<CheckPostStatusResponse>('/v1/community/post/check-status', { post_category })
+}
+
 // 推广类型
 export type PromotionType = string
 // 推广有效期
@@ -141,6 +154,17 @@ export const getHotAdTagsApi = () => {
 // 搜索标签
 export const searchAdTagsApi = (keyword: string) => {
   return http.get<AdTagItem[]>('/v1/community/ad-tag/search', { keyword })
+}
+
+// 推广发布资格检查响应
+export interface CheckAdEligibilityResponse {
+  can_publish: boolean
+  reason?: string
+}
+
+// 检查推广发布资格
+export const checkAdEligibilityApi = () => {
+  return http.get<CheckAdEligibilityResponse>('/v1/community/ad-post/check-eligibility')
 }
 
 // 创建推广帖子

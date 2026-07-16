@@ -2450,10 +2450,9 @@ const copyText = (text: string) => {
   align-items: center;
   gap: 12rpx;
   margin: 24rpx 0;
-  padding: 24rpx;
+  padding: 24rpx 0;
   background: #ffffff;
   border-radius: 16rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
   font-family: Alibaba PuHuiTi2 !important;
 
   .adTypeTag {
