@@ -12,6 +12,11 @@
 
   <view>
     <custom-nav2 :title="t('social.detail.page_title')" pageBackgroundColor="#f7f6f4">
+      <template #right>
+        <view v-if="postDetail.member_id === userStore.userInfo?.member_id" @click="handleEditPost">
+          <wd-icon name="edit-outline" size="38rpx"></wd-icon>
+        </view>
+      </template>
       <template #default>
         <view class="container">
           <view class="socialBox">
@@ -1377,6 +1382,11 @@ const handleDelPost = (id: number, type: 'l1' | 'l2', parentItem?: any) => {
         })
     })
     .catch(() => {})
+}
+
+/** 编辑帖子 */
+const handleEditPost = () => {
+  toUrl(`/pages/cats/social/publish?id=${postId.value}&edit=true`, false)
 }
 
 /** 删除主帖 */

@@ -245,6 +245,8 @@ import {
   getAdTypeListApi,
   getHotAdTagsApi,
   searchAdTagsApi,
+  checkPostStatusApi,
+  checkAdEligibilityApi,
   type AdTagItem,
   type PromotionType,
   type PromotionValidity,
@@ -257,6 +259,12 @@ import CustomNav from '@/components/CustomNav/CustomNav.vue'
 import LEditor from '@/components/l-editor/l-editor.vue'
 
 const message = useMessage('wd-message-box-slot')
+
+// 发帖权限状态
+const canPost = ref(true)
+// 推广发布资格状态
+const canPublishAd = ref(true)
+const adEligibilityChecked = ref(false)
 
 // 语言
 const locale = uni.getLocale()
@@ -291,6 +299,10 @@ const pageTitle = computed(() => {
 
 const handleCategoryChange = ({ name }: { name: PublishCategory }) => {
   activeCategory.value = name
+  // 切换到推广专区时检查发布资格（只执行一次）
+  if (name === 'promotion' && !adEligibilityChecked.value) {
+    checkAdEligibility()
+  }
 }
 
 // 推广类型选项（从接口获取）
@@ -487,13 +499,75 @@ const cntPaddingTop = ref<number>(0)
 
 const submitLoading = ref(false)
 
+const isAddDraft = computed(() => {
+  const hasContent = editorContent.value.length > 0 || ossUploadedFiles.value.length > 0
+  return (
+    canPost.value &&
+    userStore.isLogin &&
+    hasContent &&
+    title.value.length &&
+    promotionType.value !== ''
+  )
+})
+
 const isAddPublish = computed(() => {
   const hasContent = editorContent.value.length > 0 || ossUploadedFiles.value.length > 0
-  return userStore.isLogin && hasContent && title.value.length && promotionType.value !== ''
+  return (
+    canPost.value &&
+    canPublishAd.value &&
+    userStore.isLogin &&
+    hasContent &&
+    title.value.length &&
+    promotionType.value !== ''
+  )
 })
 const isPublish = computed(() => {
-  return userStore.isLogin && (postContent.value.length > 0 || ossUploadedFiles.value.length > 0)
+  return (
+    canPost.value &&
+    userStore.isLogin &&
+    (postContent.value.length > 0 || ossUploadedFiles.value.length > 0)
+  )
 })
+
+/** 检查发帖状态 */
+const checkPostStatus = async () => {
+  try {
+    const res = await checkPostStatusApi()
+    if (res.code === 1 && res.data) {
+      canPost.value = res.data.can_post
+      if (!res.data.can_post) {
+        const banReason = res.data.ban_reason || '未知原因'
+        const banUntil = res.data.ban_until_date || '永久'
+        message.alert({
+          title: t('publish.index.ban.title'),
+          msg: `${t('publish.index.ban.reason')}：${banReason}\n${t('publish.index.ban.until')}：${banUntil}`,
+        })
+      }
+    }
+  } catch (e) {
+    console.error('checkPostStatus failed', e)
+  }
+}
+
+/** 检查推广发布资格 */
+const checkAdEligibility = async () => {
+  try {
+    const res = await checkAdEligibilityApi()
+    if (res.code === 1 && res.data) {
+      canPublishAd.value = res.data.can_publish
+      if (!res.data.can_publish && res.data.reason) {
+        message.alert({
+          title: t('publish.index.ban.title'),
+          msg: res.data.message,
+        })
+      }
+    }
+  } catch (e) {
+    console.error('checkAdEligibility failed', e)
+  } finally {
+    adEligibilityChecked.value = true
+  }
+}
 
 // 使用 ref 来存储防抖函数的引用
 const debouncedCreatePost = ref<(() => Promise<void>) | null>(null)
