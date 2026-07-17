@@ -200,7 +200,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import { t } from '@/locale/index'
 import { formatNickname, formatRelativeTime, getImageUrl, toUrl, handlePreview } from '@/utils'
 import { getAdPostListApi, getAdTypeListApi, AdPostItem } from '@/service/api/promotion'
@@ -735,6 +735,15 @@ watch(
 onMounted(async () => {
   await loadAdTypes()
   loadData(1)
+
+  // 监听刷新事件（从编辑页返回后刷新推广列表）
+  uni.$on('refreshPromotionTab', () => {
+    loadData(1, true)
+  })
+})
+
+onUnmounted(() => {
+  uni.$off('refreshPromotionTab')
 })
 </script>
 

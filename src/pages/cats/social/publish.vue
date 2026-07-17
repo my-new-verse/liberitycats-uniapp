@@ -15,6 +15,7 @@
       :line-width="20"
       :style="{ paddingTop: navHeight + 'rpx' }"
       custom-class="custom-tab"
+      v-if="!isEditMode && !isDraftEdit"
     >
       <wd-tab
         v-for="item in categoryList"
@@ -68,7 +69,7 @@
                   send-text=""
                   @search-change="onSearchChange"
                   @change="onEditorChange"
-                  :max-num="30"
+                  :max-num="1000"
                 >
                   <template #hot="{ show, onSelect, close }">
                     <view v-show="show">
@@ -79,7 +80,9 @@
                       <transition name="slide-up">
                         <view class="popup-box" v-show="show">
                           <view class="popup-header">
-                            <text class="popup-title">选择话题</text>
+                            <text class="popup-title">
+                              {{ t('publish.index.tag.select_title') }}
+                            </text>
                             <wd-icon
                               name="close-bold"
                               size="42rpx"
@@ -209,8 +212,9 @@
 
           <!-- 保存草稿按钮 -->
           <view
+            v-if="!isEditMode || isDraftEdit"
             class="adBtn draftBtn"
-            :class="{ disabled: !isAddPublish }"
+            :class="{ disabled: !isAddDraft }"
             @click.stop="debouncedCreatePromotionPost(0)"
           >
             {{ t('publish.index.promotion.draft_btn') }}
@@ -238,10 +242,13 @@
 
 <script lang="ts" setup>
 import i18n, { t } from '@/locale/index'
-import { navigateBack, toUrl } from '@/utils'
+import { navigateBack, toUrl, getImageUrl } from '@/utils'
 import {
   createPostApi,
   createPromotionPostApi,
+  updatePostApi,
+  updatePromotionPostApi,
+  getCommunityPostDetailApi,
   getAdTypeListApi,
   getHotAdTagsApi,
   searchAdTagsApi,
@@ -291,7 +298,16 @@ const categoryList = ref([
 // 激活的分类
 const activeCategory = ref<PublishCategory>('normal')
 
+// 编辑模式
+const editId = ref<number>(0)
+const isEditMode = computed(() => editId.value > 0)
+// 草稿编辑模式（不进入编辑模式，按正常发帖流程，仅预填草稿数据）
+const draftId = ref<number>(0)
+const isDraftEdit = computed(() => draftId.value > 0)
+
 const pageTitle = computed(() => {
+  if (isDraftEdit.value) return t('publish.index.edit_draft')
+  if (isEditMode.value) return t('common.edit')
   return activeCategory.value === 'promotion'
     ? t('publish.index.tab.promotion')
     : t('publish.index.tab.normal')
@@ -536,8 +552,8 @@ const checkPostStatus = async () => {
     if (res.code === 1 && res.data) {
       canPost.value = res.data.can_post
       if (!res.data.can_post) {
-        const banReason = res.data.ban_reason || '未知原因'
-        const banUntil = res.data.ban_until_date || '永久'
+        const banReason = res.data.ban_reason || t('publish.index.ban.unknown_reason')
+        const banUntil = res.data.ban_until_date || t('publish.index.ban.permanent')
         message.alert({
           title: t('publish.index.ban.title'),
           msg: `${t('publish.index.ban.reason')}：${banReason}\n${t('publish.index.ban.until')}：${banUntil}`,
@@ -569,6 +585,72 @@ const checkAdEligibility = async () => {
   }
 }
 
+/** 加载帖子数据用于编辑 */
+const loadPostForEdit = async (id: number) => {
+  try {
+    uni.showLoading({ title: t('common.loading') })
+    const res = await getCommunityPostDetailApi(id)
+    if (res.code === 1 && res.data) {
+      const post = res.data
+      // 根据帖子类型切换 Tab
+      if (post.post_category === 'advertisement') {
+        activeCategory.value = 'promotion'
+        // 预填标题
+        title.value = post.title || ''
+        // 预填推广类型
+        promotionType.value = (post.ad_type_id as PromotionType) || ''
+        // 预填联系方式
+        contactEmail.value = post.contact_email || ''
+        contactWechat.value = post.contact_wechat || ''
+        // 预填编辑器内容和标签（标签放在最前面）
+        const editorModel: { type: 'text' | 'tag'; value: string; id?: number | string }[] = []
+        if (post.ad_tags?.length) {
+          post.ad_tags.forEach((tag) => {
+            editorModel.push({ type: 'tag', id: tag.id, value: tag.display_name })
+          })
+        }
+        if (post.content) {
+          editorModel.push({ type: 'text', value: post.content })
+        }
+        // 等 editorRef 就绪后设置内容
+        nextTick(() => {
+          editorRef.value?.setValue(editorModel)
+        })
+      } else {
+        activeCategory.value = 'normal'
+        postContent.value = post.content || ''
+      }
+      // 预填图片
+      if (post.images?.length) {
+        ossUploadedFiles.value = [...post.images]
+        fileList.value = post.images.map((img: string, index: number) => ({
+          url: getImageUrl(img + '?x-oss-process=style/sqdt'),
+          uid: `existing_${index}_${Date.now()}`,
+          status: 'success',
+        }))
+        // 同步 ossUrlMap
+        fileList.value.forEach((f: any, i: number) => {
+          ossUrlMap.value[f.uid] = post.images[i]
+        })
+      }
+    }
+  } catch (e) {
+    console.error('loadPostForEdit failed', e)
+    toast.show(t('publish.index.edit.load_failed'))
+  } finally {
+    uni.hideLoading()
+  }
+}
+
+onLoad((options) => {
+  if (options.id && options.edit === 'true') {
+    editId.value = Number(options.id)
+  }
+  if (options.id && options.draft === 'true') {
+    draftId.value = Number(options.id)
+  }
+})
+
 // 使用 ref 来存储防抖函数的引用
 const debouncedCreatePost = ref<(() => Promise<void>) | null>(null)
 const debouncedCreatePromotionPost = ref<((publishStatus: number) => Promise<void>) | null>(null)
@@ -589,6 +671,9 @@ onMounted(() => {
     ossConfig.value = res.data
   })
 
+  // 检查发帖状态
+  checkPostStatus()
+
   // 加载推广类型列表
   loadAdTypes()
 
@@ -600,14 +685,32 @@ onMounted(() => {
     leading: true,
     trailing: false,
   })
+
+  // 编辑模式：加载帖子数据（在 onMounted 中调用，确保 editorRef 已就绪）
+  if (editId.value > 0) {
+    loadPostForEdit(editId.value)
+  }
+  // 草稿编辑：预填草稿数据，按正常发帖流程处理
+  if (draftId.value > 0) {
+    loadPostForEdit(draftId.value)
+  }
 })
 
 /** 公共：发布成功处理 */
 const handlePublishSuccess = (res: any) => {
   if (res.code === 1) {
     toast.show(t('common.toast.post_success'))
-    uni.$emit('refreshSocialTab')
-    uni.$emit('switchToSocialTab')
+    const postId = editId.value || draftId.value || res.data?.id
+    if (activeCategory.value === 'promotion') {
+      uni.$emit('refreshPromotionTab')
+      uni.$emit('refreshPromotionPost', postId)
+    } else {
+      uni.$emit('refreshSocialTab')
+      uni.$emit('refreshNormalPost', postId)
+    }
+    if (!isEditMode.value) {
+      uni.$emit('switchToSocialTab')
+    }
     navigateBack()
   } else {
     toast.show(res.msg)
@@ -638,34 +741,35 @@ const createPost = async () => {
     return
   }
 
-  message
-    .confirm({
-      msg: t('social.publish.confirm_txt'),
-      cancelButtonText: t('social.publish.confirm.no'),
-      confirmButtonText: t('social.publish.confirm.yes'),
-    })
-    .then(async () => {
-      // 防止重复提交
-      if (submitLoading.value) return
-      submitLoading.value = true
+  const doSubmit = async () => {
+    // 防止重复提交
+    if (submitLoading.value) return
+    submitLoading.value = true
 
-      try {
-        const res = await createPostApi(postContent.value, ossUploadedFiles.value)
-        if (res.code === 1) {
-          toast.show(t('common.toast.post_success'))
-          uni.$emit('refreshSocialTab')
-          uni.$emit('switchToSocialTab')
-          navigateBack()
-        } else {
-          toast.show(res.msg)
-        }
-      } catch (error) {
-        toast.info('失败:' + error.errMsg)
-      } finally {
-        submitLoading.value = false
-      }
-    })
-    .catch(() => {})
+    try {
+      const res = isEditMode.value
+        ? await updatePostApi(editId.value, postContent.value, ossUploadedFiles.value)
+        : await createPostApi(postContent.value, ossUploadedFiles.value, draftId.value || undefined)
+      handlePublishSuccess(res)
+    } catch (error) {
+      toast.info(t('common.toast.post_failed') + ': ' + error.errMsg)
+    } finally {
+      submitLoading.value = false
+    }
+  }
+
+  if (isEditMode.value) {
+    doSubmit()
+  } else {
+    message
+      .confirm({
+        msg: t('social.publish.confirm_txt'),
+        cancelButtonText: t('social.publish.confirm.no'),
+        confirmButtonText: t('social.publish.confirm.yes'),
+      })
+      .then(doSubmit)
+      .catch(() => {})
+  }
 }
 
 // 创建推广帖子
@@ -695,18 +799,35 @@ const createPromotionPost = async (publishStatus: number = 1) => {
     submitLoading.value = true
 
     try {
-      const res = await createPromotionPostApi({
-        content,
-        images: ossUploadedFiles.value,
-        ad_type_id: promotionType.value,
-        contact_email: contactEmail.value || undefined,
-        contact_wechat: contactWechat.value || undefined,
-        validity_days: validityDays.value,
-        title: title.value,
-        publish_status: publishStatus as 0 | 1,
-        tags,
-      })
-      handlePublishSuccess(res)
+      if (isEditMode.value) {
+        const res = await updatePromotionPostApi({
+          id: editId.value,
+          content,
+          images: ossUploadedFiles.value,
+          ad_type_id: promotionType.value,
+          contact_email: contactEmail.value || undefined,
+          contact_wechat: contactWechat.value || undefined,
+          validity_days: validityDays.value,
+          title: title.value,
+          publish_status: publishStatus as 0 | 1,
+          tags,
+        })
+        handlePublishSuccess(res)
+      } else {
+        const res = await createPromotionPostApi({
+          content,
+          images: ossUploadedFiles.value,
+          ad_type_id: promotionType.value,
+          contact_email: contactEmail.value || undefined,
+          contact_wechat: contactWechat.value || undefined,
+          validity_days: validityDays.value,
+          title: title.value,
+          publish_status: publishStatus as 0 | 1,
+          tags,
+          id: draftId.value || undefined,
+        })
+        handlePublishSuccess(res)
+      }
     } catch (error) {
       // toast.info('失败:' + error.errMsg)
     } finally {
@@ -714,7 +835,9 @@ const createPromotionPost = async (publishStatus: number = 1) => {
     }
   }
 
-  if (publishStatus === 1) {
+  if (isEditMode.value) {
+    doSubmit()
+  } else if (publishStatus === 1) {
     message
       .confirm({
         msg: t('social.publish.confirm_txt'),
@@ -846,7 +969,7 @@ $minor-color: #666666;
 }
 :deep(.titleInput) {
   margin-bottom: 24rpx;
-  border: 1px solid $border-color;
+  border: 1px solid #ededed;
 
   .wd-input__inner {
     font-size: 28rpx;
@@ -871,7 +994,7 @@ $minor-color: #666666;
   // min-height: 300rpx;
   margin: 24rpx 0;
   border-radius: $border-radius;
-  border: 1px solid $border-color;
+  border: 1px solid #ededed;
   padding: 12rpx;
   // 覆写 l-editor 的 fixed 定位，使其内嵌在卡片中
   :deep(.l-editor) {
@@ -957,7 +1080,7 @@ $minor-color: #666666;
   }
   padding: 0 12rpx;
   border-radius: $border-radius;
-  border: 1px solid $border-color;
+  border: 1px solid #ededed;
 }
 
 .typeGrid {
@@ -979,7 +1102,7 @@ $minor-color: #666666;
     color: #ffffff;
     font-weight: 600;
   }
-  border: 1px solid $border-color;
+  border: 1px solid #ededed;
 }
 
 .validityGrid {
@@ -1002,7 +1125,7 @@ $minor-color: #666666;
     color: #ffffff;
     font-weight: 600;
   }
-  border: 1px solid $border-color;
+  border: 1px solid #ededed;
 }
 
 .adBtn {
@@ -1026,7 +1149,7 @@ $minor-color: #666666;
     color: #cccccc;
     border: 0;
   }
-  border: 1px solid $border-color;
+  border: 1px solid #ededed;
 }
 
 /* 发布按钮 */
@@ -1077,7 +1200,7 @@ $minor-color: #666666;
   &.checked {
     border-color: #ff6b03;
   }
-  border: 1px solid $border-color;
+  border: 1px solid #ededed;
 }
 
 .radioDot {
@@ -1128,7 +1251,7 @@ $minor-color: #666666;
     background-color: #ff6b03;
     border-color: #ff6b03;
   }
-  border: 1px solid $border-color;
+  border: 1px solid #ededed;
 }
 
 .agreementText {

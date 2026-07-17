@@ -12,6 +12,11 @@
 
   <view>
     <custom-nav2 :title="t('adDetail.page_title')" pageBackgroundColor="#f7f6f4">
+      <template #right>
+        <view v-if="postDetail.member_id === userStore.userInfo?.member_id" @click="handleEditPost">
+          <wd-icon name="edit-outline" size="38rpx"></wd-icon>
+        </view>
+      </template>
       <template #default>
         <view class="container">
           <view class="socialBox">
@@ -1395,6 +1400,17 @@ onMounted(() => {
       },
     )
   }
+
+  // 监听刷新事件（从编辑页返回后刷新帖子详情）
+  uni.$on('refreshPromotionPost', () => {
+    if (postId.value) {
+      getCommunityPostDetailApi(postId.value).then((res) => {
+        if (res.code === 1 && res.data) {
+          postDetail.value = res.data
+        }
+      })
+    }
+  })
 })
 // 在组件卸载时清理防抖函数和定时器
 onUnmounted(() => {
@@ -1405,6 +1421,7 @@ onUnmounted(() => {
     clearTimeout(pendingFocusTimer)
     pendingFocusTimer = null
   }
+  uni.$off('refreshPromotionPost')
 })
 
 const handleLoadComments = (sort: string) => {
@@ -1850,6 +1867,10 @@ const copyText = (text: string) => {
       //   toast.show(t('common.copy_success') || '已复制')
     },
   })
+}
+/** 编辑帖子 */
+const handleEditPost = () => {
+  toUrl(`/pages/cats/social/publish?id=${postId.value}&edit=true`, false)
 }
 </script>
 

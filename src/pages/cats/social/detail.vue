@@ -1326,6 +1326,17 @@ onMounted(() => {
       },
     )
   }
+
+  // 监听刷新事件（从编辑页返回后刷新帖子详情）
+  uni.$on('refreshNormalPost', () => {
+    if (postId.value) {
+      getCommunityPostDetailApi(postId.value).then((res) => {
+        if (res.code === 1 && res.data) {
+          postDetail.value = res.data
+        }
+      })
+    }
+  })
 })
 // 在组件卸载时清理防抖函数和定时器
 onUnmounted(() => {
@@ -1336,6 +1347,7 @@ onUnmounted(() => {
     clearTimeout(pendingFocusTimer)
     pendingFocusTimer = null
   }
+  uni.$off('refreshNormalPost')
 })
 
 const handleLoadComments = (sort: string) => {

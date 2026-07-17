@@ -272,7 +272,7 @@
                 </view>
                 <view
                   class="socialCntBox"
-                  @click="toUrl('/pages/cats/social/detail?id=' + item.id, false)"
+                  @click="toUrl('/pages/cats/social/publish?id=' + item.id + '&draft=true', true)"
                 >
                   <view class="socialCnt text-clamp-4">
                     <view class="socialTips" v-if="item.is_approved === 0">
@@ -330,7 +330,7 @@
                 </view>
                 <view
                   class="socialCntBox"
-                  @click="toUrl('/pages/cats/social/ad_detail?id=' + item.id, false)"
+                  @click="toUrl('/pages/cats/social/publish?id=' + item.id + '&draft=true', true)"
                 >
                   <view class="titleRow" v-if="item.title">
                     <view v-if="item.ad_type?.name" class="tag tag1">
@@ -406,6 +406,7 @@ import { getUserInfoApi } from '@/service/api/user'
 import {
   getCommunityPostListApi,
   getCommunityPostListApiResponse,
+  getCommunityPostDetailApi,
   likePostApi,
   deletePostApi,
   reportPostApi,
@@ -494,7 +495,35 @@ onPageScroll((e) => {
 // 页面加载
 onLoad(() => {
   loadMore()
+
+  // 监听刷新事件（从编辑页返回后更新对应帖子）
+  uni.$on('refreshNormalPost', (postId?: number) => {
+    if (postId) updateListItem(postId)
+  })
+  uni.$on('refreshPromotionPost', (postId?: number) => {
+    if (postId) updateListItem(postId)
+  })
 })
+
+onUnmounted(() => {
+  uni.$off('refreshNormalPost')
+  uni.$off('refreshPromotionPost')
+})
+
+/** 单条更新：获取帖子详情并替换列表中对应项 */
+const updateListItem = async (postId: number) => {
+  try {
+    const res = await getCommunityPostDetailApi(postId)
+    if (res.code === 1 && res.data) {
+      const index = socialList.value.data.findIndex((item) => item.id === postId)
+      if (index !== -1) {
+        socialList.value.data[index] = { ...socialList.value.data[index], ...res.data }
+      }
+    }
+  } catch (e) {
+    console.error('updateListItem failed', e)
+  }
+}
 
 // 上拉加载
 onReachBottom(() => {

@@ -450,7 +450,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { t } from '@/locale/index'
 import { formatRelativeTime, getImageUrl, toUrl, formatNickname, handlePreview } from '@/utils'
 import { getAdTypeListApi, getAdTagHotApi, getAdTagSearchApi } from '@/service/api/promotion'
@@ -1323,6 +1323,17 @@ onMounted(async () => {
     /* ignore */
   }
   loadHotTags()
+
+  // 监听刷新事件（从编辑页返回后重新搜索）
+  uni.$on('refreshPromotionPost', () => {
+    if (hasSearched.value) {
+      search()
+    }
+  })
+})
+
+onUnmounted(() => {
+  uni.$off('refreshPromotionPost')
 })
 </script>
 

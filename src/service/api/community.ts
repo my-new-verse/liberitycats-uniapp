@@ -104,10 +104,20 @@ export const commitPostApi = (
 }
 
 // 创建帖子
-export const createPostApi = (content: string, images: string[]) => {
+export const createPostApi = (content: string, images: string[], id?: number) => {
   return http.post('/v1/community/post/create', {
     content,
     images,
+    id,
+  })
+}
+
+// 更新帖子
+export const updatePostApi = (id: number, content: string, images: string[]) => {
+  return http({
+    url: `/v1/community/post/update/${id}`,
+    method: 'PUT',
+    data: { content, images },
   })
 }
 
@@ -171,15 +181,38 @@ export const checkAdEligibilityApi = () => {
 export const createPromotionPostApi = (params: {
   content: string
   images: string[]
-  ad_type: PromotionType
+  ad_type_id: PromotionType
   contact_email?: string
   contact_wechat?: string
   validity_days: PromotionValidity
-  publish_status: 1
+  publish_status: 0 | 1
   tags?: number[]
+  title: string
+  id?: number
 }) => {
   return http.post('/v1/community/ad-post/create', {
     ...params,
+  })
+}
+
+// 更新推广帖子
+export const updatePromotionPostApi = (params: {
+  id: number
+  content: string
+  images: string[]
+  ad_type_id: PromotionType
+  contact_email?: string
+  contact_wechat?: string
+  validity_days: PromotionValidity
+  publish_status: 0 | 1
+  tags?: number[]
+  title: string
+}) => {
+  const { id, ...rest } = params
+  return http({
+    url: `/v1/community/ad-post/update/${id}`,
+    method: 'PUT',
+    data: rest,
   })
 }
 
