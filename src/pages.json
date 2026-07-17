@@ -136,6 +136,13 @@
       }
     },
     {
+      "path": "pages/game/extract_coin_guide",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/game/index",
       "type": "page",
       "style": {
