@@ -374,6 +374,18 @@
       </view>
     </wd-action-sheet>
 
+    <!-- 操作面板 -->
+    <wd-action-sheet
+      custom-class="reportSheet"
+      v-model="reportShow"
+      :actions="reportActions"
+      :z-index="1100"
+      @close="reportSheetClose"
+      @select="reportSheetSelect"
+    />
+
+    <SharePopup ref="shareRef" />
+
     <!-- 禁言弹窗 -->
     <wd-message-box selector="wd-message-box-ban" :title="t('report.admin.ban_post')">
       <view class="banDialog">
