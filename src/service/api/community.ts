@@ -282,8 +282,11 @@ export const adminRemovalApi = (
 }
 
 /** 查询用户发帖禁言状态 */
-export const getPostBanStatusApi = (memberId: number) => {
-  return http.get('/v1/member/admin/post-ban/check-status', { member_id: memberId } as any)
+export const getPostBanStatusApi = (memberId: number, postCategory?: string) => {
+  return http.get('/v1/member/admin/post-ban/check-status', {
+    member_id: memberId,
+    ...(postCategory ? { post_category: postCategory } : {}),
+  } as any)
 }
 
 /** 禁止用户发帖 */

@@ -397,7 +397,7 @@ const handleUnban = () => {
   message
     .confirm({
       title: t('report.admin.unban_post'),
-      msg: `t('report.admin.unban_post.confirm', { name: banTargetMemberName.value })`,
+      msg: t('report.admin.unban_post.confirm', { name: banTargetMemberName.value }),
     })
     .then(() => {
       unbanPostApi(banTargetMemberId.value).then((res) => {
@@ -475,7 +475,7 @@ const reportPost = async (post: any) => {
 
   if (userStore.userInfo.community_permissions?.can_take_down === 1) {
     try {
-      const statusRes = await getPostBanStatusApi(member.id)
+      const statusRes = await getPostBanStatusApi(member.id, 'advertisement')
       updateBanAction(statusRes.code === 1 && statusRes.data?.is_banned)
     } catch (e) {
       /* ignore */

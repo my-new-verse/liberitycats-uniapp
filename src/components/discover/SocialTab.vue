@@ -926,7 +926,7 @@ const reportPost = async (post: getCommunityPostListApiResponse['data'][number])
   // 管理员权限：异步查询禁言状态
   if (userStore.userInfo.community_permissions?.can_take_down === 1) {
     try {
-      const statusRes = await getPostBanStatusApi(member.id)
+      const statusRes = await getPostBanStatusApi(member.id, 'social')
       const isBanned = statusRes.code === 1 && statusRes.data?.is_banned
       updateBanAction(isBanned)
     } catch (e) {
@@ -1037,7 +1037,7 @@ const handleUnban = () => {
   message
     .confirm({
       title: t('report.admin.unban_post'),
-      msg: `t('report.admin.unban_post.confirm', { name: banTargetMemberName.value })`,
+      msg: t('report.admin.unban_post.confirm', { name: banTargetMemberName.value }),
     })
     .then(() => {
       unbanPostApi(banTargetMemberId.value).then((res) => {
