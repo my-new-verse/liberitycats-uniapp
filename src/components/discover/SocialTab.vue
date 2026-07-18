@@ -84,131 +84,22 @@
         :style="{ paddingTop: cntPaddingTop + 36 + 20 + 'rpx' }"
       >
         <view class="cell" v-for="item in socialList.data" :key="item.id">
-          <view class="socialItem">
-            <view
-              class="delBox"
-              v-if="item.member_id === userStore.userInfo?.member_id"
-              @click="handleDelPost(item.id)"
-            ></view>
-            <view class="jbBox" v-else @click="reportPost(item)"></view>
-            <!-- <view
-              v-if="getMemberFollowInfo(item.member)"
-              class="followBtn"
-              :class="getMemberFollowInfo(item.member).style"
-              @click.stop="handleFollowClick(item.member)"
-            >
-              {{ getMemberFollowInfo(item.member).text }}
-              <wd-icon
-                custom-style="margin-left: 12rpx"
-                name="star-on"
-                size="22rpx"
-                color="#ff6b03"
-                v-if="item.member.is_special_following === 1"
-              ></wd-icon>
-            </view> -->
-            <view class="socialHead">
-              <view class="avatarBox" @click="toUserHome(item.member_id)">
-                <image
-                  class="avatar"
-                  :src="getImageUrl(item.member.avatar + '?x-oss-process=style/jzcq')"
-                />
-                <view class="levelIcon">
-                  <image :src="`/static/images/level/${item.member.level}.png`" mode="widthFix" />
-                </view>
-              </view>
-
-              <view class="nameWrap">
-                <view class="name">{{ formatNickname(item.member.nickname, 22) }}</view>
-                <!-- <view
-                  v-if="getMemberFollowInfo(item.member)"
-                  class="followBtn"
-                  :class="getMemberFollowInfo(item.member).style"
-                  @click.stop="handleFollowClick(item.member)"
-                >
-                  {{ getMemberFollowInfo(item.member).text }}
-                  <wd-icon custom-style="margin-left: 12rpx" name="star-on" size="22rpx" color="#ff6b03" v-if="item.member.is_special_following === 1"></wd-icon>
-                </view> -->
-              </view>
-
-              <view v-if="item.tag?.name" class="tag" :class="item.tag?.extend_json?.class">
-                {{ item.tag?.name }}
-              </view>
-            </view>
-            <view
-              class="socialCntBox"
-              @click="toUrl('/pages/cats/social/detail?id=' + item.id, false)"
-            >
-              <view class="socialCnt text-clamp-4">
-                <view class="socialTips" v-if="item.is_approved === 0">
-                  {{ t('social.detail.content.not_audit_seed_myself') }}
-                </view>
-                {{ item.content }}
-              </view>
-              <view
-                class="socialMedia"
-                v-if="item.images.length > 0"
-                :class="{
-                  mediaImg4: item.images.length === 4,
-                  singleImg: item.images.length === 1,
-                }"
-              >
-                <view
-                  v-for="(image, index) in item.images"
-                  :key="index"
-                  @tap.stop="doHandlePreview(item.images, index)"
-                >
-                  <wd-img
-                    :radius="5"
-                    custom-class="mediaImgItem"
-                    :mode="item.images.length === 1 ? 'widthFix' : 'aspectFill'"
-                    :src="getImageUrl(image + '?x-oss-process=style/sqdt')"
-                    :enable-preview="false"
-                  />
-                </view>
-              </view>
-              <view class="socialTime">
-                {{ formatRelativeTime(item.create_time) }}
-              </view>
-            </view>
-            <view class="socialFoot">
-              <view
-                class="socialBtnBox"
-                @click="toUrl('/pages/cats/social/detail?id=' + item.id, false)"
-              >
-                <view class="socialBtnIcon view"></view>
-                <view class="socialBtn">{{ item.view_count }}</view>
-              </view>
-              <view
-                class="socialBtnBox"
-                @click="
-                  toUrl('/pages/cats/social/detail?id=' + item.id + '&showComment=false', false)
-                "
-              >
-                <view class="socialBtnIcon quote"></view>
-                <view class="socialBtn">{{ item.commit_count }}</view>
-              </view>
-              <view class="socialBtnBox">
-                <view class="zanWrapper" @click.stop="likePost(item.id)">
-                  <image
-                    class="Icon"
-                    :src="
-                      item.is_liked === 1
-                        ? '/static/images/unlike.png'
-                        : '/static/images/zan0.33.png'
-                    "
-                    mode="aspectFit"
-                    :style="{ opacity: item.currentGif ? 0 : 1 }"
-                  />
-                  <image :src="item.currentGif" class="Icon" mode="aspectFit" />
-                </view>
-
-                <view class="socialBtn" style="margin-left: 10rpx">{{ item.like_count }}</view>
-              </view>
-              <view class="socialBtnBox" @click="handleOpenShare(item)">
-                <view class="socialBtnIcon share"></view>
-              </view>
-            </view>
-          </view>
+          <SocialPostItem
+            :item="item"
+            :show-delete="item.member_id === userStore.userInfo?.member_id"
+            :show-report="item.member_id !== userStore.userInfo?.member_id"
+            @delete="handleDelPost"
+            @report="reportPost"
+            @avatar-click="(i) => toUserHome(i.member_id)"
+            @click="(i) => toUrl('/pages/cats/social/detail?id=' + i.id, false)"
+            @view-click="(i) => toUrl('/pages/cats/social/detail?id=' + i.id, false)"
+            @comment-click="
+              (i) => toUrl('/pages/cats/social/detail?id=' + i.id + '&showComment=false', false)
+            "
+            @like="(i) => likePost(i.id)"
+            @share="handleOpenShare"
+            @preview="doHandlePreview"
+          />
         </view>
       </view>
       <template v-else-if="activeSocialCache.hasInitialized">
@@ -280,6 +171,7 @@
 <script lang="ts" setup>
 import { computed, nextTick, ref, watch, onMounted, onUnmounted } from 'vue'
 import { t } from '@/locale/index'
+import SocialPostItem from '@/components/PostItem/SocialPostItem.vue'
 import {
   formatNickname,
   formatRelativeTime,
@@ -976,7 +868,6 @@ function reportSheetSelect({ item, index }) {
   }
   if (index === reportActionIndex.unban) {
     handleUnban()
-    return
   }
 }
 

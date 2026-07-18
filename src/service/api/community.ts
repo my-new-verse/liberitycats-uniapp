@@ -104,20 +104,24 @@ export const commitPostApi = (
 }
 
 // 创建帖子
-export const createPostApi = (content: string, images: string[], id?: number) => {
+export const createPostApi = (content: string, images: string[]) => {
   return http.post('/v1/community/post/create', {
     content,
     images,
-    id,
   })
 }
 
 // 更新帖子
-export const updatePostApi = (id: number, content: string, images: string[]) => {
+export const updatePostApi = (
+  id: number,
+  content: string,
+  images: string[],
+  publish_status: 0 | 1 = 1,
+) => {
   return http({
     url: `/v1/community/post/update/${id}`,
     method: 'PUT',
-    data: { content, images },
+    data: { content, images, publish_status },
   })
 }
 

@@ -104,117 +104,19 @@
         <template v-else-if="searchResult.posts.length > 0">
           <view class="socialBox">
             <view class="cell" v-for="item in searchResult.posts" :key="item.id">
-              <view class="socialItem">
-                <view
-                  class="delBox"
-                  v-if="item.member_id === userStore.userInfo?.member_id"
-                  @click="handleDelPost(item.id)"
-                ></view>
-                <view class="jbBox" v-else @click="reportPost(item)"></view>
-                <view class="socialHead">
-                  <view class="avatarBox" @click="toUserHome(item.member_id)">
-                    <image
-                      class="avatar"
-                      :src="getImageUrl(item.member.avatar + '?x-oss-process=style/jzcq')"
-                    />
-                    <view class="levelIcon" v-if="getLevelValue(item.member)">
-                      <image
-                        :src="getLevelIcon(item.member)"
-                        mode="aspectFit"
-                        @error="handleLevelIconError(item.member)"
-                        @load="handleLevelIconLoad(item.member)"
-                      />
-                    </view>
-                  </view>
-                  <view class="nameWrap">
-                    <view class="name">{{ formatNickname(item.member.nickname, 22) }}</view>
-                  </view>
-                </view>
-                <view
-                  class="socialCntBox"
-                  @click.capture.stop="toUrl('/pages/cats/social/ad_detail?id=' + item.id, false)"
-                >
-                  <view class="titleRow" v-if="item.title">
-                    <view v-if="item.ad_type?.name" class="tag tag1">
-                      {{ item.ad_type?.name }}
-                    </view>
-                    <view class="socialCnt text-clamp-4 title">{{ item.title }}</view>
-                  </view>
-                  <view class="socialCnt text-clamp-4 content" v-if="item.content">
-                    {{ item.content }}
-                  </view>
-                  <view class="adTagsRow" v-if="item.ad_tags?.length">
-                    <text v-for="tag in item.ad_tags" :key="tag.id" class="adTagChip">
-                      # {{ tag.display_name }}
-                    </text>
-                  </view>
-                  <view
-                    class="socialMedia"
-                    v-if="item.images.length > 0"
-                    :class="{
-                      mediaImg4: item.images.length === 4,
-                      singleImg: item.images.length === 1,
-                    }"
-                  >
-                    <view
-                      v-for="(image, index) in item.images"
-                      :key="index"
-                      @tap.stop="doHandlePreview(item.images, index)"
-                    >
-                      <wd-img
-                        :radius="5"
-                        custom-class="mediaImgItem"
-                        :mode="item.images.length === 1 ? 'widthFix' : 'aspectFill'"
-                        :src="getImageUrl(image + '?x-oss-process=style/sqdt')"
-                        :enable-preview="false"
-                      />
-                    </view>
-                  </view>
-                  <view class="socialTime">{{ formatRelativeTime(item.create_time) }}</view>
-                </view>
-                <view class="socialFoot">
-                  <view
-                    class="socialBtnBox"
-                    @click.capture.stop="toUrl('/pages/cats/social/ad_detail?id=' + item.id, false)"
-                  >
-                    <view class="socialBtnIcon view"></view>
-                    <view class="socialBtn">{{ item.view_count || 0 }}</view>
-                  </view>
-                  <view
-                    class="socialBtnBox"
-                    @click.capture.stop="toUrl('/pages/cats/social/ad_detail?id=' + item.id, false)"
-                  >
-                    <view class="socialBtnIcon quote"></view>
-                    <view class="socialBtn">{{ item.commit_count || 0 }}</view>
-                  </view>
-                  <view class="socialBtnBox">
-                    <view class="zanWrapper" @click.stop="likeSearchPost(item)">
-                      <image
-                        class="Icon"
-                        :src="
-                          item.is_liked === 1
-                            ? '/static/images/unlike.png'
-                            : '/static/images/zan0.33.png'
-                        "
-                        mode="aspectFit"
-                        :style="{ opacity: item.currentGif ? 0 : 1 }"
-                      />
-                      <image
-                        v-if="item.currentGif"
-                        :src="item.currentGif"
-                        class="Icon"
-                        mode="aspectFit"
-                      />
-                    </view>
-                    <view class="socialBtn" style="margin-left: 10rpx">
-                      {{ item.like_count || 0 }}
-                    </view>
-                  </view>
-                  <view class="socialBtnBox" @click.stop="handleShare(item)">
-                    <view class="socialBtnIcon share"></view>
-                  </view>
-                </view>
-              </view>
+              <PromotionPostItem
+                :item="item"
+                :show-delete="item.member_id === userStore.userInfo?.member_id"
+                :show-report="item.member_id !== userStore.userInfo?.member_id"
+                @delete="handleDelPost"
+                @report="reportPost"
+                @avatar-click="(i) => toUserHome(i.member_id)"
+                @click="(i) => toUrl('/pages/cats/social/ad_detail?id=' + i.id, false)"
+                @view-click="(i) => toUrl('/pages/cats/social/ad_detail?id=' + i.id, false)"
+                @comment-click="(i) => toUrl('/pages/cats/social/ad_detail?id=' + i.id, false)"
+                @like="likeSearchPost"
+                @share="handleShare"
+              />
             </view>
           </view>
         </template>
@@ -452,6 +354,7 @@
 <script lang="ts" setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { t } from '@/locale/index'
+import PromotionPostItem from '@/components/PostItem/PromotionPostItem.vue'
 import { formatRelativeTime, getImageUrl, toUrl, formatNickname, handlePreview } from '@/utils'
 import { getAdTypeListApi, getAdTagHotApi, getAdTagSearchApi } from '@/service/api/promotion'
 import {
@@ -2070,5 +1973,8 @@ onUnmounted(() => {
     font-size: 28rpx;
     color: #999999;
   }
+}
+.socialBox {
+  padding-bottom: 24rpx;
 }
 </style>

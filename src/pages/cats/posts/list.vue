@@ -36,341 +36,70 @@
           <!-- 普通帖 -->
           <template v-if="activePostFilter === 'normal'">
             <view class="cell socialBox" v-for="item in socialList.data" :key="item.id">
-              <view class="socialItem">
-                <view class="delBox" @click="handleDelPost(item.id)"></view>
-                <view class="socialHead">
-                  <view class="avatarBox">
-                    <image
-                      class="avatar"
-                      :src="getImageUrl(item.member.avatar + '?x-oss-process=style/jzcq')"
-                    />
-                    <view class="levelIcon">
-                      <image
-                        :src="`/static/images/level/${item.member.level}.png`"
-                        mode="widthFix"
-                      />
-                    </view>
-                  </view>
-                  <view class="nameWrap">
-                    <view class="name">{{ formatNickname(item.member.nickname, 22) }}</view>
-                  </view>
-                  <view v-if="item.tag?.name" class="tag" :class="item.tag?.extend_json?.class">
-                    {{ item.tag?.name }}
-                  </view>
-                </view>
-                <view
-                  class="socialCntBox"
-                  @click="toUrl('/pages/cats/social/detail?id=' + item.id, false)"
-                >
-                  <view class="socialCnt text-clamp-4">
-                    <view class="socialTips" v-if="item.is_approved === 0">
-                      {{ t('social.detail.content.not_audit_seed_myself') }}
-                    </view>
-                    {{ item.content }}
-                  </view>
-                  <view
-                    class="socialMedia"
-                    v-if="item.images.length > 0"
-                    :class="{
-                      mediaImg4: item.images.length === 4,
-                      singleImg: item.images.length === 1,
-                    }"
-                  >
-                    <view
-                      v-for="(image, index) in item.images"
-                      :key="index"
-                      @tap.stop="doHandlePreview(item.images, index)"
-                    >
-                      <wd-img
-                        :radius="5"
-                        custom-class="mediaImgItem"
-                        :mode="item.images.length === 1 ? 'widthFix' : 'aspectFill'"
-                        :src="getImageUrl(image + '?x-oss-process=style/sqdt')"
-                        :enable-preview="false"
-                      />
-                    </view>
-                  </view>
-                  <view class="socialTime">{{ formatRelativeTime(item.create_time) }}</view>
-                </view>
-                <view class="socialFoot">
-                  <view
-                    class="socialBtnBox"
-                    @click="toUrl('/pages/cats/social/detail?id=' + item.id, false)"
-                  >
-                    <view class="socialBtnIcon view"></view>
-                    <view class="socialBtn">{{ item.view_count }}</view>
-                  </view>
-                  <view
-                    class="socialBtnBox"
-                    @click="
-                      toUrl('/pages/cats/social/detail?id=' + item.id + '&showComment=false', false)
-                    "
-                  >
-                    <view class="socialBtnIcon quote"></view>
-                    <view class="socialBtn">{{ item.commit_count }}</view>
-                  </view>
-                  <view class="socialBtnBox">
-                    <view class="zanWrapper" @click.stop="likePost(item)">
-                      <image
-                        class="Icon"
-                        :src="
-                          item.is_liked === 1
-                            ? '/static/images/unlike.png'
-                            : '/static/images/zan0.33.png'
-                        "
-                        mode="aspectFit"
-                        :style="{ opacity: item.currentGif ? 0 : 1 }"
-                      />
-                      <image :src="item.currentGif" class="Icon" mode="aspectFit" />
-                    </view>
-                    <view class="socialBtn">{{ item.like_count }}</view>
-                  </view>
-                  <view class="socialBtnBox" @click="handleOpenShare(item)">
-                    <view class="socialBtnIcon share"></view>
-                  </view>
-                </view>
-              </view>
+              <SocialPostItem
+                :item="item"
+                show-delete
+                @delete="handleDelPost"
+                @avatar-click="
+                  (i) => toUrl('/pages/cats/user/home?member_id=' + i.member_id, false)
+                "
+                @click="(i) => toUrl('/pages/cats/social/detail?id=' + i.id, false)"
+                @view-click="(i) => toUrl('/pages/cats/social/detail?id=' + i.id, false)"
+                @comment-click="
+                  (i) => toUrl('/pages/cats/social/detail?id=' + i.id + '&showComment=false', false)
+                "
+                @like="likePost"
+                @share="handleOpenShare"
+                @preview="doHandlePreview"
+              />
             </view>
           </template>
 
           <!-- 推广帖 -->
           <template v-if="activePostFilter === 'promotion'">
             <view class="cell socialBox" v-for="item in socialList.data" :key="item.id">
-              <view class="socialItem">
-                <view class="delBox" @click="handleDelPost(item.id)"></view>
-                <view class="socialHead">
-                  <view
-                    class="avatarBox"
-                    @click="toUrl('/pages/cats/user/home?member_id=' + item.member_id, false)"
-                  >
-                    <image
-                      class="avatar"
-                      :src="getImageUrl(item.member?.avatar + '?x-oss-process=style/jzcq')"
-                    />
-                    <view class="levelIcon">
-                      <image
-                        :src="`/static/images/level/${item.member.level}.png`"
-                        mode="widthFix"
-                      />
-                    </view>
-                  </view>
-                  <view class="nameWrap">
-                    <view class="name">{{ formatNickname(item.member?.nickname, 22) }}</view>
-                  </view>
-                </view>
-                <view
-                  class="socialCntBox"
-                  @click="toUrl('/pages/cats/social/ad_detail?id=' + item.id, false)"
-                >
-                  <view class="titleRow" v-if="item.title">
-                    <view v-if="item.ad_type?.name" class="tag tag1">
-                      {{ item.ad_type?.name }}
-                    </view>
-                    <view class="socialCnt text-clamp-4 title">{{ item.title }}</view>
-                  </view>
-                  <view class="socialCnt text-clamp-4 content" v-if="item.content">
-                    {{ item.content }}
-                  </view>
-                  <view class="adTagsRow" v-if="item.ad_tags?.length">
-                    <text v-for="tag in item.ad_tags" :key="tag.id" class="adTagChip">
-                      # {{ tag.display_name }}
-                    </text>
-                  </view>
-                  <view
-                    class="socialMedia"
-                    v-if="item.images?.length > 0"
-                    :class="{
-                      mediaImg4: item.images.length === 4,
-                      singleImg: item.images.length === 1,
-                    }"
-                  >
-                    <view
-                      v-for="(image, index) in item.images"
-                      :key="index"
-                      @tap.stop="doHandlePreview(item.images, index)"
-                    >
-                      <wd-img
-                        :radius="5"
-                        custom-class="mediaImgItem"
-                        :mode="item.images.length === 1 ? 'widthFix' : 'aspectFill'"
-                        :src="getImageUrl(image + '?x-oss-process=style/sqdt')"
-                        :enable-preview="false"
-                      />
-                    </view>
-                  </view>
-                  <view class="socialTime">{{ formatRelativeTime(item.create_time) }}</view>
-                </view>
-                <view class="socialFoot">
-                  <view
-                    class="socialBtnBox"
-                    @click="toUrl('/pages/cats/social/ad_detail?id=' + item.id, false)"
-                  >
-                    <view class="socialBtnIcon view"></view>
-                    <view class="socialBtn">{{ item.view_count }}</view>
-                  </view>
-                  <view
-                    class="socialBtnBox"
-                    @click="
-                      toUrl(
-                        '/pages/cats/social/ad_detail?id=' + item.id + '&showComment=false',
-                        false,
-                      )
-                    "
-                  >
-                    <view class="socialBtnIcon quote"></view>
-                    <view class="socialBtn">{{ item.commit_count }}</view>
-                  </view>
-                  <view class="socialBtnBox">
-                    <view class="zanWrapper" @click.stop="likePost(item)">
-                      <image
-                        class="Icon"
-                        :src="
-                          item.is_liked === 1
-                            ? '/static/images/unlike.png'
-                            : '/static/images/zan0.33.png'
-                        "
-                        mode="aspectFit"
-                        :style="{ opacity: item.currentGif ? 0 : 1 }"
-                      />
-                      <image :src="item.currentGif" class="Icon" mode="aspectFit" />
-                    </view>
-                    <view class="socialBtn">{{ item.like_count }}</view>
-                  </view>
-                  <view class="socialBtnBox" @click="handleOpenShare(item)">
-                    <view class="socialBtnIcon share"></view>
-                  </view>
-                </view>
-              </view>
+              <PromotionPostItem
+                :item="item"
+                show-delete
+                @delete="handleDelPost"
+                @avatar-click="
+                  (i) => toUrl('/pages/cats/user/home?member_id=' + i.member_id, false)
+                "
+                @click="(i) => toUrl('/pages/cats/social/ad_detail?id=' + i.id, false)"
+                @view-click="(i) => toUrl('/pages/cats/social/ad_detail?id=' + i.id, false)"
+                @comment-click="
+                  (i) =>
+                    toUrl('/pages/cats/social/ad_detail?id=' + i.id + '&showComment=false', false)
+                "
+                @like="likePost"
+                @share="handleOpenShare"
+              />
             </view>
           </template>
 
           <!-- 草稿：根据 post_category 判断展示样式 -->
           <template v-if="activePostFilter === 'draft'">
             <view class="cell socialBox" v-for="item in socialList.data" :key="item.id">
-              <!-- 普通帖草稿 -->
-              <view class="socialItem" v-if="item.post_category !== 'advertisement'">
-                <view class="delBox" @click="handleDelPost(item.id)"></view>
-                <view class="socialHead">
-                  <view class="avatarBox">
-                    <image
-                      class="avatar"
-                      :src="getImageUrl(item.member.avatar + '?x-oss-process=style/jzcq')"
-                    />
-                    <view class="levelIcon">
-                      <image
-                        :src="`/static/images/level/${item.member.level}.png`"
-                        mode="widthFix"
-                      />
-                    </view>
-                  </view>
-                  <view class="nameWrap">
-                    <view class="name">{{ formatNickname(item.member.nickname, 22) }}</view>
-                  </view>
-                  <view v-if="item.tag?.name" class="tag" :class="item.tag?.extend_json?.class">
-                    {{ item.tag?.name }}
-                  </view>
-                </view>
-                <view
-                  class="socialCntBox"
-                  @click="toUrl('/pages/cats/social/publish?id=' + item.id + '&draft=true', true)"
-                >
-                  <view class="socialCnt text-clamp-4">
-                    <view class="socialTips" v-if="item.is_approved === 0">
-                      {{ t('social.detail.content.not_audit_seed_myself') }}
-                    </view>
-                    {{ item.content }}
-                  </view>
-                  <view
-                    class="socialMedia"
-                    v-if="item.images.length > 0"
-                    :class="{
-                      mediaImg4: item.images.length === 4,
-                      singleImg: item.images.length === 1,
-                    }"
-                  >
-                    <view
-                      v-for="(image, index) in item.images"
-                      :key="index"
-                      @tap.stop="doHandlePreview(item.images, index)"
-                    >
-                      <wd-img
-                        :radius="5"
-                        custom-class="mediaImgItem"
-                        :mode="item.images.length === 1 ? 'widthFix' : 'aspectFill'"
-                        :src="getImageUrl(image + '?x-oss-process=style/sqdt')"
-                        :enable-preview="false"
-                      />
-                    </view>
-                  </view>
-                  <view class="socialTime">{{ formatRelativeTime(item.create_time) }}</view>
-                </view>
-              </view>
-              <!-- 推广帖草稿 -->
-              <view class="socialItem" v-else>
-                <view class="delBox" @click="handleDelPost(item.id)"></view>
-                <view class="socialHead">
-                  <view
-                    class="avatarBox"
-                    @click="toUrl('/pages/cats/user/home?member_id=' + item.member_id, false)"
-                  >
-                    <image
-                      class="avatar"
-                      :src="getImageUrl(item.member?.avatar + '?x-oss-process=style/jzcq')"
-                    />
-                    <view class="levelIcon">
-                      <image
-                        :src="`/static/images/level/${item.member.level}.png`"
-                        mode="widthFix"
-                      />
-                    </view>
-                  </view>
-                  <view class="nameWrap">
-                    <view class="name">{{ formatNickname(item.member?.nickname, 22) }}</view>
-                  </view>
-                </view>
-                <view
-                  class="socialCntBox"
-                  @click="toUrl('/pages/cats/social/publish?id=' + item.id + '&draft=true', true)"
-                >
-                  <view class="titleRow" v-if="item.title">
-                    <view v-if="item.ad_type?.name" class="tag tag1">
-                      {{ item.ad_type?.name }}
-                    </view>
-                    <view class="socialCnt text-clamp-4 title">{{ item.title }}</view>
-                  </view>
-                  <view class="socialCnt text-clamp-4 content" v-if="item.content">
-                    {{ item.content }}
-                  </view>
-                  <view class="adTagsRow" v-if="item.ad_tags?.length">
-                    <text v-for="tag in item.ad_tags" :key="tag.id" class="adTagChip">
-                      # {{ tag.display_name }}
-                    </text>
-                  </view>
-                  <view
-                    class="socialMedia"
-                    v-if="item.images?.length > 0"
-                    :class="{
-                      mediaImg4: item.images.length === 4,
-                      singleImg: item.images.length === 1,
-                    }"
-                  >
-                    <view
-                      v-for="(image, index) in item.images"
-                      :key="index"
-                      @tap.stop="doHandlePreview(item.images, index)"
-                    >
-                      <wd-img
-                        :radius="5"
-                        custom-class="mediaImgItem"
-                        :mode="item.images.length === 1 ? 'widthFix' : 'aspectFill'"
-                        :src="getImageUrl(image + '?x-oss-process=style/sqdt')"
-                        :enable-preview="false"
-                      />
-                    </view>
-                  </view>
-                  <view class="socialTime">{{ formatRelativeTime(item.create_time) }}</view>
-                </view>
-              </view>
+              <SocialPostItem
+                v-if="item.post_category !== 'advertisement'"
+                :item="item"
+                show-delete
+                :show-foot="false"
+                @delete="handleDelPost"
+                @click="(i) => toUrl('/pages/cats/social/publish?id=' + i.id + '&draft=true', true)"
+                @preview="doHandlePreview"
+              />
+              <PromotionPostItem
+                v-else
+                :item="item"
+                show-delete
+                :show-foot="false"
+                @delete="handleDelPost"
+                @avatar-click="
+                  (i) => toUrl('/pages/cats/user/home?member_id=' + i.member_id, false)
+                "
+                @click="(i) => toUrl('/pages/cats/social/publish?id=' + i.id + '&draft=true', true)"
+              />
             </view>
           </template>
         </template>
@@ -394,6 +123,8 @@
 import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
 import { t } from '@/locale/index'
 import CustomNav from '@/components/CustomNav/CustomNav.vue'
+import SocialPostItem from '@/components/PostItem/SocialPostItem.vue'
+import PromotionPostItem from '@/components/PostItem/PromotionPostItem.vue'
 import {
   formatNickname,
   formatRelativeTime,
@@ -503,11 +234,24 @@ onLoad(() => {
   uni.$on('refreshPromotionPost', (postId?: number) => {
     if (postId) updateListItem(postId)
   })
+  // 草稿编辑成功后刷新列表
+  // 发布时携带 category 参数，需同时重置草稿 tab 和对应分类 tab 缓存
+  uni.$on('refreshPostList', (category?: string) => {
+    // 重置草稿 tab 缓存
+    postFilterCache.value.draft = createPostFilterCache()
+    // 如果指定了分类，重置对应分类 tab 缓存（发布后的帖子会出现在对应列表中）
+    if (category === 'normal' || category === 'promotion') {
+      postFilterCache.value[category] = createPostFilterCache()
+    }
+    // 刷新当前活跃 tab
+    loadMore(true)
+  })
 })
 
 onUnmounted(() => {
   uni.$off('refreshNormalPost')
   uni.$off('refreshPromotionPost')
+  uni.$off('refreshPostList')
 })
 
 /** 单条更新：获取帖子详情并替换列表中对应项 */

@@ -50,109 +50,21 @@
       <!-- 推广卡片列表 -->
       <template v-if="promoList.length > 0 || !cacheLoaded">
         <view class="cell" v-for="item in promoList" :key="item.id">
-          <view class="socialItem">
-            <view
-              class="delBox"
-              v-if="item.member_id === userStore.userInfo?.member_id"
-              @click="handleDelPost(item.id)"
-            ></view>
-            <view class="jbBox" v-else @click="reportPost(item)"></view>
-            <view class="socialHead">
-              <view class="avatarBox" @click="toUserHome(item.member_id)">
-                <image
-                  class="avatar"
-                  :src="getImageUrl(item.member?.avatar + '?x-oss-process=style/jzcq')"
-                />
-                <view class="levelIcon">
-                  <image :src="`/static/images/level/${item.member.level}.png`" mode="widthFix" />
-                </view>
-              </view>
-              <view class="nameWrap">
-                <view class="name">{{ formatNickname(item.member?.nickname, 22) }}</view>
-              </view>
-            </view>
-            <view
-              class="socialCntBox"
-              @click="toUrl('/pages/cats/social/ad_detail?id=' + item.id, false)"
-            >
-              <view class="titleRow" v-if="item.title">
-                <view v-if="item.ad_type?.name" class="tag tag1">
-                  {{ item.ad_type?.name }}
-                </view>
-                <view class="socialCnt text-clamp-4 title">{{ item.title }}</view>
-              </view>
-              <view class="socialCnt text-clamp-4 content" v-if="item.content">
-                {{ item.content }}
-              </view>
-              <view class="adTagsRow" v-if="item.ad_tags?.length">
-                <text v-for="tag in item.ad_tags" :key="tag.id" class="adTagChip">
-                  # {{ tag.display_name }}
-                </text>
-              </view>
-              <view
-                class="socialMedia"
-                v-if="item.images?.length > 0"
-                :class="{
-                  mediaImg4: item.images.length === 4,
-                  singleImg: item.images.length === 1,
-                }"
-              >
-                <view
-                  v-for="(image, index) in item.images"
-                  :key="index"
-                  @tap.stop="doHandlePreview(item.images, index)"
-                >
-                  <wd-img
-                    :radius="5"
-                    custom-class="mediaImgItem"
-                    :mode="item.images.length === 1 ? 'widthFix' : 'aspectFill'"
-                    :src="getImageUrl(image + '?x-oss-process=style/sqdt')"
-                    :enable-preview="false"
-                  />
-                </view>
-              </view>
-              <view class="socialTime">
-                {{ formatRelativeTime(item.create_time) }}
-              </view>
-            </view>
-            <view class="socialFoot">
-              <view
-                class="socialBtnBox"
-                @click="toUrl('/pages/cats/social/ad_detail?id=' + item.id, false)"
-              >
-                <view class="socialBtnIcon view"></view>
-                <view class="socialBtn">{{ item.view_count }}</view>
-              </view>
-              <view
-                class="socialBtnBox"
-                @click="
-                  toUrl('/pages/cats/social/ad_detail?id=' + item.id + '&showComment=false', false)
-                "
-              >
-                <view class="socialBtnIcon quote"></view>
-                <view class="socialBtn">{{ item.commit_count }}</view>
-              </view>
-              <view class="socialBtnBox">
-                <view class="zanWrapper" @click.stop="likePost(item.id)">
-                  <image
-                    class="Icon"
-                    :src="
-                      item.is_liked === 1
-                        ? '/static/images/unlike.png'
-                        : '/static/images/zan0.33.png'
-                    "
-                    mode="aspectFit"
-                    :style="{ opacity: item.currentGif ? 0 : 1 }"
-                  />
-                  <image :src="item.currentGif" class="Icon" mode="aspectFit" />
-                </view>
-                <view class="socialBtn" style="margin-left: 10rpx">{{ item.like_count }}</view>
-              </view>
-              <view class="socialBtnBox" @click="handleOpenShare(item)">
-                <view class="socialBtnIcon share"></view>
-              </view>
-            </view>
-          </view>
+          <PromotionPostItem
+            :item="item"
+            :show-delete="item.member_id === userStore.userInfo?.member_id"
+            :show-report="item.member_id !== userStore.userInfo?.member_id"
+            @delete="handleDelPost"
+            @report="reportPost"
+            @avatar-click="(i) => toUserHome(i.member_id)"
+            @click="(i) => toUrl('/pages/cats/social/ad_detail?id=' + i.id, false)"
+            @view-click="(i) => toUrl('/pages/cats/social/ad_detail?id=' + i.id, false)"
+            @comment-click="
+              (i) => toUrl('/pages/cats/social/ad_detail?id=' + i.id + '&showComment=false', false)
+            "
+            @like="(i) => likePost(i.id)"
+            @share="handleOpenShare"
+          />
         </view>
       </template>
       <template v-else>
@@ -160,6 +72,18 @@
           <view class="emptyImg"></view>
         </view>
       </template>
+    </view>
+    <!-- 发布浮窗 -->
+    <view class="pubSocial" @click="toUrl('/pages/cats/social/publish?category=promotion', true)">
+      <view class="pubImg"></view>
+    </view>
+    <!-- 消息入口浮窗 -->
+    <view class="msgEntry" @click="toUrl('/pages/cats/message/index?category=community', true)">
+      <view class="msgDot" v-if="msgUnreadCount > 0">
+        <view>{{ msgUnreadCount > 99 ? 99 : msgUnreadCount }}</view>
+        <view v-if="msgUnreadCount > 99">+</view>
+      </view>
+      <view class="msgImg"></view>
     </view>
     <!-- 操作面板 -->
     <wd-action-sheet
@@ -202,7 +126,9 @@
 <script lang="ts" setup>
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import { t } from '@/locale/index'
+import PromotionPostItem from '@/components/PostItem/PromotionPostItem.vue'
 import { formatNickname, formatRelativeTime, getImageUrl, toUrl, handlePreview } from '@/utils'
+import { getUnReadNotificationCountApi } from '@/service/api/user'
 import { getAdPostListApi, getAdTypeListApi, AdPostItem } from '@/service/api/promotion'
 import {
   likePostApi,
@@ -226,6 +152,17 @@ const messageBan = useMessage('wd-message-box-ban')
 
 const GIF_LIKE = '/static/images/like_action.gif'
 const GIF_UNLIKE = '/static/images/unlike_action.gif'
+const msgUnreadCount = ref(0)
+
+/** 拉取未读消息数 */
+function fetchUnreadCount() {
+  if (!userStore.isLogin) return
+  getUnReadNotificationCountApi()
+    .then((res) => {
+      msgUnreadCount.value = res.data ?? 0
+    })
+    .catch(() => {})
+}
 
 const props = defineProps<{
   state: string
@@ -732,7 +669,12 @@ watch(
   },
 )
 
+onShow(() => {
+  fetchUnreadCount()
+})
+
 onMounted(async () => {
+  fetchUnreadCount()
   await loadAdTypes()
   loadData(1)
 

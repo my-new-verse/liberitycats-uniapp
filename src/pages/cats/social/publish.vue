@@ -25,7 +25,7 @@
       ></wd-tab>
     </wd-tabs>
     <custom-nav :title="pageTitle" pageBackgroundColor="#f7f6f4">
-      <template #right>
+      <!-- <template #right>
         <view
           v-if="activeCategory === 'normal'"
           class="kf"
@@ -34,7 +34,7 @@
         >
           {{ t('publish.index.header.publish_btn') }}
         </view>
-      </template>
+      </template> -->
       <template #default>
         <!-- 内容卡片 -->
         <view class="card title-card" v-if="activeCategory === 'promotion'">
@@ -129,6 +129,28 @@
               @success="handleOssUploadSuccess"
               custom-class="pubUpload"
             ></wd-upload>
+          </view>
+        </view>
+
+        <!-- 普通模式发布卡片 -->
+        <view v-if="activeCategory === 'normal'" class="card">
+          <!-- 保存草稿按钮 -->
+          <view
+            v-if="!isEditMode || isDraftEdit"
+            class="adBtn draftBtn"
+            :class="{ disabled: !isPublish }"
+            @click.stop="debouncedCreatePost?.(0)"
+          >
+            {{ t('publish.index.promotion.draft_btn') }}
+          </view>
+
+          <!-- 发布按钮 -->
+          <view
+            class="adBtn publishBtn"
+            :class="{ disabled: !isPublish }"
+            @click.stop="debouncedCreatePost?.(1)"
+          >
+            {{ t('publish.index.header.publish_btn') }}
           </view>
         </view>
 
@@ -649,10 +671,13 @@ onLoad((options) => {
   if (options.id && options.draft === 'true') {
     draftId.value = Number(options.id)
   }
+  if (options.category === 'promotion') {
+    activeCategory.value = 'promotion'
+  }
 })
 
 // 使用 ref 来存储防抖函数的引用
-const debouncedCreatePost = ref<(() => Promise<void>) | null>(null)
+const debouncedCreatePost = ref<((publishStatus: number) => Promise<void>) | null>(null)
 const debouncedCreatePromotionPost = ref<((publishStatus: number) => Promise<void>) | null>(null)
 
 onMounted(() => {
@@ -697,19 +722,29 @@ onMounted(() => {
 })
 
 /** 公共：发布成功处理 */
-const handlePublishSuccess = (res: any) => {
+const handlePublishSuccess = (res: any, publishStatus: number = 1) => {
   if (res.code === 1) {
     toast.show(t('common.toast.post_success'))
-    const postId = editId.value || draftId.value || res.data?.id
-    if (activeCategory.value === 'promotion') {
-      uni.$emit('refreshPromotionTab')
-      uni.$emit('refreshPromotionPost', postId)
+    if (isDraftEdit.value) {
+      // 草稿编辑：通知列表页刷新（发布时携带分类信息以刷新对应 tab）
+      uni.$emit('refreshPostList', publishStatus === 1 ? activeCategory.value : undefined)
+      // 发布（非存草稿）时，还需要通知对应的 Tab 刷新
+      if (publishStatus === 1) {
+        if (activeCategory.value === 'promotion') {
+          uni.$emit('refreshPromotionTab')
+        } else {
+          uni.$emit('refreshSocialTab')
+        }
+      }
     } else {
-      uni.$emit('refreshSocialTab')
-      uni.$emit('refreshNormalPost', postId)
-    }
-    if (!isEditMode.value) {
-      uni.$emit('switchToSocialTab')
+      if (activeCategory.value === 'promotion') {
+        uni.$emit('refreshPromotionTab')
+      } else {
+        uni.$emit('refreshSocialTab')
+      }
+      if (!isEditMode.value) {
+        uni.$emit('switchToSocialTab')
+      }
     }
     navigateBack()
   } else {
@@ -730,7 +765,7 @@ const getEditorPayload = () => {
 
 // 创建普通动态
 // 创建原始的 createPost 函数
-const createPost = async () => {
+const createPost = async (publishStatus: number = 1) => {
   if (!userStore.isLogin) {
     // toast.show(t('common.toast.pleaseLogin'))
     toUrl('/pages/cats/login/login', true, false)
@@ -747,10 +782,21 @@ const createPost = async () => {
     submitLoading.value = true
 
     try {
-      const res = isEditMode.value
-        ? await updatePostApi(editId.value, postContent.value, ossUploadedFiles.value)
-        : await createPostApi(postContent.value, ossUploadedFiles.value, draftId.value || undefined)
-      handlePublishSuccess(res)
+      const content = postContent.value
+      const files = ossUploadedFiles.value
+      const status = publishStatus as 0 | 1
+      let res
+      if (isEditMode.value || isDraftEdit.value) {
+        res = await updatePostApi(
+          isEditMode.value ? editId.value : draftId.value,
+          postContent.value,
+          ossUploadedFiles.value,
+          publishStatus as 0 | 1,
+        )
+      } else {
+        res = await createPostApi(content, files, status)
+      }
+      handlePublishSuccess(res, publishStatus)
     } catch (error) {
       toast.info(t('common.toast.post_failed') + ': ' + error.errMsg)
     } finally {
@@ -760,7 +806,7 @@ const createPost = async () => {
 
   if (isEditMode.value) {
     doSubmit()
-  } else {
+  } else if (publishStatus === 1) {
     message
       .confirm({
         msg: t('social.publish.confirm_txt'),
@@ -769,6 +815,8 @@ const createPost = async () => {
       })
       .then(doSubmit)
       .catch(() => {})
+  } else {
+    doSubmit()
   }
 }
 
@@ -799,9 +847,9 @@ const createPromotionPost = async (publishStatus: number = 1) => {
     submitLoading.value = true
 
     try {
-      if (isEditMode.value) {
+      if (isEditMode.value || isDraftEdit.value) {
         const res = await updatePromotionPostApi({
-          id: editId.value,
+          id: isEditMode.value ? editId.value : draftId.value,
           content,
           images: ossUploadedFiles.value,
           ad_type_id: promotionType.value,
@@ -812,7 +860,7 @@ const createPromotionPost = async (publishStatus: number = 1) => {
           publish_status: publishStatus as 0 | 1,
           tags,
         })
-        handlePublishSuccess(res)
+        handlePublishSuccess(res, publishStatus)
       } else {
         const res = await createPromotionPostApi({
           content,
@@ -824,9 +872,8 @@ const createPromotionPost = async (publishStatus: number = 1) => {
           title: title.value,
           publish_status: publishStatus as 0 | 1,
           tags,
-          id: draftId.value || undefined,
         })
-        handlePublishSuccess(res)
+        handlePublishSuccess(res, publishStatus)
       }
     } catch (error) {
       // toast.info('失败:' + error.errMsg)
@@ -924,6 +971,17 @@ $minor-color: #666666;
   background-color: #f7f6f4 !important;
   padding: 24rpx !important;
   padding-top: calc(80rpx + var(--liberty-cats-page-common-border-radius)) !important;
+}
+
+.navRightBox {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.draftBtnNav {
+  font-size: 26rpx;
+  color: #999;
 }
 
 .kf {

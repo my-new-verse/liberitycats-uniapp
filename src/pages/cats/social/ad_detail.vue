@@ -80,13 +80,6 @@
                     ></wd-icon>
                   </view> -->
                 </view>
-                <view
-                  v-if="postDetail.tag?.name"
-                  class="tag"
-                  :class="postDetail.tag?.extend_json?.class"
-                >
-                  {{ postDetail.tag?.name }}
-                </view>
               </view>
               <!-- 标题单独卡片 -->
               <view class="adTitleCard" v-if="postDetail.ad_type.name || postDetail.title">
@@ -1904,6 +1897,8 @@ const handleEditPost = () => {
 .socialBox .socialItem .socialCntBox .socialCnt {
   -webkit-user-select: text;
   user-select: text;
+  color: #666666;
+  margin-bottom: 24rpx;
 }
 
 .adTagsRow {
@@ -2457,7 +2452,7 @@ const handleEditPost = () => {
   display: flex;
   align-items: center;
   gap: 12rpx;
-  margin: 24rpx 0;
+  // margin: 24rpx 0;
   padding: 24rpx 0;
   background: #ffffff;
   border-radius: 16rpx;

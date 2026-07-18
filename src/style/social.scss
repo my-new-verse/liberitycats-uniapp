@@ -292,4 +292,80 @@
   background-color: #fff7e5;
   border-radius: 8rpx;
 }
+.nameWrap {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+}
+.zanWrapper {
+  width: 85rpx !important;
+  height: 85rpx !important;
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0 !important;
+  vertical-align: middle;
+  margin: 0 -22rpx !important;
+  overflow: visible !important;
+
+  .Icon {
+    position: absolute !important;
+    width: 100% !important;
+    height: 100% !important;
+    left: 0 !important;
+    top: 0 !important;
+    display: block !important;
+    pointer-events: none !important;
+  }
+}
 // social end
+
+// promotion post styles
+.socialCntBox {
+  .titleRow {
+    display: flex;
+    align-items: center;
+    gap: 8rpx;
+    margin-bottom: 8rpx;
+    .tag {
+      padding: 4rpx 16rpx;
+      font-size: 24rpx;
+      text-transform: uppercase;
+      border-radius: 8rpx;
+      line-height: 1.4;
+    }
+    .tag1 {
+      color: #fff;
+      background: var(--wot-color-primary);
+    }
+    .tag2 {
+      color: #ac59ff;
+      background: #ece8f6;
+    }
+    .tag3 {
+      color: #ff0303;
+      background: #ffeaea;
+    }
+  }
+  .title {
+    flex: 1;
+    color: #1d1d1f !important;
+  }
+  .content {
+    color: #666666 !important;
+  }
+}
+.adTagsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 16rpx;
+}
+.adTagChip {
+  font-size: 22rpx;
+  color: var(--liberty-cats-primary-color);
+  padding: 4rpx 0;
+  border-radius: 8rpx;
+  margin-right: 12rpx;
+}
