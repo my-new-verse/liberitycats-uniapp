@@ -89,9 +89,9 @@
                 </view>
               </view>
               <!-- 标题单独卡片 -->
-              <view class="adTitleCard" v-if="postDetail.ad_type_name || postDetail.title">
-                <view class="adTypeTag" v-if="postDetail.ad_type_name">
-                  {{ postDetail.ad_type_name }}
+              <view class="adTitleCard" v-if="postDetail.ad_type.name || postDetail.title">
+                <view class="adTypeTag" v-if="postDetail.ad_type.name">
+                  {{ postDetail.ad_type.name }}
                 </view>
                 <text class="adTitle" v-if="postDetail.title">{{ postDetail.title }}</text>
               </view>
@@ -1164,41 +1164,28 @@ onLoad((options) => {
       getAdTypeListApi().then((res) => {
         adTypeList.value = res.data
       }),
-    ])
-      .then(() => {
-        // 匹配推广类型名称
-        if (postDetail.value.ad_type_id && adTypeList.value.length > 0) {
-          const matched = adTypeList.value.find(
-            (item) => String(item.id) === String(postDetail.value.ad_type_id),
-          )
-          if (matched) {
-            postDetail.value.ad_type_name = matched.name
-          }
-        }
-      })
-      .finally(() => {
-        if (options.showComment === 'true') {
-          uni.hideLoading()
-          if (options.commentId) {
-            setTimeout(() => {
-              if (commentList.value?.data?.length)
-                scrollToAnchor('commentItem_' + options.commentId)
-              // uni.hideLoading()
-            }, 1000)
-          } else {
-            setTimeout(() => {
-              if (commentList.value?.data?.length === 0) {
-                showCommentPopup()
-              } else {
-                scrollToComment()
-              }
-              // uni.hideLoading()
-            }, 1000)
-          }
+    ]).finally(() => {
+      if (options.showComment === 'true') {
+        uni.hideLoading()
+        if (options.commentId) {
+          setTimeout(() => {
+            if (commentList.value?.data?.length) scrollToAnchor('commentItem_' + options.commentId)
+            // uni.hideLoading()
+          }, 1000)
         } else {
-          uni.hideLoading()
+          setTimeout(() => {
+            if (commentList.value?.data?.length === 0) {
+              showCommentPopup()
+            } else {
+              scrollToComment()
+            }
+            // uni.hideLoading()
+          }, 1000)
         }
-      })
+      } else {
+        uni.hideLoading()
+      }
+    })
 
     // 加载表情列表
     getCommunityEmotionListByCategoryApi().then((res) => {
