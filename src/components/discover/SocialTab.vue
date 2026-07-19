@@ -183,6 +183,7 @@ import {
 import {
   getCommunityPostListApi,
   getCommunityPostListApiResponse,
+  getCommunityPostDetailApi,
   likePostApi,
   deletePostApi,
   reportPostApi,
@@ -754,6 +755,21 @@ onMounted(() => {
     isRefreshing = true
     loadSocial(1, socialFilter.value)
   })
+  // 普通帖编辑后替换对应项（不触发全量刷新）
+  uni.$on('refreshNormalPost', async (postId?: number) => {
+    if (!postId) return
+    try {
+      const res = await getCommunityPostDetailApi(postId)
+      if (res.code === 1 && res.data) {
+        const idx = socialList.value.data.findIndex((item) => item.id === postId)
+        if (idx !== -1) {
+          socialList.value.data[idx] = { ...socialList.value.data[idx], ...res.data }
+        }
+      }
+    } catch (e) {
+      console.error('refreshNormalPost failed', e)
+    }
+  })
   uni.$on('discoverActiveTabChange', (tabName: string) => {
     if (tabName === t('discover.tabs.social')) {
       refreshSocialChatData()
@@ -778,6 +794,7 @@ onUnmounted(() => {
     groupChatReadyTimer = null
   }
   uni.$off('refreshSocialTab')
+  uni.$off('refreshNormalPost')
   uni.$off('discoverActiveTabChange')
   uni.$off('switchToChatGroup')
 })

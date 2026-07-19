@@ -104,10 +104,11 @@ export const commitPostApi = (
 }
 
 // 创建帖子
-export const createPostApi = (content: string, images: string[]) => {
+export const createPostApi = (content: string, images: string[], publishStatus: string = 1) => {
   return http.post('/v1/community/post/create', {
     content,
     images,
+    publish_status: publishStatus,
   })
 }
 

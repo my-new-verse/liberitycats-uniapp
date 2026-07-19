@@ -673,6 +673,7 @@ onLoad((options) => {
   }
   if (options.category === 'promotion') {
     activeCategory.value = 'promotion'
+    checkAdEligibility()
   }
 })
 
@@ -725,27 +726,41 @@ onMounted(() => {
 const handlePublishSuccess = (res: any, publishStatus: number = 1) => {
   if (res.code === 1) {
     toast.show(t('common.toast.post_success'))
+
     if (isDraftEdit.value) {
-      // 草稿编辑：通知列表页刷新（发布时携带分类信息以刷新对应 tab）
-      uni.$emit('refreshPostList', publishStatus === 1 ? activeCategory.value : undefined)
-      // 发布（非存草稿）时，还需要通知对应的 Tab 刷新
+      // 草稿编辑：始终刷新 list.vue 的"草稿"tab
+      uni.$emit('refreshPostList')
+      // publishStatus = 1（发布而非存草稿）时，刷新所有 tab + SocialTab/PromotionTab
       if (publishStatus === 1) {
+        uni.$emit('refreshPostListAll')
         if (activeCategory.value === 'promotion') {
           uni.$emit('refreshPromotionTab')
         } else {
           uni.$emit('refreshSocialTab')
         }
       }
-    } else {
+    } else if (isEditMode.value) {
+      // 编辑模式
       if (activeCategory.value === 'promotion') {
+        // 推广帖编辑：刷新 PromotionTab + promotion_search
         uni.$emit('refreshPromotionTab')
+        uni.$emit('refreshPromotionPost')
       } else {
-        uni.$emit('refreshSocialTab')
+        // 普通帖编辑：替换 list.vue 中对应项（不刷新 SocialTab）
+        uni.$emit('refreshNormalPost', editId.value)
       }
-      if (!isEditMode.value) {
+    } else {
+      // 直接发布：publishStatus = 1 时才刷新 SocialTab/PromotionTab
+      if (publishStatus === 1) {
+        if (activeCategory.value === 'promotion') {
+          uni.$emit('refreshPromotionTab')
+        } else {
+          uni.$emit('refreshSocialTab')
+        }
         uni.$emit('switchToSocialTab')
       }
     }
+
     navigateBack()
   } else {
     toast.show(res.msg)
@@ -766,6 +781,8 @@ const getEditorPayload = () => {
 // 创建普通动态
 // 创建原始的 createPost 函数
 const createPost = async (publishStatus: number = 1) => {
+  debugger
+  console.log('publishStatus', publishStatus)
   if (!userStore.isLogin) {
     // toast.show(t('common.toast.pleaseLogin'))
     toUrl('/pages/cats/login/login', true, false)

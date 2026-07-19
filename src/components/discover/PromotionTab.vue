@@ -670,7 +670,7 @@ watch(
 )
 
 onShow(() => {
-  fetchUnreadCount()
+  // fetchUnreadCount()
 })
 
 onMounted(async () => {

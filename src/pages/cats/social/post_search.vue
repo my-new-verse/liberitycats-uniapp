@@ -463,6 +463,17 @@ onMounted(() => {
 
   // 加载最近选择的成员
   loadRecentMembers()
+
+  // 监听刷新事件（从编辑页返回后重新搜索）
+  uni.$on('refreshNormalPost', () => {
+    if (hasSearched.value) {
+      search()
+    }
+  })
+})
+
+onUnmounted(() => {
+  uni.$off('refreshNormalPost')
 })
 
 const navigateBack = () => {

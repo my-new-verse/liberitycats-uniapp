@@ -375,14 +375,21 @@ const mpHotKeyword = ref('')
 
 const mpBuildModelFromAtoms = (): ParsedModel[] => {
   const model: ParsedModel[] = []
-
+  // 标签放在最前面
+  mpAtoms.value
+    .filter((a) => a.type === 'tag')
+    .forEach((a) => {
+      model.push({ type: a.type, value: a.value, id: a.id })
+    })
   if (mpTextValue.value.trim().length > 0) {
     model.push({ type: 'text', value: mpTextValue.value })
   }
-  mpAtoms.value.forEach((a) => {
-    model.push({ type: a.type, value: a.value, id: a.id })
-  })
-
+  // 其他原子（@提及、图片）放在文本后面
+  mpAtoms.value
+    .filter((a) => a.type !== 'tag')
+    .forEach((a) => {
+      model.push({ type: a.type, value: a.value, id: a.id })
+    })
   return model
 }
 
@@ -553,7 +560,7 @@ const mpInsertHot = (data: { name: string; id: number | string }) => {
   mpTextValue.value = before + after
   mpPrevText.value = mpTextValue.value
 
-  mpAtoms.value.push({ type: 'tag', value: '#' + data.name, id: data.id })
+  mpAtoms.value.unshift({ type: 'tag', value: '#' + data.name, id: data.id })
   mpRebuildFromTextAtoms()
   mpClosePanel()
 }
@@ -654,7 +661,11 @@ const insertAtom = (atom: { type: string; value: string; id?: number | string })
   } else if (atom.type === 'ate' || atom.type === 'tag') {
     const prefix = atom.type === 'ate' ? '@' : '#'
     const val = (atom.value || '').startsWith(prefix) ? atom.value : prefix + (atom.value || '')
-    mpAtoms.value.push({ type: atom.type as 'ate' | 'tag', value: val, id: atom.id! })
+    if (atom.type === 'tag') {
+      mpAtoms.value.unshift({ type: 'tag', value: val, id: atom.id! })
+    } else {
+      mpAtoms.value.push({ type: 'ate', value: val, id: atom.id! })
+    }
   } else if (atom.type === 'image') {
     mpAtoms.value.push({ type: 'image', value: atom.value, id: atom.id })
   }
@@ -682,10 +693,21 @@ defineExpose({
   insertImage,
   // #ifdef H5 || APP
   insertHot: (data: { name: string; id: number | string }) => {
-    refEditorial.value?.replaceWithAtom({
-      delText: hotParams.start !== -1 ? hotParams.content : '',
-      atom: { type: 'tag', value: data.name, id: data.id },
-    })
+    // 从当前模型中移除 #keyword 文本
+    const kw = hotParams.content
+    let model = [...message.model]
+    if (kw) {
+      model = model
+        .map((m) => {
+          if (m.type === 'text' && m.value.includes(kw)) {
+            return { ...m, value: m.value.replace(kw, '') }
+          }
+          return m
+        })
+        .filter((m) => !(m.type === 'text' && !m.value?.trim()))
+    }
+    // 将标签插入到内容最前面
+    setValue([{ type: 'tag', value: data.name, id: data.id }, ...model])
     closeHotPanel()
   },
   closeHotPanel,

@@ -227,23 +227,29 @@ onPageScroll((e) => {
 onLoad(() => {
   loadMore()
 
-  // 监听刷新事件（从编辑页返回后更新对应帖子）
+  // 监听刷新事件（从编辑页返回后替换对应帖子）
   uni.$on('refreshNormalPost', (postId?: number) => {
     if (postId) updateListItem(postId)
   })
   uni.$on('refreshPromotionPost', (postId?: number) => {
-    if (postId) updateListItem(postId)
-  })
-  // 草稿编辑成功后刷新列表
-  // 发布时携带 category 参数，需同时重置草稿 tab 和对应分类 tab 缓存
-  uni.$on('refreshPostList', (category?: string) => {
-    // 重置草稿 tab 缓存
-    postFilterCache.value.draft = createPostFilterCache()
-    // 如果指定了分类，重置对应分类 tab 缓存（发布后的帖子会出现在对应列表中）
-    if (category === 'normal' || category === 'promotion') {
-      postFilterCache.value[category] = createPostFilterCache()
+    if (postId) {
+      updateListItem(postId)
+    } else {
+      // 推广帖编辑无 postId，重置推广帖缓存并刷新
+      postFilterCache.value.promotion = createPostFilterCache()
+      loadMore(true)
     }
-    // 刷新当前活跃 tab
+  })
+  // 草稿编辑成功后刷新草稿 tab
+  uni.$on('refreshPostList', () => {
+    postFilterCache.value.draft = createPostFilterCache()
+    loadMore(true)
+  })
+  // 草稿发布后刷新所有 tab 缓存
+  uni.$on('refreshPostListAll', () => {
+    postFilterCache.value.normal = createPostFilterCache()
+    postFilterCache.value.promotion = createPostFilterCache()
+    postFilterCache.value.draft = createPostFilterCache()
     loadMore(true)
   })
 })
@@ -252,6 +258,7 @@ onUnmounted(() => {
   uni.$off('refreshNormalPost')
   uni.$off('refreshPromotionPost')
   uni.$off('refreshPostList')
+  uni.$off('refreshPostListAll')
 })
 
 /** 单条更新：获取帖子详情并替换列表中对应项 */

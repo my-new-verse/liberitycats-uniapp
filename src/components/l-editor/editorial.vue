@@ -162,13 +162,20 @@ export default {
 
     // 光标移到指定节点后面
     setCaretAfter(node) {
-      const range = document.createRange();
-      const sel = window.getSelection();
-      range.setStartAfter(node);
-      range.collapse(true);
-      sel.removeAllRanges();
-      sel.addRange(range);
-      if (this.editable && typeof this.editable.focus === "function") this.editable.focus();
+      // 节点已从 DOM 中移除，无法定位光标
+      if (!node || !node.parentNode) return;
+      try {
+        const range = document.createRange();
+        const sel = window.getSelection();
+        range.setStartAfter(node);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        if (this.editable && typeof this.editable.focus === "function") this.editable.focus();
+      } catch (e) {
+        // 降级处理：光标移到末尾
+        this.placeCaretToEnd(this.editable);
+      }
     },
 
     // 获取 editable 内的选区
@@ -227,9 +234,13 @@ export default {
     // 节点插入
     insertNodeAtCursor(node) {
       const sel = window.getSelection();
+      // DocumentFragment 插入后子节点会被移走，需记录最后一个子节点用于定位光标
+      const isFragment = node.nodeType === Node.DOCUMENT_FRAGMENT_NODE;
+      const lastChild = isFragment && node.lastChild ? node.lastChild : node;
+
       if (!sel || sel.rangeCount === 0) {
         this.editable.appendChild(node);
-        this.setCaretAfter(node);
+        this.setCaretAfter(lastChild);
         return;
       }
       const range = sel.getRangeAt(0);
@@ -249,7 +260,7 @@ export default {
       } else {
         range.insertNode(node);
       }
-      this.setCaretAfter(node);
+      this.setCaretAfter(lastChild);
     },
 
     insertZWSAfter(node) {
@@ -382,7 +393,10 @@ export default {
           const text = (item.value || "").startsWith(prefix) ? item.value : prefix + (item.value || "");
           const atom = this.createTextAtom(text, item.type, item.id);
           this.editable.appendChild(atom);
-          this.editable.appendChild(document.createTextNode("​")); // 零宽分隔
+          this.editable.appendChild(document.createTextNode("\u200b")); // 零宽分隔
+          if (item.type === "tag") {
+            this.editable.appendChild(document.createTextNode(" ")); // 标签后加空格
+          }
         } else if (item.type === "image") {
           const atom = this.createImageAtom(item.value || "", item.id);
           this.editable.appendChild(atom);
