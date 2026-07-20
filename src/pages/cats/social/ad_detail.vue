@@ -123,7 +123,7 @@
                   class="promotionCard"
                   v-if="postDetail.contact_email || postDetail.contact_wechat"
                 >
-                  <view class="promotionCardTitle">{{ t('adDetail.promotion_info') }}</view>
+                  <!-- <view class="promotionCardTitle">{{ t('adDetail.promotion_info') }}</view> -->
                   <view class="promotionRow" v-if="postDetail.contact_email">
                     <wd-img
                       width="36rpx"

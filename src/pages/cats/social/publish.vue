@@ -1044,7 +1044,7 @@ $minor-color: #666666;
 }
 :deep(.titleInput) {
   margin-bottom: 24rpx;
-  border: 1px solid #ededed;
+  border: 1px solid $border-color;
 
   .wd-input__inner {
     font-size: 28rpx;
@@ -1069,7 +1069,7 @@ $minor-color: #666666;
   // min-height: 300rpx;
   margin: 24rpx 0;
   border-radius: $border-radius;
-  border: 1px solid #ededed;
+  border: 1px solid $border-color;
   padding: 12rpx;
   // 覆写 l-editor 的 fixed 定位，使其内嵌在卡片中
   :deep(.l-editor) {
@@ -1149,13 +1149,13 @@ $minor-color: #666666;
 }
 
 :deep(.pubInput) {
+  padding: 0 12rpx;
+  border-radius: $border-radius;
+  border: 1px solid $border-color;
   .wd-input__inner {
     height: 80rpx;
     // background-color: #f9f9f9;
   }
-  padding: 0 12rpx;
-  border-radius: $border-radius;
-  border: 1px solid #ededed;
 }
 
 .typeGrid {
@@ -1170,6 +1170,7 @@ $minor-color: #666666;
   font-size: 26rpx;
   color: $minor-color;
   transition: all 0.2s ease;
+  border: 1px solid $border-color;
 
   &.active {
     background-color: #ff6b03;
@@ -1177,7 +1178,6 @@ $minor-color: #666666;
     color: #ffffff;
     font-weight: 600;
   }
-  border: 1px solid #ededed;
 }
 
 .validityGrid {
@@ -1193,6 +1193,7 @@ $minor-color: #666666;
   font-size: 26rpx;
   color: #666;
   transition: all 0.2s ease;
+  border: 1px solid $border-color;
 
   &.active {
     background-color: #ff6b03;
@@ -1200,7 +1201,6 @@ $minor-color: #666666;
     color: #ffffff;
     font-weight: 600;
   }
-  border: 1px solid #ededed;
 }
 
 .adBtn {
@@ -1219,12 +1219,12 @@ $minor-color: #666666;
 .draftBtn {
   background-color: #fff;
   color: $minor-color;
+  border: 1px solid $border-color;
   &.disabled {
     background-color: #fafafa;
     color: #cccccc;
     border: 0;
   }
-  border: 1px solid #ededed;
 }
 
 /* 发布按钮 */
@@ -1271,11 +1271,11 @@ $minor-color: #666666;
   border-radius: 50%;
   background-color: #ffffff;
   transition: all 0.2s ease;
+  border: 1px solid $border-color;
 
   &.checked {
     border-color: #ff6b03;
   }
-  border: 1px solid #ededed;
 }
 
 .radioDot {
@@ -1321,12 +1321,12 @@ $minor-color: #666666;
   border-radius: $border-radius;
   background-color: #ffffff;
   transition: all 0.2s ease;
+  border: 1px solid $border-color;
 
   &.checked {
     background-color: #ff6b03;
     border-color: #ff6b03;
   }
-  border: 1px solid #ededed;
 }
 
 .agreementText {
