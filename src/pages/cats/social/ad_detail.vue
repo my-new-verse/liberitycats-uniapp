@@ -56,7 +56,7 @@
                     />
                   </view>
                 </view>
-                <view class="nameWrap">
+                <view class="nameWrapTitle">
                   <view class="name">{{ formatNickname(postDetail?.member?.nickname, 22) }}</view>
                   <view class="metaRow">
                     <text class="metaTime">{{ formatRelativeTime(postDetail.create_time) }}</text>
@@ -82,8 +82,8 @@
                 </view>
               </view>
               <!-- 标题单独卡片 -->
-              <view class="adTitleCard" v-if="postDetail.ad_type.name || postDetail.title">
-                <view class="adTypeTag" v-if="postDetail.ad_type.name">
+              <view class="adTitleCard" v-if="postDetail.ad_type?.name || postDetail.title">
+                <view class="adTypeTag" v-if="postDetail.ad_type?.name">
                   {{ postDetail.ad_type.name }}
                 </view>
                 <text class="adTitle" v-if="postDetail.title">{{ postDetail.title }}</text>
@@ -2544,7 +2544,7 @@ const handleEditPost = () => {
 }
 
 /* ========== 关注按钮 ========== */
-.nameWrap {
+.nameWrapTitle {
   display: flex;
   flex-direction: column;
   align-items: flex-start;

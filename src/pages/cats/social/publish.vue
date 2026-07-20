@@ -15,7 +15,7 @@
       :line-width="20"
       :style="{ paddingTop: navHeight + 'rpx' }"
       custom-class="custom-tab"
-      v-if="!isEditMode && !isDraftEdit"
+      v-if="!isEditMode && !isDraftEdit && isCatHolder"
     >
       <wd-tab
         v-for="item in categoryList"
@@ -291,6 +291,8 @@ const message = useMessage('wd-message-box-slot')
 
 // 发帖权限状态
 const canPost = ref(true)
+// 是否为猫 holder（控制推广 tab 显示）
+const isCatHolder = ref(true)
 // 推广发布资格状态
 const canPublishAd = ref(true)
 const adEligibilityChecked = ref(false)
@@ -593,6 +595,10 @@ const checkAdEligibility = async () => {
     const res = await checkAdEligibilityApi()
     if (res.code === 1 && res.data) {
       canPublishAd.value = res.data.can_publish
+      // 读取 is_cat_holder，控制推广 tab 显示
+      if (res.data.checks) {
+        isCatHolder.value = res.data.checks.is_cat_holder
+      }
       if (!res.data.can_publish && res.data.reason) {
         message.alert({
           title: t('publish.index.ban.title'),
@@ -673,7 +679,6 @@ onLoad((options) => {
   }
   if (options.category === 'promotion') {
     activeCategory.value = 'promotion'
-    checkAdEligibility()
   }
 })
 
@@ -699,6 +704,9 @@ onMounted(() => {
 
   // 检查发帖状态
   checkPostStatus()
+
+  // 检查推广发布资格（控制推广 tab 显示）
+  checkAdEligibility()
 
   // 加载推广类型列表
   loadAdTypes()
