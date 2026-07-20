@@ -525,6 +525,20 @@ const onUserFilterClosed = () => {
 watch(
   confirmedUserIds,
   () => {
+    const hasKeyword = searchText.value.trim() !== ''
+    const hasUser = confirmedUserIds.value.length > 0
+    const timeRange = getTimeRange()
+    const hasTimeFilter = !!(timeRange.start_time || timeRange.end_time)
+    const hasTypeFilter = selectedAdTypeId.value !== 0
+    const hasTagFilter = selectedTagId.value !== 0
+
+    // 所有筛选条件都为空，回到初始状态
+    if (!hasKeyword && !hasUser && !hasTimeFilter && !hasTypeFilter && !hasTagFilter) {
+      hasSearched.value = false
+      searchResult.value = { posts: [], total: 0, page: 0, limit: 20 }
+      return
+    }
+
     search()
   },
   { deep: true },
@@ -659,6 +673,20 @@ const getTimeRange = () => {
   }
 }
 watch([confirmedTimeRange, confirmedStartTime, confirmedEndTime], () => {
+  const hasKeyword = searchText.value.trim() !== ''
+  const hasUser = confirmedUserIds.value.length > 0
+  const timeRange = getTimeRange()
+  const hasTimeFilter = !!(timeRange.start_time || timeRange.end_time)
+  const hasTypeFilter = selectedAdTypeId.value !== 0
+  const hasTagFilter = selectedTagId.value !== 0
+
+  // 所有筛选条件都为空，回到初始状态
+  if (!hasKeyword && !hasUser && !hasTimeFilter && !hasTypeFilter && !hasTagFilter) {
+    hasSearched.value = false
+    searchResult.value = { posts: [], total: 0, page: 0, limit: 20 }
+    return
+  }
+
   search()
 })
 
@@ -707,6 +735,20 @@ const loadHotTags = async () => {
 const selectAdType = (t: any) => {
   selectedAdTypeId.value = t.id
   showAdTypeFilter.value = false
+
+  const hasKeyword = searchText.value.trim() !== ''
+  const hasUser = confirmedUserIds.value.length > 0
+  const timeRange = getTimeRange()
+  const hasTimeFilter = !!(timeRange.start_time || timeRange.end_time)
+  const hasTypeFilter = selectedAdTypeId.value !== 0
+  const hasTagFilter = selectedTagId.value !== 0
+
+  if (!hasKeyword && !hasUser && !hasTimeFilter && !hasTypeFilter && !hasTagFilter) {
+    hasSearched.value = false
+    searchResult.value = { posts: [], total: 0, page: 0, limit: 20 }
+    return
+  }
+
   search()
 }
 const selectSort = (name: string) => {
@@ -717,6 +759,20 @@ const selectSort = (name: string) => {
 const selectTag = (id: number) => {
   selectedTagId.value = id
   showTagFilter.value = false
+
+  const hasKeyword = searchText.value.trim() !== ''
+  const hasUser = confirmedUserIds.value.length > 0
+  const timeRange = getTimeRange()
+  const hasTimeFilter = !!(timeRange.start_time || timeRange.end_time)
+  const hasTypeFilter = selectedAdTypeId.value !== 0
+  const hasTagFilter = selectedTagId.value !== 0
+
+  if (!hasKeyword && !hasUser && !hasTimeFilter && !hasTypeFilter && !hasTagFilter) {
+    hasSearched.value = false
+    searchResult.value = { posts: [], total: 0, page: 0, limit: 20 }
+    return
+  }
+
   search()
 }
 
@@ -745,13 +801,6 @@ const buildSearchParams = (page: number) => {
 }
 
 const search = async () => {
-  const hasKeyword = searchText.value.trim() !== ''
-  const hasUser = confirmedUserIds.value.length > 0
-  if (!hasKeyword && !hasUser) {
-    uni.showToast({ title: t('social.search.requireKeywordOrUser'), icon: 'none' })
-    return
-  }
-
   if (isLoading.value) return
   isLoading.value = true
   hasSearched.value = true
