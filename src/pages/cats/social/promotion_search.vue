@@ -2,12 +2,13 @@
 {
   style: {
     navigationStyle: 'custom',
+    softinputMode: 'adjustResize',
   },
 }
 </route>
 
 <template>
-  <view class="page" :class="[locale]">
+  <view class="page" :class="[locale]" :style="{ '--keyboard-height': keyboardHeight + 'px' }">
     <!-- ========== 自定义导航栏 + 搜索框 ========== -->
     <view class="customNav" :style="{ height: navHeight + 'rpx' }">
       <view class="navHeaderBg" :style="{ paddingTop: navHeaderPaddingTop + 'rpx' }">
@@ -188,6 +189,7 @@
       v-model="showUserFilter"
       :title="t('social.search.filter.user')"
       :z-index="1100"
+      :custom-class="keyboardHeight > 0 ? 'user-filter-sheet--keyboard' : ''"
       @closed="onUserFilterClosed"
     >
       <view class="filterContent">
@@ -196,6 +198,7 @@
             v-model="memberKeyword"
             :placeholder="t('social.search.filter.userPlaceholder')"
             clearable
+            :cursor-spacing="100"
             @confirm="searchUsers"
           />
           <wd-button
@@ -296,7 +299,13 @@
     <wd-action-sheet v-model="showTagFilter" title="标签" :z-index="1100">
       <view class="filterContent">
         <view class="searchMember">
-          <wd-input v-model="tagKeyword" placeholder="搜索标签" clearable @confirm="searchTags" />
+          <wd-input
+            v-model="tagKeyword"
+            placeholder="搜索标签"
+            clearable
+            :cursor-spacing="100"
+            @confirm="searchTags"
+          />
           <wd-button type="primary" size="small" @click="searchTags" custom-class="searchMemberBtn">
             {{ t('common.search') }}
           </wd-button>
@@ -380,6 +389,7 @@ import SharePopup from '@/components/SharePopup/SharePopup.vue'
 // 导航栏布局
 // ============================================================
 const locale = uni.getLocale()
+const keyboardHeight = ref(0)
 
 const { safeAreaInsets } = uni.getSystemInfoSync()
 const safeTopRpx = ref<number>(0)
@@ -399,6 +409,11 @@ onMounted(() => {
 
   // 加载最近选择的成员
   loadRecentMembers()
+
+  // 键盘高度监听（用户筛选弹窗键盘适配）
+  uni.onKeyboardHeightChange((res) => {
+    keyboardHeight.value = res.height || 0
+  })
 })
 
 const navigateBack = () => {
@@ -1286,6 +1301,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   uni.$off('refreshPromotionPost')
+  uni.offKeyboardHeightChange()
 })
 </script>
 
@@ -2025,5 +2041,9 @@ onUnmounted(() => {
 }
 .socialBox {
   padding-bottom: 24rpx;
+}
+
+:deep(.user-filter-sheet--keyboard) {
+  bottom: var(--keyboard-height, 0px) !important;
 }
 </style>

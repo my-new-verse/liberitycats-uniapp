@@ -2,12 +2,13 @@
 {
   style: {
     navigationStyle: 'custom',
+    softinputMode: 'adjustResize',
   },
 }
 </route>
 
 <template>
-  <view class="page" :class="[locale]">
+  <view class="page" :class="[locale]" :style="{ '--keyboard-height': keyboardHeight + 'px' }">
     <!-- ========== 自定义导航栏 + 搜索框 ========== -->
     <view class="customNav" :style="{ height: navHeight + 'rpx' }">
       <view class="navHeaderBg" :style="{ paddingTop: navHeaderPaddingTop + 'rpx' }">
@@ -276,6 +277,7 @@
       v-model="showUserFilter"
       :title="t('social.search.filter.user')"
       :z-index="1100"
+      :custom-class="keyboardHeight > 0 ? 'user-filter-sheet--keyboard' : ''"
       @closed="onUserFilterClosed"
     >
       <view class="filterContent">
@@ -284,6 +286,7 @@
             v-model="memberKeyword"
             :placeholder="t('social.search.filter.userPlaceholder')"
             clearable
+            :cursor-spacing="100"
             @confirm="searchUsers"
           />
           <wd-button
@@ -445,6 +448,9 @@ import SharePopup from '@/components/SharePopup/SharePopup.vue'
 // ============================================================
 const locale = uni.getLocale()
 
+// 键盘高度（用于用户筛选弹窗上移）
+const keyboardHeight = ref(0)
+
 const { safeAreaInsets } = uni.getSystemInfoSync()
 const safeTopRpx = ref<number>(0)
 const navHeight = ref<number>(0)
@@ -464,6 +470,11 @@ onMounted(() => {
   // 加载最近选择的成员
   loadRecentMembers()
 
+  // 监听键盘高度变化
+  uni.onKeyboardHeightChange((res) => {
+    keyboardHeight.value = res.height || 0
+  })
+
   // 监听刷新事件（从编辑页返回后重新搜索）
   uni.$on('refreshNormalPost', () => {
     if (hasSearched.value) {
@@ -474,6 +485,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   uni.$off('refreshNormalPost')
+  uni.offKeyboardHeightChange()
 })
 
 const navigateBack = () => {
@@ -2118,6 +2130,11 @@ const handleLevelIconError = (member: any) => {
       }
     }
   }
+}
+
+/* ========== 用户筛选弹窗键盘适配 ========== */
+:deep(.user-filter-sheet--keyboard) {
+  bottom: var(--keyboard-height, 0px) !important;
 }
 
 /* ========== 空状态 ========== */

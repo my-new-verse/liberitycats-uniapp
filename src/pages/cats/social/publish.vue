@@ -24,6 +24,7 @@
         :name="item.value"
       ></wd-tab>
     </wd-tabs>
+    <view v-else :style="{ paddingTop: navHeight - 104 + 'rpx' }"></view>
     <custom-nav :title="pageTitle" pageBackgroundColor="#f7f6f4">
       <!-- <template #right>
         <view
@@ -190,6 +191,7 @@
                 clearable
                 inputmode="email"
                 :ignoreCompositionEvent="false"
+                :adjust-position="false"
               />
             </view>
             <view class="contactItem">

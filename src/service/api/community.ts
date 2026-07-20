@@ -175,6 +175,9 @@ export const searchAdTagsApi = (keyword: string) => {
 export interface CheckAdEligibilityResponse {
   can_publish: boolean
   reason?: string
+  checks?: {
+    is_cat_holder: boolean
+  }
 }
 
 // 检查推广发布资格
