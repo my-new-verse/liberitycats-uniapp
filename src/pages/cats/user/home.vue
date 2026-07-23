@@ -346,6 +346,31 @@
       </wd-message-box>
 
       <wd-message-box selector="wd-message-box-slot2"></wd-message-box>
+
+      <wd-message-box selector="wd-message-box-ban" :title="t('report.admin.ban_post')">
+        <view class="banDialog">
+          <view class="banLabel">
+            {{ t('report.admin.ban_post.label', { name: banTargetMemberName }) }}
+          </view>
+          <view class="banDaysTitle">{{ t('report.admin.ban_post.days') }}</view>
+          <view class="banDaysRow">
+            <view class="banDayItem" :class="{ active: banDays === 1 }" @click="banDays = 1">
+              1天
+            </view>
+            <view class="banDayItem" :class="{ active: banDays === 3 }" @click="banDays = 3">
+              3天
+            </view>
+            <view class="banDayItem" :class="{ active: banDays === 7 }" @click="banDays = 7">
+              7天
+            </view>
+          </view>
+          <wd-input
+            v-model="banReason"
+            :placeholder="t('report.admin.ban_post.reason_placeholder')"
+            custom-class="banReasonInput"
+          />
+        </view>
+      </wd-message-box>
     </view>
 
     <SharePopup ref="shareRef" />
@@ -385,6 +410,8 @@ import {
   adminRemovalApi,
   likePostApi,
   deletePostApi,
+  banPostApi,
+  unbanPostApi,
 } from '@/service/api/community'
 import SharePopup from '@/components/SharePopup/SharePopup.vue'
 
@@ -393,6 +420,7 @@ const toast = useToast()
 const locale = uni.getLocale()
 const message = useMessage('wd-message-box-slot')
 const message2 = useMessage('wd-message-box-slot2')
+const messageBan = useMessage('wd-message-box-ban')
 const shareRef = ref<any>(null)
 
 const GIF_LIKE = '/static/images/like_action.gif'
@@ -671,6 +699,11 @@ const showMoreActions = ref(false)
 const moreActions = ref<any[]>([])
 const reportTargetPost = ref<any>(null)
 
+const banDays = ref(1)
+const banReason = ref('')
+const banTargetMemberId = ref(0)
+const banTargetMemberName = ref('')
+
 /** 关注按钮文案和样式 */
 const followBtnInfo = computed(() => {
   const u: any = userInfo.value || {}
@@ -722,6 +755,7 @@ const openPostActions = (post: any) => {
     return
   }
   reportTargetPost.value = post
+  const member = post.member
   const actions: any[] = []
 
   actions.push({ name: t('social.index.post.report'), type: 'report', color: '#ff6b03' })
@@ -733,6 +767,72 @@ const openPostActions = (post: any) => {
 
   moreActions.value = actions
   showMoreActions.value = true
+
+  banTargetMemberId.value = member.id
+  banTargetMemberName.value = member.nickname || ''
+
+  if (userStore.userInfo.community_permissions?.can_take_down === 1) {
+    updateBanAction(!!member.is_banned)
+  }
+}
+
+const updateBanAction = (isBanned: boolean) => {
+  const actions = moreActions.value
+  // 移除已有的 ban/unban
+  for (let i = actions.length - 1; i >= 0; i--) {
+    if (actions[i].type === 'ban' || actions[i].type === 'unban') {
+      actions.splice(i, 1)
+    }
+  }
+  if (isBanned) {
+    actions.push({ name: t('report.admin.unban_post.action'), type: 'unban', color: '#333' })
+  } else {
+    actions.push({ name: t('report.admin.ban_post.action'), type: 'ban', color: '#FF3B30' })
+  }
+  moreActions.value = actions
+}
+
+const handleBanPost = () => {
+  banDays.value = 1
+  banReason.value = ''
+  messageBan
+    .confirm({})
+    .then(() => confirmBan())
+    .catch(() => {})
+}
+
+const syncMemberBanState = (memberId: number, isBanned: boolean) => {
+  socialList.value.data.forEach((post) => {
+    if (post.member_id === memberId) {
+      post.member.is_banned = isBanned
+    }
+  })
+}
+
+const confirmBan = () => {
+  banPostApi(banTargetMemberId.value, banDays.value, banReason.value || undefined).then((res) => {
+    if (res.code === 1) {
+      uni.showToast({ title: res.msg || t('common.operation_success'), icon: 'none' })
+      syncMemberBanState(banTargetMemberId.value, true)
+    }
+  })
+}
+
+const handleUnbanPost = () => {
+  message2
+    .confirm({
+      title: t('report.admin.unban_post'),
+      msg: t('report.admin.unban_post.confirm', { name: banTargetMemberName.value }),
+    })
+    .then(() => {
+      unbanPostApi(banTargetMemberId.value).then((res) => {
+        if (res.code === 1) {
+          uni.showToast({ title: res.msg || t('common.operation_success'), icon: 'none' })
+          syncMemberBanState(banTargetMemberId.value, false)
+        }
+      })
+    })
+    .catch(() => {})
 }
 
 const handleMoreActionSelect = ({ item }: any) => {
@@ -756,6 +856,12 @@ const handleMoreActionSelect = ({ item }: any) => {
       break
     case 'remove':
       handleAdminRemove()
+      break
+    case 'ban':
+      handleBanPost()
+      break
+    case 'unban':
+      handleUnbanPost()
       break
   }
 }
@@ -1332,6 +1438,38 @@ const doHandlePreview = (images: string[], currentIndex: number = 0, needDealImg
     top: 0 !important;
     display: block !important;
     pointer-events: none !important;
+  }
+}
+
+.banDialog {
+  padding: 16rpx 0;
+  .banLabel {
+    font-size: 28rpx;
+    color: #333;
+    margin-bottom: 24rpx;
+  }
+  .banDaysTitle {
+    font-size: 26rpx;
+    color: #666;
+    margin-bottom: 12rpx;
+  }
+  .banDaysRow {
+    display: flex;
+    gap: 16rpx;
+    margin-bottom: 20rpx;
+    .banDayItem {
+      flex: 1;
+      padding: 16rpx 0;
+      text-align: center;
+      font-size: 28rpx;
+      color: #333;
+      background: #f5f5f5;
+      border-radius: 12rpx;
+      &.active {
+        color: #fff;
+        background: #ff6b03;
+      }
+    }
   }
 }
 </style>
