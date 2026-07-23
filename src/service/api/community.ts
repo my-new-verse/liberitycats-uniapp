@@ -167,8 +167,8 @@ export const getHotAdTagsApi = () => {
 }
 
 // 搜索标签
-export const searchAdTagsApi = (keyword: string) => {
-  return http.get<AdTagItem[]>('/v1/community/ad-tag/search', { keyword })
+export const searchAdTagsApi = (keyword: string, limit = 20) => {
+  return http.get<AdTagItem[]>('/v1/community/ad-tag/search', { keyword, limit })
 }
 
 // 推广发布资格检查响应
@@ -194,7 +194,7 @@ export const createPromotionPostApi = (params: {
   contact_wechat?: string
   validity_days: PromotionValidity
   publish_status: 0 | 1
-  tags?: number[]
+  tags?: (number | string)[]
   title: string
   id?: number
 }) => {
@@ -213,7 +213,7 @@ export const updatePromotionPostApi = (params: {
   contact_wechat?: string
   validity_days: PromotionValidity
   publish_status: 0 | 1
-  tags?: number[]
+  tags?: (number | string)[]
   title: string
 }) => {
   const { id, ...rest } = params

@@ -73,7 +73,7 @@ export default defineComponent({
 <script module="editorModule" lang="renderjs">
 export default {
   data() {
-    return { isComposing: false };
+    return { isComposing: false, _deleteHandled: false };
   },
   mounted() {
     const uid = this.$ownerInstance?.$el?.getAttribute?.("data-uid") || this.$ownerInstance?.$el?.dataset?.uid;
@@ -143,9 +143,8 @@ export default {
         if (node === range.startContainer) { cursorIndex += range.startOffset; break; }
         cursorIndex += (node.textContent || "").length;
       }
-      if (typeof this.owner.callMethod === "function") {
-        this.owner.callMethod("changeCursor", { index: cursorIndex, action });
-      }
+      try { if (typeof this.owner.callMethod === "function") { this.owner.callMethod("changeCursor", { index: cursorIndex, action }); return; } } catch (err) {}
+      try { if (typeof this.owner.changeCursor === "function") { this.owner.changeCursor({ index: cursorIndex, action }); } } catch (err) {}
     },
 
     // 光标移到内容末尾，确保键盘弹出时光标可见
@@ -461,11 +460,20 @@ export default {
     // 事件处理
     onInput(e) {
       if (this.isComposing) return;
+      var wasDeleteHandled = this._deleteHandled;
+      this._deleteHandled = false;
       this.parseModelAndNotify();
       if (e.data) this.updateCaretInfo("insert");
+      // 退格已由 onKeydown 处理且当前也是删除输入，跳过避免重复
+      if (wasDeleteHandled && !e.data) return;
       if (this.owner) {
-        try { if (typeof this.owner.callMethod === "function") { this.owner.callMethod("onHandleInput", e.data); return; } } catch (err) {}
-        try { if (typeof this.owner.onHandleInput === "function") { this.owner.onHandleInput(e.data); } } catch (err) {}
+        // 检测回车键（insertParagraph）并传递 \n
+        let inputData = e.data;
+        if (inputData === null && e.inputType === "insertParagraph") {
+          inputData = "\n";
+        }
+        try { if (typeof this.owner.callMethod === "function") { this.owner.callMethod("onHandleInput", inputData); return; } } catch (err) {}
+        try { if (typeof this.owner.onHandleInput === "function") { this.owner.onHandleInput(inputData); } } catch (err) {}
       }
     },
 
@@ -475,6 +483,7 @@ export default {
         const range = this.getSelectionRange();
         if (!range) return;
         const { startContainer, startOffset } = range;
+        let atomDeleted = false;
 
         if (startContainer.nodeType === Node.TEXT_NODE) {
           const tn = startContainer;
@@ -486,7 +495,7 @@ export default {
               if (tn.previousSibling && this.isZeroWidthNode(tn.previousSibling))
                 tn.previousSibling.parentNode.removeChild(tn.previousSibling);
               this.parseModelAndNotify();
-              return;
+              atomDeleted = true;
             }
           }
           if (e.key === "Delete" && startOffset === (tn.textContent || "").length) {
@@ -497,7 +506,7 @@ export default {
               if (tn.nextSibling && this.isZeroWidthNode(tn.nextSibling))
                 tn.nextSibling.parentNode.removeChild(tn.nextSibling);
               this.parseModelAndNotify();
-              return;
+              atomDeleted = true;
             }
           }
         }
@@ -509,10 +518,27 @@ export default {
             e.preventDefault();
             ec.removeChild(ec.childNodes[idx]);
             this.parseModelAndNotify();
+            atomDeleted = true;
+          }
+        }
+
+        // 非原子删除：标记并由 onInput 通知；若 onInput 不触发则在此补充通知
+        if (!atomDeleted) {
+          this._deleteHandled = true;
+          if (this.owner) {
+            try { if (typeof this.owner.callMethod === "function") { this.owner.callMethod("onHandleInput", null); return; } } catch (err) {}
+            try { if (typeof this.owner.onHandleInput === "function") { this.owner.onHandleInput(null); } } catch (err) {}
           }
         }
       } else if (e.key.startsWith("Arrow")) {
         this.updateCaretInfo("move");
+      } else if (e.key === "Enter") {
+        // 通知父组件回车键被按下（用于确认自定义标签）
+        this.updateCaretInfo("insert");
+        if (this.owner) {
+          try { if (typeof this.owner.callMethod === "function") { this.owner.callMethod("onHandleInput", "\n"); return; } } catch (err) {}
+          try { if (typeof this.owner.onHandleInput === "function") { this.owner.onHandleInput("\n"); } } catch (err) {}
+        }
       }
     },
 
@@ -629,6 +655,7 @@ export default {
 <style lang="scss">
 .editable {
   width: 100%;
+  min-height: 200rpx;
   outline: none;
   white-space: pre-wrap;
   word-break: break-word;

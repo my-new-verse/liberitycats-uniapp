@@ -4,11 +4,17 @@
     navigationStyle: 'custom',
     navigationBarTitleText: 'Publish',
     backgroundColor: '#f7f6f4',
+    softinputMode: 'adjustResize',
   },
 }
 </route>
 <template>
-  <view :style="{ '--message-nav-height': navHeight + 'rpx' }">
+  <view
+    :style="{
+      '--message-nav-height': navHeight + 'rpx',
+      '--keyboard-height': keyboardHeight + 'px',
+    }"
+  >
     <wd-tabs
       v-model="activeCategory"
       @click="handleCategoryChange"
@@ -24,8 +30,12 @@
         :name="item.value"
       ></wd-tab>
     </wd-tabs>
-    <view v-else :style="{ paddingTop: navHeight - 104 + 'rpx' }"></view>
-    <custom-nav :title="pageTitle" pageBackgroundColor="#f7f6f4">
+    <view v-else :style="{ paddingTop: navHeight - 80 + 'rpx' }"></view>
+    <custom-nav
+      :title="pageTitle"
+      pageBackgroundColor="#f7f6f4"
+      :paddingBottom="contentPaddingBottom"
+    >
       <!-- <template #right>
         <view
           v-if="activeCategory === 'normal'"
@@ -52,6 +62,8 @@
             :ignoreCompositionEvent="false"
             :maxlength="30"
             show-word-limit
+            :cursor-spacing="100"
+            hold-keyboard
           />
           <view class="tip">{{ t('publish.index.promotion.title.tip') }}</view>
         </view>
@@ -62,48 +74,30 @@
               <text class="required">*</text>
             </view>
             <view class="txtBox">
-              <view class="editorBox">
-                <l-editor
-                  :placeholder="t('publish.index.content.placeholder')"
-                  ref="editorRef"
-                  :clear-on-send="false"
-                  send-text=""
-                  @search-change="onSearchChange"
-                  @change="onEditorChange"
-                  :max-num="1000"
-                >
-                  <template #hot="{ show, onSelect, close }">
-                    <view v-show="show">
-                      <transition name="fade">
-                        <view class="mask" v-show="show" @click="close"></view>
-                      </transition>
-
-                      <transition name="slide-up">
-                        <view class="popup-box" v-show="show">
-                          <view class="popup-header">
-                            <text class="popup-title">
-                              {{ t('publish.index.tag.select_title') }}
-                            </text>
-                            <wd-icon
-                              name="close-bold"
-                              size="42rpx"
-                              @click="close"
-                              color="#999"
-                            ></wd-icon>
-                          </view>
-                          <view
-                            v-for="item in tagList"
-                            :key="item.id"
-                            class="popup-tag-item"
-                            @click="handleSelectTag(item, onSelect)"
-                          >
-                            <text class="popup-tag-name"># {{ item.name }}</text>
-                          </view>
-                        </view>
-                      </transition>
-                    </view>
-                  </template>
-                </l-editor>
+              <wd-textarea
+                v-model="promotionContent"
+                :placeholder="t('publish.index.content.placeholder')"
+                custom-textarea-class="pubTextArea"
+                auto-height
+                :maxlength="1000"
+                show-word-limit
+                :ignoreCompositionEvent="false"
+                :cursor-spacing="100"
+                hold-keyboard
+              />
+            </view>
+            <view class="tagBar">
+              <wd-img
+                src="/static/images/label.png"
+                width="68rpx"
+                mode="widthFix"
+                @click="openTagPopup"
+              ></wd-img>
+              <view class="selectedTagsBox" v-if="selectedTagList.length > 0">
+                <view v-for="tag in selectedTagList" :key="tag.id" class="tagChip">
+                  <text class="tagChipText"># {{ tag.value.replace(/^#/, '') }}</text>
+                  <text class="tagChipClose" @click="removeSelectedTag(tag)">×</text>
+                </view>
               </view>
             </view>
           </template>
@@ -117,6 +111,8 @@
               show-word-limit
               :ignoreCompositionEvent="false"
               :auto-focus="true"
+              :cursor-spacing="100"
+              hold-keyboard
             />
           </view>
           <view class="uploadBox">
@@ -190,8 +186,10 @@
                 custom-class="pubInput"
                 clearable
                 inputmode="email"
-                :ignoreCompositionEvent="false"
-                :adjust-position="false"
+                :adjust-position="true"
+                :cursor-spacing="100"
+                :focus-when-clear="false"
+                hold-keyboard
               />
             </view>
             <view class="contactItem">
@@ -201,6 +199,10 @@
                 :placeholder="t('publish.index.promotion.wechat.placeholder')"
                 custom-class="pubInput"
                 clearable
+                :adjust-position="true"
+                :cursor-spacing="100"
+                :focus-when-clear="false"
+                hold-keyboard
               />
             </view>
           </view>
@@ -209,7 +211,7 @@
         <!-- 推广模式发布卡片 -->
         <view v-if="activeCategory === 'promotion'" class="card">
           <!-- 可见范围 -->
-          <view class="visibilityRow">
+          <!-- <view class="visibilityRow">
             <view class="visibilityOption" @click="visibility = 'public'">
               <view class="visibilityRadio" :class="{ checked: visibility === 'public' }">
                 <view v-if="visibility === 'public'" class="radioDot"></view>
@@ -224,7 +226,7 @@
                 {{ t('publish.index.promotion.visibility_friends_only') }}
               </text>
             </view>
-          </view>
+          </view> -->
 
           <!-- 阅读并同意协议 -->
           <!-- <view class="agreementRow" @click="hasAgreed = !hasAgreed">
@@ -259,6 +261,41 @@
 
       <template #footer></template>
     </custom-nav>
+
+    <!-- 标签选择弹出层 -->
+    <view class="tag-popup-mask" v-if="tagPopupVisible" @click="closeTagPopup"></view>
+    <view class="tag-popup" v-show="tagPopupVisible">
+      <view class="popup-header">
+        <text class="popup-title">{{ t('publish.index.tag.select_title') }}</text>
+        <wd-icon name="close-bold" size="42rpx" @click="closeTagPopup" color="#999"></wd-icon>
+      </view>
+      <l-editor
+        ref="editorRef"
+        :clear-on-send="false"
+        send-text=""
+        @search-change="onSearchChange"
+        @change="onEditorChange"
+        :keyboard-height="keyboardHeight"
+        placeholder="输入 # 搜索标签"
+      >
+        <template #hot="{ show, onSelect, close }">
+          <view v-show="show" class="tag-popup-list">
+            <view
+              v-for="item in tagList"
+              :key="item.id"
+              class="popup-tag-item"
+              @click="handleSelectTag(item, onSelect)"
+            >
+              <text class="popup-tag-name"># {{ item.name }}</text>
+            </view>
+          </view>
+        </template>
+      </l-editor>
+      <view class="tag-popup-footer">
+        <view class="tag-popup-confirm-btn" @click="confirmTagPopup">确定</view>
+      </view>
+    </view>
+
     <wd-toast />
     <wd-message-box selector="wd-message-box-slot" />
   </view>
@@ -294,20 +331,26 @@ const message = useMessage('wd-message-box-slot')
 // 发帖权限状态
 const canPost = ref(true)
 // 是否为猫 holder（控制推广 tab 显示）
-const isCatHolder = ref(true)
+const isCatHolder = ref(false)
 // 推广发布资格状态
 const canPublishAd = ref(true)
 const adEligibilityChecked = ref(false)
+const adEligibilityMessage = ref('')
+const adEligibilityReason = ref('')
 
 // 语言
 const locale = uni.getLocale()
 const toast = useToast()
 const userStore = useUserStore()
 
-// l-editor 引用
+// l-editor 引用（用于标签选择弹出层）
 const editorRef = ref<InstanceType<typeof LEditor> | null>(null)
 // 编辑器内容（纯文本，用于判断是否有内容）
 const editorContent = ref('')
+// 推广模式文本内容
+const promotionContent = ref('')
+// 已选标签列表
+const selectedTagList = ref<{ value: string; id: number | string }[]>([])
 
 // 发布分类列表
 type PublishCategory = 'normal' | 'promotion'
@@ -341,9 +384,9 @@ const pageTitle = computed(() => {
 
 const handleCategoryChange = ({ name }: { name: PublishCategory }) => {
   activeCategory.value = name
-  // 切换到推广专区时检查发布资格（只执行一次）
-  if (name === 'promotion' && !adEligibilityChecked.value) {
-    checkAdEligibility()
+  // 切换到推广专区时展示发布资格检查结果
+  if (name === 'promotion' && adEligibilityChecked.value) {
+    showAdEligibilityResult()
   }
 }
 
@@ -388,17 +431,12 @@ const onSearchChange = (data: {
   content: string
 }) => {
   if (data.type === 'tag') {
-    // # 标签搜索
     tagSearchKeyword.value = data.keyword || ''
-    tagPopupVisible.value = true
     if (data.keyword) {
       debouncedSearchTag(data.keyword)
     } else {
       loadHotTags()
     }
-  } else {
-    // @ 提及（暂不处理）
-    tagPopupVisible.value = false
   }
 }
 
@@ -408,6 +446,7 @@ const loadHotTags = async () => {
     const res = await getHotAdTagsApi()
     if (res.code === 1) {
       tagList.value = res.data || []
+      editorRef.value?.setHotPanelVisible(tagList.value.length > 0)
     }
   } catch (e) {
     console.error('loadHotTags failed', e)
@@ -428,6 +467,7 @@ const debouncedSearchTag = (keyword: string) => {
       const res = await searchAdTagsApi(keyword.trim())
       if (res.code === 1) {
         tagList.value = res.data || []
+        editorRef.value?.setHotPanelVisible(tagList.value.length > 0)
       }
     } catch (e) {
       console.error('searchAdTags failed', e)
@@ -448,21 +488,60 @@ const handleSelectTag = (
   if (editorRef.value) {
     editorRef.value.insertHot({ name: item.name, id: item.id })
   }
-  tagPopupVisible.value = false
 }
 
-/** 弹窗关闭时重置状态 */
-const onTagPopupClose = () => {
+/** 打开标签弹出层 */
+const openTagPopup = () => {
+  tagPopupVisible.value = true
+  // 将当前已选标签同步到 l-editor
+  nextTick(() => {
+    const model = selectedTagList.value.map((tag) => ({
+      type: 'tag' as const,
+      value: tag.value,
+      id: tag.id,
+    }))
+    editorRef.value?.setValue(model)
+    editorRef.value?.focus?.()
+  })
+  loadHotTags()
+}
+
+/** 关闭标签弹出层（不保存） */
+const closeTagPopup = () => {
+  tagPopupVisible.value = false
   tagSearchKeyword.value = ''
   if (editorRef.value) {
     editorRef.value.closeHotPanel?.()
   }
 }
 
+/** 确认标签选择：将 l-editor 中的标签写入 selectedTagList */
+const confirmTagPopup = () => {
+  const data = editorRef.value?.getValue()
+  if (data) {
+    selectedTagList.value = (data.model || []).filter((item: any) => item.type === 'tag')
+  }
+  tagPopupVisible.value = false
+  tagSearchKeyword.value = ''
+  if (editorRef.value) {
+    editorRef.value.closeHotPanel?.()
+  }
+}
+
+/** 移除已选标签（仅从 selectedTagList 移除，下次打开弹出层时同步到 l-editor） */
+const removeSelectedTag = (tag: { value: string; id: number | string }) => {
+  selectedTagList.value = selectedTagList.value.filter((item) => item.id !== tag.id)
+}
+
+/** 标签弹出层为独立遮罩，内容区无需额外留白 */
+const contentPaddingBottom = computed(() => 0)
+
 /** 清空编辑器内容 */
 const clearEditor = () => {
   editorRef.value?.clear()
   editorContent.value = ''
+  promotionContent.value = ''
+  selectedTagList.value = []
 }
 
 // 图片上传
@@ -538,11 +617,12 @@ const safeTopRpx = ref<number>(0)
 const navHeight = ref<number>(0)
 const navHeaderPaddingTop = ref<number>(0)
 const cntPaddingTop = ref<number>(0)
+const keyboardHeight = ref(0)
 
 const submitLoading = ref(false)
 
 const isAddDraft = computed(() => {
-  const hasContent = editorContent.value.length > 0 || ossUploadedFiles.value.length > 0
+  const hasContent = promotionContent.value.length > 0 || ossUploadedFiles.value.length > 0
   return (
     canPost.value &&
     userStore.isLogin &&
@@ -553,7 +633,16 @@ const isAddDraft = computed(() => {
 })
 
 const isAddPublish = computed(() => {
-  const hasContent = editorContent.value.length > 0 || ossUploadedFiles.value.length > 0
+  const hasContent = promotionContent.value.length > 0 || ossUploadedFiles.value.length > 0
+  console.log(
+    'hasContent',
+    canPost.value &&
+      canPublishAd.value &&
+      userStore.isLogin &&
+      hasContent &&
+      title.value.length &&
+      promotionType.value !== '',
+  )
   return (
     canPost.value &&
     canPublishAd.value &&
@@ -601,17 +690,24 @@ const checkAdEligibility = async () => {
       if (res.data.checks) {
         isCatHolder.value = res.data.checks.is_cat_holder
       }
-      if (!res.data.can_publish && res.data.reason) {
-        message.alert({
-          title: t('publish.index.ban.title'),
-          msg: res.data.message,
-        })
-      }
+      // 保存结果，切换到推广 tab 时再展示
+      adEligibilityMessage.value = res.data.message || ''
+      adEligibilityReason.value = res.data.reason || ''
     }
   } catch (e) {
     console.error('checkAdEligibility failed', e)
   } finally {
     adEligibilityChecked.value = true
+  }
+}
+
+/** 切换到推广 tab 时展示发布资格检查结果 */
+const showAdEligibilityResult = () => {
+  if (isCatHolder.value && !canPublishAd.value && adEligibilityReason.value) {
+    message.alert({
+      title: t('publish.index.ban.title'),
+      msg: adEligibilityMessage.value,
+    })
   }
 }
 
@@ -632,15 +728,15 @@ const loadPostForEdit = async (id: number) => {
         // 预填联系方式
         contactEmail.value = post.contact_email || ''
         contactWechat.value = post.contact_wechat || ''
-        // 预填编辑器内容和标签（标签放在最前面）
+        // 内容设置到 textarea
+        promotionContent.value = post.content || ''
+        // 标签设置到 l-editor（弹出层中的）
         const editorModel: { type: 'text' | 'tag'; value: string; id?: number | string }[] = []
         if (post.ad_tags?.length) {
           post.ad_tags.forEach((tag) => {
             editorModel.push({ type: 'tag', id: tag.id, value: tag.display_name })
           })
-        }
-        if (post.content) {
-          editorModel.push({ type: 'text', value: post.content })
+          selectedTagList.value = editorModel.filter((item) => item.type === 'tag')
         }
         // 等 editorRef 就绪后设置内容
         nextTick(() => {
@@ -704,11 +800,27 @@ onMounted(() => {
     ossConfig.value = res.data
   })
 
-  // 检查发帖状态
-  checkPostStatus()
+  // 编辑模式：不需要做权限校验
+  if (editId.value === 0 && draftId.value === 0) {
+    // 检查发帖状态
+    checkPostStatus()
 
-  // 检查推广发布资格（控制推广 tab 显示）
-  checkAdEligibility()
+    // 检查推广发布资格（控制推广 tab 显示）
+    checkAdEligibility().then(() => {
+      // 从推广 Tab 进入时直接展示检查结果
+      if (activeCategory.value === 'promotion') {
+        showAdEligibilityResult()
+      }
+    })
+  }
+
+  // 键盘高度监听（标签弹窗键盘适配）
+  if (typeof uni.onKeyboardHeightChange === 'function') {
+    uni.onKeyboardHeightChange((res) => {
+      console.log(res, '-----')
+      keyboardHeight.value = res.height || 0
+    })
+  }
 
   // 加载推广类型列表
   loadAdTypes()
@@ -764,10 +876,11 @@ const handlePublishSuccess = (res: any, publishStatus: number = 1) => {
       if (publishStatus === 1) {
         if (activeCategory.value === 'promotion') {
           uni.$emit('refreshPromotionTab')
+          uni.$emit('switchToPromotionTab')
         } else {
           uni.$emit('refreshSocialTab')
+          uni.$emit('switchToSocialTab')
         }
-        uni.$emit('switchToSocialTab')
       }
     }
 
@@ -780,11 +893,18 @@ const handlePublishSuccess = (res: any, publishStatus: number = 1) => {
 /** 公共：从编辑器获取内容和标签 */
 const getEditorPayload = () => {
   const editorData = editorRef.value?.getValue()
-  // 去掉 content 中的 ⁣{tag_0}⁣ ⁣{tag_1}⁣ 等占位符
-  const content = (editorData?.message || '').replace(/⁣\{tag_\d+\}⁣/g, '')
-  const tags = (editorData?.tags || []).map((item: { value: string; id: number | string }) =>
-    Number(item.id),
-  )
+  // 内容来自 wd-textarea
+  const content = promotionContent.value
+  const tags = (editorData?.tags || []).map((item: { value: string; id: number | string }) => {
+    const numId = Number(item.id)
+    // 自定义标签（id 为字符串）：与当前标签列表比对，匹配则用数据库 id 替换
+    if (isNaN(numId)) {
+      const tagName = item.value.startsWith('#') ? item.value.slice(1) : item.value
+      const matched = tagList.value.find((t) => t.name === tagName)
+      return matched ? matched.id : tagName
+    }
+    return numId
+  })
   return { content, tags }
 }
 
@@ -855,7 +975,7 @@ const createPromotionPost = async (publishStatus: number = 1) => {
   }
 
   const { content, tags } = getEditorPayload()
-
+  console.log({ content, tags })
   if (!content && ossUploadedFiles.value.length === 0) {
     toast.show(t('common.toast.pleaseInputContent'))
     return
@@ -903,7 +1023,7 @@ const createPromotionPost = async (publishStatus: number = 1) => {
         handlePublishSuccess(res, publishStatus)
       }
     } catch (error) {
-      // toast.info('失败:' + error.errMsg)
+      console.error('失败:' + error.errMsg)
     } finally {
       submitLoading.value = false
     }
@@ -933,6 +1053,9 @@ onUnmounted(() => {
   if (debouncedCreatePromotionPost.value) {
     ;(debouncedCreatePromotionPost.value as any).cancel()
   }
+  if (typeof uni.offKeyboardHeightChange === 'function') {
+    uni.offKeyboardHeightChange()
+  }
 })
 </script>
 
@@ -945,6 +1068,7 @@ $btn-border-raduis: 8px;
 $tipColor: #999999;
 $main-color: #1d1d1f;
 $minor-color: #666666;
+
 :deep(.zh-Hans, .zh-Hant) {
   .wd-textarea * {
     font-family: Alibaba PuHuiTi2 !important;
@@ -953,6 +1077,7 @@ $minor-color: #666666;
 
 .page {
   background-color: #f7f6f4;
+
   .pbl,
   .pbr {
     .fbg {
@@ -975,6 +1100,7 @@ $minor-color: #666666;
 :deep(.custom-tab) {
   background-color: #f7f6f4 !important;
   z-index: 10;
+
   .wd-tabs__nav {
     background-color: #f7f6f4 !important;
     padding: 0 var(--liberty-cats-page-common-border-radius);
@@ -984,9 +1110,11 @@ $minor-color: #666666;
       sans-serif;
 
     height: var(--wot-tabs-nav-height, 88rpx);
+
     .wd-tabs__nav-container {
       height: 100%;
       width: 100%;
+
       .wd-tabs__nav-item {
         height: 100%;
       }
@@ -998,6 +1126,11 @@ $minor-color: #666666;
   background-color: #f7f6f4 !important;
   padding: 24rpx !important;
   padding-top: calc(80rpx + var(--liberty-cats-page-common-border-radius)) !important;
+}
+
+:deep(.default-cnt) {
+  min-height: auto !important;
+  padding-bottom: calc(var(--keyboard-height, 0px) + 200px) !important;
 }
 
 .navRightBox {
@@ -1017,6 +1150,7 @@ $minor-color: #666666;
   line-height: 32rpx;
   color: #ffffff;
 }
+
 .kf.disabled {
   color: #ccc;
 }
@@ -1052,6 +1186,7 @@ $minor-color: #666666;
     margin-top: 18rpx;
   }
 }
+
 :deep(.titleInput) {
   margin-bottom: 24rpx;
   border: 1px solid $border-color;
@@ -1062,16 +1197,24 @@ $minor-color: #666666;
     //padding: 20rpx 0;
     font-family: 'Alibaba PuHuiTi2' !important;
   }
+
   .uni-input-input {
     font-family: 'Alibaba PuHuiTi2' !important;
   }
+
   .wd-input__placeholder {
     font-family: 'Alibaba PuHuiTi2' !important;
   }
 }
 
 .txtBox {
-  min-height: 200rpx;
+  min-height: 300rpx;
+  border-radius: $border-radius;
+  border: 1px solid $border-color;
+  padding: 0 12rpx;
+  .wd-textarea {
+    min-height: 300rpx;
+  }
 }
 
 .editorBox {
@@ -1081,6 +1224,7 @@ $minor-color: #666666;
   border-radius: $border-radius;
   border: 1px solid $border-color;
   padding: 12rpx;
+
   // 覆写 l-editor 的 fixed 定位，使其内嵌在卡片中
   :deep(.l-editor) {
     position: relative !important;
@@ -1096,11 +1240,14 @@ $minor-color: #666666;
     font-family: 'Alibaba PuHuiTi2' !important;
     min-height: 300rpx;
     font-size: 26rpx;
+    padding-left: 24rpx;
+
     &:empty::before {
       font-family: 'Alibaba PuHuiTi2' !important;
       // font-family: 'Alimama FangYuanTi VF' !important;
       color: #b0b0b0 !important;
     }
+
     .text-atom {
       font-family: 'Alibaba PuHuiTi2' !important;
       // font-family: 'Alimama FangYuanTi VF' !important;
@@ -1124,6 +1271,7 @@ $minor-color: #666666;
     width: 200rpx;
     height: 200rpx;
   }
+
   .wd-upload__preview:nth-child(3n) {
     margin-right: 0;
   }
@@ -1131,6 +1279,7 @@ $minor-color: #666666;
 
 :deep(.pubTextArea) {
   background: transparent;
+
   .wd-textarea__value {
     color: rgba(0, 0, 0, 0.26);
     background: #ff6b03;
@@ -1145,6 +1294,7 @@ $minor-color: #666666;
   &:last-child {
     margin-bottom: 0;
   }
+
   .pubInput {
     flex: 1;
   }
@@ -1162,6 +1312,7 @@ $minor-color: #666666;
   padding: 0 12rpx;
   border-radius: $border-radius;
   border: 1px solid $border-color;
+
   .wd-input__inner {
     height: 80rpx;
     // background-color: #f9f9f9;
@@ -1225,11 +1376,13 @@ $minor-color: #666666;
   transition: opacity 0.2s ease;
   font-family: 'Alibaba PuHuiTi2' !important;
 }
+
 /* 草稿按钮 */
 .draftBtn {
   background-color: #fff;
   color: $minor-color;
   border: 1px solid $border-color;
+
   &.disabled {
     background-color: #fafafa;
     color: #cccccc;
@@ -1309,6 +1462,7 @@ $minor-color: #666666;
   line-height: 1.5;
   text-align: center;
 }
+
 ::v-deep .wd-input::after {
   height: 0;
 }
@@ -1429,7 +1583,8 @@ $minor-color: #666666;
   width: 100%;
   height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px); /* 毛玻璃背景，可选 */
+  backdrop-filter: blur(4px);
+  /* 毛玻璃背景，可选 */
 
   /* 默认隐藏（透明 + 禁止点击） */
   opacity: 0;
@@ -1441,17 +1596,21 @@ $minor-color: #666666;
   /* 让弹出层在遮罩里垂直底部对齐 */
   display: flex;
   justify-content: center;
-  align-items: flex-end; /* 关键：让子元素从底部弹出来 */
+  align-items: flex-end;
+  /* 关键：让子元素从底部弹出来 */
 }
 
 /* ---------- 弹出层主体（从下方滑入） ---------- */
 .popup {
   background: #ffffff;
   width: 100%;
-  max-width: 500px; /* 移动端适配，限制最大宽度 */
-  max-height: 70vh; /* 防止内容过多顶出屏幕 */
+  max-width: 500px;
+  /* 移动端适配，限制最大宽度 */
+  max-height: 70vh;
+  /* 防止内容过多顶出屏幕 */
   padding: 30px 28px 40px;
-  border-radius: 24px 24px 0 0; /* 上方圆角，底部直角贴合 */
+  border-radius: 24px 24px 0 0;
+  /* 上方圆角，底部直角贴合 */
   box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.15);
 
   /* 位移动画核心：初始在下方一个屏幕外 */
@@ -1459,7 +1618,8 @@ $minor-color: #666666;
   transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   /* cubic-bezier 带有轻微弹性效果，更自然 */
 
-  overflow-y: auto; /* 内容过多时内部滚动 */
+  overflow-y: auto;
+  /* 内容过多时内部滚动 */
 }
 
 /* 当遮罩显示时：背景显现，弹出层滑入 */
@@ -1467,6 +1627,7 @@ $minor-color: #666666;
   opacity: 1;
   visibility: visible;
 }
+
 .overlay.active .popup {
   transform: translateY(0);
 }
@@ -1482,21 +1643,25 @@ $minor-color: #666666;
   line-height: 1;
   transition: 0.2s;
 }
+
 .popup .close-btn:hover {
   color: #333;
   transform: rotate(90deg);
 }
+
 .popup h2 {
   font-size: 22px;
   margin-bottom: 12px;
   color: #1a1a2e;
 }
+
 .popup p {
   font-size: 16px;
   line-height: 1.7;
   color: #555;
   margin-bottom: 20px;
 }
+
 .popup .action-btn {
   display: block;
   width: 100%;
@@ -1509,6 +1674,7 @@ $minor-color: #666666;
   font-weight: 600;
   cursor: pointer;
 }
+
 .popup .action-btn:hover {
   background: #3a56d4;
 }
@@ -1531,10 +1697,12 @@ $minor-color: #666666;
   background: rgba(0, 0, 0, 0.5);
   z-index: 998;
 }
+
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s ease;
 }
+
 .fade-enter,
 .fade-leave-to {
   opacity: 0;
@@ -1549,13 +1717,16 @@ $minor-color: #666666;
   right: 0;
   background: #ffffff;
   border-radius: 40rpx 40rpx 0 0;
+  border-top: 1rpx solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 -8rpx 30rpx rgba(0, 0, 0, 0.15);
   z-index: 999;
   box-sizing: border-box;
-  max-height: 70vh;
+  max-height: calc(100vh - var(--message-nav-height, 0rpx));
   overflow-y: auto;
   font-family: 'Alibaba PuHuiTi2' !important;
   /* 注意：这里不要写 display:flex 干扰 v-show，由 Vue 控制 */
 }
+
 .popup-header {
   display: flex;
   align-items: center;
@@ -1563,37 +1734,161 @@ $minor-color: #666666;
   padding: 30rpx 40rpx 20rpx;
   font-family: 'Alibaba PuHuiTi2' !important;
 }
+
 .popup-title {
   font-size: 28rpx;
   font-weight: 600;
   color: #333;
   font-family: 'Alibaba PuHuiTi2' !important;
 }
+
 .popup-close {
   font-size: 36rpx;
   color: #999;
   padding: 10rpx;
   font-family: 'Alibaba PuHuiTi2' !important;
 }
+
 .popup-tag-item {
   padding: 24rpx 40rpx;
   border-bottom: 1rpx solid #f0f0f0;
   font-family: 'Alibaba PuHuiTi2' !important;
 }
+
 .zh-Hans .popup-tag-item:last-child {
   border-bottom: none;
 }
+
 .popup-tag-name {
   font-size: 24rpx;
   color: #333;
   font-family: 'Alibaba PuHuiTi2' !important;
 }
+
 .slide-up-enter-active,
 .slide-up-leave-active {
   transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
+
 .slide-up-enter,
 .slide-up-leave-to {
-  transform: translateY(100%); /* 初始在屏幕外 */
+  transform: translateY(100%);
+  /* 初始在屏幕外 */
+}
+
+/* ----- 标签弹出层 ----- */
+.tag-popup-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 998;
+}
+
+.tag-popup {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border-radius: 40rpx 40rpx 0 0;
+  border-top: 1rpx solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 -8rpx 30rpx rgba(0, 0, 0, 0.15);
+  z-index: 999;
+  box-sizing: border-box;
+  max-height: 70vh;
+  overflow-y: auto;
+  font-family: 'Alibaba PuHuiTi2' !important;
+}
+
+.tag-popup-list {
+  max-height: 500rpx;
+  overflow-y: auto;
+}
+
+.tag-popup :deep(.l-editor) {
+  position: relative !important;
+  bottom: auto !important;
+  box-shadow: none !important;
+  z-index: auto !important;
+  padding-bottom: 0 !important;
+}
+
+.tag-popup :deep(.tools) {
+  display: none !important;
+}
+.tag-popup-footer {
+  padding: 20rpx 40rpx 40rpx;
+}
+.tag-popup-confirm-btn {
+  height: 80rpx;
+  line-height: 80rpx;
+  text-align: center;
+  background: var(--wot-color-theme);
+  color: #fff;
+  font-size: 28rpx;
+  border-radius: 40rpx;
+  font-family: 'Alibaba PuHuiTi2' !important;
+}
+
+/* ----- 已选标签芯片 ----- */
+.tagBar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  padding: 0 0 20rpx;
+}
+
+.selectedTagsBox {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  align-items: center;
+}
+
+.tagChip {
+  display: flex;
+  align-items: center;
+  background: #f0f0f0;
+  border-radius: 24rpx;
+  padding: 8rpx 20rpx;
+  font-size: 24rpx;
+  color: #333;
+  font-family: 'Alibaba PuHuiTi2' !important;
+}
+
+.tagChipText {
+  font-size: 24rpx;
+}
+
+.tagChipClose {
+  margin-left: 8rpx;
+  font-size: 28rpx;
+  color: #999;
+}
+
+:deep(.editable) {
+  font-family: 'Alibaba PuHuiTi2' !important;
+  min-height: 300rpx;
+  font-size: 26rpx;
+  padding-left: 24rpx;
+
+  /* &:empty::before {
+    font-family: 'Alibaba PuHuiTi2' !important;
+    // font-family: 'Alimama FangYuanTi VF' !important;
+    color: #b0b0b0 !important;
+  } */
+
+  .text-atom {
+    font-family: 'Alibaba PuHuiTi2' !important;
+    color: var(--wot-color-theme) !important;
+  }
+  .atom {
+    font-family: 'Alibaba PuHuiTi2' !important;
+    color: var(--wot-color-theme) !important;
+  }
 }
 </style>

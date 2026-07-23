@@ -10,14 +10,6 @@
       :onSelect="insertAt"
       :close="closeAtPanel"
     />
-    <slot
-      name="hot"
-      :show="hotParams.show"
-      :keyword="hotParams.keyword"
-      :content="hotParams.content"
-      :onSelect="insertHot"
-      :close="closeHotPanel"
-    />
     <view class="editor-wrap">
       <Editorial
         class="editor"
@@ -40,6 +32,14 @@
         </view>
       </view>
     </view>
+    <slot
+      name="hot"
+      :show="hotParams.show"
+      :keyword="hotParams.keyword"
+      :content="hotParams.content"
+      :onSelect="insertHot"
+      :close="closeHotPanel"
+    />
     <slot name="emoji" :show="emojiParams.show" :onSelect="insertEmoji" :close="closeEmojiPanel" />
     <!-- #endif -->
 
@@ -50,13 +50,6 @@
       :show="mpAtShow"
       :keyword="mpAtKeyword"
       :onSelect="mpInsertAt"
-      :close="mpClosePanel"
-    />
-    <slot
-      name="hot"
-      :show="mpHotShow"
-      :keyword="mpHotKeyword"
-      :onSelect="mpInsertHot"
       :close="mpClosePanel"
     />
     <view class="editor-wrap">
@@ -94,6 +87,13 @@
         </view>
       </view>
     </view>
+    <slot
+      name="hot"
+      :show="mpHotShow"
+      :keyword="mpHotKeyword"
+      :onSelect="mpInsertHot"
+      :close="mpClosePanel"
+    />
     <slot
       name="emoji"
       :show="mpEmojiShow"
@@ -184,6 +184,7 @@ onBeforeUnmount(() => {
 let cursorIndex = 0
 const ateParams = reactive({ content: '', keyword: '', start: -1, show: false })
 const hotParams = reactive({ content: '', keyword: '', start: -1, show: false })
+let hasSpaceAfterHash = false
 const emojiParams = reactive({ show: false })
 // #endif
 
@@ -300,6 +301,7 @@ const onHandleInput = (value: string) => {
       return emitSearch('ate')
     }
     if (value === '#') {
+      // 唤起标签选择弹窗
       hotParams.start = cursorIndex
       hotParams.show = true
       hotParams.content = '#'
@@ -323,18 +325,70 @@ const onHandleInput = (value: string) => {
     return emitSearch('ate')
   }
 
-  // # 激活状态
-  if (hotParams.show) {
-    if (cursorIndex <= hotParams.start) return closeHotPanel()
+  // # 标签输入状态（弹窗模式 + 自定义输入模式统一处理）
+  if (hotParams.start !== -1) {
+    // 连续输入 # 时，仅将最后一个 # 作为标签起点，之前的 # 作为普通文本
+    if (value === '#') {
+      hasSpaceAfterHash = false
+      hotParams.start = cursorIndex
+      hotParams.content = '#'
+      hotParams.keyword = ''
+      return emitSearch('tag')
+    }
+    // 空格或回车：确认标签
+    if (value === ' ' || value === '\n') {
+      if (hotParams.keyword) {
+        refEditorial.value?.replaceWithAtom({
+          delText: hotParams.content,
+          atom: { type: 'tag', value: hotParams.keyword, id: hotParams.keyword },
+        })
+        closeHotPanel()
+        return
+      }
+      // 空格且无关键词：标记空格状态，隐藏面板，记入 content 以便退格还原
+      if (value === ' ') {
+        hasSpaceAfterHash = true
+        hotParams.show = false
+        hotParams.content += value
+        return
+      }
+      // 回车且无关键词：关闭面板
+      closeHotPanel()
+      return
+    }
+    // 普通字符：累积到标签名，触发搜索
     if (value) {
+      // 如果 # 后面曾输入过空格，继续隐藏面板，不触发标签搜索
+      if (hasSpaceAfterHash) {
+        hotParams.content += value
+        return
+      }
       hotParams.content += value
       hotParams.keyword += value
-    } else {
-      cursorIndex--
+      return emitSearch('tag')
+    }
+    // 退格处理
+    let justRemovedSpace = false
+    if (hotParams.content.length > 1) {
+      const removedChar = hotParams.content.slice(-1)
       hotParams.content = hotParams.content.slice(0, -1)
       hotParams.keyword = hotParams.keyword.slice(0, -1)
+      // 退格删除了 # 后面的空格，重置空格标记，恢复面板显示
+      if (removedChar === ' ' && hasSpaceAfterHash) {
+        hasSpaceAfterHash = false
+        hotParams.show = true
+        justRemovedSpace = true
+      }
+    } else {
+      // content 仅为 '#' 时再退格：# 已被删除，退出标签模式
+      return closeHotPanel()
     }
-    return emitSearch('tag')
+    // keyword 为空时不 emit search，避免触发父组件异步 API 导致面板状态竞争
+    // 唯一例外：退格删除空格后需要刷新标签列表数据
+    if (hotParams.keyword || justRemovedSpace) {
+      return emitSearch('tag')
+    }
+    return
   }
 }
 
@@ -355,8 +409,19 @@ const insertHot = (data: { name: string; id: number | string }) => {
   })
   closeHotPanel()
 }
-const closeHotPanel = () =>
+const closeHotPanel = () => {
   Object.assign(hotParams, { show: false, start: -1, content: '', keyword: '' })
+  hasSpaceAfterHash = false
+}
+
+/** 仅控制弹窗显隐，不重置输入状态（供外部根据搜索结果控制） */
+const setHotPanelVisible = (visible: boolean) => {
+  // 标签模式激活时，不允许外部强制隐藏面板（避免异步 API 回调覆盖编辑器内部状态）
+  if (hotParams.start !== -1 && !visible) return
+  // # 后面有未删除的空格时，不允许外部强制显示面板
+  if (hasSpaceAfterHash && visible) return
+  hotParams.show = visible
+}
 
 const insertEmoji = (data: { value: string }) => {
   refEditorial.value?.onAtomChange?.({ type: 'text', value: data.value })
@@ -483,13 +548,20 @@ const mpOnTextInput = (e: any) => {
             content: '@' + mpAtKeyword.value,
           })
         } else if (mpHotShow.value) {
-          mpHotKeyword.value += ch
-          emit('search-change', {
-            type: 'tag',
-            trigger: '#',
-            keyword: mpHotKeyword.value,
-            content: '#' + mpHotKeyword.value,
-          })
+          if (ch === '#') {
+            // 连续输入 # 时，仅将最后一个 # 作为标签起点
+            mpHotTriggerIndex.value = triggerPos + i
+            mpHotKeyword.value = ''
+            emit('search-change', { type: 'tag', trigger: '#', keyword: '', content: '#' })
+          } else {
+            mpHotKeyword.value += ch
+            emit('search-change', {
+              type: 'tag',
+              trigger: '#',
+              keyword: mpHotKeyword.value,
+              content: '#' + mpHotKeyword.value,
+            })
+          }
         }
       }
     }
@@ -707,10 +779,12 @@ defineExpose({
         .filter((m) => !(m.type === 'text' && !m.value?.trim()))
     }
     // 将标签插入到内容最前面
-    setValue([{ type: 'tag', value: data.name, id: data.id }, ...model])
+    console.log('------', model)
+    setValue([...model, { type: 'tag', value: data.name, id: data.id }])
     closeHotPanel()
   },
   closeHotPanel,
+  setHotPanelVisible,
   // #endif
 })
 

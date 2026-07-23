@@ -272,14 +272,20 @@
       </view>
     </wd-action-sheet>
 
-    <!-- ========== 用户筛选弹窗 ========== -->
-    <wd-action-sheet
+    <!-- ========== 用户筛选弹窗（使用 wd-popup 以便 custom-style 直接控制 .wd-popup 高度） ========== -->
+    <wd-popup
       v-model="showUserFilter"
-      :title="t('social.search.filter.user')"
+      position="bottom"
+      :custom-style="userFilterPopupStyle"
       :z-index="1100"
-      :custom-class="keyboardHeight > 0 ? 'user-filter-sheet--keyboard' : ''"
-      @closed="onUserFilterClosed"
+      @close="onUserFilterClosed"
     >
+      <view class="userFilterHeader">
+        <text class="userFilterTitle">{{ t('social.search.filter.user') }}</text>
+        <view class="userFilterClose" @click="showUserFilter = false">
+          <text class="closeIcon">✕</text>
+        </view>
+      </view>
       <view class="filterContent">
         <view class="searchMember">
           <wd-input
@@ -375,7 +381,7 @@
           </wd-button>
         </view>
       </view>
-    </wd-action-sheet>
+    </wd-popup>
 
     <!-- 操作面板 -->
     <wd-action-sheet
@@ -470,10 +476,12 @@ onMounted(() => {
   // 加载最近选择的成员
   loadRecentMembers()
 
-  // 监听键盘高度变化
-  uni.onKeyboardHeightChange((res) => {
-    keyboardHeight.value = res.height || 0
-  })
+  // 监听键盘高度变化（H5 等平台可能不支持，需做存在性检查）
+  if (typeof uni.onKeyboardHeightChange === 'function') {
+    uni.onKeyboardHeightChange((res) => {
+      keyboardHeight.value = res.height || 0
+    })
+  }
 
   // 监听刷新事件（从编辑页返回后重新搜索）
   uni.$on('refreshNormalPost', () => {
@@ -485,7 +493,9 @@ onMounted(() => {
 
 onUnmounted(() => {
   uni.$off('refreshNormalPost')
-  uni.offKeyboardHeightChange()
+  if (typeof uni.offKeyboardHeightChange === 'function') {
+    uni.offKeyboardHeightChange()
+  }
 })
 
 const navigateBack = () => {
@@ -708,7 +718,6 @@ const reportSheetSelect = ({ item, index }: any) => {
   }
   if (index === reportActionIndex.unban) {
     handleUnban()
-    return
   }
 }
 
@@ -1209,6 +1218,20 @@ const getTimeRange = () => {
 // 用户筛选
 // ============================================================
 const showUserFilter = ref(false)
+
+/** wd-popup custom-style：用 screenHeight 避免 adjustResize 下 windowHeight 被双重扣减 */
+const userFilterPopupStyle = computed(() => {
+  const sysInfo = uni.getSystemInfoSync()
+  const navHeightPx = (navHeight.value * sysInfo.windowWidth) / 750
+  if (keyboardHeight.value > 0) {
+    // 键盘唤起时：可用高度 = 屏幕高度 - 键盘高度 - 导航栏高度
+    const maxH = sysInfo.screenHeight - keyboardHeight.value - navHeightPx
+    return `max-height: ${maxH}px;`
+  }
+  // 无键盘时：最大高度 = 屏幕高度 - 导航栏高度
+  const maxH = sysInfo.screenHeight - navHeightPx
+  return `max-height: ${maxH}px;`
+})
 const memberKeyword = ref('')
 const searchedUsers = ref<any[]>([])
 /** 弹窗内临时选中的用户 ID */
@@ -1744,6 +1767,7 @@ const handleLevelIconError = (member: any) => {
 
 /* ========== 时间筛选弹窗内容 ========== */
 .filterContent {
+  // max-height: 60vh;
   padding: 24rpx 24rpx;
 
   .timePresetRow {
@@ -2132,9 +2156,25 @@ const handleLevelIconError = (member: any) => {
   }
 }
 
-/* ========== 用户筛选弹窗键盘适配 ========== */
-:deep(.user-filter-sheet--keyboard) {
-  bottom: var(--keyboard-height, 0px) !important;
+/* ========== 用户筛选弹窗样式 ========== */
+.userFilterHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx 32rpx;
+  border-bottom: 1rpx solid #eee;
+}
+.userFilterTitle {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+}
+.userFilterClose {
+  padding: 8rpx 16rpx;
+}
+.closeIcon {
+  font-size: 32rpx;
+  color: #999;
 }
 
 /* ========== 空状态 ========== */

@@ -118,6 +118,9 @@ onMounted(() => {
   uni.$on('switchToSocialTab', () => {
     activeTab.value = t('discover.tabs.social')
   })
+  uni.$on('switchToPromotionTab', () => {
+    activeTab.value = t('discover.tabs.promotion')
+  })
   uni.$on('switchToChildTab', (tab: string | number) => {
     if (tab === 'liberty' || tab === 'portfolio') isFixed.value = true
     else isFixed.value = false
@@ -265,6 +268,7 @@ const handleRefreshError = () => {
 onUnmounted(() => {
   uni.$emit('discoverPageVisibilityChange', false)
   uni.$off('switchToSocialTab')
+  uni.$off('switchToPromotionTab')
   uni.$off('switchToLibertyCatsTab')
   uni.$off('discoverActiveTabChange')
 })

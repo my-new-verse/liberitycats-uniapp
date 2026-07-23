@@ -851,6 +851,15 @@ const updateBanAction = (isBanned: boolean) => {
   reportActions.value = actions
 }
 
+/** 同步列表中同一用户的禁言状态 */
+const syncMemberBanState = (memberId: number, isBanned: boolean) => {
+  socialList.value.data.forEach((post) => {
+    if (post.member_id === memberId) {
+      post.member.is_banned = isBanned
+    }
+  })
+}
+
 function reportSheetSelect({ item, index }) {
   if (index === reportActionIndex.follow) {
     const member = reportPostItem.value.member
@@ -940,15 +949,10 @@ const reportPost = async (post: getCommunityPostListApiResponse['data'][number])
   banTargetMemberId.value = member.id
   banTargetMemberName.value = member.nickname || ''
 
-  // 管理员权限：异步查询禁言状态
+  // 管理员权限：直接使用 member.is_banned
   if (userStore.userInfo.community_permissions?.can_take_down === 1) {
-    try {
-      const statusRes = await getPostBanStatusApi(member.id, 'social')
-      const isBanned = statusRes.code === 1 && statusRes.data?.is_banned
-      updateBanAction(isBanned)
-    } catch (e) {
-      /* ignore */
-    }
+    const isBanned = member.is_banned
+    updateBanAction(isBanned)
   }
 }
 
@@ -1043,6 +1047,8 @@ const confirmBan = () => {
     .then((res) => {
       if (res.code === 1) {
         uni.showToast({ title: res.msg || t('common.operation_success'), icon: 'none' })
+        // 同步列表中该用户的禁言状态为已禁言
+        syncMemberBanState(banTargetMemberId.value, true)
       } else {
         toast.show(res.msg || t('common.error'))
       }
@@ -1060,6 +1066,8 @@ const handleUnban = () => {
       unbanPostApi(banTargetMemberId.value).then((res) => {
         if (res.code === 1) {
           uni.showToast({ title: res.msg || t('common.operation_success'), icon: 'none' })
+          // 同步列表中该用户的禁言状态为未禁言
+          syncMemberBanState(banTargetMemberId.value, false)
         } else {
           toast.show(res.msg || t('common.error'))
         }

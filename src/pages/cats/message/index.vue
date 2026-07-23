@@ -549,22 +549,48 @@ const toDetail = (notificationItem: any) => {
         // 点赞
         case 'like':
           const { type, id } = interactionTarget
-          if (type === 'Comment')
-            toUrlOnce(
-              `/pages/cats/social/detail?id=${rootPostId}&showComment=${true}&commentId=${id}`,
-            )
-          else toUrlOnce('/pages/cats/social/detail?id=' + id)
+          // 根据 post_category 判断是跳转 social detail 还是 ad_detail
+          const isAdvertisement = context?.post_category === 'advertisement'
+          if (isAdvertisement) {
+            // 广告详情页面
+            const adId = context?.id || rootPostId
+            toUrlOnce('/pages/cats/social/ad_detail?id=' + adId)
+          } else {
+            // 普通社交帖子
+            if (type === 'Comment')
+              toUrlOnce(
+                `/pages/cats/social/detail?id=${rootPostId}&showComment=${true}&commentId=${id}`,
+              )
+            else toUrlOnce('/pages/cats/social/detail?id=' + id)
+          }
           break
         // 特别关注发帖
         case 'special_follow_post':
-          toUrlOnce('/pages/cats/social/detail?id=' + rootPostId)
+          // 根据 post_category 判断是跳转 social detail 还是 ad_detail
+          const isSpecialFollowAd = context?.post_category === 'advertisement'
+          if (isSpecialFollowAd) {
+            // 广告详情页面
+            const adId = context?.id || rootPostId
+            toUrlOnce('/pages/cats/social/ad_detail?id=' + adId)
+          } else {
+            // 普通社交帖子
+            toUrlOnce('/pages/cats/social/detail?id=' + rootPostId)
+          }
           break
         // 评论
         case 'comment':
-          // 评论的话，都要跳到对应的评论，现在的评论只能评论帖子
-          toUrlOnce(
-            `/pages/cats/social/detail?id=${rootPostId}&showComment=${true}&commentId=${context?.commentId}`,
-          )
+          // 评论的话，要根据 post_category 判断是跳转 social detail 还是 ad_detail
+          const isCommentAd = context?.post_category === 'advertisement'
+          if (isCommentAd) {
+            // 广告详情页面
+            const adId = context?.id || rootPostId
+            toUrlOnce('/pages/cats/social/ad_detail?id=' + adId)
+          } else {
+            // 普通社交帖子 - 跳到对应的评论
+            toUrlOnce(
+              `/pages/cats/social/detail?id=${rootPostId}&showComment=${true}&commentId=${context?.commentId}`,
+            )
+          }
           break
         default:
           break

@@ -183,6 +183,19 @@ export default ({ command, mode }) => {
           drop_debugger: true,
         },
       },
+      rollupOptions: {
+        onwarn(warning, warn) {
+          // 过滤 renderjs 双 script 块导致的 sourcemap 冲突警告
+          if (
+            warning.code === 'MULTIPLE_SOURCemap_CONFLICTS' ||
+            (warning.message &&
+              warning.message.includes('Multiple conflicting contents for sourcemap source'))
+          ) {
+            return
+          }
+          warn(warning)
+        },
+      },
     },
     optimizeDeps: {
       exclude:

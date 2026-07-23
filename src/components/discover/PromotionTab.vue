@@ -16,13 +16,13 @@
       >
         {{ t('discover.social.filter.hot') }}
       </view>
-      <!-- <view
+      <view
         class="opItem"
         :class="{ active: activeFilter === 'following' }"
         @click="handleFilterChange('following')"
       >
         {{ t('discover.social.filter.following') }}
-      </view> -->
+      </view>
       <!-- <image src="/static/images/filter1.png" class="filterIcon" mode="aspectFit" /> -->
       <image
         src="/static/images/search1.png"
@@ -74,7 +74,11 @@
       </template>
     </view>
     <!-- 发布浮窗 -->
-    <view class="pubSocial" @click="toUrl('/pages/cats/social/publish?category=promotion', true)">
+    <view
+      v-if="hasPermission"
+      class="pubSocial"
+      @click="toUrl('/pages/cats/social/publish?category=promotion', true)"
+    >
       <view class="pubImg"></view>
     </view>
     <!-- 消息入口浮窗 -->
@@ -138,9 +142,9 @@ import {
   deleteFollowApi,
   setSpecialFollowApi,
   adminRemovalApi,
-  getPostBanStatusApi,
   banPostApi,
   unbanPostApi,
+  checkAdEligibilityApi,
 } from '@/service/api/community'
 import { useUserStore } from '@/store/user'
 import { useMessage, useToast } from 'wot-design-uni'
@@ -164,6 +168,21 @@ function fetchUnreadCount() {
     .catch(() => {})
 }
 
+/** 检查推广发布资格 */
+const checkAdEligibility = async () => {
+  try {
+    const res = await checkAdEligibilityApi()
+    if (res.code === 1 && res.data.checks?.is_cat_holder === false) {
+      hasPermission.value = false
+    } else {
+      hasPermission.value = true
+    }
+  } catch (e) {
+    console.error('checkAdEligibility failed', e)
+    hasPermission.value = true
+  }
+}
+
 const props = defineProps<{
   state: string
   cntPaddingTop: number
@@ -181,6 +200,9 @@ const handleOpenShare = (item: any) => {
 }
 
 const activeFilter = ref('latest')
+
+// 推广发布权限
+const hasPermission = ref(true)
 
 // 类型卡片数据
 const activeCardType = ref(0)
@@ -264,7 +286,10 @@ const loadData = async (page = 1, refresh = false) => {
     if (activeCardType.value !== 0) {
       params.ad_type_id = activeCardType.value
     }
-
+    if (activeFilter.value === 'following') {
+      params.scope = 'following'
+      delete params.sort
+    }
     const res = await getAdPostListApi(params)
     if (res.code === 1 && res.data) {
       if (res.data.current_page === 1) {
@@ -372,6 +397,17 @@ const updateBanAction = (isBanned: boolean) => {
   reportActions.value = actions
 }
 
+/** 同步列表中同一用户的禁言状态 */
+const syncMemberBanState = (memberId: number, isBanned: boolean) => {
+  Object.values(adListCache.value).forEach((cache) => {
+    cache.data.forEach((post) => {
+      if (post.member_id === memberId) {
+        post.member.is_banned = isBanned
+      }
+    })
+  })
+}
+
 const handleBan = () => {
   banDays.value = 1
   banReason.value = ''
@@ -386,6 +422,8 @@ const confirmBan = () => {
     .then((res) => {
       if (res.code === 1) {
         uni.showToast({ title: res.msg || t('common.operation_success'), icon: 'none' })
+        // 同步列表中该用户的禁言状态为已禁言
+        syncMemberBanState(banTargetMemberId.value, true)
       } else {
         toast.show(res.msg || t('common.error'))
       }
@@ -403,6 +441,8 @@ const handleUnban = () => {
       unbanPostApi(banTargetMemberId.value).then((res) => {
         if (res.code === 1) {
           uni.showToast({ title: res.msg || t('common.operation_success'), icon: 'none' })
+          // 同步列表中该用户的禁言状态为未禁言
+          syncMemberBanState(banTargetMemberId.value, false)
         } else {
           toast.show(res.msg || t('common.error'))
         }
@@ -473,13 +513,10 @@ const reportPost = async (post: any) => {
   banTargetMemberId.value = member.id
   banTargetMemberName.value = member.nickname || ''
 
-  if (userStore.userInfo.community_permissions?.can_take_down === 1) {
-    try {
-      const statusRes = await getPostBanStatusApi(member.id, 'advertisement')
-      updateBanAction(statusRes.code === 1 && statusRes.data?.is_banned)
-    } catch (e) {
-      /* ignore */
-    }
+  // 管理员权限：直接使用 member.is_banned
+  if (userStore.userInfo.community_permissions?.can_take_down != null) {
+    const isBanned = member.is_banned
+    updateBanAction(isBanned)
   }
 }
 
@@ -675,6 +712,7 @@ onShow(() => {
 
 onMounted(async () => {
   fetchUnreadCount()
+  await checkAdEligibility()
   await loadAdTypes()
   loadData(1)
 

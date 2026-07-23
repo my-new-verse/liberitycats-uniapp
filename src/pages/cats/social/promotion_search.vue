@@ -185,13 +185,19 @@
     </wd-action-sheet>
 
     <!-- ========== 用户筛选弹窗 ========== -->
-    <wd-action-sheet
+    <wd-popup
       v-model="showUserFilter"
-      :title="t('social.search.filter.user')"
+      position="bottom"
+      :custom-style="userFilterPopupStyle"
       :z-index="1100"
-      :custom-class="keyboardHeight > 0 ? 'user-filter-sheet--keyboard' : ''"
-      @closed="onUserFilterClosed"
+      @close="onUserFilterClosed"
     >
+      <view class="userFilterHeader">
+        <text class="userFilterTitle">{{ t('social.search.filter.user') }}</text>
+        <view class="userFilterClose" @click="showUserFilter = false">
+          <text class="closeIcon">✕</text>
+        </view>
+      </view>
       <view class="filterContent">
         <view class="searchMember">
           <wd-input
@@ -275,7 +281,7 @@
           </wd-button>
         </view>
       </view>
-    </wd-action-sheet>
+    </wd-popup>
 
     <!-- ========== 类型筛选 ========== -->
     <wd-action-sheet v-model="showAdTypeFilter" title="类型" :z-index="1100">
@@ -410,10 +416,12 @@ onMounted(() => {
   // 加载最近选择的成员
   loadRecentMembers()
 
-  // 键盘高度监听（用户筛选弹窗键盘适配）
-  uni.onKeyboardHeightChange((res) => {
-    keyboardHeight.value = res.height || 0
-  })
+  // 键盘高度监听（H5 等平台可能不支持，需做存在性检查）
+  if (typeof uni.onKeyboardHeightChange === 'function') {
+    uni.onKeyboardHeightChange((res) => {
+      keyboardHeight.value = res.height || 0
+    })
+  }
 })
 
 const navigateBack = () => {
@@ -457,6 +465,21 @@ const searchResult = ref<{
 
 // ========== 用户筛选 ==========
 const showUserFilter = ref(false)
+
+/** wd-popup custom-style：用 screenHeight 避免 adjustResize 下 windowHeight 被双重扣减 */
+const userFilterPopupStyle = computed(() => {
+  const sysInfo = uni.getSystemInfoSync()
+  const navHeightPx = (navHeight.value * sysInfo.windowWidth) / 750
+  if (keyboardHeight.value > 0) {
+    // 键盘唤起时：可用高度 = 屏幕高度 - 键盘高度 - 导航栏高度
+    const maxH = sysInfo.screenHeight - keyboardHeight.value - navHeightPx
+    return `max-height: ${maxH}px;`
+  }
+  // 无键盘时：最大高度 = 屏幕高度 - 导航栏高度
+  const maxH = sysInfo.screenHeight - navHeightPx
+  return `max-height: ${maxH}px;`
+})
+
 const memberKeyword = ref('')
 const searchedUsers = ref<any[]>([])
 const tempSelectedUserIds = ref<number[]>([])
@@ -1301,7 +1324,9 @@ onMounted(async () => {
 
 onUnmounted(() => {
   uni.$off('refreshPromotionPost')
-  uni.offKeyboardHeightChange()
+  if (typeof uni.offKeyboardHeightChange === 'function') {
+    uni.offKeyboardHeightChange()
+  }
 })
 </script>
 
@@ -2043,7 +2068,24 @@ onUnmounted(() => {
   padding-bottom: 24rpx;
 }
 
-:deep(.user-filter-sheet--keyboard) {
-  bottom: var(--keyboard-height, 0px) !important;
+/* ========== 用户筛选弹窗样式 ========== */
+.userFilterHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx 32rpx;
+  border-bottom: 1rpx solid #eee;
+}
+.userFilterTitle {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+}
+.userFilterClose {
+  padding: 8rpx 16rpx;
+}
+.closeIcon {
+  font-size: 32rpx;
+  color: #999;
 }
 </style>

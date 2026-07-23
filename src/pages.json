@@ -681,14 +681,16 @@
       "path": "pages/cats/social/post_search",
       "type": "page",
       "style": {
-        "navigationStyle": "custom"
+        "navigationStyle": "custom",
+        "softinputMode": "adjustResize"
       }
     },
     {
       "path": "pages/cats/social/promotion_search",
       "type": "page",
       "style": {
-        "navigationStyle": "custom"
+        "navigationStyle": "custom",
+        "softinputMode": "adjustResize"
       }
     },
     {
@@ -697,7 +699,8 @@
       "style": {
         "navigationStyle": "custom",
         "navigationBarTitleText": "Publish",
-        "backgroundColor": "#f7f6f4"
+        "backgroundColor": "#f7f6f4",
+        "softinputMode": "adjustResize"
       }
     },
     {
