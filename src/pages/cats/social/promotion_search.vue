@@ -382,7 +382,6 @@ import {
   deleteFollowApi,
   setSpecialFollowApi,
   adminRemovalApi,
-  getPostBanStatusApi,
   banPostApi,
   unbanPostApi,
 } from '@/service/api/community'
@@ -1020,6 +1019,15 @@ const updateBanAction = (isBanned: boolean) => {
   }
   reportActions.value = actions
 }
+/** 同步搜索结果中同一用户的禁言状态 */
+const syncMemberBanState = (memberId: number, isBanned: boolean) => {
+  searchResult.value.posts.forEach((post) => {
+    if (post.member_id === memberId) {
+      post.member.is_banned = isBanned
+    }
+  })
+}
+
 const handleBan = () => {
   banDays.value = 1
   banReason.value = ''
@@ -1029,7 +1037,16 @@ const handleBan = () => {
     .catch(() => {})
 }
 const confirmBan = () => {
-  banPostApi(banTargetMemberId.value, banDays.value, banReason.value || undefined).then((res) => {})
+  banPostApi(banTargetMemberId.value, banDays.value, banReason.value || undefined)
+    .then((res) => {
+      if (res.code === 1) {
+        uni.showToast({ title: res.msg || t('common.operation_success'), icon: 'none' })
+        syncMemberBanState(banTargetMemberId.value, true)
+      } else {
+        toast.show(res.msg || t('common.error'))
+      }
+    })
+    .catch(() => {})
 }
 const handleUnban = () => {
   message
@@ -1039,7 +1056,12 @@ const handleUnban = () => {
     })
     .then(() => {
       unbanPostApi(banTargetMemberId.value).then((res) => {
-        if (res.code === 1) uni.showToast({ title: res.msg || '操作成功', icon: 'none' })
+        if (res.code === 1) {
+          uni.showToast({ title: res.msg || t('common.operation_success'), icon: 'none' })
+          syncMemberBanState(banTargetMemberId.value, false)
+        } else {
+          toast.show(res.msg || t('common.error'))
+        }
       })
     })
     .catch(() => {})
@@ -1121,13 +1143,10 @@ const reportPost = async (post: any) => {
   reportPostItem.value = post
   banTargetMemberId.value = member.id
   banTargetMemberName.value = member.nickname || ''
+  // 管理员权限：直接使用 member.is_banned
   if (userStore.userInfo.community_permissions?.can_take_down === 1) {
-    try {
-      const statusRes = await getPostBanStatusApi(member.id, 'advertisement')
-      updateBanAction(statusRes.code === 1 && statusRes.data?.is_banned)
-    } catch (e) {
-      /* ignore */
-    }
+    const isBanned = member.is_banned
+    updateBanAction(isBanned)
   }
 }
 

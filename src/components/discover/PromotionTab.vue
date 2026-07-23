@@ -514,7 +514,7 @@ const reportPost = async (post: any) => {
   banTargetMemberName.value = member.nickname || ''
 
   // 管理员权限：直接使用 member.is_banned
-  if (userStore.userInfo.community_permissions?.can_take_down != null) {
+  if (userStore.userInfo.community_permissions?.can_take_down === 1) {
     const isBanned = member.is_banned
     updateBanAction(isBanned)
   }
