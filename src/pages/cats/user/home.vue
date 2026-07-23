@@ -118,6 +118,11 @@
             <template v-if="activePostFilter === 'normal'">
               <view class="cell socialBox" v-for="item in socialList.data" :key="item.id">
                 <view class="socialItem">
+                  <view
+                    v-if="item.member_id === userStore.userInfo?.member_id"
+                    class="delBox"
+                    @click="handleDelPost(item.id)"
+                  ></view>
                   <view class="socialHead">
                     <view class="avatarBox">
                       <image
@@ -133,6 +138,11 @@
                     </view>
                     <view class="nameWrap">
                       <view class="name">{{ formatNickname(item.member.nickname, 22) }}</view>
+                      <view
+                        v-if="item.member_id !== userStore.userInfo?.member_id"
+                        class="moreActionsBtn"
+                        @click.stop="openPostActions(item)"
+                      ></view>
                     </view>
                     <view v-if="item.tag?.name" class="tag" :class="item.tag?.extend_json?.class">
                       {{ item.tag?.name }}
@@ -179,7 +189,11 @@
             <template v-if="activePostFilter === 'promotion'">
               <view class="cell socialBox" v-for="item in socialList.data" :key="item.id">
                 <view class="socialItem">
-                  <view class="delBox" @click="handleDelPost(item.id)"></view>
+                  <view
+                    v-if="item.member_id === userStore.userInfo?.member_id"
+                    class="delBox"
+                    @click="handleDelPost(item.id)"
+                  ></view>
                   <view class="socialHead">
                     <view
                       class="avatarBox"
@@ -198,6 +212,11 @@
                     </view>
                     <view class="nameWrap">
                       <view class="name">{{ formatNickname(item.member?.nickname, 22) }}</view>
+                      <view
+                        v-if="item.member_id !== userStore.userInfo?.member_id"
+                        class="moreActionsBtn"
+                        @click.stop="openPostActions(item)"
+                      ></view>
                     </view>
                   </view>
                   <view
@@ -650,6 +669,7 @@ const onRefreshAbort = () => {
 // ========== 更多操作面板 ==========
 const showMoreActions = ref(false)
 const moreActions = ref<any[]>([])
+const reportTargetPost = ref<any>(null)
 
 /** 关注按钮文案和样式 */
 const followBtnInfo = computed(() => {
@@ -669,6 +689,7 @@ const openMoreActions = () => {
     toUrl('/pages/cats/login', true)
     return
   }
+  reportTargetPost.value = null
   const isFollowing = userInfo.value.is_following === 1
   const isSpecial = userInfo.value.is_special_following === 1
   const actions: any[] = []
@@ -691,6 +712,25 @@ const openMoreActions = () => {
 
   //   actions.push({ name: '', type: 'divider', disabled: true })
   //   actions.push({ name: t('social.index.user.block'), type: 'block' })
+  moreActions.value = actions
+  showMoreActions.value = true
+}
+
+const openPostActions = (post: any) => {
+  if (!userStore.isLogin) {
+    toUrl('/pages/cats/login', true)
+    return
+  }
+  reportTargetPost.value = post
+  const actions: any[] = []
+
+  actions.push({ name: t('social.index.post.report'), type: 'report', color: '#ff6b03' })
+  actions.push({ name: t('social.index.user.block'), type: 'block' })
+
+  if (userStore.userInfo.community_permissions?.can_take_down === 1) {
+    actions.push({ name: t('report.admin.remove_post'), type: 'remove', color: '#FF3B30' })
+  }
+
   moreActions.value = actions
   showMoreActions.value = true
 }
@@ -755,35 +795,51 @@ const handleBlock = () => {
     toUrl('/pages/cats/login', true)
     return
   }
-  message
+  const targetPost = reportTargetPost.value
+  message2
     .confirm({ msg: t('social.index.report_user_confirm_txt') })
     .then(() => {
       uni.showLoading()
-      // 用用户的第一篇帖子 ID 作为 block 的标识
-      const postId = socialList.value.data?.[0]?.id || memberId.value
+      const postId = targetPost?.id || socialList.value.data?.[0]?.id || memberId.value
       blockUserApi(postId)
         .then((res) => {
           if (res.data?.result === 1) {
             uni.showToast({ title: t('common.operation_success'), icon: 'none' })
-            setTimeout(() => uni.navigateBack(), 500)
+            if (targetPost) {
+              socialList.value.data = socialList.value.data.filter(
+                (i) => i.member_id !== targetPost.member_id,
+              )
+            } else {
+              setTimeout(() => uni.navigateBack(), 500)
+            }
           }
         })
-        .finally(() => uni.hideLoading())
+        .finally(() => {
+          uni.hideLoading()
+          reportTargetPost.value = null
+        })
     })
     .catch(() => {})
 }
 
 const handleReport = () => {
-  uni.navigateTo({ url: `/pages/cats/report/content?id=${memberId.value}&type=user` })
+  const targetPost = reportTargetPost.value
+  reportTargetPost.value = null
+  if (targetPost) {
+    uni.navigateTo({ url: `/pages/cats/report/content?id=${targetPost.id}&type=post` })
+  } else {
+    uni.navigateTo({ url: `/pages/cats/report/content?id=${memberId.value}&type=user` })
+  }
 }
 
 const handleAdminRemove = () => {
-  const postId = socialList.value.data?.[0]?.id
+  const targetPost = reportTargetPost.value
+  const postId = targetPost?.id || socialList.value.data?.[0]?.id
   if (!postId) {
     uni.showToast({ title: t('common.no_data'), icon: 'none' })
     return
   }
-  message
+  message2
     .confirm({
       title: t('report.admin.remove_post'),
       msg: t('social.index.post.remove_content'),
@@ -797,7 +853,10 @@ const handleAdminRemove = () => {
             uni.showToast({ title: t('common.operation_success'), icon: 'none' })
           }
         })
-        .finally(() => uni.hideLoading())
+        .finally(() => {
+          uni.hideLoading()
+          reportTargetPost.value = null
+        })
     })
     .catch(() => {})
 }
@@ -1171,6 +1230,20 @@ const doHandlePreview = (images: string[], currentIndex: number = 0, needDealImg
   background-repeat: no-repeat;
   background-position: center;
   background-size: 24rpx 24rpx;
+  flex-shrink: 0;
+}
+
+.nameWrap .moreActionsBtn {
+  margin-left: auto;
+  background-repeat: no-repeat;
+  background-size: 100%;
+}
+
+.socialHead .nameWrap {
+  flex: 1;
+  min-width: 0;
+  background-repeat: no-repeat;
+  background-size: 100%;
 }
 
 /* ========== 操作面板分割线 ========== */
