@@ -121,6 +121,12 @@ onMounted(() => {
   uni.$on('switchToPromotionTab', () => {
     activeTab.value = t('discover.tabs.promotion')
   })
+  uni.$on('switchToNewsTabFromChat', () => {
+    activeTab.value = t('discover.tabs.news')
+    nextTick(() => {
+      uni.$emit('switchToNewsTab')
+    })
+  })
   uni.$on('switchToChildTab', (tab: string | number) => {
     if (tab === 'liberty' || tab === 'portfolio') isFixed.value = true
     else isFixed.value = false
@@ -269,6 +275,7 @@ onUnmounted(() => {
   uni.$emit('discoverPageVisibilityChange', false)
   uni.$off('switchToSocialTab')
   uni.$off('switchToPromotionTab')
+  uni.$off('switchToNewsTabFromChat')
   uni.$off('switchToLibertyCatsTab')
   uni.$off('discoverActiveTabChange')
 })

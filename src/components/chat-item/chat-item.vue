@@ -62,6 +62,7 @@
         </view>
         <view class="chat-content-container">
           <text
+            v-if="!isNewsMessageType(item.message_type)"
             :class="{
               'chat-user-name': true,
               'chat-location-me': item.is_self,
@@ -239,6 +240,317 @@
                 </view>
               </view>
             </view>
+            <!-- 新闻卡片 -->
+            <view
+              v-else-if="
+                item.message_type === 'news_card' && item.payload.card_type === 'hourly_news_digest'
+              "
+              class="news-wrapper"
+            >
+              <!-- 回复引用 -->
+              <view
+                v-if="item.reply_to || item.reply_message"
+                class="reply-ref"
+                @click.stop="handleReplyClick"
+              >
+                <text class="reply-ref-name">
+                  {{ item.reply_to?.sender_nickname || item.reply_message?.sender?.nickname }}：
+                </text>
+              </view>
+              <view class="news-top-row">
+                <text class="chat-user-name">{{ getMessageSenderDisplayName(item) }}</text>
+                <view
+                  v-if="
+                    item.payload?.card_type === 'hourly_flash_digest' ||
+                    item.payload?.card_type === 'hourly_news_digest' ||
+                    item.payload?.card_type === 'hourly_important_news_digest' ||
+                    item.payload?.card_type === 'news_collection'
+                  "
+                  class="news-card-header-row"
+                >
+                  <text class="news-card-header-text">
+                    定时推送 / {{ item.payload?.category || '新闻' }}
+                  </text>
+                </view>
+              </view>
+              <view class="news-card">
+                <view class="news-card-body">
+                  <template v-if="item.payload?.items?.length">
+                    <view
+                      v-for="(newsItem, newsIndex) in item.payload?.items"
+                      :key="newsIndex"
+                      class="news-digest-item"
+                    >
+                      <view v-if="newsItem?.cover" class="news-digest-cover">
+                        <image
+                          :src="newsItem.cover"
+                          mode="aspectFill"
+                          class="news-digest-cover-img"
+                        />
+                      </view>
+                      <view class="news-digest-content">
+                        <view v-if="newsItem?.category" class="news-digest-category">
+                          {{ newsItem.category }}
+                        </view>
+                        <text class="news-digest-title">{{ newsItem?.title || '' }}</text>
+                        <text class="news-digest-summary">{{ newsItem?.summary || '' }}</text>
+                        <view class="news-digest-footer">
+                          <text class="news-digest-source">
+                            {{ newsItem?.source || '' }}{{ newsItem?.source ? ' • ' : ''
+                            }}{{ formatRelativeTime(newsItem?.published_at) }}
+                          </text>
+                          <text
+                            class="news-digest-read-more"
+                            @click.stop="handleNewsCardClick(newsItem)"
+                          >
+                            阅读全文 →
+                          </text>
+                        </view>
+                      </view>
+                    </view>
+                  </template>
+                  <view v-else class="news-digest-empty">
+                    <text class="news-digest-empty-title">{{ item.payload?.title || '' }}</text>
+                  </view>
+                </view>
+              </view>
+            </view>
+            <!-- 热点新闻卡片 -->
+            <view
+              v-else-if="
+                item.message_type === 'news_card' &&
+                item.payload.card_type === 'hourly_important_news_digest'
+              "
+              class="news-wrapper"
+            >
+              <view class="news-top-row">
+                <text class="chat-user-name">{{ getMessageSenderDisplayName(item) }}</text>
+                <view
+                  v-if="
+                    item.payload?.card_type === 'hourly_flash_digest' ||
+                    item.payload?.card_type === 'hourly_news_digest' ||
+                    item.payload?.card_type === 'hourly_important_news_digest' ||
+                    item.payload?.card_type === 'news_collection'
+                  "
+                  class="news-card-header-row"
+                >
+                  <text class="news-card-header-text">
+                    定时推送 / {{ item.payload?.category || '热点新闻' }}
+                  </text>
+                </view>
+              </view>
+              <view class="news-card">
+                <view class="news-card-body">
+                  <template v-if="item.payload?.items?.length">
+                    <view
+                      v-for="(newsItem, newsIndex) in item.payload?.items"
+                      :key="newsIndex"
+                      class="hot-news-item"
+                      @click.stop="handleNewsCardClick(newsItem)"
+                    >
+                      <view v-if="newsItem?.cover" class="hot-news-cover">
+                        <image :src="newsItem.cover" mode="aspectFill" class="hot-news-cover-img" />
+                      </view>
+                      <view class="hot-news-content">
+                        <text class="news-card-title">{{ newsItem?.title || '' }}</text>
+                        <text class="news-card-summary">{{ newsItem?.summary || '' }}</text>
+                        <view class="hot-news-footer">
+                          <text class="hot-news-source">
+                            {{ newsItem?.source || '' }}{{ newsItem?.source ? ' • ' : ''
+                            }}{{ formatRelativeTime(newsItem?.published_at) }}
+                          </text>
+                          <text
+                            class="hot-news-read-more"
+                            @click.stop="handleNewsCardClick(newsItem)"
+                          >
+                            阅读全文 →
+                          </text>
+                        </view>
+                      </view>
+                    </view>
+                  </template>
+                  <view v-else class="hot-news-empty">
+                    <text class="hot-news-empty-title">{{ item.payload?.title || '' }}</text>
+                  </view>
+                </view>
+              </view>
+            </view>
+            <!-- 快讯卡片 -->
+            <view
+              v-else-if="
+                item.message_type === 'news_card' &&
+                item.payload.news_type === 'news' &&
+                item.payload.card_type === 'news_collection'
+              "
+              class="news-wrapper"
+            >
+              <view class="news-top-row">
+                <text class="chat-user-name">{{ getMessageSenderDisplayName(item) }}</text>
+                <view
+                  v-if="
+                    !(item.reply_to || item.reply_message) &&
+                    (item.payload?.card_type === 'hourly_flash_digest' ||
+                      item.payload?.card_type === 'hourly_news_digest' ||
+                      item.payload?.card_type === 'hourly_important_news_digest' ||
+                      item.payload?.card_type === 'news_collection')
+                  "
+                  class="news-card-header-row"
+                  style="position: absolute; top: 0; right: 0"
+                >
+                  <text class="news-card-header-text">定时推送</text>
+                </view>
+              </view>
+              <view class="news-card">
+                <view class="quick-news-body">
+                  <!-- 回复引用 -->
+                  <view
+                    v-if="item.reply_to || item.reply_message"
+                    class="reply-ref"
+                    @click.stop="handleReplyClick"
+                  >
+                    <text class="reply-ref-name">
+                      {{ item.reply_to?.sender_nickname || item.reply_message?.sender?.nickname }}：
+                    </text>
+                    <text class="reply-ref-content">
+                      {{ replyPreviewContent }}
+                    </text>
+                  </view>
+
+                  <!-- 卡片标题和更新时间 -->
+                  <view v-if="item.payload?.items?.length" class="quick-news-header">
+                    <view class="quick-news-title-row">
+                      <view v-if="item.payload?.category" class="quick-news-category-badge">
+                        {{ item.payload.category }}
+                      </view>
+                      <text class="quick-news-title">
+                        {{ item.payload?.title || '今晚快讯' }}
+                      </text>
+                    </view>
+                    <text class="quick-news-update-time">
+                      {{ item.payload?.updateTime || '按时间倒序' }}
+                    </text>
+                  </view>
+
+                  <!-- wd-cell 展示快讯列表 -->
+                  <wd-cell-group
+                    v-if="item.payload?.items?.length"
+                    :border="false"
+                    custom-class="quick-news-cell-group"
+                  >
+                    <wd-cell
+                      v-for="(newsItem, newsIndex) in item.payload?.items"
+                      :key="newsIndex"
+                      :title="newsItem.title"
+                      is-link
+                      custom-class="quick-news-cell"
+                      @click="handleNewsCardClick(newsItem)"
+                    />
+                  </wd-cell-group>
+                  <view v-else class="quick-news-empty">
+                    <text class="quick-news-empty-title">{{ item.payload?.title || '' }}</text>
+                  </view>
+                </view>
+              </view>
+            </view>
+            <!-- 快讯卡片（时间线样式） -->
+            <view
+              v-else-if="
+                (item.message_type === 'news_card' &&
+                  item.payload.news_type === 'flash' &&
+                  item.payload.card_type === 'news_collection') ||
+                item.payload.card_type === 'hourly_flash_digest'
+              "
+              class="news-wrapper"
+            >
+              <view class="news-top-row">
+                <text class="chat-user-name">{{ getMessageSenderDisplayName(item) }}</text>
+                <view
+                  v-if="
+                    !(item.reply_to || item.reply_message) &&
+                    (item.payload?.card_type === 'hourly_flash_digest' ||
+                      item.payload?.card_type === 'hourly_news_digest' ||
+                      item.payload?.card_type === 'hourly_important_news_digest' ||
+                      item.payload?.card_type === 'news_collection')
+                  "
+                  class="news-card-header-row"
+                  style="position: absolute; top: 0; right: 0"
+                >
+                  <text class="news-card-header-text">定时推送</text>
+                </view>
+              </view>
+              <view class="news-card">
+                <view class="quick-news-body">
+                  <!-- 回复引用 -->
+                  <view
+                    v-if="item.reply_to || item.reply_message"
+                    class="reply-ref"
+                    @click.stop="handleReplyClick"
+                  >
+                    <text class="reply-ref-name">
+                      {{ item.reply_to?.sender_nickname || item.reply_message?.sender?.nickname }}：
+                    </text>
+                    <text class="reply-ref-content">
+                      {{ replyPreviewContent }}
+                    </text>
+                  </view>
+
+                  <!-- 卡片标题和更新时间 -->
+                  <view v-if="item.payload?.items?.length" class="quick-news-header">
+                    <view class="quick-news-title-row">
+                      <view v-if="item.payload?.category" class="quick-news-category-badge">
+                        {{ item.payload.category }}
+                      </view>
+                      <text class="quick-news-title">
+                        {{ item.payload?.title || '今晚快讯' }}
+                      </text>
+                    </view>
+                    <text class="quick-news-update-time">
+                      {{ item.payload?.updateTime || '按时间倒序' }}
+                    </text>
+                  </view>
+                  <!-- wd-steps 时间线展示快讯列表 -->
+                  <wd-steps
+                    v-if="item.payload?.items?.length"
+                    :active="item.payload.items.length"
+                    vertical
+                    dot
+                    custom-class="quick-news-steps"
+                  >
+                    <wd-step
+                      v-for="(newsItem, newsIndex) in item.payload?.items"
+                      :key="newsIndex"
+                      status="finished"
+                    >
+                      <template #title>
+                        <view
+                          class="quick-news-timeline-item"
+                          @click.stop="handleNewsCardClick(newsItem)"
+                        >
+                          <text class="quick-news-timeline-time">
+                            {{ formatRelativeTime(newsItem?.published_at) }}
+                          </text>
+                          <text class="quick-news-timeline-title">{{ newsItem.title }}</text>
+                        </view>
+                      </template>
+                    </wd-step>
+                  </wd-steps>
+                  <view v-else class="quick-news-empty">
+                    <text class="quick-news-empty-title">{{ item.payload?.title || '' }}</text>
+                  </view>
+
+                  <!-- 底部全部快讯 -->
+                  <view
+                    v-if="item.payload?.items?.length"
+                    class="quick-news-footer"
+                    @click.stop="handleViewAllNews(item)"
+                  >
+                    <text class="quick-news-footer-text">
+                      {{ item.payload?.viewAllText || '全部快讯 ›' }}
+                    </text>
+                  </view>
+                </view>
+              </view>
+            </view>
           </view>
         </view>
       </template>
@@ -335,6 +647,10 @@ const replyMessageEmotionSrc = computed(() => {
   }
   return getEmotionMessageSrc(replyMessage)
 })
+
+const isNewsMessageType = (type: string) => {
+  return type === 'news' || type === 'hot_news' || type === 'news_card'
+}
 
 const getMessageSenderDisplayName = (msg: ChatMessage) => {
   const nickname = msg.sender?.nickname || ''
@@ -440,6 +756,27 @@ const EmotionTool = (() => {
 
 const retryFailedMessage = (msg) => {
   emit('retry', msg)
+}
+
+// news_card 单条点击跳转新闻详情
+const handleNewsCardClick = (newsItem: any) => {
+  const newsId = newsItem?.news_id
+  if (!newsId) return
+  toUrl(`/pages/cats/news/detail?id=${newsId}`)
+}
+
+// 查看全部快讯
+const handleViewAllNews = (item: any) => {
+  const url = item?.payload?.viewAllUrl
+  if (url) {
+    toUrl(url)
+    return
+  }
+  // 跳转到发现页新闻tab，子tab设置为全部快讯
+  uni.$emit('switchToNewsTabFromChat')
+  uni.switchTab({
+    url: '/pages/tabbar/discover',
+  })
 }
 
 // 头像长按 @提及
@@ -1005,8 +1342,512 @@ const handleAvatarClick = (memberId: number | undefined) => {
     height: 100%;
     border-radius: 16rpx;
     display: block;
-    // box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
     margin-top: 18rpx;
+  }
+}
+
+/* ========== 新闻卡片样式 ========== */
+.news-wrapper {
+  display: flex;
+  flex-direction: column;
+  margin-top: 10rpx;
+}
+
+.news-top-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 8rpx;
+  position: relative; /* 用于绝对定位右上角 badge */
+  justify-content: space-between;
+}
+
+.news-card-header-row {
+  display: inline-flex;
+  background-color: var(--liberty-cats-primary-color, #ff6b03);
+  padding: 4rpx 16rpx;
+  border-radius: 8rpx;
+
+  .news-card-header-text {
+    font-size: 22rpx;
+    color: #fff;
+    font-weight: 500;
+  }
+}
+
+.news-card {
+  // width: 520rpx;
+  background-color: #fff;
+  border-radius: 24rpx;
+  overflow: hidden;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
+}
+
+.news-card-body {
+  padding: 24rpx;
+}
+
+/* 新闻 digest 列表项 */
+.news-digest-item {
+  padding-bottom: 24rpx;
+  margin-bottom: 24rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+
+  &:last-child {
+    padding-bottom: 0;
+    margin-bottom: 0;
+    border-bottom: none;
+  }
+}
+
+/* 空状态 */
+.news-digest-empty,
+.hot-news-empty,
+.quick-news-empty {
+  padding: 20rpx 0;
+  text-align: center;
+}
+
+.news-digest-empty-title,
+.hot-news-empty-title,
+.quick-news-empty-title {
+  font-size: 28rpx;
+  color: #999;
+}
+
+.news-digest-cover {
+  width: 100%;
+  height: 280rpx;
+  border-radius: 12rpx;
+  overflow: hidden;
+  margin-bottom: 16rpx;
+
+  .news-digest-cover-img {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.news-digest-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.news-digest-category {
+  display: inline-flex;
+  align-self: flex-start;
+  background-color: var(--liberty-cats-primary-color, #ff6b03);
+  color: #fff;
+  font-size: 20rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+  font-weight: 500;
+  margin-bottom: 4rpx;
+}
+
+.news-digest-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #1a1a1a;
+  line-height: 1.4;
+}
+
+.news-digest-summary {
+  font-size: 24rpx;
+  color: #666;
+  line-height: 1.5;
+}
+
+.news-digest-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx solid #f0f0f0;
+}
+
+.news-digest-source {
+  font-size: 22rpx;
+  color: #999;
+}
+
+.news-digest-read-more {
+  font-size: 24rpx;
+  color: var(--liberty-cats-primary-color, #ff6b03);
+  font-weight: 500;
+}
+
+/* 新闻卡片横向布局 */
+.news-card-content {
+  display: flex;
+  gap: 20rpx;
+  align-items: center;
+}
+
+.news-card-thumb {
+  flex-shrink: 0;
+  width: 176rpx;
+  height: 188rpx;
+  border-radius: 12rpx;
+  overflow: hidden;
+  background-color: #f5f5f5;
+
+  .news-card-thumb-img {
+    width: 100%;
+    height: 100%;
+  }
+
+  .news-card-thumb-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #f0f0f0, #e0e0e0);
+  }
+}
+
+.news-card-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.news-card-tag-row {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  flex-wrap: wrap;
+}
+
+.news-card-tag {
+  font-size: 20rpx;
+  color: var(--liberty-cats-primary-color, #ff6b03);
+  background-color: rgba(255, 107, 3, 0.1);
+  padding: 4rpx 12rpx;
+  border-radius: 6rpx;
+  flex-shrink: 0;
+}
+
+.news-card-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #1a1a1a;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.news-card-source {
+  font-size: 22rpx;
+  color: #999;
+}
+
+.news-card-arrow {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-left: 12rpx;
+
+  .news-card-arrow-icon {
+    font-size: 40rpx;
+    color: #ccc;
+    font-weight: 300;
+    line-height: 1;
+  }
+}
+
+.hot-news-source-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4rpx;
+
+  .news-card-read-more {
+    font-size: 22rpx;
+    color: var(--liberty-cats-primary-color, #ff6b03);
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+}
+
+.news-card-summary {
+  font-size: 24rpx;
+  color: #666;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.news-card-footer {
+  padding-top: 16rpx;
+  margin-top: 16rpx;
+  border-top: 1rpx solid #f0f0f0;
+
+  .news-card-read-more {
+    font-size: 24rpx;
+    color: var(--liberty-cats-primary-color, #ff6b03);
+    font-weight: 500;
+  }
+}
+
+/* 热点新闻 */
+.hot-news-item {
+  padding-bottom: 24rpx;
+  margin-bottom: 24rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+
+  &:last-child {
+    padding-bottom: 0;
+    margin-bottom: 0;
+    border-bottom: none;
+  }
+}
+
+.hot-news-cover {
+  width: 100%;
+  height: 280rpx;
+  border-radius: 12rpx;
+  overflow: hidden;
+  margin-bottom: 20rpx;
+  background-color: #1a1a2e;
+
+  .hot-news-cover-img {
+    width: 100%;
+    height: 100%;
+  }
+
+  .hot-news-cover-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+
+    .hot-news-cover-label {
+      font-size: 36rpx;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: 4rpx;
+    }
+  }
+}
+
+.hot-news-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.hot-news-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx solid #f0f0f0;
+}
+
+.hot-news-source {
+  font-size: 22rpx;
+  color: #999;
+}
+
+.hot-news-read-more {
+  font-size: 24rpx;
+  color: var(--liberty-cats-primary-color, #ff6b03);
+  font-weight: 500;
+}
+
+.quick-news-body {
+  text-align: left;
+  background-color: #ffffff;
+  padding: 20rpx 28rpx;
+  border-radius: 8rpx 30rpx 30rpx 30rpx;
+  @include chat-font;
+  line-height: 1.5;
+  color: #1a1a1a;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.03);
+  word-break: break-all;
+  max-width: 90%;
+}
+
+/* 快讯头部 */
+.quick-news-header {
+  margin-bottom: 8rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.quick-news-header {
+  margin-bottom: 16rpx;
+  padding-bottom: 16rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.quick-news-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 8rpx;
+}
+
+.quick-news-category-badge {
+  display: inline-flex;
+  background-color: var(--liberty-cats-primary-color, #ff6b03);
+  color: #fff;
+  font-size: 20rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+  font-weight: 500;
+}
+
+.quick-news-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.quick-news-update-time {
+  font-size: 22rpx;
+  color: #999;
+}
+
+.quick-news-summary {
+  font-size: 22rpx;
+  color: #999;
+  margin-bottom: 16rpx;
+}
+
+.quick-news-card-type {
+  font-size: 20rpx;
+  font-weight: 500;
+  color: var(--liberty-cats-primary-color, #ff6b03);
+  line-height: 1.4;
+  max-width: 80%;
+  margin-top: 4rpx;
+}
+
+.quick-news-info {
+  font-size: 22rpx;
+  color: #999;
+  margin: 16rpx 0;
+}
+
+/* wd-cell 快讯列表覆盖样式 */
+:deep(.quick-news-cell-group) {
+  background: transparent !important;
+  // border-top: 1px solid #eeeef0;
+  .wd-cell {
+    background: transparent !important;
+    padding: 12rpx 0 !important;
+
+    .wd-cell__wrapper {
+      padding: 0 !important;
+      align-items: center !important;
+    }
+
+    .wd-cell__left {
+      flex: 1 !important;
+      margin-right: 0 !important;
+      min-width: 90% !important;
+    }
+
+    .wd-cell__title {
+      font-size: 28rpx !important;
+      font-weight: 400 !important;
+      color: #1a1a1a !important;
+      line-height: 1.5;
+    }
+
+    .wd-cell__value {
+      display: none !important;
+    }
+
+    .wd-cell__arrow-right {
+      font-size: 24rpx !important;
+      color: #ccc !important;
+    }
+
+    &:last-child {
+      .wd-cell__wrapper::after {
+        display: none;
+      }
+    }
+  }
+}
+
+/* wd-steps 时间线快讯样式 */
+:deep(.quick-news-steps) {
+  .wd-step {
+    .wd-step__content {
+      margin-left: 20rpx;
+      padding-bottom: 24rpx;
+      width: 100%;
+    }
+
+    .wd-step__title {
+      width: 100%;
+    }
+
+    .wd-step__dot {
+      width: 16rpx;
+      height: 16rpx;
+      background: var(--liberty-cats-primary-color, #ff6b03);
+    }
+
+    .wd-step__line {
+      background: #e0e0e0;
+    }
+
+    &:last-child {
+      .wd-step__content {
+        padding-bottom: 0;
+      }
+    }
+  }
+}
+
+.quick-news-timeline-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+  margin-left: 12rpx;
+}
+
+.quick-news-timeline-time {
+  font-size: 24rpx;
+  font-weight: 500;
+  color: var(--liberty-cats-primary-color, #ff6b03);
+}
+
+.quick-news-timeline-title {
+  font-size: 28rpx;
+  font-weight: 400;
+  color: #1a1a1a;
+  line-height: 1.5;
+}
+
+.quick-news-footer {
+  margin-top: 16rpx;
+  padding-top: 16rpx;
+  // border-top: 1rpx solid #f0f0f0;
+  display: flex;
+  justify-content: flex-end;
+
+  .quick-news-footer-text {
+    font-size: 24rpx;
+    color: var(--liberty-cats-primary-color, #ff6b03);
   }
 }
 </style>

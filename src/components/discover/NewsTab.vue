@@ -237,11 +237,19 @@ onMounted(() => {
     isRefreshing = true
     loadNews(1, tabType.value)
   })
+  // 监听跳转快讯tab事件
+  uni.$on('switchToNewsTab', () => {
+    tabType.value = -1
+    nextTick(() => {
+      loadNews(1, -1)
+    })
+  })
 })
 
 // 组件卸载时移除事件监听
 onUnmounted(() => {
   uni.$off('refreshNewsTab')
+  uni.$off('switchToNewsTab')
 })
 
 const changeTab = async (type: NewsTabType) => {

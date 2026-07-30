@@ -571,7 +571,6 @@ const loadAfterContextMessages = (afterId: number, limit: number = 50) => {
 const handleChatScroll = (e) => {
   const scrollTop = e.detail ? e.detail.scrollTop : e.contentOffset.y
   lastScrollTop = scrollTop
-  console.log('handleChatScroll', scrollTop)
   scrollTopValue.value = e.detail.scrollTop
   // return
   // 上下文模式：scrollTop 小于 50vh 时加载一批 after_message_id 消息
@@ -2086,6 +2085,8 @@ const handleReplyMessage = (msg: ChatMessage) => {
       .filter((part) => part.type === 'text' && !!part.text)
       .map((part) => part.text || '')
       .join('')
+  } else if (msg.message_type === 'news_card' && msg.payload?.items) {
+    content = msg.payload.items.map((item: any) => item.title || '').join('；')
   }
   if (!nickname) return
   const memberId = getMessageTargetMemberId(msg)
@@ -2110,6 +2111,8 @@ const handleCopyMessage = (msg: ChatMessage) => {
         .map((part) => part.text || '')
         .join('')
     }
+  } else if (msg.message_type === 'news_card' && msg.payload?.items) {
+    content = msg.payload.items.map((item: any) => item.title || '').join('\n')
   }
 
   if (content) {
