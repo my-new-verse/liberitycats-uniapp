@@ -943,9 +943,10 @@ const getMemberFollowInfo = (member: any) => {
   if (!member || member.is_self) return null
   if (member.is_special_following)
     return { text: t('social.index.user.special.following'), style: 'followed' }
-  if (member.is_mutual_following) return { text: '互相关注', style: 'followed' }
+  if (member.is_mutual_following)
+    return { text: t('social.index.user.mutual_following'), style: 'followed' }
   if (member.is_following) return { text: '已关注', style: 'followed' }
-  if (member.is_following_me) return { text: '回关', style: 'follow' }
+  if (member.is_following_me) return { text: t('social.index.user.follow_back'), style: 'follow' }
   return { text: '关注', style: 'follow' }
 }
 
@@ -1406,9 +1407,9 @@ const getFollowButtonInfo = (user: any) => {
   if (user.is_self) return null
   if (user.is_special_following)
     return { text: t('social.index.user.special.following'), style: 'followed' }
-  if (user.is_mutual) return { text: '互相关注', style: 'followed' }
+  if (user.is_mutual) return { text: t('social.index.user.mutual_following'), style: 'followed' }
   if (user.is_followed) return { text: '已关注', style: 'followed' }
-  if (user.is_following_me) return { text: '回关', style: 'follow' }
+  if (user.is_following_me) return { text: t('social.index.user.follow_back'), style: 'follow' }
   return { text: '关注', style: 'follow' }
 }
 
@@ -2083,12 +2084,6 @@ const handleLevelIconError = (member: any) => {
     background-color: #ffffff;
     color: #999;
     border-color: #ddd;
-  }
-  &.special {
-    background: linear-gradient(135deg, #fff7e5 0%, #fff0d6 100%);
-    color: #ff6b03;
-    border-color: #ff6b03;
-    font-weight: 600;
   }
 }
 

@@ -1584,10 +1584,10 @@ const getMemberFollowInfo = (member: any) => {
   if (!member || member.is_self) return null
   if (member.is_special_following)
     return { text: t('social.index.user.special.following'), style: 'followed' }
-  // return { text: t('social.index.user.special.following'), style: 'special' }
-  if (member.is_mutual_following) return { text: '互相关注', style: 'followed' }
+  if (member.is_mutual_following)
+    return { text: t('social.index.user.mutual_following'), style: 'followed' }
   if (member.is_following) return { text: '已关注', style: 'followed' }
-  if (member.is_following_me) return { text: '回关', style: 'follow' }
+  if (member.is_following_me) return { text: t('social.index.user.follow_back'), style: 'follow' }
   return { text: '关注', style: 'follow' }
 }
 
@@ -2390,12 +2390,6 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
     background-color: #ffffff;
     color: #999;
     border-color: #ddd;
-  }
-  &.special {
-    background: linear-gradient(135deg, #fff7e5 0%, #fff0d6 100%);
-    color: #ff6b03;
-    border-color: #ff6b03;
-    font-weight: 600;
   }
 }
 </style>

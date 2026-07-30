@@ -709,10 +709,10 @@ const followBtnInfo = computed(() => {
   const u: any = userInfo.value || {}
   if (u.is_special_following)
     return { text: t('social.index.user.special.following'), style: 'followed' }
-  // return { text: t('social.index.user.special.following'), style: 'special' }
-  if (u.is_mutual_following) return { text: '互相关注', style: 'followed' }
+  if (u.is_mutual_following)
+    return { text: t('social.index.user.mutual_following'), style: 'followed' }
   if (u.is_following === 1) return { text: '已关注', style: 'followed' }
-  if (u.is_following_me) return { text: '回关', style: 'follow' }
+  if (u.is_following_me) return { text: t('social.index.user.follow_back'), style: 'follow' }
   return { text: '关注', style: 'follow' }
 })
 
@@ -1303,14 +1303,6 @@ const doHandlePreview = (images: string[], currentIndex: number = 0, needDealImg
       background: #ffffff !important;
       color: #999 !important;
       border-color: #ddd !important;
-    }
-  }
-  &.special {
-    :deep(.follow-btn) {
-      background: linear-gradient(135deg, #fff7e5 0%, #fff0d6 100%) !important;
-      color: #ff6b03 !important;
-      border-color: #ff6b03 !important;
-      font-weight: 600;
     }
   }
 }

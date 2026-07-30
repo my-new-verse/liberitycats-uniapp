@@ -276,6 +276,8 @@
   "social.index.user.block": "屏蔽用戶",
   "social.index.comment.remove": "下架評論",
   "social.index.user.follow": "關注",
+  "social.index.user.mutual_following": "相互關注",
+  "social.index.user.follow_back": "回關",
   "social.index.user.follow.success": "關注成功",
   "social.index.user.follow.cancel": "不再關注該用戶？",
   "social.index.user.follow.canceled": "已取消關注",
