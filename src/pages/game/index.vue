@@ -37,20 +37,12 @@
     <!-- 游戏容器 -->
     <web-view
       v-if="gameUrl"
-      v-show="webViewVisible"
       :src="gameUrl"
       @message="handleMessage"
       @onPostMessage="handlePostMessage"
       @error="handleError"
       :webview-styles="webviewStyles"
     ></web-view>
-
-    <!-- 交互提示层 -->
-    <view v-if="showInteractionHint" class="interaction-hint" @click="handleUserInteraction">
-      <view class="hint-content">
-        <text>点击屏幕开始游戏</text>
-      </view>
-    </view>
 
     <!-- 调试信息 -->
     <!-- <view v-if="debugInfo" class="debug-info">
@@ -64,8 +56,6 @@ import { ref, onMounted } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 
 const gameUrl = ref('')
-const webViewVisible = ref(false)
-const showInteractionHint = ref(true)
 const debugInfo = ref('')
 
 const webviewStyles = {
@@ -97,16 +87,6 @@ const buildGameUrl = () => {
   return `https://game.libertycats.app/minigame/index.html?${queryString}`
 }
 
-// 处理用户交互
-const handleUserInteraction = () => {
-  if (showInteractionHint.value) {
-    // 保持已预加载的 web-view，仅控制显示，避免因创建时机导致的白屏
-    showInteractionHint.value = false
-    webViewVisible.value = true
-    debugInfo.value = '开始游戏，展示已预加载内容'
-  }
-}
-
 // 处理游戏发送的消息
 const handleMessage = (e) => {
   console.log('收到游戏消息:', e.detail.data)
@@ -130,16 +110,14 @@ const handleError = (e) => {
 }
 
 onLoad((options) => {
-  // 页面加载时即开始预加载游戏 URL，但不显示，用户点击后再展示
   gameUrl.value = decodeURIComponent(options.url) || ''
   console.log('gameUrl.value', gameUrl.value)
-  debugInfo.value = '页面加载完成，已开始预加载游戏，等待用户交互...'
+  debugInfo.value = '页面加载完成，开始加载游戏...'
 })
 
 // 添加全局错误监听
 onMounted(() => {
-  // 这里保留文案，onLoad 已设置一次
-  debugInfo.value = '页面加载完成，已开始预加载游戏，等待用户交互...'
+  debugInfo.value = '页面加载完成，开始加载游戏...'
 
   // 使用uni.onError替代window.onerror
   uni.onError((err) => {
@@ -160,24 +138,6 @@ onMounted(() => {
   height: 100vh;
   overflow: hidden;
   background-color: #000;
-}
-
-.interaction-hint {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(0, 0, 0, 0.8);
-
-  .hint-content {
-    font-size: 16px;
-    color: #fff;
-  }
 }
 
 .debug-info {
