@@ -74,70 +74,165 @@
           v-show="listData.data?.length > 0"
           :class="activeCategory === 'community' ? 'com-socialBox' : ''"
         >
-          <view class="cell socialBox" v-for="(item, index) in listData.data" :key="item.id">
+          <template v-for="(item, index) in listData.data" :key="item.id">
+            <!-- 社区消息时间分组标题 -->
             <view
-              class="item-wrapper"
-              @touchend.stop="onTouchWrapperEnd($event, index)"
-              @touchcancel.stop="onTouchWrapperEnd($event, index)"
+              v-if="item.category === 'community' && groupHeaderMap.get(index)"
+              class="time-header"
             >
+              <text>{{ groupHeaderMap.get(index).label }}</text>
+              <view class="time-header-calendar">
+                <wd-icon name="calendar" size="36rpx" color="#ff6b03"></wd-icon>
+                <text v-if="groupHeaderMap.get(index).date" class="time-header-date">
+                  {{ groupHeaderMap.get(index).date }}
+                </text>
+              </view>
+            </view>
+            <view class="cell socialBox">
               <view
-                class="item-inner"
-                :style="{ transform: `translateX(${item.offsetX}px)`, transition: item.transition }"
-                @touchstart.stop="onTouchStart($event, index)"
-                @touchmove.stop="onTouchMove($event, index)"
-                @touchend.stop="onTouchEnd($event, index)"
-                @touchcancel.stop="onTouchEnd($event, index)"
+                class="item-wrapper"
+                @touchend.stop="onTouchWrapperEnd($event, index)"
+                @touchcancel.stop="onTouchWrapperEnd($event, index)"
               >
-                <view class="item-content socialItem" @click.stop="handleDetailClick(item)">
-                  <view class="socialHead">
-                    <view class="unread-dot" :class="{ hide: item.is_read }"></view>
-                    <view class="avatarBox">
-                      <wd-icon
-                        custom-class="avatar"
-                        :name="getIconName(item)"
-                        size="22px"
-                        :color="item.is_read ? '#999999' : '#ff6b03'"
-                      />
+                <view
+                  class="item-inner"
+                  :style="{
+                    transform: `translateX(${item.offsetX}px)`,
+                    transition: item.transition,
+                  }"
+                  @touchstart.stop="onTouchStart($event, index)"
+                  @touchmove.stop="onTouchMove($event, index)"
+                  @touchend.stop="onTouchEnd($event, index)"
+                  @touchcancel.stop="onTouchEnd($event, index)"
+                >
+                  <!-- 社区消息新样式 -->
+                  <view
+                    v-if="item.category === 'community'"
+                    class="item-content community-item"
+                    @click.stop="handleDetailClick(item)"
+                  >
+                    <view class="community-avatar-wrap">
+                      <view
+                        class="community-avatar"
+                        :style="getAvatarStyle(item?.member?.avatar)"
+                      ></view>
+                      <view class="community-unread-dot" :class="{ hide: item.is_read }"></view>
                     </view>
-                    <view class="nameWrap">
-                      <view class="name" style="margin-left: 0">
-                        <text>
-                          {{ item.display?.titleSegments?.[0]?.text || '' }}
-                          {{ item.display?.titleSegments?.[1]?.text || '' }}
+                    <view class="community-body">
+                      <view class="community-top-row">
+                        <view class="community-name-action">
+                          <!-- like/comment/follow/special_follow/special_follow_post：只展示 actorName -->
+                          <template v-if="isUnifiedDisplaySubtype(item)">
+                            <text class="community-name" style="font-weight: 700">
+                              {{ item.params['${actorName}'] }}
+                            </text>
+                          </template>
+                          <!-- 其他类型：保持原有逻辑 -->
+                          <template v-else>
+                            <text class="community-name">{{ item.i18n.title }}</text>
+                          </template>
+                        </view>
+                      </view>
+                      <view
+                        class="community-subtext"
+                        v-if="
+                          isUnifiedDisplaySubtype(item)
+                            ? item.display?.actionText
+                            : item.i18n.content
+                        "
+                      >
+                        <!-- like/comment/follow/special_follow/special_follow_post：只展示 display.actionText -->
+                        <text v-if="isUnifiedDisplaySubtype(item)" class="community-preview-text">
+                          {{ item.display?.actionText }}
                         </text>
-
-                        <view
-                          v-if="item.display.titleSegments[2]"
-                          class="name-link"
-                          @click.stop="handleUserHomeClick(item)"
-                        >
-                          <text style="font-weight: 700">
-                            {{ item.display.titleSegments?.[2]?.text || '' }}
+                        <!-- 其他类型：展示 i18n.content -->
+                        <rich-text
+                          v-else
+                          :nodes="item.i18n.content"
+                          class="community-preview-text"
+                        ></rich-text>
+                      </view>
+                      <text class="community-time">
+                        {{ formatRelativeTime(item.create_time) }}
+                      </text>
+                    </view>
+                    <view
+                      v-if="getFollowBtnInfo(item)"
+                      class="follow-back-btn"
+                      :class="getFollowBtnInfo(item).style"
+                      @click.stop="handleFollowBack(item)"
+                    >
+                      {{ getFollowBtnInfo(item).text }}
+                    </view>
+                    <!-- 帖子/评论内容预览（关注类型除外） -->
+                    <view v-if="!shouldHideThumbnail(item)" class="community-thumbnail">
+                      <image
+                        v-if="item?.display?.imageUrl"
+                        :src="item.display.imageUrl"
+                        class="thumbnail-image"
+                        mode="aspectFill"
+                      />
+                      <text v-else-if="item?.display?.rootPostSummary" class="thumbnail-text">
+                        {{ item.display.rootPostSummary }}
+                      </text>
+                      <view v-else class="thumbnail-placeholder"></view>
+                    </view>
+                  </view>
+                  <!-- 其他分类保持原样式 -->
+                  <view
+                    v-else
+                    class="item-content socialItem"
+                    @click.stop="handleDetailClick(item)"
+                  >
+                    <view class="socialHead">
+                      <view class="unread-dot" :class="{ hide: item.is_read }"></view>
+                      <view class="avatarBox">
+                        <wd-icon
+                          custom-class="avatar"
+                          :name="getIconName(item)"
+                          size="22px"
+                          :color="item.is_read ? '#999999' : '#ff6b03'"
+                        />
+                      </view>
+                      <view class="nameWrap">
+                        <view class="name" style="margin-left: 0">
+                          <text>
+                            {{ item.display?.titleSegments?.[0]?.text || '' }}
+                            {{ item.display?.titleSegments?.[1]?.text || '' }}
                           </text>
+                          <view
+                            v-if="item.display?.titleSegments?.[2]"
+                            class="name-link"
+                            @click.stop="handleUserHomeClick(item)"
+                          >
+                            <text style="font-weight: 700">
+                              {{ item.display.titleSegments?.[2]?.text || '' }}
+                            </text>
+                          </view>
                         </view>
                       </view>
                     </view>
-                  </view>
-                  <view class="socialCntBox">
-                    <view class="socialCnt">
-                      <rich-text
-                        :nodes="item?.i18n?.content"
-                        class="rich-text-ellipsis"
-                      ></rich-text>
+                    <view class="socialCntBox">
+                      <view class="socialCnt">
+                        <rich-text
+                          :nodes="item?.i18n?.content"
+                          class="rich-text-ellipsis"
+                        ></rich-text>
+                      </view>
+                      <view class="socialTime">
+                        {{ formatRelativeTime(item.create_time) }}
+                      </view>
                     </view>
-                    <view class="socialTime">
-                      {{ formatRelativeTime(item.create_time) }}
-                    </view>
                   </view>
-                </view>
-                <view class="item-actions">
-                  <view class="action-btn delete" @click.stop="handleMarkAsRead(item)">
-                    {{ $t('notification.index.mark_read') }}
+                  <view class="item-actions">
+                    <view class="action-btn delete" @click.stop="handleMarkAsRead(item)">
+                      {{ $t('notification.index.mark_read') }}
+                    </view>
                   </view>
                 </view>
               </view>
             </view>
-          </view>
+          </template>
         </view>
         <template v-show="!listData.data?.length">
           <view class="emptyBox" :class="{ 'com-emptyBox': activeCategory === 'community' }">
@@ -157,7 +252,7 @@
 
 <script lang="ts" setup>
 import i18n, { t } from '@/locale/index'
-import { formatRelativeTime, toUrlOnce, toUrl } from '@/utils'
+import { formatRelativeTime, toUrlOnce, toUrl, formatNickname } from '@/utils'
 import { useToast } from 'wot-design-uni'
 // 滚动加载类型
 import { LoadMoreState } from 'wot-design-uni/components/wd-loadmore/types'
@@ -173,7 +268,9 @@ import {
 } from '@/service/api/message'
 import CustomNav from '@/components/CustomNav/CustomNav.vue'
 import { useUserStore } from '@/store/user'
+import { createFollowApi } from '@/service/api/community'
 import { debounce } from 'lodash-es'
+import { getAvatarStyle } from '@/utils/avatarCache'
 const userStore = useUserStore()
 const toast = useToast()
 // 滚动到顶部监听
@@ -750,6 +847,179 @@ const getIconName = (item: any) => {
   return 'chat1'
 }
 
+// 已回关的 member ID 集合，用于隐藏已操作的按钮
+const followedBackIds = reactive(new Set<number>())
+
+// 关注按钮文案和样式（参考 user home 页面逻辑）
+const getFollowBtnInfo = (
+  item: any,
+): { text: string; style: string; memberId: number | string } | null => {
+  // 如果不是关注或特别关注类型，不显示按钮
+  if (item?.subtype !== 'follow' && item?.subtype !== 'special_follow') return null
+
+  const memberId = item?.display?.titleSegments?.[2]?.id || item?.context?.participantMemberId
+  if (!memberId) return null
+
+  // 如果已经点击过回关，不再显示按钮
+  if (followedBackIds.has(memberId)) return null
+
+  const u = item?.member || {}
+
+  if (u.is_special_following)
+    return { text: t('social.index.user.special.following'), style: 'followed', memberId }
+  if (u.is_mutual_following)
+    return { text: t('social.index.user.mutual_following'), style: 'followed', memberId }
+  if (u.is_following === 1)
+    return { text: t('social.index.user.followed'), style: 'followed', memberId }
+  if (u.is_following_me)
+    return { text: t('social.index.user.follow_back'), style: 'follow', memberId }
+  return { text: t('social.index.user.follow'), style: 'follow', memberId }
+}
+
+// 是否应该隐藏缩略图（category 为 community 且 subtype 为 follow 或 special_follow）
+const shouldHideThumbnail = (item: any): boolean => {
+  return (
+    item?.category === 'community' &&
+    (item?.subtype === 'follow' || item?.subtype === 'special_follow')
+  )
+}
+
+// 统一展示 actorName + actionText 的消息子类型
+const UNIFIED_DISPLAY_SUBTYPES = [
+  'like',
+  'comment',
+  'follow',
+  'special_follow',
+  'special_follow_post',
+]
+const isUnifiedDisplaySubtype = (item: any): boolean =>
+  UNIFIED_DISPLAY_SUBTYPES.includes(item?.subtype)
+
+// 回关按钮点击
+const handleFollowBack = async (item: any) => {
+  const btnInfo = getFollowBtnInfo(item)
+  if (!btnInfo) return
+  const { memberId, style } = btnInfo
+  if (style !== 'follow') return
+  if (!userStore.isLogin) {
+    toUrlOnce('/pages/cats/login/login', true)
+    return
+  }
+  try {
+    const res = await createFollowApi(memberId)
+    if (res.code === 1) {
+      followedBackIds.add(memberId)
+      uni.showToast({ title: t('social.index.user.follow.success'), icon: 'none' })
+    } else {
+      toast.show(res.msg || t('common.error'))
+    }
+  } catch (e) {
+    console.error('handleFollowBack failed', e)
+  }
+}
+
+// 社区消息时间分组
+const getTimeGroupKey = (createTime: string): string => {
+  if (!createTime) return 'earlier'
+  const timeZone = uni.getStorageSync('timeZone') || 'Asia/Shanghai'
+  let date: Date
+  let str = createTime.trim()
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(str)) {
+    str = str.replace(' ', 'T')
+    date = new Date(str + 'Z')
+  } else {
+    date = new Date(str)
+  }
+  if (isNaN(date.getTime())) return 'earlier'
+
+  const getParts = (d: Date, tz: string) => {
+    if (typeof Intl !== 'undefined' && typeof Intl.DateTimeFormat === 'function') {
+      return new Intl.DateTimeFormat('en-US', {
+        timeZone: tz,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).formatToParts(d)
+    }
+    return []
+  }
+
+  const now = new Date()
+  const todayParts = getParts(now, timeZone)
+  const dateParts = getParts(date, timeZone)
+
+  const todayYear = todayParts.find((p) => p.type === 'year')?.value
+  const todayMonth = todayParts.find((p) => p.type === 'month')?.value
+  const todayDay = todayParts.find((p) => p.type === 'day')?.value
+  const dateYear = dateParts.find((p) => p.type === 'year')?.value
+  const dateMonth = dateParts.find((p) => p.type === 'month')?.value
+  const dateDay = dateParts.find((p) => p.type === 'day')?.value
+
+  if (todayYear === dateYear && todayMonth === dateMonth && todayDay === dateDay) {
+    return 'today'
+  }
+  // 昨天
+  const yesterday = new Date(now)
+  yesterday.setDate(yesterday.getDate() - 1)
+  const yesterdayParts = getParts(yesterday, timeZone)
+  const yYear = yesterdayParts.find((p) => p.type === 'year')?.value
+  const yMonth = yesterdayParts.find((p) => p.type === 'month')?.value
+  const yDay = yesterdayParts.find((p) => p.type === 'day')?.value
+  if (dateYear === yYear && dateMonth === yMonth && dateDay === yDay) {
+    return 'yesterday'
+  }
+  return 'earlier'
+}
+
+// 获取当天日期文案（MM月DD日，按本地时区）
+const getTodayDateLabel = (): string => {
+  const timeZone = uni.getStorageSync('timeZone') || 'Asia/Shanghai'
+  if (typeof Intl !== 'undefined' && typeof Intl.DateTimeFormat === 'function') {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(new Date())
+    const month = parts.find((p) => p.type === 'month')?.value || ''
+    const day = parts.find((p) => p.type === 'day')?.value || ''
+    if (month && day) return `${month}月${day}日`
+  }
+  return ''
+}
+
+// 社区消息分组标题 Map（index → { label, date }）
+const groupHeaderMap = computed(() => {
+  const map = new Map<number, { label: string; date: string }>()
+  let lastKey = ''
+  listData.value.data.forEach((item, index) => {
+    // 只对 community 类型的消息进行时间分组
+    if (item.category !== 'community') return
+    const key = getTimeGroupKey(item.create_time)
+    if (key !== lastKey) {
+      map.set(index, {
+        label: getGroupLabel(key),
+        // “今天”分组额外展示当天日期
+        date: key === 'today' ? getTodayDateLabel() : '',
+      })
+      lastKey = key
+    }
+  })
+  return map
+})
+
+const getGroupLabel = (key: string): string => {
+  switch (key) {
+    case 'today':
+      return t('notification.index.today')
+    case 'yesterday':
+      return t('notification.index.yesterday')
+    case 'earlier':
+      return t('notification.index.earlier')
+    default:
+      return ''
+  }
+}
+
 // 跳转用户主页
 const toUserHome = (notificationItem: any) => {
   if (shouldSuppressSwipeTap(notificationItem)) {
@@ -1184,7 +1454,8 @@ onUnmounted(() => {
 }
 
 .item-content {
-  width: 100vw; // 确保内容撑满屏幕宽度
+  flex: 1;
+  min-width: 0;
   box-sizing: border-box;
   align-items: center;
   padding: 16rpx;
@@ -1200,9 +1471,11 @@ onUnmounted(() => {
 .item-actions {
   width: 112px; // 与 JS 中的 BUTTON_WIDTH 一致
   display: flex;
-
+  position: relative;
+  left: 24rpx;
   .action-btn {
-    flex: 1;
+    // flex: 1;
+    width: 92%;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1216,5 +1489,191 @@ onUnmounted(() => {
 }
 ::v-deep .cell {
   padding: 16rpx;
+}
+
+/* 社区消息时间分组标题 */
+.time-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16rpx 24rpx;
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #999;
+}
+
+/* 日历按钮圆形背景 */
+.time-header-calendar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  height: 44rpx;
+  padding: 0 16rpx;
+  border-radius: 22rpx;
+  background-color: #fff1e8;
+}
+
+/* 分组日期文案 */
+.time-header-date {
+  font-size: 22rpx;
+  font-weight: 500;
+  color: #ff6b03;
+}
+
+/* 社区消息项布局 */
+.community-item {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  padding: 20rpx 0 !important;
+}
+
+/* 头像 */
+.community-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+  width: 80rpx;
+  height: 80rpx;
+}
+.community-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-size: cover;
+  background-position: center;
+  background-color: #f5f5f5;
+}
+.community-unread-dot {
+  position: absolute;
+  top: 2rpx;
+  right: 2rpx;
+  width: 20rpx;
+  height: 20rpx;
+  background: var(--liberty-cats-primary-color);
+  border-radius: 50%;
+  border: 2rpx solid #fff;
+
+  &.hide {
+    display: none;
+  }
+}
+
+/* 主体内容 */
+.community-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 75%;
+}
+.community-top-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+.community-name-action {
+  flex: 1;
+  min-width: 0;
+}
+.community-name {
+  font-size: 26rpx;
+  // font-weight: 600;
+  color: #333;
+}
+.community-time {
+  font-size: 24rpx;
+  color: #999;
+  flex-shrink: 0;
+}
+.community-subtext {
+  margin-top: 8rpx;
+}
+.community-preview-text {
+  font-size: 26rpx;
+  color: #666;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2; /* 最多展示两行，超出部分省略号 */
+}
+
+/* 回关按钮 */
+.follow-back-btn {
+  flex-shrink: 0;
+  padding: 8rpx 28rpx;
+  font-size: 24rpx;
+  font-weight: 500;
+  border-radius: 32rpx;
+  line-height: 1.4;
+
+  // 未关注：主色背景，白色文字
+  &.follow {
+    color: #fff;
+    background-color: #ff6b03;
+  }
+
+  // 已关注/特别关注/互相关注：浅灰背景，深色文字
+  &.followed {
+    color: #666;
+    background-color: #f5f5f5;
+  }
+}
+
+/* 帖子/评论缩略图（关注类型除外） */
+.community-thumbnail {
+  flex-shrink: 0;
+  width: 160rpx;
+  height: 160rpx;
+  margin-left: 8rpx;
+  border-radius: 12rpx;
+  overflow: hidden;
+  background-color: #f5f5f5;
+}
+.thumbnail-placeholder {
+  width: 100%;
+  height: 100%;
+  background-color: #fbf7f3;
+  background-image: linear-gradient(90deg, #fbf7f3 25%, #f5ece6 50%, #fbf7f3 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.thumbnail-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 12rpx;
+}
+.thumbnail-text {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 12rpx; /* 底部 padding 稍大以平衡视觉 */
+  font-size: 22rpx;
+  color: #666;
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  background-color: #fbf7f3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 </style>
