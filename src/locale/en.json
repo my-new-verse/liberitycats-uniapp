@@ -305,6 +305,9 @@
   "social.index.stats.following": "Following",
   "social.index.stats.fans": "Followers",
   "social.index.stats.special_following": "Special",
+
+  "follow_list.title": "Follow & Fans",
+  "follow_list.search_placeholder": "Search users",
   "social.index.user.special.cancel": "Cancel special follow",
   "social.index.user.special.cancel.confirm": "Confirm to cancel special follow?",
   "social.index.user.special.success": "Special follow set",

@@ -68,17 +68,59 @@
           </view>
         </view>
         <view class="whiteBox">
-          <view class="statItem">
+          <view
+            class="statItem"
+            @click="
+              toUrl(
+                '/pages/cats/social/follow_list?tab=following&member_id=' +
+                  memberId +
+                  '&fc=' +
+                  (stats?.following_count || 0) +
+                  '&fnc=' +
+                  (stats?.fans_count || 0) +
+                  '&sc=' +
+                  (stats?.special_following_count || 0),
+              )
+            "
+          >
             <text class="statCount">{{ formatCount(stats?.following_count || 0) }}</text>
             <text class="statLabel">{{ t('social.index.stats.following') }}</text>
           </view>
           <view class="statDivider">|</view>
-          <view class="statItem">
+          <view
+            class="statItem"
+            @click="
+              toUrl(
+                '/pages/cats/social/follow_list?tab=fans&member_id=' +
+                  memberId +
+                  '&fc=' +
+                  (stats?.following_count || 0) +
+                  '&fnc=' +
+                  (stats?.fans_count || 0) +
+                  '&sc=' +
+                  (stats?.special_following_count || 0),
+              )
+            "
+          >
             <text class="statCount">{{ formatCount(stats?.fans_count || 0) }}</text>
             <text class="statLabel">{{ t('social.index.stats.fans') }}</text>
           </view>
           <view class="statDivider">|</view>
-          <view class="statItem">
+          <view
+            class="statItem"
+            @click="
+              toUrl(
+                '/pages/cats/social/follow_list?tab=special&member_id=' +
+                  memberId +
+                  '&fc=' +
+                  (stats?.following_count || 0) +
+                  '&fnc=' +
+                  (stats?.fans_count || 0) +
+                  '&sc=' +
+                  (stats?.special_following_count || 0),
+              )
+            "
+          >
             <text class="statCount">{{ formatCount(stats?.special_following_count || 0) }}</text>
             <text class="statLabel">{{ t('social.index.stats.special_following') }}</text>
           </view>
