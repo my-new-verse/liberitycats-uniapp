@@ -603,6 +603,14 @@
       }
     },
     {
+      "path": "pages/cats/social/follow_list",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#f7f6f4"
+      }
+    },
+    {
       "path": "pages/cats/social/group_announcement_detail",
       "type": "page",
       "layout": "default",

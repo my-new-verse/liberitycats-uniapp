@@ -486,3 +486,41 @@ export const searchMembersApi = (keyword: string, page = 1, limit = 50) => {
     limit,
   })
 }
+
+/** 关注/粉丝/特别关注列表项 */
+export interface FollowMemberItem {
+  member_id: number
+  nickname: string
+  avatar: string
+  level: {
+    level: number
+    name: string
+    icon: string
+  }
+  cat_food_balance: string
+  fans_count: number
+  is_following: number
+  is_mutual_following: number
+  is_special_following: number
+  is_self: number
+  follow_time: number
+}
+
+/** 关注/粉丝/特别关注列表响应 */
+export interface FollowMemberListResponse {
+  total: number
+  page: number
+  limit: number
+  members: FollowMemberItem[]
+}
+
+/** 获取关注/粉丝/特别关注列表 */
+export const getFollowMembersApi = (params: {
+  type?: 'following' | 'fans' | 'special_following'
+  member_id?: number
+  page?: number
+  limit?: number
+  keyword?: string
+}) => {
+  return http.get<FollowMemberListResponse>('/v1/community/follow/members', params)
+}

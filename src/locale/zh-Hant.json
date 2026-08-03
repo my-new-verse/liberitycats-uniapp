@@ -286,6 +286,9 @@
   "social.index.stats.following": "關注",
   "social.index.stats.fans": "粉絲",
   "social.index.stats.special_following": "特別關注",
+
+  "follow_list.title": "關注與粉絲",
+  "follow_list.search_placeholder": "搜索用戶",
   "social.index.user.special.cancel": "取消特別關注",
   "social.index.user.special.cancel.confirm": "確定取消特別關注嗎？",
   "social.index.user.special.success": "已設為特別關注",
