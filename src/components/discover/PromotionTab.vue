@@ -42,7 +42,20 @@
           :key="item.id"
           @click="handleAdTypeChange(item.id)"
         >
-          <view class="cardIcon" :style="{ backgroundImage: `url('${item.icon}')` }"></view>
+          <view class="cardIcon">
+            <image
+              class="cardIconImg"
+              :class="{ hide: activeCardType === item.id }"
+              :src="item.before_click_icon_url || item.icon"
+              mode="aspectFit"
+            />
+            <image
+              class="cardIconImg cardIconImgActive"
+              :class="{ show: activeCardType === item.id }"
+              :src="item.after_click_icon_url || item.icon"
+              mode="aspectFit"
+            />
+          </view>
           <text class="cardType">{{ item.name }}</text>
         </view>
       </view>
@@ -251,12 +264,23 @@ const syncCurrentCache = () => {
   }
 }
 
+// 预下载类型卡片图标，避免切换选中态时闪动
+const preloadAdTypeIcons = (types: any[]) => {
+  types.forEach((item) => {
+    ;[item?.before_click_icon_url, item?.after_click_icon_url, item?.icon].forEach((url) => {
+      if (!url) return
+      uni.getImageInfo({ src: url, fail: () => {} })
+    })
+  })
+}
+
 // 加载广告类型列表
 const loadAdTypes = async () => {
   try {
     const res = await getAdTypeListApi()
     if (res.code === 1 && res.data) {
       cardTypes.value = res.data as any[]
+      preloadAdTypeIcons(cardTypes.value)
     }
   } catch (e) {
     console.error('loadAdTypes failed', e)
@@ -805,12 +829,32 @@ onUnmounted(() => {
     }
 
     .cardIcon {
+      position: relative;
       width: 72rpx;
       height: 72rpx;
       border-radius: 16rpx;
-      background-repeat: no-repeat;
-      background-position: center;
-      background-size: contain;
+
+      // 点击前后两张图标叠加渲染，切换时只改透明度，避免重新加载闪动
+      .cardIconImg {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        transition: opacity 0.15s ease;
+      }
+
+      .cardIconImgActive {
+        opacity: 0;
+
+        &.show {
+          opacity: 1;
+        }
+      }
+
+      .hide {
+        opacity: 0;
+      }
     }
 
     .cardType {
