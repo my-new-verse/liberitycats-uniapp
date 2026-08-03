@@ -584,9 +584,9 @@ watch(
 const getFollowButtonInfo = (user: any) => {
   if (user.is_self) return null
   if (user.is_mutual) return { text: t('social.index.user.mutual_following'), style: 'mutual' }
-  if (user.is_followed) return { text: '已关注', style: 'followed' }
+  if (user.is_followed) return { text: t('social.index.user.followed'), style: 'followed' }
   if (user.is_following_me) return { text: t('social.index.user.follow_back'), style: 'follow' }
-  return { text: '关注', style: 'follow' }
+  return { text: t('social.index.user.follow'), style: 'follow' }
 }
 const handleFollow = async (user: any) => {
   if (user.is_followed) {

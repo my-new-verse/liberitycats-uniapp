@@ -273,6 +273,7 @@
   "social.index.user.block": "Block User",
   "social.index.comment.remove": "Remove Comment",
   "social.index.user.follow": "Follow",
+  "social.index.user.followed": "Following",
   "social.index.user.mutual_following": "Mutual",
   "social.index.user.follow_back": "Follow Back",
   "social.index.user.unfollow": "Unfollow",

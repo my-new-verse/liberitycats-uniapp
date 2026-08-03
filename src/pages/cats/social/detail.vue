@@ -1586,9 +1586,9 @@ const getMemberFollowInfo = (member: any) => {
     return { text: t('social.index.user.special.following'), style: 'followed' }
   if (member.is_mutual_following)
     return { text: t('social.index.user.mutual_following'), style: 'followed' }
-  if (member.is_following) return { text: '已关注', style: 'followed' }
+  if (member.is_following) return { text: t('social.index.user.followed'), style: 'followed' }
   if (member.is_following_me) return { text: t('social.index.user.follow_back'), style: 'follow' }
-  return { text: '关注', style: 'follow' }
+  return { text: t('social.index.user.follow'), style: 'follow' }
 }
 
 const scrollToComment = () => {
