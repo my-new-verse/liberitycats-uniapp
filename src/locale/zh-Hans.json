@@ -562,6 +562,9 @@
   "notification.index.delete_success": "删除成功",
   "notification.index.delete_batch_success": "批量删除成功",
   "notification.index.make_all_read": "全部已读",
+  "notification.index.today": "今天",
+  "notification.index.yesterday": "昨天",
+  "notification.index.earlier": "更早",
 
   "group.chat.members_btn": "群成员 ({count})",
   "group.chat.input_placeholder": "输入消息...",

@@ -550,6 +550,9 @@
   "notification.index.delete_success": "Deleted successfully",
   "notification.index.delete_batch_success": "Bulk deleted successfully",
   "notification.index.make_all_read": "All read",
+  "notification.index.today": "Today",
+  "notification.index.yesterday": "Yesterday",
+  "notification.index.earlier": "Earlier",
 
   "group.chat.members_btn": "Members ({count})",
   "group.chat.input_placeholder": "Type a message...",
