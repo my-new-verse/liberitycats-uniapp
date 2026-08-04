@@ -115,6 +115,7 @@
                       <view
                         class="community-avatar"
                         :style="getAvatarStyle(item?.member?.avatar)"
+                        @click.stop="handleUserHomeClick(item)"
                       ></view>
                       <view class="community-unread-dot" :class="{ hide: item.is_read }"></view>
                     </view>
@@ -123,13 +124,13 @@
                         <view class="community-name-action">
                           <!-- like/comment/follow/special_follow/special_follow_post：只展示 actorName -->
                           <template v-if="isUnifiedDisplaySubtype(item)">
-                            <text class="community-name" style="font-weight: 700">
+                            <text
+                              class="community-name"
+                              style="font-weight: 700"
+                              @click.stop="handleUserHomeClick(item)"
+                            >
                               {{ item.params['${actorName}'] }}
                             </text>
-                          </template>
-                          <!-- 其他类型：保持原有逻辑 -->
-                          <template v-else>
-                            <text class="community-name">{{ item.i18n.title }}</text>
                           </template>
                         </view>
                       </view>
@@ -1026,7 +1027,7 @@ const toUserHome = (notificationItem: any) => {
     clearSwipeTapSuppressed()
     return
   }
-  const memberId = notificationItem?.display.titleSegments[2].id
+  const memberId = notificationItem.member_id || notificationItem?.display.titleSegments[2].id
   if (notificationItem.opened || notificationItem.offsetX !== 0) {
     // 如果滑块是开着的，则执行关闭逻辑
     closeSwipe(notificationItem)
