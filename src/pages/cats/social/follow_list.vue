@@ -198,7 +198,14 @@ const loadState = ref('loading')
 
 const switchTab = (key: TabKey) => {
   if (activeTab.value === key) return
+  const prevKey = activeTab.value
   activeTab.value = key
+
+  if (searchKeyword.value.trim()) {
+    cacheMap[prevKey].loaded = false
+    cacheMap[prevKey].page = 0
+    cacheMap[prevKey].list = []
+  }
   searchKeyword.value = ''
   const cache = cacheMap[key]
   loadState.value = cache.loaded && cache.page >= cache.lastPage ? 'finished' : 'loading'
@@ -209,7 +216,6 @@ const switchTab = (key: TabKey) => {
 const searchKeyword = ref('')
 
 const onSearch = () => {
-  // TODO: 接入搜索接口
   loadData(true)
 }
 
@@ -235,8 +241,6 @@ const loadData = async (refresh = false) => {
   cache.loading = true
   loadState.value = 'loading'
 
-  // TODO: 替换为真实接口
-  await new Promise((r) => setTimeout(r, 300))
   const type = activeTab.value === 'special' ? 'special_following' : activeTab.value
   const params: any = {
     type,
@@ -306,16 +310,15 @@ const syncMemberFollowState = (targetId: number, data: any, user: any) => {
     }
   })
 
-  // 如果是查看自己的列表，同步关注 tab 的数量和列表
   if (!memberId.value) {
     if (!wasFollowing && data.is_following) {
-      // 新增关注：关注数 +1，插入列表头部
+      // 新增关注
       tabCounts.value.following += 1
       if (cacheMap.following.loaded) {
         cacheMap.following.list.unshift({ ...user, ...data })
       }
     } else if (wasFollowing && !data.is_following) {
-      // 取消关注：关注数 -1，从列表移除
+      // 取消关注
       tabCounts.value.following = Math.max(0, tabCounts.value.following - 1)
       if (cacheMap.following.loaded) {
         cacheMap.following.list = cacheMap.following.list.filter(
@@ -402,13 +405,12 @@ const formatFansCount = (count: number) => {
 // ========== 初始化 ==========
 onLoad((options: any) => {
   const targetId = Number(options?.member_id || 0)
-  // 如果是自己的，不传 member_id，接口默认查当前登录用户
   if (targetId && targetId === userStore.userInfo?.member_id) {
     memberId.value = 0
   } else {
     memberId.value = targetId
   }
-  // 从 URL 参数取数量，避免先显示 0 再跳动
+
   if (options?.fc) tabCounts.value.following = Number(options.fc)
   if (options?.fnc) tabCounts.value.fans = Number(options.fnc)
   if (options?.sc) tabCounts.value.special = Number(options.sc)
@@ -420,6 +422,7 @@ onLoad((options: any) => {
 
 <style lang="scss" scoped>
 @import '/src/style/base';
+@import '/src/style/social';
 
 .page {
   min-height: 100vh;
@@ -613,9 +616,12 @@ onLoad((options: any) => {
     display: flex;
     flex-direction: column;
     gap: 6rpx;
+    font-family:
+      Alimama FangYuanTi VF,
+      sans-serif;
 
     .memberName {
-      font-size: 30rpx;
+      font-size: 28rpx;
       color: #333;
       font-weight: 500;
       overflow: hidden;
