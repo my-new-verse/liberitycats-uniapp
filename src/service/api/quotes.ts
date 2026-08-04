@@ -34,3 +34,13 @@ export interface getCollectionDetailApiResponse {
 export const getCollectionDetailApi = () => {
   return http.get<getCollectionDetailApiResponse>('/v1/quotes/collection/detail')
 }
+
+export interface getInvestmentPortfolioEntryTokenApiResponse {
+  jumpUrl: string
+}
+
+export const getInvestmentPortfolioEntryTokenApi = () => {
+  return http.post<getInvestmentPortfolioEntryTokenApiResponse>(
+    '/v1/investment-portfolio/entry-token',
+  )
+}
