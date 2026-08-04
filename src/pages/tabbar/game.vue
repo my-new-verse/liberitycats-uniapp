@@ -122,13 +122,19 @@ const openMiniProgram = () => {
 
 // 绑定/换绑的公共请求逻辑
 const doBindArGame = (code: string) => {
-  bindArGameApi(code).then((res) => {
-    console.log('bind Ar Game', res)
-    if (res.code === 1) {
-      toast.show(res.msg && res.msg.length ? res.msg : t('my.game.bind_ar.msgbox.success.msg'))
-      userStore.getUserInfo()
-    }
-  })
+  bindArGameApi(code)
+    .then((res) => {
+      console.log('bind Ar Game', res)
+      if (res.code === 1) {
+        toast.show(res.msg && res.msg.length ? res.msg : t('my.game.bind_ar.msgbox.success.msg'))
+        userStore.getUserInfo()
+      } else {
+        toast.show(res.msg || t('my.game.bind_ar.msgbox.failed.msg'))
+      }
+    })
+    .catch(() => {
+      toast.show(t('my.game.bind_ar.msgbox.failed.msg'))
+    })
 }
 
 // 弹出输入框让用户输入绑定口令

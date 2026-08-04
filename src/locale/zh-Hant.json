@@ -114,6 +114,7 @@
   "my.game.bind_ar.msgbox.was_bond.msg": "绑定口令是: {0}",
   "my.game.bind_ar.msgbox.change_bind.confirm_msg": "確認要換綁嗎？",
   "my.game.bind_ar.msgbox.success.msg": "綁定成功",
+  "my.game.bind_ar.msgbox.failed.msg": "綁定失敗",
 
   "publish.index.header.publish_btn": "發佈",
   "publish.index.content.placeholder": "說點什麼...",

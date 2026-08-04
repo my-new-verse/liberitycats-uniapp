@@ -113,6 +113,7 @@
   "my.game.bind_ar.msgbox.was_bond.msg": "Bound Password is: {0}",
   "my.game.bind_ar.msgbox.change_bind.confirm_msg": "Confirm to rebind?",
   "my.game.bind_ar.msgbox.success.msg": "Bind successful",
+  "my.game.bind_ar.msgbox.failed.msg": "Bind failed",
 
   "publish.index.header.publish_btn": "Publish",
   "publish.index.content.placeholder": "Say something...",
