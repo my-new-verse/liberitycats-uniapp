@@ -133,6 +133,7 @@ import {
   getQuotesListApiResponse,
   getCollectionDetailApi,
   getCollectionDetailApiResponse,
+  getInvestmentPortfolioEntryTokenApi,
 } from '@/service/api/quotes'
 import { formatNumber, getImageUrl, getServerOnOff, openUrl } from '@/utils'
 import { t } from '@/locale'
@@ -180,11 +181,18 @@ const zhuangeWVRef = ref<InstanceType<typeof QuoteWebview>>()
 const LIBERTY_WEBVIEW_URL = 'https://lcat8.com'
 const PORTFOLIO_WEBVIEW_URL = 'http://47.236.146.191:3000/#analysis-section'
 
+// 存储 portfolio 的 jumpUrl
+const portfolioJumpUrl = ref<string>('')
+let isFetchingPortfolioToken = false
+
 const getWebviewUrl = (type: WebviewTabType): string => {
-  if (type === 'portfolio')
+  if (type === 'portfolio') {
     return (
-      (getServerOnOff('portfolio_chart_url ', 'common', true) as string) || PORTFOLIO_WEBVIEW_URL
+      portfolioJumpUrl.value ||
+      (getServerOnOff('portfolio_chart_url ', 'common', true) as string) ||
+      PORTFOLIO_WEBVIEW_URL
     )
+  }
   return (getServerOnOff('quote_chart_url', 'common', true) as string) || LIBERTY_WEBVIEW_URL
 }
 
@@ -193,6 +201,28 @@ const getActiveWebviewRef = () => {
   if (tabType.value === 'liberty') return libertyWVRef.value
   if (tabType.value === 'portfolio') return zhuangeWVRef.value
   return null
+}
+
+/** 获取 portfolio 入口 token */
+const fetchPortfolioToken = async () => {
+  if (isFetchingPortfolioToken) {
+    return portfolioJumpUrl.value
+  }
+
+  try {
+    isFetchingPortfolioToken = true
+    const res = await getInvestmentPortfolioEntryTokenApi()
+    if (res.data?.jumpUrl) {
+      portfolioJumpUrl.value = res.data.jumpUrl
+      console.log('[QuotesTab] 获取 portfolio 入口 token 成功:', portfolioJumpUrl.value)
+    }
+  } catch (error) {
+    console.error('[QuotesTab] 获取 portfolio 入口 token 失败:', error)
+  } finally {
+    isFetchingPortfolioToken = false
+  }
+
+  return portfolioJumpUrl.value
 }
 
 /** 批量操作所有 WebView 组件 */
@@ -427,16 +457,26 @@ const changeTab = async (type: QuotesTabType) => {
   }
   await nextTick()
 
-  if (
-    (type === 'liberty' && getServerOnOff('enable_quote')) ||
-    (type === 'portfolio' && getServerOnOff('portfolio_chart_enable', 'common'))
-  ) {
+  if (type === 'liberty' && getServerOnOff('enable_quote')) {
     const wvRef = getActiveWebviewRef()
     if (wvRef) {
       await wvRef.create()
       wvRef.show()
     }
   }
+
+  // portfolio 需要先获取 token
+  if (type === 'portfolio' && getServerOnOff('portfolio_chart_enable', 'common')) {
+    const token = await fetchPortfolioToken()
+    if (token) {
+      const wvRef = getActiveWebviewRef()
+      if (wvRef) {
+        await wvRef.create()
+        wvRef.show()
+      }
+    }
+  }
+
   if (type === 'hot' && !quotesCacheMap.value.hot.hasInitialized) {
     loadQuotes(1, 'hot')
   }
