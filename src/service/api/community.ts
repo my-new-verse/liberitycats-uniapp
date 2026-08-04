@@ -524,3 +524,7 @@ export const getFollowMembersApi = (params: {
 }) => {
   return http.get<FollowMemberListResponse>('/v1/community/follow/members', params)
 }
+
+export const refreshAdPostApi = (id: number) => {
+  return http.post<{ success: boolean; message?: string }>(`/v1/community/ad-post/${id}/refresh`)
+}

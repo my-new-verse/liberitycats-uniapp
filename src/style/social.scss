@@ -109,6 +109,17 @@
     .jbBox {
       background-image: url('@/static/images/more.png');
     }
+    .refreshBox {
+      position: absolute;
+      top: 0;
+      right: 60rpx;
+      z-index: 9;
+      width: 40rpx;
+      height: 40rpx;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
     .socialHead {
       display: flex;
       align-items: center;

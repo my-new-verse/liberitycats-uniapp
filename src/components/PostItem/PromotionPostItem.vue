@@ -1,6 +1,14 @@
 <template>
   <view class="socialItem">
-    <view class="delBox" v-if="showDelete" @click="$emit('delete', item.id)"></view>
+    <view v-if="showDelete" class="delBox">
+      <wd-icon
+        @click="$emit('refresh', item)"
+        name="refresh1"
+        size="22px"
+        color="#999999"
+      ></wd-icon>
+      <view @click="$emit('delete', item.id)" class="del-child"></view>
+    </view>
     <view class="jbBox" v-else-if="showReport" @click="$emit('report', item)"></view>
     <view class="socialHead">
       <view class="avatarBox" @click="$emit('avatar-click', item)">
@@ -79,6 +87,7 @@ withDefaults(
 defineEmits<{
   delete: [id: number]
   report: [item: any]
+  refresh: [item: any]
   'avatar-click': [item: any]
   click: [item: any]
   'view-click': [item: any]
@@ -90,4 +99,21 @@ defineEmits<{
 
 <style lang="scss">
 @import '/src/style/social';
+
+:deep(.delBox) {
+  background-image: none !important;
+  width: auto !important;
+  height: auto !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  .del-child {
+    width: 40rpx;
+    height: 40rpx;
+    background-image: url('@/static/images/trush@2x.png');
+    background-repeat: no-repeat;
+    background-size: 100%;
+  }
+}
 </style>

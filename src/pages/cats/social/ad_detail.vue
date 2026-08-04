@@ -21,11 +21,12 @@
         <view class="container">
           <view class="socialBox">
             <view class="socialItem">
-              <view
-                class="delBox"
-                v-if="postDetail.member_id === userStore.userInfo?.member_id"
-                @click="handleDelMainPost"
-              ></view>
+              <template v-if="postDetail.member_id === userStore.userInfo?.member_id">
+                <view class="delBox" @click="handleDelMainPost"></view>
+                <view class="refreshBox" @click="handleRefreshPost">
+                  <wd-icon name="refresh1" color="#999999" size="22px"></wd-icon>
+                </view>
+              </template>
               <view class="jbBox" v-else @click="reportPost(postDetail)"></view>
               <view
                 v-if="getMemberFollowInfo(postDetail?.member)"
@@ -59,7 +60,11 @@
                 <view class="nameWrapTitle">
                   <view class="name">{{ formatNickname(postDetail?.member?.nickname, 22) }}</view>
                   <view class="metaRow">
-                    <text class="metaTime">{{ formatRelativeTime(postDetail.create_time) }}</text>
+                    <text class="metaTime">
+                      {{
+                        formatRelativeTime(postDetail.promotion_sort_time || postDetail.create_time)
+                      }}
+                    </text>
                     <text class="metaSeparator">·</text>
                     <text class="metaPublished">{{ t('adDetail.published_in') }}</text>
                     <text class="metaZone">{{ t('adDetail.promotion_zone') }}</text>
@@ -598,6 +603,7 @@ import {
   setSpecialFollowApi,
   getAdTypeListApi,
   AdTypeItem,
+  refreshAdPostApi,
 } from '@/service/api/community'
 import {
   formatNickname,
@@ -1470,6 +1476,33 @@ const handleDelMainPost = () => {
         .finally(() => uni.hideLoading())
     })
     .catch(() => {})
+}
+
+/** 刷新主帖 */
+const handleRefreshPost = async () => {
+  if (!userStore.isLogin) {
+    toast.show(t('common.toast.pleaseLogin'))
+    return
+  }
+
+  try {
+    uni.showLoading()
+    const res = await refreshAdPostApi(postDetail.value.id)
+    uni.hideLoading()
+    if (res.code === 1) {
+      toast.show(t('social.detail.refresh.success'))
+      // 与 publish.vue 编辑推广帖成功后的逻辑一致：刷新列表并返回列表页
+      uni.$emit('refreshPromotionTab')
+      uni.$emit('refreshPromotionPost')
+      setTimeout(() => uni.navigateBack(), 500)
+    } else {
+      toast.show(res.msg || t('social.detail.refresh.failed'))
+    }
+  } catch (error) {
+    console.error('刷新失败:', error)
+    uni.hideLoading()
+    toast.show(t('social.detail.refresh.failed'))
+  }
 }
 
 /** 操作面板的取消关注（直接完全取关，不检查特别关注状态） */

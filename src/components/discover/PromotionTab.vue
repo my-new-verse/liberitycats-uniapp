@@ -68,6 +68,7 @@
             :show-delete="item.member_id === userStore.userInfo?.member_id"
             :show-report="item.member_id !== userStore.userInfo?.member_id"
             @delete="handleDelPost"
+            @refresh="handleRefreshPost"
             @report="reportPost"
             @avatar-click="(i) => toUserHome(i.member_id)"
             @click="(i) => toUrl('/pages/cats/social/ad_detail?id=' + i.id, false)"
@@ -158,6 +159,7 @@ import {
   banPostApi,
   unbanPostApi,
   checkAdEligibilityApi,
+  refreshAdPostApi,
 } from '@/service/api/community'
 import { useUserStore } from '@/store/user'
 import { useMessage, useToast } from 'wot-design-uni'
@@ -670,6 +672,25 @@ const handleDelPost = (id: number) => {
       })
     })
     .catch(() => {})
+}
+
+// 刷新推广帖（调用接口，成功后更新当前页列表）
+const handleRefreshPost = async (item: any) => {
+  try {
+    uni.showLoading()
+    const res = await refreshAdPostApi(item.id)
+    uni.hideLoading()
+    if (res.code === 1) {
+      toast.show(t('social.detail.refresh.success'))
+      // 重新拉取当前筛选下的列表
+      loadData(1, true)
+    } else {
+      toast.show(res.msg || t('social.detail.refresh.failed'))
+    }
+  } catch (e) {
+    uni.hideLoading()
+    toast.show(t('social.detail.refresh.failed'))
+  }
 }
 
 const goSearch = () => {

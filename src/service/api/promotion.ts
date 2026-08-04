@@ -72,6 +72,10 @@ export interface AdTypeItem {
   sort_order: number
   is_enabled: number
   icon: string
+  // 点击前展示的图标
+  before_click_icon_url: string
+  // 点击后展示的图标
+  after_click_icon_url: string
 }
 
 /** 获取广告类型列表 */

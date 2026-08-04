@@ -62,6 +62,7 @@ interface NavigateToOptions {
        "/pages/cats/social/ad_detail" |
        "/pages/cats/social/detail" |
        "/pages/cats/social/detail_sktiy_comment" |
+       "/pages/cats/social/follow_list" |
        "/pages/cats/social/group_announcement_detail" |
        "/pages/cats/social/group_announcement_list" |
        "/pages/cats/social/group_chat" |

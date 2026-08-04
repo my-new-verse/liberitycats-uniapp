@@ -271,6 +271,8 @@
   "social.detail.comment.reply_prefix": "回覆 ",
   "social.detail.comment.btn.send": "發表",
   "social.detail.content.not_audit_seed_myself": "內容未稽核，僅自己可見",
+  "social.detail.refresh.success": "刷新成功",
+  "social.detail.refresh.failed": "刷新失敗",
   "social.index.post.report": "檢舉貼文",
   "social.index.post.report_comment": "檢舉評論",
   "social.index.user.block": "屏蔽用戶",

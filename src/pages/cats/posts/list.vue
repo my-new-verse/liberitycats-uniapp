@@ -62,6 +62,7 @@
                 :item="item"
                 show-delete
                 @delete="handleDelPost"
+                @refresh="handleRefreshPromotion"
                 @avatar-click="
                   (i) => toUrl('/pages/cats/user/home?member_id=' + i.member_id, false)
                 "
@@ -145,6 +146,7 @@ import {
   createFollowApi,
   deleteFollowApi,
   getMyPostsApi,
+  refreshAdPostApi,
 } from '@/service/api/community'
 import { useUserStore } from '@/store'
 import { useMessage, useToast } from 'wot-design-uni'
@@ -217,6 +219,30 @@ const handlePostFilterChange = (key: string) => {
   if (!cache.loaded) loadMore()
 }
 
+/** 重置推广帖缓存并重新加载列表 */
+const refreshPromotionList = () => {
+  postFilterCache.value.promotion = createPostFilterCache()
+  loadMore(true)
+}
+
+// 刷新推广帖（调用接口，成功后更新当前页列表）
+const handleRefreshPromotion = async (item: any) => {
+  try {
+    uni.showLoading()
+    const res = await refreshAdPostApi(item.id)
+    uni.hideLoading()
+    if (res.code === 1) {
+      toast.show(t('social.detail.refresh.success'))
+      refreshPromotionList()
+    } else {
+      toast.show(res.msg || t('social.detail.refresh.failed'))
+    }
+  } catch (e) {
+    uni.hideLoading()
+    toast.show(t('social.detail.refresh.failed'))
+  }
+}
+
 // 滚动
 const scrollTop = ref(0)
 onPageScroll((e) => {
@@ -236,8 +262,7 @@ onLoad(() => {
       updateListItem(postId)
     } else {
       // 推广帖编辑无 postId，重置推广帖缓存并刷新
-      postFilterCache.value.promotion = createPostFilterCache()
-      loadMore(true)
+      refreshPromotionList()
     }
   })
   // 草稿编辑成功后刷新草稿 tab
