@@ -206,6 +206,8 @@ const handleFiatBlur = (selectItem: any, e: any) => {
       })
     })
   }
+  // 无论 value 是否为空，blur 后都隐藏键盘
+  uni.hideKeyboard()
 }
 </script>
 
