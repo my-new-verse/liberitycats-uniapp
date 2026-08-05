@@ -413,9 +413,18 @@ const handleBindWallet = () => {
 .unlockSheet {
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
+  width: 100%;
   max-height: 78vh;
   padding-bottom: env(safe-area-inset-bottom);
+  overflow-x: hidden;
   background-color: #ffffff;
+
+  /* 弹层内所有盒子统一按边框计算宽度，避免内边距把内容顶出屏幕 */
+  view,
+  scroll-view {
+    box-sizing: border-box;
+  }
 }
 
 .sheetHead {
@@ -455,6 +464,7 @@ const handleBindWallet = () => {
 
 .sheetBody {
   flex: 1;
+  width: 100%;
   max-height: 58vh;
   padding: 0 32rpx;
 }
