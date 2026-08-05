@@ -347,9 +347,10 @@ const handleSubscribe = async () => {
   const { subscribePath, subscribeUrl } = config.value.plan
   try {
     const res = await createMembershipSubscriptionApi(eligibility.value.subscription.plan?.plan_id)
-    if (res.code === 1 && res.data?.order_sn) {
+    if (res.code === 1 && res.data?.order_no) {
       show.value = false
-      toUrl(`/pages/cats/pay/index?order_sn=${res.data.order_sn}`, true)
+      // 与商城下单一致，统一走收银台页面
+      toUrl(`/pages/cats/pay/index?order_no=${res.data.order_no}`, true)
       return
     }
     if (res.code === 1 && res.data?.pay_url) {

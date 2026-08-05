@@ -21,7 +21,7 @@
       :line-width="20"
       :style="{ paddingTop: navHeight + 'rpx' }"
       custom-class="custom-tab"
-      v-if="!isEditMode && !isDraftEdit && isCatHolder"
+      v-if="!isEditMode && !isDraftEdit"
     >
       <wd-tab
         v-for="item in categoryList"
@@ -297,6 +297,13 @@
       </view>
     </view>
 
+    <!-- 推广发布的会员资格解锁弹层（保留已填写内容，关闭后停留在本页） -->
+    <MembershipUnlockPopup
+      v-model="unlockVisible"
+      :scene="unlockScene"
+      @unlocked="handleUnlocked"
+    />
+
     <wd-toast />
     <wd-message-box selector="wd-message-box-slot" />
   </view>
@@ -326,6 +333,8 @@ import { getAliyunOssConfigApi, type getAliyunOssConfigApiResponse } from '@/ser
 import { debounce } from 'lodash-es'
 import CustomNav from '@/components/CustomNav/CustomNav.vue'
 import LEditor from '@/components/l-editor/l-editor.vue'
+import MembershipUnlockPopup from '@/components/MembershipUnlock/MembershipUnlockPopup.vue'
+import { useMembershipUnlock } from '@/hooks/useMembership'
 
 const message = useMessage('wd-message-box-slot')
 
@@ -635,18 +644,11 @@ const isAddDraft = computed(() => {
 
 const isAddPublish = computed(() => {
   const hasContent = promotionContent.value.length > 0 || ossUploadedFiles.value.length > 0
-  console.log(
-    'hasContent',
-    canPost.value &&
-      canPublishAd.value &&
-      userStore.isLogin &&
-      hasContent &&
-      title.value.length &&
-      promotionType.value !== '',
-  )
+  // 未持有资格时按钮保持可点击，点击后引导解锁而非直接禁用
+  const adAllowed = !isCatHolder.value || canPublishAd.value
   return (
     canPost.value &&
-    canPublishAd.value &&
+    adAllowed &&
     userStore.isLogin &&
     hasContent &&
     title.value.length &&
@@ -702,14 +704,35 @@ const checkAdEligibility = async () => {
   }
 }
 
-/** 切换到推广 tab 时展示发布资格检查结果 */
+/**
+ * 切换到推广 tab 时的资格反馈
+ * - 已是 holder 但被限制发布：沿用违规提示
+ * - 未持有资格：弹出统一解锁引导，而不是隐藏入口
+ */
 const showAdEligibilityResult = () => {
-  if (isCatHolder.value && !canPublishAd.value && adEligibilityReason.value) {
+  if (!isCatHolder.value) {
+    openUnlockPopup('publish_ad')
+    return
+  }
+  if (!canPublishAd.value && adEligibilityReason.value) {
     message.alert({
       title: t('publish.index.ban.title'),
       msg: adEligibilityMessage.value,
     })
   }
+}
+
+const {
+  visible: unlockVisible,
+  scene: unlockScene,
+  open: openUnlockPopup,
+  handleUnlocked: handleUnlockedBase,
+} = useMembershipUnlock()
+
+/** 资格更新后重新校验并回到原任务 */
+const handleUnlocked = async () => {
+  await checkAdEligibility()
+  handleUnlockedBase()
 }
 
 /** 加载帖子数据用于编辑 */
@@ -972,6 +995,14 @@ const createPost = async (publishStatus: number = 1) => {
 const createPromotionPost = async (publishStatus: number = 1) => {
   if (!userStore.isLogin) {
     toUrl('/pages/cats/login/login', true, false)
+    return
+  }
+
+  // 发布（非草稿）需要会员资格：无资格时弹出解锁引导，解锁后自动继续发布
+  if (publishStatus === 1 && adEligibilityChecked.value && !isCatHolder.value) {
+    openUnlockPopup('publish_ad', () => {
+      if (isCatHolder.value) createPromotionPost(publishStatus)
+    })
     return
   }
 

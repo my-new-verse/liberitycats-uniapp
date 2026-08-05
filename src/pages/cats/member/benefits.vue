@@ -124,7 +124,7 @@ const { eligibility, load } = useMembershipEligibility()
 const { visible: unlockVisible, scene: unlockScene, open, handleUnlocked } = useMembershipUnlock()
 
 const openUnlock = () => {
-  open('nft_holder')
+  open('general')
 }
 
 onMounted(() => {

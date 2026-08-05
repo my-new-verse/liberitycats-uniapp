@@ -1,7 +1,7 @@
 import { http } from '@/utils/http'
 
 /** 受限功能场景（会员资格准入场景） */
-export type MembershipScene = 'publish_ad' | 'group_chat' | 'portfolio' | 'nft_holder'
+export type MembershipScene = 'publish_ad' | 'group_chat' | 'portfolio' | 'nft_holder' | 'general'
 
 /** 订阅方案（价格 / 周期由服务端或系统配置决定） */
 export interface MembershipPlan {
@@ -65,7 +65,7 @@ export const getMembershipPlanApi = () => {
 
 /** 创建订阅订单，返回项目现有支付流程所需信息 */
 export const createMembershipSubscriptionApi = (planId?: string | number) => {
-  return http.post<{ order_sn?: string; pay_url?: string }>(
+  return http.post<{ order_no?: string; pay_url?: string }>(
     '/v1/member/membership/create-subscription',
     { plan_id: planId },
   )

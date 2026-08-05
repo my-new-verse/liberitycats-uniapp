@@ -629,6 +629,13 @@
         </view>
       </view>
     </wd-popup>
+
+    <!-- 群聊准入资格解锁弹层 -->
+    <MembershipUnlockPopup
+      v-model="unlockVisible"
+      :scene="unlockScene"
+      @unlocked="handleUnlocked"
+    />
   </view>
 </template>
 
@@ -677,6 +684,8 @@ import {
 } from '@/service/api/groupChat'
 import { defaultEmojiList } from '@/utils/defaultEmojiList'
 import VirtualList from '@/components/virtual-list/virtual-list.vue'
+import MembershipUnlockPopup from '@/components/MembershipUnlock/MembershipUnlockPopup.vue'
+import { useMembershipUnlock } from '@/hooks/useMembership'
 const virtualListRef = ref<InstanceType<typeof VirtualList> | null>(null)
 
 const raf = (fn: () => void) => {
@@ -738,6 +747,14 @@ const userStore = useUserStore()
 const toast = useToast()
 const locale = uni.getLocale()
 const roomCode = ref('')
+
+// 群聊准入资格解锁弹层
+const {
+  visible: unlockVisible,
+  scene: unlockScene,
+  open: openUnlockPopup,
+  handleUnlocked,
+} = useMembershipUnlock()
 const routeRoomId = ref<number>(0)
 const roomDetail = ref<ChatRoomDetail | null>(null)
 const currentAnnouncement = ref<AnnouncementSummary | null>(null)
@@ -2879,7 +2896,8 @@ const validateBeforeSend = (): boolean => {
   // 4. 用户必须已加入群（未加入时服务端可自动补加入，此处仅做提示）
   // 如果 roomDetail 中有成员信息，可以检查是否已加入
   if (roomDetail.value.access.is_accessible !== 1) {
-    toast.show(t('group.chat.notAccessible'))
+    // 资格中途失效时给出解锁引导，而不是仅提示无权限
+    openUnlockPopup('group_chat', () => loadRoomDetail())
     return false
   }
 
@@ -2895,7 +2913,7 @@ const validateBeforeSend = (): boolean => {
     return false
   }
 
-  // 7. client_message_id 幂等性由 createClientMessageId() 保证，每次生成唯一 ID
+  // 7. client_message_id 幂等性由 createClientMessageId() 保证，每���生成唯一 ID
   // 该函数使用设备ID + 用户ID + 群ID + 序列号 + UUID v5 确保唯一性
 
   return true
