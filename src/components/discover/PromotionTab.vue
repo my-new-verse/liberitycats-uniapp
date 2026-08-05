@@ -781,7 +781,7 @@ watch(
 )
 
 onShow(() => {
-  // fetchUnreadCount()
+  fetchUnreadCount()
 })
 
 onMounted(async () => {
@@ -795,10 +795,16 @@ onMounted(async () => {
   uni.$on('refreshPromotionTab', () => {
     loadData(1, true)
   })
+
+  // 监听刷新未读消息数
+  uni.$on('refreshTabMsgUnread', () => {
+    fetchUnreadCount()
+  })
 })
 
 onUnmounted(() => {
   uni.$off('refreshPromotionTab')
+  uni.$off('refreshTabMsgUnread')
 })
 </script>
 
