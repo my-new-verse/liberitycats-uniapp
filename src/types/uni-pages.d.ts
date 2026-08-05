@@ -41,6 +41,7 @@ interface NavigateToOptions {
        "/pages/cats/kf/add" |
        "/pages/cats/login/login" |
        "/pages/cats/login/login_code" |
+       "/pages/cats/member/benefits" |
        "/pages/cats/message/index" |
        "/pages/cats/news/detail" |
        "/pages/cats/notification/detail" |

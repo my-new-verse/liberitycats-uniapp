@@ -49,6 +49,13 @@
         </view>
       </view>
     </scroll-view>
+
+    <!-- 专属官方群聊的会员资格解锁弹层 -->
+    <MembershipUnlockPopup
+      v-model="unlockVisible"
+      :scene="unlockScene"
+      @unlocked="handleUnlocked"
+    />
   </view>
 </template>
 
@@ -66,6 +73,8 @@ import {
   NotificationSummaryRoom,
 } from '@/service/api/groupChat'
 import { useUserStore } from '@/store/user'
+import MembershipUnlockPopup from '@/components/MembershipUnlock/MembershipUnlockPopup.vue'
+import { useMembershipUnlock } from '@/hooks/useMembership'
 
 const props = defineProps<{
   /** 父组件传递的通知摘要 rooms 数据 */
@@ -140,11 +149,30 @@ const loadGroupList = async (forceRefresh = false) => {
   }
 }
 
-const handleJoinOrEnter = async (group: GroupChatItem) => {
+const {
+  visible: unlockVisible,
+  scene: unlockScene,
+  open: openUnlockPopup,
+  handleUnlocked,
+} = useMembershipUnlock()
+
+const handleJoinOrEnter = async (group: GroupChatItem, skipAccessCheck = false) => {
   if (!group?.id || enteringGroupMap.value[group.id]) return
 
   if (!hasLoginToken()) {
     toUrl('/pages/cats/login/login')
+    return
+  }
+
+  // 无准入资格时，在当前页面弹出解锁弹层，保留原有列表上下文
+  if (!skipAccessCheck && group.is_joined !== 1 && group.is_accessible === 0) {
+    openUnlockPopup('group_chat', async () => {
+      // 资格生效后刷新房间准入状态，并直接回到"进入群聊"这一原任务
+      await loadGroupList(true)
+      const latest = (groupList.value.find((item) => item.id === group.id) ||
+        group) as GroupChatItem
+      handleJoinOrEnter(latest, true)
+    })
     return
   }
 

@@ -62,6 +62,9 @@ importers:
       dayjs:
         specifier: 1.11.10
         version: 1.11.10
+      laravel-echo:
+        specifier: ^1.19.0
+        version: 1.19.0
       lodash-es:
         specifier: 4.17.21
         version: 4.17.21
@@ -71,12 +74,18 @@ importers:
       pinia-plugin-persistedstate:
         specifier: 3.2.1
         version: 3.2.1(pinia@2.0.36(typescript@5.8.3)(vue@3.4.21(typescript@5.8.3)))
+      pusher-js:
+        specifier: ^8.5.0
+        version: 8.6.0
       qs:
         specifier: 6.5.3
         version: 6.5.3
       sass:
         specifier: 1.77.8
         version: 1.77.8
+      uniapp-video-player:
+        specifier: ^1.3.0
+        version: 1.3.0(vue@3.4.21(typescript@5.8.3))
       vue:
         specifier: 3.4.21
         version: 3.4.21(typescript@5.8.3)
@@ -114,9 +123,6 @@ importers:
       '@dcloudio/vite-plugin-uni':
         specifier: 3.0.0-4020920240930001
         version: 3.0.0-4020920240930001(postcss@8.5.3)(rollup@4.41.1)(vite@5.2.8(@types/node@20.17.50)(sass@1.77.8)(terser@5.39.2))(vue@3.4.21(typescript@5.8.3))
-      '@esbuild/darwin-arm64':
-        specifier: 0.20.2
-        version: 0.20.2
       '@esbuild/darwin-x64':
         specifier: 0.20.2
         version: 0.20.2
@@ -4062,6 +4068,10 @@ packages:
   kolorist@1.8.0:
     resolution: {integrity: sha512-Y+60/zizpJ3HRH8DCss+q95yr6145JXZo46OTpFvDZWLfRCE4qChOyk1b26nMaNpfHHgxagk9dXT5OP0Tfe+dQ==}
 
+  laravel-echo@1.19.0:
+    resolution: {integrity: sha512-o/X4XH8BIRwij66PSjtotZfM88Z8g/4P3gzxQf2BTcZBKmGqucvI5JYYLprR2OZQ9XlGsmJ2v+hDpPGEbXwUWw==}
+    engines: {node: '>=10'}
+
   lcid@3.1.1:
     resolution: {integrity: sha512-M6T051+5QCGLBQb8id3hdvIW8+zeFV2FyBGFS9IEK5H9Wt4MueD4bW1eWikpHgZp+5xR3l5c8pZUkQsIA0BFZg==}
     engines: {node: '>=8'}
@@ -4781,6 +4791,9 @@ packages:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
     engines: {node: '>=6'}
 
+  pusher-js@8.6.0:
+    resolution: {integrity: sha512-wShJPfCS/kYkCBVzVW67wa9cnQIgHTszEK2XHNrFkOgGruuGw081aERAxfRjfdFU+WcIt8x6dvbwkTW4iZuQ8Q==}
+
   qrcode-reader@1.0.4:
     resolution: {integrity: sha512-rRjALGNh9zVqvweg1j5OKIQKNsw3bLC+7qwlnead5K/9cb1cEIAGkwikt/09U0K+2IDWGD9CC6SP7tHAjUeqvQ==}
 
@@ -5396,6 +5409,9 @@ packages:
   tslib@2.8.1:
     resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
 
+  tweetnacl@1.0.3:
+    resolution: {integrity: sha512-6rt+RN7aOi1nGMyC4Xa5DdYiukl2UWCbcJft7YhxReBGQD7OAM8Pbxw6YMo4r2diNEA8FEmu32YOn9rhaiE5yw==}
+
   type-check@0.4.0:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}
     engines: {node: '>= 0.8.0'}
@@ -5464,6 +5480,11 @@ packages:
 
   undici-types@6.19.8:
     resolution: {integrity: sha512-ve2KP6f/JnbPBFyobGHuerC9g1FYGn/F8n1LWTwNxCEzd6IfqTwUQcNXgEtmmQ6DlRrC1hrSrBnCZPokRrDHjw==}
+
+  uniapp-video-player@1.3.0:
+    resolution: {integrity: sha512-WZa/U836ou053pzqijL2EzDrN1VX2e7Dj4R/xSMKzhcotaTqTLTc9xL832xkgwPDFmL5MEecGuyPsw2sE4hutA==}
+    peerDependencies:
+      vue: ^2.6.0 || ^3.0.0
 
   unicode-canonical-property-names-ecmascript@2.0.1:
     resolution: {integrity: sha512-dA8WbNeb2a6oQzAQ55YlT5vQAWGV9WXOsi3SskE3bcCdM0P4SDd+24zS/OCacdRq5BkdsRj9q3Pg6YyQoxIGqg==}
@@ -7357,7 +7378,8 @@ snapshots:
   '@esbuild/android-x64@0.20.2':
     optional: true
 
-  '@esbuild/darwin-arm64@0.20.2': {}
+  '@esbuild/darwin-arm64@0.20.2':
+    optional: true
 
   '@esbuild/darwin-x64@0.20.2': {}
 
@@ -10990,6 +11012,8 @@ snapshots:
 
   kolorist@1.8.0: {}
 
+  laravel-echo@1.19.0: {}
+
   lcid@3.1.1:
     dependencies:
       invert-kv: 3.0.1
@@ -11662,6 +11686,10 @@ snapshots:
       punycode: 2.3.1
 
   punycode@2.3.1: {}
+
+  pusher-js@8.6.0:
+    dependencies:
+      tweetnacl: 1.0.3
 
   qrcode-reader@1.0.4: {}
 
@@ -12365,6 +12393,8 @@ snapshots:
   tslib@2.8.1:
     optional: true
 
+  tweetnacl@1.0.3: {}
+
   type-check@0.4.0:
     dependencies:
       prelude-ls: 1.2.1
@@ -12441,6 +12471,10 @@ snapshots:
       jiti: 1.21.7
 
   undici-types@6.19.8: {}
+
+  uniapp-video-player@1.3.0(vue@3.4.21(typescript@5.8.3)):
+    dependencies:
+      vue: 3.4.21(typescript@5.8.3)
 
   unicode-canonical-property-names-ecmascript@2.0.1: {}
 

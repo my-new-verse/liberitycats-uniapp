@@ -338,22 +338,71 @@
                   </view>
                 </template>
                 <template v-else>
-                  <view
-                    class="emptyBox"
-                    style="
-                      width: 80%;
-                      height: 200rpx;
-                      margin: 40rpx auto 0 auto;
-                      font-size: 24rpx;
-                      color: #999;
-                      text-align: center;
-                    "
-                  >
-                    <view class="emptyTextRow">
-                      <text>{{ t('my.nft.empty_txt') }}</text>
+                  <!-- 未持有 Liberty Cats NFT 的空状态 -->
+                  <view class="nftEmptyState">
+                    <view class="emptyStatusBox">
+                      <view class="emptyStatusText">{{ t('my.nft.empty.status') }}</view>
+                      <view class="emptyStatusCount">
+                        <text class="countLabel">{{ t('my.nft.empty.count_label') }}</text>
+                        <text class="countValue">0</text>
+                      </view>
                       <view class="nftGuideButton" role="button" @click.stop="openNftGuide">
                         <wd-icon name="help-circle-filled" size="22px"></wd-icon>
                       </view>
+                    </view>
+                    <view class="emptyMetaList">
+                      <view class="emptyMetaItem">
+                        <text class="metaLabel">{{ t('my.nft.empty.wallet') }}</text>
+                        <view class="metaRight">
+                          <text class="metaValue">
+                            {{ formatWalletAddress(userStore.userInfo.wallet_address) }}
+                          </text>
+                          <text class="metaLink" @click="toUrl('/pages/cats/settings/index', true)">
+                            {{ t('my.nft.empty.manage_wallet') }}
+                          </text>
+                        </view>
+                      </view>
+                      <view class="emptyMetaItem">
+                        <text class="metaLabel">{{ t('my.nft.empty.collection') }}</text>
+                        <text class="metaValue">{{ membershipConfig.collection }}</text>
+                      </view>
+                      <view class="emptyMetaItem">
+                        <text class="metaLabel">{{ t('my.nft.empty.network') }}</text>
+                        <text class="metaValue">{{ membershipConfig.network }}</text>
+                      </view>
+                    </view>
+                    <view class="emptyValueDesc">{{ t('my.nft.empty.value_desc') }}</view>
+                    <view class="emptyPrimaryBtn" @click="openNftUnlock">
+                      {{ t('my.nft.empty.hold_now') }}
+                    </view>
+                    <view class="emptyRefreshLink" @click="handleRefreshNftList">
+                      {{ t('my.nft.empty.refresh') }}
+                    </view>
+                    <view class="holderBenefits">
+                      <view class="holderBenefitsTitle">
+                        {{ t('my.nft.holder.benefits_title') }}
+                      </view>
+                      <view class="holderBenefitsList">
+                        <view
+                          class="holderBenefitItem"
+                          v-for="item in MEMBERSHIP_BENEFITS"
+                          :key="item.key"
+                        >
+                          {{ t(`membership.benefits.item.${item.key}`) }}
+                        </view>
+                      </view>
+                      <view
+                        class="holderBenefitsMore"
+                        @click="toUrl('/pages/cats/member/benefits', true)"
+                      >
+                        {{ t('membership.unlock.benefits_entry') }}
+                      </view>
+                    </view>
+                    <view class="subscribeHint">
+                      <text class="subscribeHintText">{{ t('my.nft.subscribe_hint') }}</text>
+                      <text class="subscribeHintLink" @click="openSubscribeIntro">
+                        {{ t('my.nft.subscribe_hint_link') }}
+                      </text>
                     </view>
                   </view>
                 </template>
@@ -518,6 +567,12 @@
       <wd-message-box selector="wd-message-box-slot2"></wd-message-box>
     </view>
     <FloatingCat />
+    <!-- 会员资格解锁底部弹层 -->
+    <MembershipUnlockPopup
+      v-model="unlockVisible"
+      :scene="unlockScene"
+      @unlocked="handleUnlockSuccess"
+    />
     <!-- 版本更新弹窗 -->
     <AppUpdatePopup
       :model-value="manualUpdatePopupShow"
@@ -538,6 +593,7 @@
 import i18n, { t } from '@/locale/index'
 import {
   formatNickname,
+  formatWalletAddress,
   getImageUrl,
   openOkx,
   shareToSystem,
@@ -547,6 +603,12 @@ import {
   formatNumber,
   openUrl,
 } from '@/utils'
+import MembershipUnlockPopup from '@/components/MembershipUnlock/MembershipUnlockPopup.vue'
+import {
+  MEMBERSHIP_BENEFITS,
+  getMembershipConfig,
+  useMembershipUnlock,
+} from '@/hooks/useMembership'
 
 import { useMessage, useToast } from 'wot-design-uni'
 
@@ -800,6 +862,27 @@ const handleRefreshNftList = () => {
     .finally(() => {
       uni.hideLoading()
     })
+}
+
+// 会员资格解锁弹层（我的 NFT 未持有状态复用同一份持有引导内容）
+const membershipConfig = ref(getMembershipConfig())
+const { visible: unlockVisible, scene: unlockScene, open: openUnlockPopup } = useMembershipUnlock()
+
+const openNftUnlock = () => {
+  membershipConfig.value = getMembershipConfig()
+  openUnlockPopup('nft_holder')
+}
+
+const openSubscribeIntro = () => {
+  toUrl('/pages/cats/member/benefits', true)
+}
+
+// 资格更新后回到原任务：刷新我的 NFT 与资产数据
+const handleUnlockSuccess = () => {
+  unlockVisible.value = false
+  loadNftList()
+  refreshAssets()
+  refreshLevel()
 }
 
 const handleKf = () => {
@@ -1298,6 +1381,143 @@ const bindArGame = () => {
         color: #ff6b03;
         border: 2rpx solid #ff6b03;
         border-radius: 44rpx;
+      }
+
+      /* 未持有 NFT 的空状态 */
+      .nftEmptyState {
+        margin-top: 24rpx;
+
+        .emptyStatusBox {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 24rpx 28rpx;
+          background-color: #faf8f5;
+          border-radius: 24rpx;
+        }
+
+        .emptyStatusText {
+          font-size: 28rpx;
+          font-weight: 500;
+          color: #261000;
+        }
+
+        .emptyStatusCount {
+          .countLabel {
+            margin-right: 8rpx;
+            font-size: 22rpx;
+            color: rgba(38, 16, 0, 0.5);
+          }
+
+          .countValue {
+            font-size: 32rpx;
+            font-weight: 600;
+            color: #ff6b03;
+          }
+        }
+
+        .emptyMetaList {
+          margin-top: 16rpx;
+
+          .emptyMetaItem {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12rpx 4rpx;
+          }
+
+          .metaLabel {
+            font-size: 24rpx;
+            color: rgba(38, 16, 0, 0.5);
+          }
+
+          .metaRight {
+            display: flex;
+            align-items: center;
+          }
+
+          .metaValue {
+            font-size: 24rpx;
+            color: #261000;
+          }
+
+          .metaLink {
+            margin-left: 16rpx;
+            font-size: 22rpx;
+            color: #ff6b03;
+          }
+        }
+
+        .emptyValueDesc {
+          margin-top: 12rpx;
+          font-size: 24rpx;
+          line-height: 36rpx;
+          color: rgba(38, 16, 0, 0.6);
+        }
+
+        .emptyPrimaryBtn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          height: 88rpx;
+          margin-top: 24rpx;
+          font-size: 30rpx;
+          font-weight: 500;
+          color: #ffffff;
+          background: linear-gradient(329deg, #ff6b03 0%, #ee941a 100%);
+          border-radius: 44rpx;
+        }
+
+        .emptyRefreshLink {
+          margin-top: 20rpx;
+          font-size: 24rpx;
+          color: #ff6b03;
+          text-align: center;
+        }
+
+        .holderBenefits {
+          padding-top: 24rpx;
+          margin-top: 24rpx;
+          border-top: 2rpx solid rgba(38, 16, 0, 0.06);
+
+          .holderBenefitsTitle {
+            font-size: 26rpx;
+            color: rgba(38, 16, 0, 0.55);
+          }
+
+          .holderBenefitsList {
+            display: flex;
+            flex-wrap: wrap;
+            margin-top: 16rpx;
+          }
+
+          .holderBenefitItem {
+            padding: 8rpx 20rpx;
+            margin: 0 12rpx 12rpx 0;
+            font-size: 22rpx;
+            color: #261000;
+            background-color: #faf8f5;
+            border-radius: 24rpx;
+          }
+
+          .holderBenefitsMore {
+            margin-top: 4rpx;
+            font-size: 24rpx;
+            color: #ff6b03;
+          }
+        }
+
+        .subscribeHint {
+          margin-top: 20rpx;
+          font-size: 22rpx;
+          line-height: 32rpx;
+          color: rgba(38, 16, 0, 0.45);
+
+          .subscribeHintLink {
+            margin-left: 8rpx;
+            color: #ff6b03;
+          }
+        }
       }
 
       .nftList {
