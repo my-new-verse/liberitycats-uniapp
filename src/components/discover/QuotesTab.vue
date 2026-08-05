@@ -123,6 +123,13 @@
         "
       />
     </view>
+
+    <!-- 投资组合行情的会员资格解锁弹层 -->
+    <MembershipUnlockPopup
+      v-model="unlockVisible"
+      :scene="unlockScene"
+      @unlocked="handleUnlocked"
+    />
   </view>
 </template>
 
@@ -140,6 +147,8 @@ import { formatNumber, getImageUrl, getServerOnOff, openUrl } from '@/utils'
 import { t } from '@/locale'
 import QuoteWebview from '@/components/quote-webview/quote-webview.vue'
 import { useUserStore } from '@/store'
+import MembershipUnlockPopup from '@/components/MembershipUnlock/MembershipUnlockPopup.vue'
+import { useMembershipUnlock } from '@/hooks/useMembership'
 
 type LoadMoreState = 'loading' | 'finished' | 'error' | 'success'
 
@@ -277,6 +286,11 @@ const activatePortfolioWebview = async () => {
       if (previousUrl) {
         await wvRef.create()
         wvRef.show()
+      } else {
+        openUnlockPopup('portfolio', () => {
+          tabType.value = 'hot'
+          changeTab('portfolio')
+        })
       }
       return
     }
@@ -349,6 +363,14 @@ watch(
     }
   },
 )
+
+// 投资组合入口的会员资格解锁弹层
+const {
+  visible: unlockVisible,
+  scene: unlockScene,
+  open: openUnlockPopup,
+  handleUnlocked,
+} = useMembershipUnlock()
 
 const tabType = ref<QuotesTabType>(getServerOnOff('enable_quote') ? 'liberty' : 'hot')
 watch(
