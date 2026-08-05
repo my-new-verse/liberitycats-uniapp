@@ -716,6 +716,8 @@ const handleMarkAsRead = (notificationItem: any) => {
       getNotificationUnreadCount()
       getUnreadByCategory()
       closeSwipe(notificationItem)
+      // 刷新 Tab 页面上的未读消息数量
+      uni.$emit('refreshTabMsgUnread')
     } else {
       toast.show(res.msg || t('common.error'))
       closeSwipe(notificationItem)
