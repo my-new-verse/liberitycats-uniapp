@@ -87,12 +87,8 @@
         </view>
       </template>
     </view>
-    <!-- 发布浮窗 -->
-    <view
-      v-if="hasPermission"
-      class="pubSocial"
-      @click="toUrl('/pages/cats/social/publish?category=promotion', true)"
-    >
+    <!-- 发布浮窗（始终显示） -->
+    <view class="pubSocial" @click="handlePublishClick">
       <view class="pubImg"></view>
     </view>
     <!-- 消息入口浮窗 -->
@@ -145,7 +141,14 @@
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import { t } from '@/locale/index'
 import PromotionPostItem from '@/components/PostItem/PromotionPostItem.vue'
-import { formatNickname, formatRelativeTime, getImageUrl, toUrl, handlePreview } from '@/utils'
+import {
+  formatNickname,
+  formatRelativeTime,
+  getImageUrl,
+  toUrl,
+  handlePreview,
+  getServerOnOff,
+} from '@/utils'
 import { getUnReadNotificationCountApi } from '@/service/api/user'
 import { getAdPostListApi, getAdTypeListApi, AdPostItem } from '@/service/api/promotion'
 import {
@@ -195,6 +198,32 @@ const checkAdEligibility = async () => {
   } catch (e) {
     console.error('checkAdEligibility failed', e)
     hasPermission.value = true
+  }
+}
+
+// 发布浮窗图片 URL（从服务端配置获取）
+const publishIconUrl = ref('')
+
+/** 加载发布浮窗图标（无权限时点击预览该图片） */
+const loadPublishIcon = () => {
+  const url = getServerOnOff('ar_withdraw_process_image_url', 'common', true)
+  if (url) {
+    publishIconUrl.value = getImageUrl(url)
+  }
+}
+
+/** 点击发布浮窗：有权限跳转发布页，无权限预览说明图片 */
+const handlePublishClick = () => {
+  if (!userStore.isLogin) {
+    toast.show(t('common.toast.pleaseLogin'))
+    toUrl('/pages/cats/login/login', true)
+    return
+  }
+  if (hasPermission.value) {
+    toUrl('/pages/cats/social/publish?category=promotion', true)
+  } else {
+    // 无权限：预览说明图片
+    if (publishIconUrl.value) handlePreview([publishIconUrl.value], 0, false)
   }
 }
 
@@ -757,6 +786,7 @@ onShow(() => {
 
 onMounted(async () => {
   fetchUnreadCount()
+  loadPublishIcon()
   await checkAdEligibility()
   await loadAdTypes()
   loadData(1)

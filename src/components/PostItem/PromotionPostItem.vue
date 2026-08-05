@@ -39,7 +39,9 @@
           # {{ tag.display_name }}
         </text>
       </view>
-      <view class="socialTime">{{ formatRelativeTime(item.create_time) }}</view>
+      <view class="socialTime">
+        {{ formatRelativeTime(item.promotion_sort_time || item.create_time) }}
+      </view>
     </view>
     <view class="socialFoot" v-if="showFoot">
       <view class="socialBtnBox" @click="$emit('view-click', item)">
