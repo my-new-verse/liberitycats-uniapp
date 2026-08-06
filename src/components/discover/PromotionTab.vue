@@ -206,7 +206,7 @@ const publishIconUrl = ref('')
 
 /** 加载发布浮窗图标（无权限时点击预览该图片） */
 const loadPublishIcon = () => {
-  const url = getServerOnOff('ar_withdraw_process_image_url', 'common', true)
+  const url = getServerOnOff('promotion_post_guide_url', 'common', true)
   if (url) {
     publishIconUrl.value = getImageUrl(url)
   }
