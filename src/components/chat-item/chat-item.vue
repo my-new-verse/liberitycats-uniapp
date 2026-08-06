@@ -785,6 +785,7 @@ let avatarLongPressTimer: ReturnType<typeof setTimeout> | null = null
 let avatarLongPressStartX = 0
 let avatarLongPressStartY = 0
 let avatarLongPressMoved = false
+let avatarLongPressTriggered = false // 长按是否已触发（用于阻止后续合成 click 跳转主页）
 const AVATAR_LONG_PRESS_DURATION_MS = 450
 const AVATAR_LONG_PRESS_MOVE_THRESHOLD_PX = 10
 
@@ -795,10 +796,12 @@ const handleAvatarTouchStart = (event: any) => {
   avatarLongPressStartX = Number(touch.clientX || touch.pageX || 0)
   avatarLongPressStartY = Number(touch.clientY || touch.pageY || 0)
   avatarLongPressMoved = false
+  avatarLongPressTriggered = false
   if (avatarLongPressTimer) clearTimeout(avatarLongPressTimer)
   avatarLongPressTimer = setTimeout(() => {
     avatarLongPressTimer = null
     if (avatarLongPressMoved) return
+    avatarLongPressTriggered = true
     const memberId = props.item.sender?.member_id
     const nickname = props.item.sender?.nickname || ''
     if (!memberId) return
@@ -830,7 +833,11 @@ const handleAvatarTouchEnd = () => {
 }
 // ✅ 点击头像查看用户主页
 const handleAvatarClick = (memberId: number | undefined) => {
-  console.log(memberId)
+  // 长按已触发 @提及时，阻止后续合成 click 跳转主页
+  if (avatarLongPressTriggered) {
+    avatarLongPressTriggered = false
+    return
+  }
   if (!memberId) return
   uni.navigateTo({
     url: `/pages/cats/user/home?member_id=${memberId}`,
