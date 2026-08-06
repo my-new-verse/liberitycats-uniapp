@@ -37,6 +37,7 @@ interface NavigateToOptions {
        "/pages/cats/flow/confirm_order" |
        "/pages/cats/goods/detail" |
        "/pages/cats/goods/search" |
+       "/pages/cats/guide/index" |
        "/pages/cats/kf/add" |
        "/pages/cats/login/login" |
        "/pages/cats/login/login_code" |

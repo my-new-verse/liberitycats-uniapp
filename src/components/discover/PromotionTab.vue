@@ -223,7 +223,9 @@ const handlePublishClick = () => {
     toUrl('/pages/cats/social/publish?category=promotion', true)
   } else {
     // 无权限：预览说明图片
-    if (publishIconUrl.value) handlePreview([publishIconUrl.value], 0, false)
+    if (publishIconUrl.value) {
+      toUrl(`/pages/cats/guide/index?key=promotion_post_guide_url`)
+    }
   }
 }
 

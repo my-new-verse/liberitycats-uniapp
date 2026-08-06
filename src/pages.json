@@ -390,6 +390,13 @@
       }
     },
     {
+      "path": "pages/cats/guide/index",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/cats/kf/add",
       "type": "page",
       "layout": "default",

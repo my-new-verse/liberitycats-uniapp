@@ -349,7 +349,12 @@
                       text-align: center;
                     "
                   >
-                    {{ t('my.nft.empty_txt') }}
+                    <view class="emptyTextRow">
+                      <text>{{ t('my.nft.empty_txt') }}</text>
+                      <view class="nftGuideButton" role="button" @click.stop="openNftGuide">
+                        <wd-icon name="help-circle-filled" size="22px"></wd-icon>
+                      </view>
+                    </view>
                   </view>
                 </template>
               </view>
@@ -366,7 +371,12 @@
               "
               v-else
             >
-              {{ t('my.nft.empty.not_bind_wallet') }}
+              <view class="emptyTextRow">
+                <text>{{ t('my.nft.empty.not_bind_wallet') }}</text>
+                <view class="nftGuideButton" role="button" @click.stop="openNftGuide">
+                  <wd-icon name="help-circle-filled" size="22px"></wd-icon>
+                </view>
+              </view>
               <view
                 class="nftConnect"
                 @click="connectWallet"
@@ -629,6 +639,12 @@ const iconMap = {
 const showNftMoreOnOff = ref(false)
 const showNftMore = () => {
   showNftMoreOnOff.value = !showNftMoreOnOff.value
+}
+
+const openNftGuide = () => {
+  const guideId = agreementsMap.value?.user_pledge_nft_guide?.id
+  if (!guideId) return
+  toUrl(`/pages/cats/guide/index?key=nft_purchase_guide_url`)
 }
 
 const refreshAssets = () => {
@@ -1252,6 +1268,21 @@ const bindArGame = () => {
           color: #261000;
         }
       }
+      .emptyTextRow {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8rpx;
+      }
+
+      .nftGuideButton {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #ff6b03;
+        cursor: pointer;
+      }
+
       .nftConnect {
         display: flex;
         align-items: center;
