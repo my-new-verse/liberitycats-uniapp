@@ -95,6 +95,10 @@
     "watch": true,
     "watchEffect": true,
     "watchPostEffect": true,
-    "watchSyncEffect": true
+    "watchSyncEffect": true,
+    "MEMBERSHIP_BENEFITS": true,
+    "getMembershipConfig": true,
+    "useMembershipEligibility": true,
+    "useMembershipUnlock": true
   }
 }
