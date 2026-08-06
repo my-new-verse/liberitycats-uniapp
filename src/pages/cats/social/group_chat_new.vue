@@ -1409,6 +1409,7 @@ const queryList = async (pageNo, pageSize) => {
             lastestMessageId.value = String(res.data.next_before_message_id)
           }
           paging.value?.complete(messages)
+          messages.forEach((message) => stageReadMessage(message.id))
           await nextTick()
           setTimeout(async () => {
             await scrollIntoViewById(targetId)
@@ -1520,6 +1521,7 @@ const getChatMessageList = async (beforeMessageId: string | number = null, silen
     lastestMessageId.value = newLastestId
     const filtered = filterExistingMessages(messages.value, newMessages)
     paging.value?.complete(filtered)
+    filtered.forEach((message) => stageReadMessage(message.id))
   } else {
     messageCache.set(beforeMessageId, {
       messages: newMessages,
@@ -2714,10 +2716,14 @@ const flushPendingReadOnLeave = async () => {
   // if (hasFlushedReadOnLeave) return
 
   const roomId = roomDetail.value?.room.id || routeRoomId.value
-  // 兜底：数组可能经过翻转，顺序不确定，取首尾两项中 ID 较大的
-  const firstId = messages.value[0]?.id || 0
-  const lastId = messages.value[messages.value.length - 1]?.id || 0
-  const lastReadMessageId = pendingReadMessageId.value || Math.max(firstId, lastId)
+  // 补充暂存的离屏消息 id（用户不在底部时收到的实时消息）
+  pendingOffscreenMessages.forEach((msg) => stageReadMessage(msg.id))
+  // 遍历所有消息取最大 id，确保不遗漏
+  const maxMessageId = messages.value.reduce((max, msg) => {
+    const id = Number(msg?.id || 0)
+    return id > max ? id : max
+  }, 0)
+  const lastReadMessageId = pendingReadMessageId.value || maxMessageId
   if (!roomId || !lastReadMessageId) return
 
   hasFlushedReadOnLeave = true
