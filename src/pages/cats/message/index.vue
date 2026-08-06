@@ -279,13 +279,16 @@
           </template>
         </view>
         <view
-          v-if="calendarSelectedLabel && !listData.data?.length"
+          v-if="activeCategory === 'community' && !currentCache.loading && !listData.data?.length"
           class="time-header time-header-empty"
         >
           <view class="time-header-calendar" @click.stop="calendarRef?.open()">
             <wd-icon name="calendar" size="36rpx" color="#ff6b03"></wd-icon>
-            <text class="time-header-date">{{ calendarSelectedLabel }}</text>
+            <text class="time-header-date">
+              {{ calendarSelectedLabel || getTodayDateLabel() }}
+            </text>
             <wd-icon
+              v-if="calendarSelectedLabel"
               name="error-fill"
               size="28rpx"
               color="#ccc"
@@ -295,6 +298,8 @@
           </view>
         </view>
         <view class="emptyBox" v-if="!currentCache.loading && currentList.length === 0">
+          <view class="emptyImg"></view>
+
           <view class="emptyText">{{ t('common.no_data') }}</view>
         </view>
       </template>
