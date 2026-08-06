@@ -88,10 +88,19 @@
               >
                 <wd-icon name="calendar" size="36rpx" color="#ff6b03"></wd-icon>
                 <text
-                  v-if="calendarSelectedLabel || groupHeaderMap.get(index).date"
+                  v-if="
+                    calendarSelectedLabel ||
+                    (!(activeSubtype === 'follow' && !isShowingAll) &&
+                      groupHeaderMap.get(index).date)
+                  "
                   class="time-header-date"
                 >
-                  {{ calendarSelectedLabel || groupHeaderMap.get(index).date }}
+                  {{
+                    calendarSelectedLabel ||
+                    (!(activeSubtype === 'follow' && !isShowingAll)
+                      ? groupHeaderMap.get(index).date
+                      : '')
+                  }}
                 </text>
                 <wd-icon
                   v-if="calendarSelectedLabel"
@@ -356,6 +365,9 @@ type NotificationCacheEntry = {
   loaded: boolean
   loading: boolean
   scrollTop: number
+  calendarRange: number[]
+  confirmedStartDate: string
+  confirmedEndDate: string
 }
 
 const createCacheEntry = (): NotificationCacheEntry => ({
@@ -364,6 +376,9 @@ const createCacheEntry = (): NotificationCacheEntry => ({
   loaded: false,
   loading: false,
   scrollTop: 0,
+  calendarRange: [],
+  confirmedStartDate: '',
+  confirmedEndDate: '',
 })
 // 消息分类列表（对应接口category）
 const categoryList = ref([
@@ -582,11 +597,25 @@ const getUnreadByCategory = () => {
 
 // ========== 日历筛选（起止时间） ==========
 const calendarRef = ref()
-// daterange 模式下 v-model 绑定 [startTimestamp, endTimestamp]
-const calendarRange = ref<number[]>([])
-// 确认后的日期参数（实际用于接口查询）
-const confirmedStartDate = ref('')
-const confirmedEndDate = ref('')
+// 日期筛选保存在当前 subtype 的缓存中，点赞/关注/评论互不影响。
+const calendarRange = computed<number[]>({
+  get: () => currentCache.value.calendarRange,
+  set: (value) => {
+    currentCache.value.calendarRange = value
+  },
+})
+const confirmedStartDate = computed<string>({
+  get: () => currentCache.value.confirmedStartDate,
+  set: (value) => {
+    currentCache.value.confirmedStartDate = value
+  },
+})
+const confirmedEndDate = computed<string>({
+  get: () => currentCache.value.confirmedEndDate,
+  set: (value) => {
+    currentCache.value.confirmedEndDate = value
+  },
+})
 // 选中的日期范围展示文本，如 "2026-08-02～2026-08-04"
 const calendarSelectedLabel = computed(() => {
   if (confirmedStartDate.value && confirmedEndDate.value) {
