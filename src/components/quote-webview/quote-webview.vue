@@ -25,7 +25,12 @@
       <!-- #endif -->
 
       <!-- #ifdef H5 -->
-      <web-view v-if="active && !hasError" :src="url" @load="handleLoaded" @error="handleError" />
+      <web-view
+        v-if="active && shouldRender && !hasError"
+        :src="url"
+        @load="handleLoaded"
+        @error="handleError"
+      />
       <view
         v-show="hasError"
         style="
@@ -66,6 +71,7 @@ const emit = defineEmits<{
 const instance = getCurrentInstance()
 const webviewInstance = ref<any>(null)
 const hasError = ref(false)
+const shouldRender = ref(true)
 let isUnmounted = false
 let _lastPosition = { top: 0, left: 0 }
 
@@ -123,6 +129,7 @@ const handleReload = async () => {
 
 /** 创建 native WebView（APP-PLUS）或触发 H5 渲染。幂等：已有实例则仅 show()。 */
 const create = async (): Promise<void> => {
+  shouldRender.value = true
   // #ifdef APP-PLUS
   if (isUnmounted) return
 
@@ -246,6 +253,7 @@ const hide = (): void => {
 
 /** 完全销毁当前 WebView（清理监听 + close 实例） */
 const destroy = (): void => {
+  shouldRender.value = false
   // #ifdef APP-PLUS
   if (webviewInstance.value) {
     removeWebviewListeners()

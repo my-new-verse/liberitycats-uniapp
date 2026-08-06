@@ -138,6 +138,7 @@ import {
 import { formatNumber, getImageUrl, getServerOnOff, openUrl } from '@/utils'
 import { t } from '@/locale'
 import QuoteWebview from '@/components/quote-webview/quote-webview.vue'
+import { useUserStore } from '@/store'
 
 type LoadMoreState = 'loading' | 'finished' | 'error' | 'success'
 
@@ -177,6 +178,7 @@ type WebviewTabType = 'liberty' | 'portfolio'
 // ========== WebView 子组件协调 ==========
 const libertyWVRef = ref<InstanceType<typeof QuoteWebview>>()
 const zhuangeWVRef = ref<InstanceType<typeof QuoteWebview>>()
+const userStore = useUserStore()
 
 const LIBERTY_WEBVIEW_URL = 'https://lcat8.com'
 const PORTFOLIO_WEBVIEW_URL = 'http://47.236.146.191:3000/#analysis-section'
@@ -231,6 +233,18 @@ const forEachWebviewRef = (fn: (wv: InstanceType<typeof QuoteWebview>) => void) 
     if (r) fn(r)
   })
 }
+
+// 退出登录时销毁 WebView，避免原生 WebView 继续保留上一个账号的会话。
+watch(
+  () => userStore.isLogin,
+  (isLogin, wasLogin) => {
+    if (!isLogin && wasLogin) {
+      forEachWebviewRef((wv) => wv.destroy())
+      portfolioJumpUrl.value = ''
+      isFetchingPortfolioToken = false
+    }
+  },
+)
 
 const tabType = ref<QuotesTabType>(getServerOnOff('enable_quote') ? 'liberty' : 'hot')
 watch(
