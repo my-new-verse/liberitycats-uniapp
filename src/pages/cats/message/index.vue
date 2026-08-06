@@ -205,9 +205,11 @@
                         class="thumbnail-image"
                         mode="aspectFill"
                       />
-                      <text v-else-if="item?.display?.rootPostSummary" class="thumbnail-text">
-                        {{ item.display.rootPostSummary }}
-                      </text>
+                      <view v-else-if="item?.display?.rootPostSummary" class="thumbnail-text">
+                        <text class="thumbnail-text-inner">
+                          {{ item.display.rootPostSummary }}
+                        </text>
+                      </view>
                       <view v-else class="thumbnail-placeholder"></view>
                     </view>
                   </view>
@@ -267,11 +269,25 @@
             </view>
           </template>
         </view>
-        <template v-show="!listData.data?.length">
-          <view class="emptyBox" :class="{ 'com-emptyBox': activeCategory === 'community' }">
-            <view class="emptyImg"></view>
+        <view
+          v-if="calendarSelectedLabel && !listData.data?.length"
+          class="time-header time-header-empty"
+        >
+          <view class="time-header-calendar" @click.stop="calendarRef?.open()">
+            <wd-icon name="calendar" size="36rpx" color="#ff6b03"></wd-icon>
+            <text class="time-header-date">{{ calendarSelectedLabel }}</text>
+            <wd-icon
+              name="error-fill"
+              size="28rpx"
+              color="#ccc"
+              class="calendar-clear-icon"
+              @click.stop="handleCalendarClear"
+            ></wd-icon>
           </view>
-        </template>
+        </view>
+        <view class="emptyBox" v-if="!currentCache.loading && currentList.length === 0">
+          <view class="emptyText">{{ t('common.no_data') }}</view>
+        </view>
       </template>
 
       <template #footer>
@@ -406,6 +422,8 @@ const getCurrentCache = () => {
 }
 // 消息列表数据
 const listData = ref<getNotificationListResponse>(getCurrentCache().listData)
+const currentCache = computed(() => getCurrentCache())
+const currentList = computed(() => listData.value.data || [])
 const syncCurrentCache = () => {
   const subtype = isShowingAll.value ? '' : activeSubtype.value
   const key = getCacheKey(activeCategory.value, subtype)
@@ -1406,9 +1424,16 @@ onUnmounted(() => {
 .com-socialBox {
   padding-top: calc(104rpx + 180rpx);
 }
-.com-emptyBox {
-  padding-top: calc(104rpx + 180rpx);
-  box-sizing: border-box;
+.emptyBox {
+  display: flex;
+  justify-content: center;
+  height: auto;
+  padding-top: 200rpx;
+
+  .emptyText {
+    font-size: 28rpx;
+    color: #999;
+  }
 }
 
 /* 未读红点 */
@@ -1652,6 +1677,11 @@ onUnmounted(() => {
   color: #999;
 }
 
+.time-header-empty {
+  justify-content: flex-end;
+  padding-top: calc(104rpx + 180rpx);
+}
+
 /* 日历按钮圆形背景 */
 .time-header-calendar {
   position: relative;
@@ -1792,7 +1822,8 @@ onUnmounted(() => {
     font-size: 24rpx;
   }
 
-  .interactionTargetSummary {
+  .interactionTargetSummary,
+  .commentContent {
     color: #000;
     font-size: 26rpx;
   }
@@ -1846,22 +1877,28 @@ onUnmounted(() => {
   border-radius: 12rpx;
 }
 .thumbnail-text {
-  width: 100%;
-  height: 100%;
-  box-sizing: border-box;
-  padding: 12rpx; /* 底部 padding 稍大以平衡视觉 */
-  font-size: 22rpx;
-  color: #666;
-  line-height: 1.5;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 4;
-  background-color: #fbf7f3;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 100%;
+  max-height: calc(100% - 16rpx);
+  height: calc(100% - 16rpx);
+  box-sizing: border-box;
+  padding: 8rpx;
+  background-color: #fbf7f3;
+
+  .thumbnail-text-inner {
+    font-size: 22rpx;
+    color: #666;
+    line-height: 1.5;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    word-break: break-all;
+  }
 }
 
 @keyframes shimmer {
