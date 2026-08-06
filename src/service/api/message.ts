@@ -56,12 +56,16 @@ export const getNotificationListApi = (
   limit: number,
   category?: string,
   subtype?: 'like' | 'follow' | 'comment',
+  startDate?: string,
+  endDate?: string,
 ) => {
   return http.get<getNotificationListResponse>('/v1/member/notification/list', {
     page,
     limit,
     category,
     subtype,
+    start_date: startDate,
+    end_date: endDate,
   })
 }
 // 按分类的未读数量

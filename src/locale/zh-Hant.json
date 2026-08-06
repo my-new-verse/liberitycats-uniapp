@@ -551,9 +551,12 @@
   "notification.index.delete_success": "刪除成功",
   "notification.index.delete_batch_success": "批次刪除成功",
   "notification.index.make_all_read": "全部已讀",
+  "notification.index.filter_by_date": "按日期篩選",
   "notification.index.today": "今天",
   "notification.index.yesterday": "昨天",
   "notification.index.earlier": "更早",
+  "notification.index.content_deleted": "該內容已刪除",
+  "notification.index.content_unavailable": "該內容暫不可見",
 
   "group.chat.members_btn": "群成員 ({count})",
   "group.chat.input_placeholder": "輸入訊息...",

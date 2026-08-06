@@ -81,11 +81,26 @@
               class="time-header"
             >
               <text>{{ groupHeaderMap.get(index).label }}</text>
-              <view class="time-header-calendar">
+              <view
+                v-if="index === firstGroupHeaderIndex"
+                class="time-header-calendar"
+                @click.stop="calendarRef?.open()"
+              >
                 <wd-icon name="calendar" size="36rpx" color="#ff6b03"></wd-icon>
-                <text v-if="groupHeaderMap.get(index).date" class="time-header-date">
-                  {{ groupHeaderMap.get(index).date }}
+                <text
+                  v-if="calendarSelectedLabel || groupHeaderMap.get(index).date"
+                  class="time-header-date"
+                >
+                  {{ calendarSelectedLabel || groupHeaderMap.get(index).date }}
                 </text>
+                <wd-icon
+                  v-if="calendarSelectedLabel"
+                  name="error-fill"
+                  size="28rpx"
+                  color="#ccc"
+                  class="calendar-clear-icon"
+                  @click.stop="handleCalendarClear"
+                ></wd-icon>
               </view>
             </view>
             <view class="cell socialBox">
@@ -117,6 +132,9 @@
                         :style="getAvatarStyle(item?.member?.avatar)"
                         @click.stop="handleUserHomeClick(item)"
                       ></view>
+                      <view v-if="getLevelIcon(item?.member)" class="community-level-icon">
+                        <image :src="getLevelIcon(item?.member)" mode="widthFix" />
+                      </view>
                       <view class="community-unread-dot" :class="{ hide: item.is_read }"></view>
                     </view>
                     <view class="community-body">
@@ -124,11 +142,7 @@
                         <view class="community-name-action">
                           <!-- like/comment/follow/special_follow/special_follow_post：只展示 actorName -->
                           <template v-if="isUnifiedDisplaySubtype(item)">
-                            <text
-                              class="community-name"
-                              style="font-weight: 700"
-                              @click.stop="handleUserHomeClick(item)"
-                            >
+                            <text class="community-name" @click.stop="handleUserHomeClick(item)">
                               {{ item.params['${actorName}'] }}
                             </text>
                           </template>
@@ -138,14 +152,35 @@
                         class="community-subtext"
                         v-if="
                           isUnifiedDisplaySubtype(item)
-                            ? item.display?.actionText
+                            ? item.display?.actionSegments?.length
                             : item.i18n.content
                         "
                       >
-                        <!-- like/comment/follow/special_follow/special_follow_post：只展示 display.actionText -->
-                        <text v-if="isUnifiedDisplaySubtype(item)" class="community-preview-text">
-                          {{ item.display?.actionText }}
-                        </text>
+                        <!-- like/comment/follow/special_follow/special_follow_post：遍历 actionSegments 展示 text（type=separator 跳过） -->
+                        <view v-if="isUnifiedDisplaySubtype(item)" class="community-preview-text">
+                          <template
+                            v-for="(segment, segIndex) in item.display?.actionSegments || []"
+                            :key="segIndex"
+                          >
+                            <!-- 第一个子元素：与时间同行 -->
+                            <view v-if="segIndex === 0" class="p-txet-row">
+                              <view class="p-txet" :class="segment.type">
+                                <text v-if="segment?.type !== 'separator'">
+                                  {{ getSegmentText(item, segment) }}
+                                </text>
+                              </view>
+                              <text class="community-time">
+                                {{ formatRelativeTime(item.create_time) }}
+                              </text>
+                            </view>
+                            <!-- 后续子元素 -->
+                            <view v-else class="p-txet" :class="segment.type">
+                              <text v-if="segment?.type !== 'separator'">
+                                {{ getSegmentText(item, segment) }}
+                              </text>
+                            </view>
+                          </template>
+                        </view>
                         <!-- 其他类型：展示 i18n.content -->
                         <rich-text
                           v-else
@@ -153,9 +188,6 @@
                           class="community-preview-text"
                         ></rich-text>
                       </view>
-                      <text class="community-time">
-                        {{ formatRelativeTime(item.create_time) }}
-                      </text>
                     </view>
                     <view
                       v-if="getFollowBtnInfo(item)"
@@ -248,6 +280,17 @@
       </template>
     </custom-nav>
     <wd-toast />
+
+    <!-- 日历筛选（起止时间） -->
+    <wd-calendar
+      ref="calendarRef"
+      v-model="calendarRange"
+      type="daterange"
+      :with-cell="false"
+      :max-date="Date.now()"
+      @confirm="handleCalendarConfirm"
+      :clearable="true"
+    />
   </view>
 </template>
 
@@ -519,6 +562,52 @@ const getUnreadByCategory = () => {
   })
 }
 
+// ========== 日历筛选（起止时间） ==========
+const calendarRef = ref()
+// daterange 模式下 v-model 绑定 [startTimestamp, endTimestamp]
+const calendarRange = ref<number[]>([])
+// 确认后的日期参数（实际用于接口查询）
+const confirmedStartDate = ref('')
+const confirmedEndDate = ref('')
+// 选中的日期范围展示文本，如 "2026-08-02～2026-08-04"
+const calendarSelectedLabel = computed(() => {
+  if (confirmedStartDate.value && confirmedEndDate.value) {
+    return `${confirmedStartDate.value}～${confirmedEndDate.value}`
+  }
+  return ''
+})
+
+/** 时间戳 → YYYY-MM-DD */
+const formatTimestampToDate = (ts: number): string => {
+  if (!ts) return ''
+  const d = new Date(ts)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+/** 日历确认：格式化起止日期并重新加载 */
+const handleCalendarConfirm = () => {
+  const [start, end] = calendarRange.value
+  confirmedStartDate.value = start ? formatTimestampToDate(start) : ''
+  confirmedEndDate.value = end ? formatTimestampToDate(end) : ''
+  // 重置缓存并重新加载第一页
+  const cache = getCurrentCache()
+  resetCacheEntry(cache)
+  loadMore()
+}
+
+/** 清空日期筛选 */
+const handleCalendarClear = () => {
+  calendarRange.value = []
+  confirmedStartDate.value = ''
+  confirmedEndDate.value = ''
+  const cache = getCurrentCache()
+  resetCacheEntry(cache)
+  loadMore()
+}
+
 // 加载消息列表
 const loadMore = (refresh = false) => {
   const requestCategory = activeCategory.value
@@ -536,12 +625,14 @@ const loadMore = (refresh = false) => {
   cache.state = 'loading'
   state.value = 'loading'
   uni.showLoading()
-  // 传参：页码、分类
+  // 传参：页码、分类、日期筛选
   getNotificationListApi(
     cache.listData.current_page + 1,
     cache.listData.per_page,
     requestCategory && requestCategory !== 'all' ? requestCategory : '',
     requestCategory === 'community' ? apiSubtype : undefined,
+    confirmedStartDate.value || undefined,
+    confirmedEndDate.value || undefined,
   )
     .then((res) => {
       console.log(res)
@@ -633,6 +724,20 @@ const toDetail = (notificationItem: any) => {
       break
     case 'community':
       const { interactionTarget, rootPostId } = context
+      // follow / special_follow 跳转个人主页，不涉及 target 状态；其余子类型需检查 target.status
+      const isFollowType = ['follow', 'special_follow'].includes(notificationItem?.subtype)
+      if (!isFollowType) {
+        const targetStatus = context?.target?.status
+        if (targetStatus && targetStatus !== 'available') {
+          // 非 available 状态不可跳转，提示对应文案
+          if (targetStatus === 'deleted') {
+            toast.show(t('notification.index.content_deleted'))
+          } else {
+            toast.show(t('notification.index.content_unavailable'))
+          }
+          break
+        }
+      }
       /**
        *  rootPostId 所在帖子ID。
           interactionTarget：若 type === "Comment"，则 interactionTarget.id 定位被赞/被回复所在的那条评论ID；
@@ -887,6 +992,42 @@ const shouldHideThumbnail = (item: any): boolean => {
   )
 }
 
+/** 获取 level_id 的值（优先使用 level_id，兼容旧的 level 字段） */
+const getLevelValue = (member: any): number | null => {
+  if (member?.level_id !== undefined) {
+    const num = Number(member.level_id)
+    return isNaN(num) || num <= 0 ? null : num
+  }
+  const level = member?.level
+  if (!level) return null
+  const levelNum = level.level !== undefined ? level.level : level
+  const num = Number(levelNum)
+  return isNaN(num) || num <= 0 ? null : num
+}
+
+/** 获取 level 图标路径 */
+const getLevelIcon = (member: any): string => {
+  const levelId = getLevelValue(member)
+  if (!levelId) return ''
+  return `/static/images/level/${levelId}.png`
+}
+
+/** interactionTargetSummary 的展示文本：根据 context.target.status 判断 */
+const getInteractionTargetText = (item: any, segment: any): string => {
+  const status = item?.context?.target?.status
+  if (status === 'available') return segment?.text || ''
+  if (status === 'deleted') return t('notification.index.content_deleted')
+  return t('notification.index.content_unavailable')
+}
+
+/** 获取 segment 的展示文本（interactionTargetSummary 类型需根据 target 状态判断） */
+const getSegmentText = (item: any, segment: any): string => {
+  if (segment?.type === 'interactionTargetSummary') {
+    return getInteractionTargetText(item, segment)
+  }
+  return segment?.text || ''
+}
+
 // 统一展示 actorName + actionText 的消息子类型
 const UNIFIED_DISPLAY_SUBTYPES = [
   'like',
@@ -1008,6 +1149,12 @@ const groupHeaderMap = computed(() => {
     }
   })
   return map
+})
+
+// 第一个分组标题的 index（只有它展示日历按钮）
+const firstGroupHeaderIndex = computed(() => {
+  const first = groupHeaderMap.value.keys().next()
+  return first.done ? -1 : first.value
 })
 
 const getGroupLabel = (key: string): string => {
@@ -1507,6 +1654,7 @@ onUnmounted(() => {
 
 /* 日历按钮圆形背景 */
 .time-header-calendar {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1515,6 +1663,12 @@ onUnmounted(() => {
   padding: 0 16rpx;
   border-radius: 22rpx;
   background-color: #fff1e8;
+
+  .calendar-clear-icon {
+    position: absolute;
+    top: -10rpx;
+    right: -10rpx;
+  }
 }
 
 /* 分组日期文案 */
@@ -1527,7 +1681,7 @@ onUnmounted(() => {
 /* 社区消息项布局 */
 .community-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 18rpx;
   padding: 20rpx 0 !important;
 }
@@ -1562,6 +1716,22 @@ onUnmounted(() => {
   }
 }
 
+/* 等级图标 */
+.community-level-icon {
+  position: absolute;
+  right: -4rpx;
+  bottom: 2rpx;
+  z-index: 9;
+  width: 28rpx;
+  height: 28rpx;
+  pointer-events: none;
+
+  image {
+    width: 100%;
+    height: 100%;
+  }
+}
+
 /* 主体内容 */
 .community-body {
   flex: 1;
@@ -1585,10 +1755,11 @@ onUnmounted(() => {
 .community-name {
   font-size: 26rpx;
   // font-weight: 600;
-  color: #333;
+  // color: #333;
+  color: #000;
 }
 .community-time {
-  font-size: 24rpx;
+  font-size: 22rpx;
   color: #999;
   flex-shrink: 0;
 }
@@ -1596,13 +1767,35 @@ onUnmounted(() => {
   margin-top: 8rpx;
 }
 .community-preview-text {
-  font-size: 26rpx;
   color: #666;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2; /* 最多展示两行，超出部分省略号 */
+  display: flex;
+  // align-items: center;
+  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 6rpx;
+  .p-txet-row {
+    display: flex;
+    align-items: center;
+    gap: 8rpx;
+  }
+  .p-txet {
+    // flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2; /* 最多展示两行，超出部分省略号 */
+  }
+  .action {
+    color: #999;
+    font-size: 24rpx;
+  }
+
+  .interactionTargetSummary {
+    color: #000;
+    font-size: 26rpx;
+  }
 }
 
 /* 回关按钮 */
@@ -1630,8 +1823,8 @@ onUnmounted(() => {
 /* 帖子/评论缩略图（关注类型除外） */
 .community-thumbnail {
   flex-shrink: 0;
-  width: 160rpx;
-  height: 160rpx;
+  width: 120rpx;
+  height: 120rpx;
   margin-left: 8rpx;
   border-radius: 12rpx;
   overflow: hidden;
