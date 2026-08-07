@@ -87,20 +87,8 @@
                 @click.stop="calendarRef?.open()"
               >
                 <wd-icon name="calendar" size="36rpx" color="#ff6b03"></wd-icon>
-                <text
-                  v-if="
-                    calendarSelectedLabel ||
-                    (!(activeSubtype === 'follow' && !isShowingAll) &&
-                      groupHeaderMap.get(index).date)
-                  "
-                  class="time-header-date"
-                >
-                  {{
-                    calendarSelectedLabel ||
-                    (!(activeSubtype === 'follow' && !isShowingAll)
-                      ? groupHeaderMap.get(index).date
-                      : '')
-                  }}
+                <text v-if="calendarSelectedLabel" class="time-header-date">
+                  {{ calendarSelectedLabel }}
                 </text>
                 <wd-icon
                   v-if="calendarSelectedLabel"
@@ -284,8 +272,8 @@
         >
           <view class="time-header-calendar" @click.stop="calendarRef?.open()">
             <wd-icon name="calendar" size="36rpx" color="#ff6b03"></wd-icon>
-            <text class="time-header-date">
-              {{ calendarSelectedLabel || getTodayDateLabel() }}
+            <text v-if="calendarSelectedLabel" class="time-header-date">
+              {{ calendarSelectedLabel }}
             </text>
             <wd-icon
               v-if="calendarSelectedLabel"
@@ -326,7 +314,7 @@
 
 <script lang="ts" setup>
 import i18n, { t } from '@/locale/index'
-import { formatRelativeTime, toUrlOnce, toUrl, formatNickname } from '@/utils'
+import { formatRelativeTime, toUrlOnce, toUrl, formatNickname, getTimeZoneOffsetStr } from '@/utils'
 import { useToast } from 'wot-design-uni'
 // 滚动加载类型
 import { LoadMoreState } from 'wot-design-uni/components/wd-loadmore/types'
@@ -1121,8 +1109,8 @@ const getTimeGroupKey = (createTime: string): string => {
   let date: Date
   let str = createTime.trim()
   if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(str)) {
-    str = str.replace(' ', 'T')
-    date = new Date(str + 'Z')
+    str = str.replace(' ', 'T') + getTimeZoneOffsetStr(timeZone)
+    date = new Date(str)
   } else {
     date = new Date(str)
   }
