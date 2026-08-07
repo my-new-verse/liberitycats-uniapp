@@ -944,6 +944,11 @@ const doSpecialFollow = (isSpecial: boolean) => {
           : t('social.index.user.special.success'),
         icon: 'none',
       })
+    } else {
+      uni.showToast({
+        title: res.msg || t('common.request.error'),
+        icon: 'none',
+      })
     }
   })
 }
