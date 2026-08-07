@@ -95,6 +95,7 @@
                 :item="item"
                 show-delete
                 :show-foot="false"
+                :show-refresh="false"
                 @delete="handleDelPost"
                 @avatar-click="
                   (i) => toUrl('/pages/cats/user/home?member_id=' + i.member_id, false)

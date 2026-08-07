@@ -2,6 +2,7 @@
   <view class="socialItem">
     <view v-if="showDelete" class="delBox">
       <wd-icon
+        v-if="showRefresh"
         @click="$emit('refresh', item)"
         name="refresh1"
         size="22px"
@@ -80,21 +81,18 @@ withDefaults(
     showFoot?: boolean
     showDelete?: boolean
     showReport?: boolean
+    showRefresh?: boolean
   }>(),
   {
     showFoot: true,
+    showRefresh: true,
   },
 )
-
-const debouncedRefresh = (value: any) => {
-  console.log('debounce refresh triggered for item:', value?.id)
-}
 
 defineEmits<{
   delete: [id: number]
   report: [item: any]
   refresh: [item: any]
-  refreshPromotion: [item: any]
   'avatar-click': [item: any]
   click: [item: any]
   'view-click': [item: any]
