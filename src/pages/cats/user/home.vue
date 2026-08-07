@@ -231,11 +231,15 @@
             <template v-if="activePostFilter === 'promotion'">
               <view class="cell socialBox" v-for="item in socialList.data" :key="item.id">
                 <view class="socialItem">
-                  <view
-                    v-if="item.member_id === userStore.userInfo?.member_id"
-                    class="delBox"
-                    @click="handleDelPost(item.id)"
-                  ></view>
+                  <view v-if="item.member_id === userStore.userInfo?.member_id" class="delBox">
+                    <wd-icon
+                      @click="debouncedHandleRefreshPost(item)"
+                      name="refresh1"
+                      size="22px"
+                      color="#999999"
+                    ></wd-icon>
+                    <view @click="handleDelPost(item.id)" class="del-child"></view>
+                  </view>
                   <view class="socialHead">
                     <view
                       class="avatarBox"
@@ -427,7 +431,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { t } from '@/locale/index'
 import {
@@ -440,6 +444,7 @@ import {
 } from '@/utils'
 import { useUserStore } from '@/store/user'
 import { useToast, useMessage } from 'wot-design-uni'
+import { debounce } from 'lodash-es'
 import { LoadMoreState } from 'wot-design-uni/components/wd-loadmore/types'
 import {
   getMemberHomepageApi,
@@ -454,6 +459,7 @@ import {
   deletePostApi,
   banPostApi,
   unbanPostApi,
+  refreshAdPostApi,
 } from '@/service/api/community'
 import SharePopup from '@/components/SharePopup/SharePopup.vue'
 
@@ -633,6 +639,10 @@ onMounted(() => {
   kfBoxTop.value = (safeAreaInsets?.top || 0) + 36 + 'rpx'
   cntHeight.value = 'calc(100vh - ' + headBoxHeight.value + ' + 64rpx)'
   // #endif
+})
+
+onUnmounted(() => {
+  debouncedHandleRefreshPost?.cancel()
 })
 
 const getCurrentCache = () => postFilterCache.value[activePostFilter.value]
@@ -1083,6 +1093,29 @@ const doHandlePreview = (images: string[], currentIndex: number = 0, needDealImg
   images = images.map((item) => (item = item + '?x-oss-process=style/sqdt'))
   handlePreview(images, currentIndex)
 }
+// 刷新推广帖（调用接口，成功后更新当前页列表）
+const handleRefreshPost = async (item: any) => {
+  try {
+    // 注意：不要和 uni.showToast 混用，否则会冲突
+    const res = await refreshAdPostApi(item.id)
+    if (res.code === 1) {
+      uni.showToast({ title: t('social.detail.refresh.success'), icon: 'success', duration: 2000 })
+      // 重新拉取当前筛选下的列表
+      loadData(1, true)
+    } else {
+      console.log(res.msg || t('social.detail.refresh.failed'))
+      uni.showToast({
+        title: res.msg || t('social.detail.refresh.failed'),
+        icon: 'none',
+        duration: 2000,
+      })
+    }
+  } catch (e) {
+    console.error('refresh failed:', e)
+    uni.showToast({ title: t('social.detail.refresh.failed'), icon: 'none', duration: 2000 })
+  }
+}
+const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
 </script>
 
 <style lang="scss" scoped>
@@ -1504,6 +1537,22 @@ const doHandlePreview = (images: string[], currentIndex: number = 0, needDealImg
         background: #ff6b03;
       }
     }
+  }
+}
+:deep(.delBox) {
+  background-image: none !important;
+  width: auto !important;
+  height: auto !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  .del-child {
+    width: 40rpx;
+    height: 40rpx;
+    background-image: url('@/static/images/trush@2x.png');
+    background-repeat: no-repeat;
+    background-size: 100%;
   }
 }
 </style>

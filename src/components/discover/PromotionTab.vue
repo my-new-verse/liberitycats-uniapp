@@ -68,7 +68,7 @@
             :show-delete="item.member_id === userStore.userInfo?.member_id"
             :show-report="item.member_id !== userStore.userInfo?.member_id"
             @delete="handleDelPost"
-            @refresh="handleRefreshPost"
+            @refresh="debouncedHandleRefreshPost"
             @report="reportPost"
             @avatar-click="(i) => toUserHome(i.member_id)"
             @click="(i) => toUrl('/pages/cats/social/ad_detail?id=' + i.id, false)"
@@ -166,6 +166,7 @@ import {
 } from '@/service/api/community'
 import { useUserStore } from '@/store/user'
 import { useMessage, useToast } from 'wot-design-uni'
+import { debounce } from 'lodash-es'
 
 const userStore = useUserStore()
 const toast = useToast()
@@ -708,21 +709,26 @@ const handleDelPost = (id: number) => {
 // 刷新推广帖（调用接口，成功后更新当前页列表）
 const handleRefreshPost = async (item: any) => {
   try {
-    uni.showLoading()
+    // 注意：不要和 uni.showToast 混用，否则会冲突
     const res = await refreshAdPostApi(item.id)
-    uni.hideLoading()
     if (res.code === 1) {
-      toast.show(t('social.detail.refresh.success'))
+      uni.showToast({ title: t('social.detail.refresh.success'), icon: 'success', duration: 2000 })
       // 重新拉取当前筛选下的列表
       loadData(1, true)
     } else {
-      toast.show(res.msg || t('social.detail.refresh.failed'))
+      console.log(res.msg || t('social.detail.refresh.failed'))
+      uni.showToast({
+        title: res.msg || t('social.detail.refresh.failed'),
+        icon: 'none',
+        duration: 2000,
+      })
     }
   } catch (e) {
-    uni.hideLoading()
-    toast.show(t('social.detail.refresh.failed'))
+    console.error('refresh failed:', e)
+    uni.showToast({ title: t('social.detail.refresh.failed'), icon: 'none', duration: 2000 })
   }
 }
+const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
 
 const goSearch = () => {
   toUrl('/pages/cats/social/promotion_search', true)
@@ -802,11 +808,15 @@ onMounted(async () => {
   uni.$on('refreshTabMsgUnread', () => {
     fetchUnreadCount()
   })
+  setTimeout(() => {
+    toast.show('yyyy')
+  }, 2000)
 })
 
 onUnmounted(() => {
   uni.$off('refreshPromotionTab')
   uni.$off('refreshTabMsgUnread')
+  debouncedHandleRefreshPost?.cancel()
 })
 </script>
 

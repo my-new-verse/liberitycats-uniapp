@@ -8,7 +8,7 @@
 
 <template>
   <view>
-    <custom-nav :title="t('game.extract_coin_guide.title')">
+    <custom-nav>
       <template #default>
         <view class="guideImgBox">
           <view v-if="imgLoading" class="imgLoading">

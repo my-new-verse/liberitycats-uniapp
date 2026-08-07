@@ -23,7 +23,7 @@
             <view class="socialItem">
               <template v-if="postDetail.member_id === userStore.userInfo?.member_id">
                 <view class="delBox" @click="handleDelMainPost"></view>
-                <view class="refreshBox" @click="handleRefreshPost">
+                <view class="refreshBox" @click="debouncedHandleRefreshPost">
                   <wd-icon name="refresh1" color="#999999" size="22px"></wd-icon>
                 </view>
               </template>
@@ -1408,6 +1408,7 @@ onUnmounted(() => {
     pendingFocusTimer = null
   }
   uni.$off('refreshPromotionPost')
+  debouncedHandleRefreshPost?.cancel()
 })
 
 const handleLoadComments = (sort: string) => {
@@ -1504,6 +1505,7 @@ const handleRefreshPost = async () => {
     toast.show(t('social.detail.refresh.failed'))
   }
 }
+const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
 
 /** 操作面板的取消关注（直接完全取关，不检查特别关注状态） */
 const handleActionSheetUnfollow = async (member: any) => {

@@ -110,7 +110,7 @@
                 :show-delete="item.member_id === userStore.userInfo?.member_id"
                 :show-report="item.member_id !== userStore.userInfo?.member_id"
                 @delete="handleDelPost"
-                @refresh="handleRefreshPost"
+                @refresh="debouncedHandleRefreshPost"
                 @report="reportPost"
                 @avatar-click="(i) => toUserHome(i.member_id)"
                 @click="(i) => toUrl('/pages/cats/social/ad_detail?id=' + i.id, false)"
@@ -389,6 +389,7 @@ import {
 } from '@/service/api/community'
 import { useUserStore } from '@/store/user'
 import { useMessage, useToast } from 'wot-design-uni'
+import { debounce } from 'lodash-es'
 import { LoadMoreState } from 'wot-design-uni/components/wd-loadmore/types'
 import SharePopup from '@/components/SharePopup/SharePopup.vue'
 
@@ -910,6 +911,7 @@ const handleRefreshPost = async (item: any) => {
     toast.show(t('social.detail.refresh.failed'))
   }
 }
+const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
 
 const onRefresh = () => {
   if (!hasSearched.value) {
@@ -1367,6 +1369,7 @@ onUnmounted(() => {
   if (typeof uni.offKeyboardHeightChange === 'function') {
     uni.offKeyboardHeightChange()
   }
+  debouncedHandleRefreshPost?.cancel()
 })
 </script>
 

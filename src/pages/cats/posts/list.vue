@@ -62,7 +62,7 @@
                 :item="item"
                 show-delete
                 @delete="handleDelPost"
-                @refresh="handleRefreshPromotion"
+                @refresh="debouncedHandleRefreshPromotion"
                 @avatar-click="
                   (i) => toUrl('/pages/cats/user/home?member_id=' + i.member_id, false)
                 "
@@ -150,6 +150,7 @@ import {
 } from '@/service/api/community'
 import { useUserStore } from '@/store'
 import { useMessage, useToast } from 'wot-design-uni'
+import { debounce } from 'lodash-es'
 import { LoadMoreState } from 'wot-design-uni/components/wd-loadmore/types'
 import SharePopup from '@/components/SharePopup/SharePopup.vue'
 
@@ -242,6 +243,7 @@ const handleRefreshPromotion = async (item: any) => {
     toast.show(t('social.detail.refresh.failed'))
   }
 }
+const debouncedHandleRefreshPromotion = debounce(handleRefreshPromotion, 500)
 
 // 滚动
 const scrollTop = ref(0)
@@ -284,6 +286,7 @@ onUnmounted(() => {
   uni.$off('refreshPromotionPost')
   uni.$off('refreshPostList')
   uni.$off('refreshPostListAll')
+  debouncedHandleRefreshPromotion?.cancel()
 })
 
 /** 单条更新：获取帖子详情并替换列表中对应项 */
