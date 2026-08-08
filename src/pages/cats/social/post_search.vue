@@ -1179,7 +1179,6 @@ const onTimeFilterClosed = () => {
 
 /** 确认时间筛选：同步到确认态，关闭弹窗 */
 const confirmTimeFilter = () => {
-  // 确认时间筛选，保留其他筛选条件
   confirmedTimeRange.value = selectedTimeRange.value
   confirmedStartTime.value = customStartTime.value
   confirmedEndTime.value = customEndTime.value
@@ -1397,7 +1396,6 @@ const confirmUserFilter = () => {
     toast.show({ msg: '最多只能选择10个用户', zIndex: 1200 })
     return
   }
-  // 确认用户筛选，保留其他筛选条件
   confirmedUserIds.value = [...tempSelectedUserIds.value]
   confirmedUsers.value = new Map(tempSelectedUsers.value)
 
@@ -1465,10 +1463,11 @@ const handleFollow = async (user: any) => {
 
 /** 弹窗关闭后恢复临时值为确认态 */
 const onUserFilterClosed = () => {
-  tempSelectedUserIds.value = [...confirmedUserIds.value]
-  tempSelectedUsers.value = new Map(confirmedUsers.value)
-  searchedUsers.value = []
-  memberKeyword.value = ''
+  // tempSelectedUserIds.value = [...confirmedUserIds.value]
+  // tempSelectedUsers.value = new Map(confirmedUsers.value)
+  // searchedUsers.value = []
+  // memberKeyword.value = ''
+  showUserFilter.value = false
 }
 
 const doHandlePreview = (images: string[], currentIndex: number = 0) => {

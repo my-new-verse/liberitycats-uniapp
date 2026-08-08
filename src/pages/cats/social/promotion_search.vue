@@ -565,10 +565,11 @@ const confirmUserFilter = () => {
   showUserFilter.value = false
 }
 const onUserFilterClosed = () => {
-  tempSelectedUserIds.value = [...confirmedUserIds.value]
-  tempSelectedUsers.value = new Map(confirmedUsers.value)
-  searchedUsers.value = []
-  memberKeyword.value = ''
+  // tempSelectedUserIds.value = [...confirmedUserIds.value]
+  // tempSelectedUsers.value = new Map(confirmedUsers.value)
+  // searchedUsers.value = []
+  // memberKeyword.value = ''
+  showUserFilter.value = false
 }
 watch(
   confirmedUserIds,
