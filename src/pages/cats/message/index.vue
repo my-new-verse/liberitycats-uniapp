@@ -1817,6 +1817,8 @@ onUnmounted(() => {
 }
 .community-subtext {
   margin-top: 8rpx;
+  max-width: 100%;
+  overflow: hidden;
 }
 .community-preview-text {
   color: #666;
@@ -1825,14 +1827,19 @@ onUnmounted(() => {
   flex-wrap: wrap;
   flex-direction: column;
   gap: 6rpx;
+  max-width: 100%;
+  overflow: hidden;
   .p-txet-row {
     display: flex;
     align-items: center;
     gap: 8rpx;
+    max-width: 100%;
+    overflow: hidden;
   }
   .p-txet {
-    // flex: 1;
+    flex: 1;
     min-width: 0;
+    max-width: 50vw;
     overflow: hidden;
     text-overflow: ellipsis;
     display: -webkit-box;
@@ -1840,8 +1847,8 @@ onUnmounted(() => {
     -webkit-line-clamp: 2; /* 最多展示两行，超出部分省略号 */
   }
   .action {
-    color: #999;
-    font-size: 24rpx;
+    color: #999 !important;
+    font-size: 24rpx !important;
   }
 
   .interactionTargetSummary,
