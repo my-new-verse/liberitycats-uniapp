@@ -33,8 +33,8 @@
     </view>
 
     <view :style="{ paddingTop: cntPaddingTop + 36 + 20 + 'rpx' }">
-      <!-- 类型卡片行 -->
-      <view class="cardRow">
+      <!-- 类型卡片行（固定不滚动） -->
+      <view class="cardRow cardRow--sticky">
         <view
           class="cardItem"
           :class="{ active: activeCardType === item.id }"
@@ -60,32 +60,35 @@
         </view>
       </view>
 
-      <!-- 推广卡片列表 -->
-      <template v-if="promoList.length > 0 || !cacheLoaded">
-        <view class="cell" v-for="item in promoList" :key="item.id">
-          <PromotionPostItem
-            :item="item"
-            :show-delete="item.member_id === userStore.userInfo?.member_id"
-            :show-report="item.member_id !== userStore.userInfo?.member_id"
-            @delete="handleDelPost"
-            @refresh="debouncedHandleRefreshPost"
-            @report="reportPost"
-            @avatar-click="(i) => toUserHome(i.member_id)"
-            @click="(i) => toUrl('/pages/cats/social/ad_detail?id=' + i.id, false)"
-            @view-click="(i) => toUrl('/pages/cats/social/ad_detail?id=' + i.id, false)"
-            @comment-click="
-              (i) => toUrl('/pages/cats/social/ad_detail?id=' + i.id + '&showComment=false', false)
-            "
-            @like="(i) => likePost(i.id)"
-            @share="handleOpenShare"
-          />
-        </view>
-      </template>
-      <template v-else>
-        <view class="emptyBox">
-          <view class="emptyImg"></view>
-        </view>
-      </template>
+      <!-- 推广卡片列表（可滚动区域） -->
+      <scroll-view class="promoListScroll" scroll-y :style="{ height: scrollHeight }">
+        <template v-if="promoList.length > 0 || !cacheLoaded">
+          <view class="cell" v-for="item in promoList" :key="item.id">
+            <PromotionPostItem
+              :item="item"
+              :show-delete="item.member_id === userStore.userInfo?.member_id"
+              :show-report="item.member_id !== userStore.userInfo?.member_id"
+              @delete="handleDelPost"
+              @refresh="debouncedHandleRefreshPost"
+              @report="reportPost"
+              @avatar-click="(i) => toUserHome(i.member_id)"
+              @click="(i) => toUrl('/pages/cats/social/ad_detail?id=' + i.id, false)"
+              @view-click="(i) => toUrl('/pages/cats/social/ad_detail?id=' + i.id, false)"
+              @comment-click="
+                (i) =>
+                  toUrl('/pages/cats/social/ad_detail?id=' + i.id + '&showComment=false', false)
+              "
+              @like="(i) => likePost(i.id)"
+              @share="handleOpenShare"
+            />
+          </view>
+        </template>
+        <template v-else>
+          <view class="emptyBox">
+            <view class="emptyImg"></view>
+          </view>
+        </template>
+      </scroll-view>
     </view>
     <!-- 发布浮窗（始终显示） -->
     <view class="pubSocial" @click="handlePublishClick">
@@ -234,6 +237,18 @@ const props = defineProps<{
   state: string
   cntPaddingTop: number
 }>()
+
+/** 计算可滚动区域的高度 */
+const scrollHeight = computed(() => {
+  const sysInfo = uni.getSystemInfoSync()
+  const screenHeight = sysInfo.windowHeight
+  // cardRow 高度约 140rpx，加上顶部 padding
+  const cardRowHeight = uni.rpx2px(140)
+  const topPadding = uni.rpx2px(props.cntPaddingTop + 36 + 20)
+  const bottomSafeArea = sysInfo.safeAreaInsets?.bottom || 0
+
+  return `${screenHeight - cardRowHeight - topPadding - bottomSafeArea}px`
+})
 
 const emit = defineEmits<{
   'update:state': [state: string]
@@ -884,6 +899,15 @@ onUnmounted(() => {
   gap: 16rpx;
   margin-bottom: 24rpx;
 
+  &.cardRow--sticky {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: var(--liberty-cats-page-background-color, #f7f6f4);
+    padding: 12rpx 0;
+    margin-bottom: 16rpx;
+  }
+
   .cardItem {
     flex: 1;
     display: flex;
@@ -932,6 +956,13 @@ onUnmounted(() => {
       margin-top: 16rpx;
     }
   }
+}
+
+/* 可滚动的推广列表区域 */
+.promoListScroll {
+  width: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 :deep(.reportSheet) {
