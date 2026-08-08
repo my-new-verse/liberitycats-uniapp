@@ -600,14 +600,32 @@ const getFollowButtonInfo = (user: any) => {
   return { text: t('social.index.user.follow'), style: 'follow' }
 }
 const handleFollow = async (user: any) => {
-  if (user.is_followed) {
-    await deleteFollowApi(user.member_id)
-    user.is_followed = false
-    user.is_mutual = false
-  } else {
-    await createFollowApi(user.member_id)
-    user.is_followed = true
-    if (user.is_following_me) user.is_mutual = true
+  console.log('handleFollow', user.member_id)
+  try {
+    // 已关注状态 - 取消关注
+    if (user.is_followed) {
+      try {
+        await message.confirm({ msg: t('social.index.user.follow.cancel'), zIndex: 1300 })
+      } catch {
+        return
+      }
+      const res = await deleteFollowApi(user.member_id)
+      if (res.code === 1) {
+        user.is_followed = false
+        user.is_mutual = false
+        uni.showToast({ title: t('social.index.user.follow.canceled'), icon: 'none' })
+      }
+    } else {
+      // 未关注状态 - 关注
+      const res = await createFollowApi(user.member_id)
+      if (res.code === 1) {
+        user.is_followed = true
+        if (user.is_following_me) user.is_mutual = true
+        uni.showToast({ title: t('social.index.user.follow.success'), icon: 'none' })
+      }
+    }
+  } catch (e) {
+    console.error('handleFollow error', e)
   }
 }
 
