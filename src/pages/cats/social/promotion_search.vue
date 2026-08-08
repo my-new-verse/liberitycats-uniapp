@@ -802,20 +802,7 @@ const loadHotTags = async () => {
 const selectAdType = (t: any) => {
   selectedAdTypeId.value = t.id
   showAdTypeFilter.value = false
-
-  const hasKeyword = searchText.value.trim() !== ''
-  const hasUser = confirmedUserIds.value.length > 0
-  const timeRange = getTimeRange()
-  const hasTimeFilter = !!(timeRange.start_time || timeRange.end_time)
-  const hasTypeFilter = selectedAdTypeId.value !== 0
-  const hasTagFilter = selectedTagId.value !== 0
-
-  if (!hasKeyword && !hasUser && !hasTimeFilter && !hasTypeFilter && !hasTagFilter) {
-    hasSearched.value = false
-    searchResult.value = { posts: [], total: 0, page: 0, limit: 20 }
-    return
-  }
-
+  // 选择类型后直接调用搜索，即使为 0（全部）也调用接口
   search()
 }
 const selectSort = (name: string) => {
@@ -826,20 +813,7 @@ const selectSort = (name: string) => {
 const selectTag = (id: number) => {
   selectedTagId.value = id
   showTagFilter.value = false
-
-  const hasKeyword = searchText.value.trim() !== ''
-  const hasUser = confirmedUserIds.value.length > 0
-  const timeRange = getTimeRange()
-  const hasTimeFilter = !!(timeRange.start_time || timeRange.end_time)
-  const hasTypeFilter = selectedAdTypeId.value !== 0
-  const hasTagFilter = selectedTagId.value !== 0
-
-  if (!hasKeyword && !hasUser && !hasTimeFilter && !hasTypeFilter && !hasTagFilter) {
-    hasSearched.value = false
-    searchResult.value = { posts: [], total: 0, page: 0, limit: 20 }
-    return
-  }
-
+  // 选择标签后直接调用搜索，即使为 0（全部）也调用接口
   search()
 }
 
