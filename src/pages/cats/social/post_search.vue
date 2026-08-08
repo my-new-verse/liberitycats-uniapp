@@ -1392,7 +1392,10 @@ const selectUser = (user: any) => {
 
 /** 确认用户筛选 */
 const confirmUserFilter = () => {
-  console.log('confirmUserFilter', tempSelectedUserIds.value)
+  if (tempSelectedUserIds.value.length > 10) {
+    toast.show({ msg: '最多只能选择10个用户', zIndex: 1200 })
+    return
+  }
   confirmedUserIds.value = [...tempSelectedUserIds.value]
   confirmedUsers.value = new Map(tempSelectedUsers.value)
 
