@@ -607,7 +607,7 @@ export const formatRelativeTime = (
 }
 
 // 辅助函数：根据时区字符串返回+08:00/-05:00等
-function getTimeZoneOffsetStr(timeZone: string) {
+export function getTimeZoneOffsetStr(timeZone: string) {
   if (typeof Intl === 'undefined' || typeof Intl.DateTimeFormat !== 'function') {
     // Intl 不可用时，直接返回东八区
     return '+08:00'
