@@ -839,6 +839,16 @@ const handleAvatarClick = (memberId: number | undefined) => {
     return
   }
   if (!memberId) return
+
+  // 如果用户已删除，禁止跳转到用户主页
+  if (props.item?.sender?.is_deleted === 1) {
+    uni.showToast({
+      title: '该用户已注销',
+      icon: 'none',
+    })
+    return
+  }
+
   uni.navigateTo({
     url: `/pages/cats/user/home?member_id=${memberId}`,
   })
