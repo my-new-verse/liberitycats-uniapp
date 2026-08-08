@@ -555,6 +555,10 @@ const removeSelectedUser = (uid: number) => {
   tempSelectedUsers.value.delete(uid)
 }
 const confirmUserFilter = () => {
+  if (tempSelectedUserIds.value.length > 10) {
+    toast.show({ msg: '最多只能选择10个用户', zIndex: 1200 })
+    return
+  }
   confirmedUserIds.value = [...tempSelectedUserIds.value]
   confirmedUsers.value = new Map(tempSelectedUsers.value)
   tempSelectedUsers.value.forEach((member) => addToRecentMembers(member))
