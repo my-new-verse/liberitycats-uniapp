@@ -334,10 +334,14 @@
       @select="reportSheetSelect"
     />
 
-    <wd-message-box selector="wd-message-box-slot" />
+    <wd-message-box selector="wd-message-box-slot" :z-index="1200" />
 
     <!-- ========== 禁言弹窗 ========== -->
-    <wd-message-box selector="wd-message-box-ban" :title="t('report.admin.ban_post')">
+    <wd-message-box
+      selector="wd-message-box-ban"
+      :title="t('report.admin.ban_post')"
+      :z-index="1200"
+    >
       <view class="banDialog">
         <view class="banLabel">
           {{ t('report.admin.ban_post.label', { name: banTargetMemberName }) }}
@@ -362,7 +366,7 @@
       </view>
     </wd-message-box>
 
-    <wd-toast />
+    <wd-toast :z-index="1200" />
     <SharePopup ref="shareRef" />
   </view>
 </template>
@@ -1250,7 +1254,7 @@ const handleRemovePost = () => {
 
 const handleActionSheetUnfollow = async (member: any) => {
   try {
-    await message.confirm({ msg: t('social.index.user.follow.cancel') })
+    await message.confirm({ msg: t('social.index.user.follow.cancel'), zIndex: 1300 })
   } catch {
     return
   }

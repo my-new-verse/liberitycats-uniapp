@@ -395,10 +395,14 @@
 
     <SharePopup ref="shareRef" />
 
-    <wd-message-box selector="wd-message-box-slot" />
+    <wd-message-box selector="wd-message-box-slot" :z-index="1200" />
 
     <!-- 禁言弹窗 -->
-    <wd-message-box selector="wd-message-box-ban" :title="t('report.admin.ban_post')">
+    <wd-message-box
+      selector="wd-message-box-ban"
+      :title="t('report.admin.ban_post')"
+      :z-index="1200"
+    >
       <view class="banDialog">
         <view class="banLabel">
           {{ t('report.admin.ban_post.label', { name: banTargetMemberName }) }}
@@ -423,7 +427,7 @@
       </view>
     </wd-message-box>
 
-    <wd-toast />
+    <wd-toast :z-index="1200" />
   </view>
 </template>
 
@@ -963,7 +967,7 @@ const syncMemberFollowState = (memberId: number, data: any) => {
 /** 操作面板的取消关注（直接完全取关） */
 const handleActionSheetUnfollow = async (member: any) => {
   try {
-    await message.confirm({ msg: t('social.index.user.follow.cancel') })
+    await message.confirm({ msg: t('social.index.user.follow.cancel'), zIndex: 1300 })
   } catch {
     return
   }
@@ -1002,7 +1006,7 @@ const handleFollowClick = async (member: any) => {
     // 普通关注状态 - 取消关注
     else if (member.is_following) {
       try {
-        await message.confirm({ msg: t('social.index.user.follow.cancel') })
+        await message.confirm({ msg: t('social.index.user.follow.cancel'), zIndex: 1300 })
       } catch {
         return
       }
@@ -1430,7 +1434,7 @@ const handleFollow = async (user: any) => {
       }
     } else if (user.is_followed) {
       try {
-        await message.confirm({ msg: t('social.index.user.follow.cancel') })
+        await message.confirm({ msg: t('social.index.user.follow.cancel'), zIndex: 1300 })
       } catch {
         return
       }
