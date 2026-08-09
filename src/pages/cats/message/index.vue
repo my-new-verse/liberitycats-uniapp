@@ -80,7 +80,12 @@
               v-if="item.category === 'community' && groupHeaderMap.get(index)"
               class="time-header"
             >
-              <text>{{ groupHeaderMap.get(index).label }}</text>
+              <text v-if="groupHeaderMap.get(index).label">
+                {{ groupHeaderMap.get(index).label }}
+              </text>
+              <!-- <text v-if="groupHeaderMap.get(index).date" class="time-header-date-text">
+                {{ groupHeaderMap.get(index).date }}
+              </text> -->
               <view
                 v-if="index === firstGroupHeaderIndex"
                 class="time-header-calendar"
@@ -1699,6 +1704,13 @@ onUnmounted(() => {
   color: #999;
 }
 
+/* 日期分组标题文本 */
+.time-header-date-text {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #999;
+}
+
 .time-header-empty {
   justify-content: flex-end;
   padding-top: calc(104rpx + 180rpx);
@@ -1834,6 +1846,7 @@ onUnmounted(() => {
     align-items: center;
     gap: 8rpx;
     max-width: 100%;
+    width: 85%;
     overflow: hidden;
   }
   .p-txet {
