@@ -763,9 +763,9 @@ const followBtnInfo = computed(() => {
     return { text: t('social.index.user.special.following'), style: 'followed' }
   if (u.is_mutual_following)
     return { text: t('social.index.user.mutual_following'), style: 'followed' }
-  if (u.is_following === 1) return { text: '已关注', style: 'followed' }
+  if (u.is_following === 1) return { text: t('social.index.user.followed'), style: 'followed' }
   if (u.is_following_me) return { text: t('social.index.user.follow_back'), style: 'follow' }
-  return { text: '关注', style: 'follow' }
+  return { text: t('social.index.user.follow'), style: 'follow' }
 })
 
 const openMoreActions = () => {
@@ -1180,8 +1180,8 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
   z-index: 98;
   height: 360rpx;
   padding-top: 48rpx;
-  padding-right: 48rpx;
-  padding-left: 48rpx;
+  padding-right: 24rpx;
+  padding-left: 24rpx;
   background: linear-gradient(329deg, #ff6b03 0%, #ee941a 100%);
   .headCnt {
     display: flex;

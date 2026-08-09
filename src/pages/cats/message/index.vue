@@ -1119,42 +1119,32 @@ const getTimeGroupKey = (createTime: string): string => {
   } else {
     date = new Date(str)
   }
-  if (isNaN(date.getTime())) return 'earlier'
-
-  const getParts = (d: Date, tz: string) => {
-    if (typeof Intl !== 'undefined' && typeof Intl.DateTimeFormat === 'function') {
-      return new Intl.DateTimeFormat('en-US', {
-        timeZone: tz,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-      }).formatToParts(d)
-    }
-    return []
+  if (isNaN(date.getTime())) {
+    console.warn('[getTimeGroupKey] Invalid date:', createTime, '-> parsed as:', str)
+    return 'earlier'
   }
 
   const now = new Date()
-  const todayParts = getParts(now, timeZone)
-  const dateParts = getParts(date, timeZone)
 
-  const todayYear = todayParts.find((p) => p.type === 'year')?.value
-  const todayMonth = todayParts.find((p) => p.type === 'month')?.value
-  const todayDay = todayParts.find((p) => p.type === 'day')?.value
-  const dateYear = dateParts.find((p) => p.type === 'year')?.value
-  const dateMonth = dateParts.find((p) => p.type === 'month')?.value
-  const dateDay = dateParts.find((p) => p.type === 'day')?.value
+  // 直接用本地日期比较（date 已包含正确时区偏移，get* 方法返回设备本地时区日期）
+  const todayY = now.getFullYear()
+  const todayM = now.getMonth()
+  const todayD = now.getDate()
+  const dateY = date.getFullYear()
+  const dateM = date.getMonth()
+  const dateD = date.getDate()
 
-  if (todayYear === dateYear && todayMonth === dateMonth && todayDay === dateDay) {
+  if (todayY === dateY && todayM === dateM && todayD === dateD) {
     return 'today'
   }
   // 昨天
   const yesterday = new Date(now)
   yesterday.setDate(yesterday.getDate() - 1)
-  const yesterdayParts = getParts(yesterday, timeZone)
-  const yYear = yesterdayParts.find((p) => p.type === 'year')?.value
-  const yMonth = yesterdayParts.find((p) => p.type === 'month')?.value
-  const yDay = yesterdayParts.find((p) => p.type === 'day')?.value
-  if (dateYear === yYear && dateMonth === yMonth && dateDay === yDay) {
+  if (
+    dateY === yesterday.getFullYear() &&
+    dateM === yesterday.getMonth() &&
+    dateD === yesterday.getDate()
+  ) {
     return 'yesterday'
   }
   return 'earlier'
