@@ -191,7 +191,8 @@ const doLogin = async () => {
     cuntDownStep.value = 0
     const res = await bindVirtualEmailApi(data.email, code.value)
     if (res.code === 1) {
-      toUrl('/pages/cats/settings/virtual_account', true, true)
+      // 绑定成功，返回两级（从 bind_code -> bind -> virtual_account）
+      navigateBack(2)
     } else {
       showToast(res.msg)
       code.value = ''
