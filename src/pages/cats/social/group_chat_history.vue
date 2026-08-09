@@ -505,7 +505,9 @@ const buildSearchParams = (page: number) => {
 const handleSearchClick = () => {
   const hasKeyword = searchText.value.trim() !== ''
   const hasUser = confirmedUserIds.value.length > 0
-  if (!hasKeyword && !hasUser) {
+  const timeRange = getTimeRange()
+  const hasTimeFilter = !!(timeRange.start_time || timeRange.end_time)
+  if (!hasKeyword && !hasUser && !hasTimeFilter) {
     uni.showToast({ title: t('social.search.requireKeywordOrUser'), icon: 'none' })
     return
   }
@@ -516,7 +518,9 @@ const handleSearchClick = () => {
 const search = async () => {
   const hasKeyword = searchText.value.trim() !== ''
   const hasUser = confirmedUserIds.value.length > 0
-  if (!hasKeyword && !hasUser) {
+  const timeRange = getTimeRange()
+  const hasTimeFilter = !!(timeRange.start_time || timeRange.end_time)
+  if (!hasKeyword && !hasUser && !hasTimeFilter) {
     uni.showToast({ title: t('social.search.requireKeywordOrUser'), icon: 'none' })
     return
   }
@@ -705,16 +709,18 @@ const confirmTimeFilter = () => {
     confirmedEndTime.value,
   )
   showTimeFilter.value = false
-  // 已有查询条件时自动触发搜索
-  if (hasSearched.value) {
-    const hasKeyword = searchText.value.trim() !== ''
-    const hasUser = confirmedUserIds.value.length > 0
-    if (hasKeyword || hasUser) {
-      clearAllTabCaches()
-      search()
-    } else {
-      clearAllData()
-    }
+  // 有任意筛选条件即触发搜索
+  const hasKeyword = searchText.value.trim() !== ''
+  const hasUser = confirmedUserIds.value.length > 0
+  const timeRange = getTimeRange()
+  const hasTimeFilter = !!(timeRange.start_time || timeRange.end_time)
+  if (hasKeyword || hasUser || hasTimeFilter) {
+    hasSearched.value = true
+    clearAllTabCaches()
+    search()
+  } else {
+    hasSearched.value = false
+    clearAllData()
   }
 }
 
