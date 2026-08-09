@@ -87,7 +87,13 @@
                 show-delete
                 :show-foot="false"
                 @delete="handleDelPost"
-                @click="(i) => toUrl('/pages/cats/social/publish?id=' + i.id + '&draft=true', true)"
+                @click="
+                  (i) =>
+                    toUrl(
+                      '/pages/cats/social/publish?id=' + i.id + '&draft=true&category=normal',
+                      true,
+                    )
+                "
                 @preview="doHandlePreview"
               />
               <PromotionPostItem
@@ -100,7 +106,13 @@
                 @avatar-click="
                   (i) => toUrl('/pages/cats/user/home?member_id=' + i.member_id, false)
                 "
-                @click="(i) => toUrl('/pages/cats/social/publish?id=' + i.id + '&draft=true', true)"
+                @click="
+                  (i) =>
+                    toUrl(
+                      '/pages/cats/social/publish?id=' + i.id + '&draft=true&category=promotion',
+                      true,
+                    )
+                "
               />
             </view>
           </template>

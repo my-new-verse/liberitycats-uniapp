@@ -1305,7 +1305,7 @@ $minor-color: #666666;
   font-size: 26rpx;
   font-weight: 500;
   color: $minor-color;
-  width: 15%;
+  width: 18%;
 }
 
 :deep(.pubInput) {
