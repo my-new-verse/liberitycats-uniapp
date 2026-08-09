@@ -846,6 +846,12 @@ onMounted(async () => {
   uni.$on('refreshTabMsgUnread', () => {
     fetchUnreadCount()
   })
+
+  // 监听关注状态变化（从详情页返回后更新列表）
+  uni.$on('followStateChange', ({ memberId, data }) => {
+    syncMemberFollowState(memberId, data)
+  })
+
   setTimeout(() => {
     toast.show('yyyy')
   }, 2000)
@@ -854,6 +860,7 @@ onMounted(async () => {
 onUnmounted(() => {
   uni.$off('refreshPromotionTab')
   uni.$off('refreshTabMsgUnread')
+  uni.$off('followStateChange')
   debouncedHandleRefreshPost?.cancel()
 })
 </script>

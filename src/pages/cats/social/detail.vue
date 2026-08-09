@@ -1598,6 +1598,9 @@ const syncMemberFollowState = (memberId: number, data: any) => {
       }
     })
   })
+
+  // 通知列表页更新关注状态
+  uni.$emit('followStateChange', { memberId, data })
 }
 
 /** 帖子/评论作者关注按钮信息 */

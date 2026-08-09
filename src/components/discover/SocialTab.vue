@@ -779,6 +779,12 @@ onMounted(() => {
     uni.removeStorageSync('pendingSwitchToChatGroup')
     handleFilterChange('groupChat')
   })
+
+  // 监听关注状态变化（从详情页返回后更新列表）
+  uni.$on('followStateChange', ({ memberId, data }) => {
+    syncMemberFollowState(memberId, data)
+  })
+
   // 检查待切换标记（覆盖 SocialTab 首次挂载时事件已 emit 的场景）
   const pendingSwitch = uni.getStorageSync('pendingSwitchToChatGroup')
   if (pendingSwitch) {
@@ -797,6 +803,7 @@ onUnmounted(() => {
   uni.$off('refreshNormalPost')
   uni.$off('discoverActiveTabChange')
   uni.$off('switchToChatGroup')
+  uni.$off('followStateChange')
 })
 
 const reportShow = ref<boolean>(false)
