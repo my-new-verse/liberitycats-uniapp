@@ -1,7 +1,7 @@
 <template>
   <view class="socialBox">
     <!-- 子 tab 栏 -->
-    <view class="socialOpBox" :style="{ height: cntPaddingTop + 20 + 'rpx' }">
+    <view class="socialOpBox" :style="{ height: cntPaddingTop + 28 + 'rpx' }">
       <view
         class="opItem"
         :class="{ active: activeFilter === 'latest' }"
@@ -33,7 +33,7 @@
     </view>
 
     <!-- 类型卡片行（固定不滚动） -->
-    <view class="cardRow cardRow--sticky" :style="{ top: cntPaddingTop + 36 + 20 + 'rpx' }">
+    <view class="cardRow cardRow--sticky" :style="{ top: cntPaddingTop + 36 + 24 + 'rpx' }">
       <view
         class="cardItem"
         :class="{ active: activeCardType === item.id }"
@@ -59,7 +59,7 @@
       </view>
     </view>
 
-    <view :style="{ paddingTop: cntPaddingTop + 36 + 20 + 'rpx' }">
+    <view :style="{ paddingTop: cntPaddingTop + 180 + 36 + 24 + 'rpx' }">
       <!-- 推广卡片列表（可滚动区域） -->
       <scroll-view class="promoListScroll" scroll-y :style="{ height: scrollHeight }">
         <template v-if="promoList.length > 0 || !cacheLoaded">
@@ -628,7 +628,7 @@ const doSetSpecialFollow = (member: any, isSpecial: boolean) => {
         // 接口返回失败，使用 toast 组件显示错误提示
         uni.showToast({
           title: res.msg || res.message || t('common.operation_failed'),
-          icon: 'error',
+          // icon: 'error',
         })
       }
     })
@@ -930,9 +930,10 @@ onUnmounted(() => {
   // padding: 12rpx 40rpx 16rpx;
   background-color: var(--liberty-cats-page-background-color, #f7f6f4);
   z-index: 10;
-
+  height: 180rpx;
+  width: calc(100vw - 2 * 32rpx);
   &.cardRow--sticky {
-    position: sticky;
+    position: fixed;
     top: 0;
     background-color: var(--liberty-cats-page-background-color, #f7f6f4);
   }
@@ -1063,12 +1064,13 @@ onUnmounted(() => {
     align-items: center;
     gap: 8rpx;
     margin-bottom: 8rpx;
+    flex-wrap: wrap;
     .tag {
       padding: 4rpx 16rpx;
       // margin-left: 12rpx;
       font-size: 24rpx;
       // font-weight: 600;
-      text-transform: uppercase;
+      // text-transform: uppercase;
       border-radius: 8rpx;
       line-height: 1.4;
     }

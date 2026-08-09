@@ -2516,7 +2516,8 @@ const handleEditPost = () => {
   background: #ffffff;
   border-radius: 16rpx;
   font-family: Alibaba PuHuiTi2 !important;
-
+  flex-direction: column;
+  align-items: flex-start;
   .adTypeTag {
     flex-shrink: 0;
     padding: 4rpx 16rpx;
