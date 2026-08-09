@@ -53,11 +53,13 @@
           <text class="filterArrow">▼</text>
         </view>
         <view class="filterItem" @click="showAdTypeFilter = true">
-          <text class="filterLabel">{{ selectedAdTypeLabel || '类型' }}</text>
+          <text class="filterLabel">
+            {{ selectedAdTypeLabel || t('social.search.filter.type') }}
+          </text>
           <text class="filterArrow">▼</text>
         </view>
         <view class="filterItem" @click="showTagFilter = true">
-          <text class="filterLabel">{{ selectedTagLabel || '标签' }}</text>
+          <text class="filterLabel">{{ selectedTagLabel || t('social.search.filter.tag') }}</text>
           <text class="filterArrow">▼</text>
         </view>
       </view>
@@ -285,9 +287,15 @@
     </wd-popup>
 
     <!-- ========== 类型筛选 ========== -->
-    <wd-action-sheet v-model="showAdTypeFilter" title="类型" :z-index="1100">
+    <wd-action-sheet
+      v-model="showAdTypeFilter"
+      :title="t('social.search.filter.type')"
+      :z-index="1100"
+    >
       <view class="filterContent">
-        <view class="filterItem" @click="selectAdType({ id: 0 })">全部</view>
+        <view class="filterItem" @click="selectAdType({ id: 0 })">
+          {{ t('social.search.filter.all') }}
+        </view>
         <view class="filterItem" v-for="t in adTypes" :key="t.id" @click="selectAdType(t)">
           {{ t.name }}
         </view>
@@ -303,12 +311,12 @@
     </wd-action-sheet> -->
 
     <!-- ========== 标签筛选 ========== -->
-    <wd-action-sheet v-model="showTagFilter" title="标签" :z-index="1100">
+    <wd-action-sheet v-model="showTagFilter" :title="t('social.search.filter.tag')" :z-index="1100">
       <view class="filterContent">
         <view class="searchMember">
           <wd-input
             v-model="tagKeyword"
-            placeholder="搜索标签"
+            :placeholder="t('social.search.filter.tagPlaceholder')"
             clearable
             :cursor-spacing="100"
             @confirm="searchTags"
@@ -317,7 +325,7 @@
             {{ t('common.search') }}
           </wd-button>
         </view>
-        <view class="filterItem" @click="selectTag(0)">全部</view>
+        <view class="filterItem" @click="selectTag(0)">{{ t('social.search.filter.all') }}</view>
         <view class="filterItem" v-for="t in adTags" :key="t.id" @click="selectTag(t.id)">
           <text>{{ t.display_name }}</text>
           <text class="tagCount">{{ t.use_count }}</text>
@@ -349,13 +357,13 @@
         <view class="banDaysTitle">{{ t('report.admin.ban_post.days') }}</view>
         <view class="banDaysRow">
           <view class="banDayItem" :class="{ active: banDays === 1 }" @click="banDays = 1">
-            1天
+            {{ t('report.admin.ban_post.day_1') }}
           </view>
           <view class="banDayItem" :class="{ active: banDays === 3 }" @click="banDays = 3">
-            3天
+            {{ t('report.admin.ban_post.day_3') }}
           </view>
           <view class="banDayItem" :class="{ active: banDays === 7 }" @click="banDays = 7">
-            7天
+            {{ t('report.admin.ban_post.day_7') }}
           </view>
         </view>
         <wd-input

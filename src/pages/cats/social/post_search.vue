@@ -410,13 +410,13 @@
         <view class="banDaysTitle">{{ t('report.admin.ban_post.days') }}</view>
         <view class="banDaysRow">
           <view class="banDayItem" :class="{ active: banDays === 1 }" @click="banDays = 1">
-            1天
+            {{ t('report.admin.ban_post.day_1') }}
           </view>
           <view class="banDayItem" :class="{ active: banDays === 3 }" @click="banDays = 3">
-            3天
+            {{ t('report.admin.ban_post.day_3') }}
           </view>
           <view class="banDayItem" :class="{ active: banDays === 7 }" @click="banDays = 7">
-            7天
+            {{ t('report.admin.ban_post.day_7') }}
           </view>
         </view>
         <wd-input
