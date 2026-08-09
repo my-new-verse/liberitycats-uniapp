@@ -262,8 +262,11 @@
                 <view
                   v-if="
                     item.payload?.card_type === 'hourly_flash_digest' ||
+                    item.payload?.card_type === 'daily_flash_digest' ||
                     item.payload?.card_type === 'hourly_news_digest' ||
+                    item.payload?.card_type === 'daily_news_digest' ||
                     item.payload?.card_type === 'hourly_important_news_digest' ||
+                    item.payload?.card_type === 'daily_important_flash_digest' ||
                     item.payload?.card_type === 'news_collection'
                   "
                   class="news-card-header-row"
@@ -319,7 +322,8 @@
             <view
               v-else-if="
                 item.message_type === 'news_card' &&
-                item.payload.card_type === 'hourly_important_news_digest'
+                (item.payload.card_type === 'hourly_important_news_digest' ||
+                  item.payload.card_type === 'daily_important_flash_digest')
               "
               class="news-wrapper"
             >
@@ -328,8 +332,11 @@
                 <view
                   v-if="
                     item.payload?.card_type === 'hourly_flash_digest' ||
+                    item.payload?.card_type === 'daily_flash_digest' ||
                     item.payload?.card_type === 'hourly_news_digest' ||
+                    item.payload?.card_type === 'daily_news_digest' ||
                     item.payload?.card_type === 'hourly_important_news_digest' ||
+                    item.payload?.card_type === 'daily_important_flash_digest' ||
                     item.payload?.card_type === 'news_collection'
                   "
                   class="news-card-header-row"
@@ -390,8 +397,11 @@
                   v-if="
                     !(item.reply_to || item.reply_message) &&
                     (item.payload?.card_type === 'hourly_flash_digest' ||
+                      item.payload?.card_type === 'daily_flash_digest' ||
                       item.payload?.card_type === 'hourly_news_digest' ||
+                      item.payload?.card_type === 'daily_news_digest' ||
                       item.payload?.card_type === 'hourly_important_news_digest' ||
+                      item.payload?.card_type === 'daily_important_flash_digest' ||
                       item.payload?.card_type === 'news_collection')
                   "
                   class="news-card-header-row"
@@ -458,7 +468,8 @@
                 (item.message_type === 'news_card' &&
                   item.payload.news_type === 'flash' &&
                   item.payload.card_type === 'news_collection') ||
-                item.payload.card_type === 'hourly_flash_digest'
+                item.payload.card_type === 'hourly_flash_digest' ||
+                item.payload.card_type === 'daily_flash_digest'
               "
               class="news-wrapper"
             >
@@ -468,8 +479,11 @@
                   v-if="
                     !(item.reply_to || item.reply_message) &&
                     (item.payload?.card_type === 'hourly_flash_digest' ||
+                      item.payload?.card_type === 'daily_flash_digest' ||
                       item.payload?.card_type === 'hourly_news_digest' ||
+                      item.payload?.card_type === 'daily_news_digest' ||
                       item.payload?.card_type === 'hourly_important_news_digest' ||
+                      item.payload?.card_type === 'daily_important_flash_digest' ||
                       item.payload?.card_type === 'news_collection')
                   "
                   class="news-card-header-row"
