@@ -50,19 +50,8 @@ const httpInterceptor = {
     }
     // 非 http 开头需拼接地址
     if (!options.url.startsWith('http')) {
-      // #ifdef H5
-      // console.log(__VITE_APP_PROXY__)
-      if (JSON.parse(__VITE_APP_PROXY__)) {
-        // 啥都不需要做
-      } else {
-        options.url = baseUrl + options.url
-      }
-      // #endif
-      // 非H5正常拼接
-      // #ifndef H5
+      // 所有平台都需要拼接 baseUrl（H5 通过代理转发）
       options.url = baseUrl + options.url
-      // #endif
-      // TIPS: 如果需要对接多个后端服务，也可以在这里处理，拼接成所需要的地址
     }
     // 1. 请求超时
     options.timeout = 30000 // 10s

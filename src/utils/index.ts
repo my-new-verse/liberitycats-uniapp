@@ -220,6 +220,14 @@ export const getEnvBaseUrl = () => {
   // 请求基准地址
   let baseUrl = import.meta.env.VITE_SERVER_BASEURL
 
+  // 根据平台选择不同的 baseURL
+  // #ifdef H5
+  baseUrl = import.meta.env.VITE_SERVER_BASEURL_H5 || baseUrl
+  // #endif
+
+  // #ifdef APP-PLUS
+  baseUrl = import.meta.env.VITE_SERVER_BASEURL_APP || baseUrl
+  // #endif
   // 小程序端环境区分
   if (isMp) {
     const {

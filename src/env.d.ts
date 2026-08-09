@@ -13,8 +13,12 @@ interface ImportMetaEnv {
   readonly VITE_APP_TITLE: string
   /** 服务端口号 */
   readonly VITE_SERVER_PORT: string
-  /** 后台接口地址 */
+  /** 后台接口地址（默认） */
   readonly VITE_SERVER_BASEURL: string
+  /** H5 平台后台接口地址（相对路径） */
+  readonly VITE_SERVER_BASEURL_H5: string
+  /** APP 平台后台接口地址（完整 URL） */
+  readonly VITE_SERVER_BASEURL_APP: string
 
   readonly VITE_IMAGE_HOST: string
 
