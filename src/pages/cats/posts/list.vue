@@ -187,9 +187,9 @@ const postFilterCache = ref<Record<string, PostFilterCache>>({
 
 const activePostFilter = ref('normal')
 const postFilterTabs = [
-  { key: 'normal', label: '普通帖' },
-  { key: 'promotion', label: '推广帖' },
-  { key: 'draft', label: '草稿' },
+  { key: 'normal', label: t('my.post.filter.normal') },
+  { key: 'promotion', label: t('my.post.filter.promotion') },
+  { key: 'draft', label: t('my.post.filter.draft') },
 ]
 
 /** 根据筛选 key 返回接口参数 */
