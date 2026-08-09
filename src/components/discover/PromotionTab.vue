@@ -608,21 +608,35 @@ const handleSpecialFollow = () => {
 }
 
 const doSetSpecialFollow = (member: any, isSpecial: boolean) => {
-  setSpecialFollowApi(member.id, isSpecial ? 0 : 1).then((res) => {
-    if (res.code === 1) {
-      syncMemberFollowState(member.id, {
-        is_following: member.is_following,
-        is_mutual_following: member.is_mutual_following,
-        is_special_following: res.data.is_special_following,
+  setSpecialFollowApi(member.id, isSpecial ? 0 : 1)
+    .then((res) => {
+      if (res.code === 1) {
+        syncMemberFollowState(member.id, {
+          is_following: member.is_following,
+          is_mutual_following: member.is_mutual_following,
+          is_special_following: res.data.is_special_following,
+        })
+        uni.showToast({
+          title: isSpecial
+            ? t('social.index.user.special.canceled')
+            : t('social.index.user.special.success'),
+          icon: 'none',
+        })
+      } else {
+        // 接口返回失败，使用 toast 组件显示错误提示
+        uni.showToast({
+          title: res.msg || res.message || t('common.operation_failed'),
+          icon: 'error',
+        })
+      }
+    })
+    .catch((err) => {
+      console.error('doSetSpecialFollow error:', err)
+      toast.show({
+        msg: t('common.network_error'),
+        icon: 'error',
       })
-      uni.showToast({
-        title: isSpecial
-          ? t('social.index.user.special.canceled')
-          : t('social.index.user.special.success'),
-        icon: 'none',
-      })
-    }
-  })
+    })
 }
 
 const handleBlockUser = () => {

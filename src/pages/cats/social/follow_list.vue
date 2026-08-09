@@ -339,21 +339,34 @@ const handleFollowClick = (user: any) => {
     message
       .confirm({ msg: t('social.index.user.special.cancel.confirm') })
       .then(() => {
-        setSpecialFollowApi(user.member_id, 0).then((res) => {
-          if (res.code === 1) {
-            syncMemberFollowState(
-              user.member_id,
-              {
-                is_following: user.is_following,
-                is_mutual_following: user.is_mutual_following,
-                is_special_following: 0,
-                is_following_me: user.is_following_me,
-              },
-              user,
-            )
-            uni.showToast({ title: t('social.index.user.special.canceled'), icon: 'none' })
-          }
-        })
+        setSpecialFollowApi(user.member_id, 0)
+          .then((res) => {
+            if (res.code === 1) {
+              syncMemberFollowState(
+                user.member_id,
+                {
+                  is_following: user.is_following,
+                  is_mutual_following: user.is_mutual_following,
+                  is_special_following: 0,
+                  is_following_me: user.is_following_me,
+                },
+                user,
+              )
+              uni.showToast({ title: t('social.index.user.special.canceled'), icon: 'none' })
+            } else {
+              uni.showToast({
+                title: res.msg || t('common.request.error'),
+                icon: 'none',
+              })
+            }
+          })
+          .catch((err) => {
+            console.error('cancel special follow error:', err)
+            uni.showToast({
+              title: t('common.network_error'),
+              icon: 'none',
+            })
+          })
       })
       .catch(() => {})
   } else if (user.is_following) {

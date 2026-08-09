@@ -1543,6 +1543,11 @@ const handleFollowClick = async (member: any) => {
           is_special_following: 0,
         })
         uni.showToast({ title: t('social.index.user.special.canceled'), icon: 'none' })
+      } else {
+        uni.showToast({
+          title: res.msg || t('common.request.error'),
+          icon: 'none',
+        })
       }
     } else if (member.is_following) {
       const confirm = await new Promise<boolean>((resolve) => {
@@ -1584,23 +1589,34 @@ const handleSpecialFollow = () => {
 }
 
 const doSpecialFollow = (member: any, isSpecial: boolean) => {
-  setSpecialFollowApi(member.id, isSpecial ? 0 : 1).then((res) => {
-    if (res.code === 1) {
-      syncMemberFollowState(member.id, {
-        is_following: member.is_following,
-        is_mutual_following: member.is_mutual_following,
-        is_special_following: res.data.is_special_following,
-      })
+  setSpecialFollowApi(member.id, isSpecial ? 0 : 1)
+    .then((res) => {
+      if (res.code === 1) {
+        syncMemberFollowState(member.id, {
+          is_following: member.is_following,
+          is_mutual_following: member.is_mutual_following,
+          is_special_following: res.data.is_special_following,
+        })
+        uni.showToast({
+          title: isSpecial
+            ? t('social.index.user.special.canceled')
+            : t('social.index.user.special.success'),
+          icon: 'none',
+        })
+      } else {
+        uni.showToast({
+          title: res.msg || t('common.request.error'),
+          icon: 'none',
+        })
+      }
+    })
+    .catch((err) => {
+      console.error('setSpecialFollowApi error:', err)
       uni.showToast({
-        title: isSpecial
-          ? t('social.index.user.special.canceled')
-          : t('social.index.user.special.success'),
+        title: t('common.network_error'),
         icon: 'none',
       })
-    } else {
-      toast.show(res.msg || t('common.error'))
-    }
-  })
+    })
 }
 
 /** 拉黑用户 */
