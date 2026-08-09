@@ -32,34 +32,34 @@
       />
     </view>
 
-    <view :style="{ paddingTop: cntPaddingTop + 36 + 20 + 'rpx' }">
-      <!-- 类型卡片行（固定不滚动） -->
-      <view class="cardRow cardRow--sticky">
-        <view
-          class="cardItem"
-          :class="{ active: activeCardType === item.id }"
-          v-for="item in cardTypes"
-          :key="item.id"
-          @click="handleAdTypeChange(item.id)"
-        >
-          <view class="cardIcon">
-            <image
-              class="cardIconImg"
-              :class="{ hide: activeCardType === item.id }"
-              :src="item.before_click_icon_url || item.icon"
-              mode="aspectFit"
-            />
-            <image
-              class="cardIconImg cardIconImgActive"
-              :class="{ show: activeCardType === item.id }"
-              :src="item.after_click_icon_url || item.icon"
-              mode="aspectFit"
-            />
-          </view>
-          <text class="cardType">{{ item.name }}</text>
+    <!-- 类型卡片行（固定不滚动） -->
+    <view class="cardRow cardRow--sticky" :style="{ top: cntPaddingTop + 36 + 20 + 'rpx' }">
+      <view
+        class="cardItem"
+        :class="{ active: activeCardType === item.id }"
+        v-for="item in cardTypes"
+        :key="item.id"
+        @click="handleAdTypeChange(item.id)"
+      >
+        <view class="cardIcon">
+          <image
+            class="cardIconImg"
+            :class="{ hide: activeCardType === item.id }"
+            :src="item.before_click_icon_url || item.icon"
+            mode="aspectFit"
+          />
+          <image
+            class="cardIconImg cardIconImgActive"
+            :class="{ show: activeCardType === item.id }"
+            :src="item.after_click_icon_url || item.icon"
+            mode="aspectFit"
+          />
         </view>
+        <text class="cardType">{{ item.name }}</text>
       </view>
+    </view>
 
+    <view :style="{ paddingTop: cntPaddingTop + 36 + 20 + 'rpx' }">
       <!-- 推广卡片列表（可滚动区域） -->
       <scroll-view class="promoListScroll" scroll-y :style="{ height: scrollHeight }">
         <template v-if="promoList.length > 0 || !cacheLoaded">
@@ -242,11 +242,13 @@ const props = defineProps<{
 const scrollHeight = computed(() => {
   const sysInfo = uni.getSystemInfoSync()
   const screenHeight = sysInfo.windowHeight
-  // cardRow 高度约 140rpx，加上顶部 padding
+  // cardRow 高度约 140rpx
   const cardRowHeight = uni.rpx2px(140)
+  // 顶部 padding（socialOpBox 高度 + cardRow 高度 + 额外间距）
   const topPadding = uni.rpx2px(props.cntPaddingTop + 36 + 20)
   const bottomSafeArea = sysInfo.safeAreaInsets?.bottom || 0
 
+  // 滚动区域高度 = 屏幕高度 - cardRow高度 - 顶部padding - 底部安全区
   return `${screenHeight - cardRowHeight - topPadding - bottomSafeArea}px`
 })
 
@@ -918,15 +920,14 @@ onUnmounted(() => {
 .cardRow {
   display: flex;
   gap: 16rpx;
-  margin-bottom: 24rpx;
+  // padding: 12rpx 40rpx 16rpx;
+  background-color: var(--liberty-cats-page-background-color, #f7f6f4);
+  z-index: 10;
 
   &.cardRow--sticky {
     position: sticky;
     top: 0;
-    z-index: 10;
     background-color: var(--liberty-cats-page-background-color, #f7f6f4);
-    padding: 12rpx 0;
-    margin-bottom: 16rpx;
   }
 
   .cardItem {
