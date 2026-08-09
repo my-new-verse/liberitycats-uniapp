@@ -272,7 +272,8 @@
                   class="news-card-header-row"
                 >
                   <text class="news-card-header-text">
-                    定时推送 / {{ item.payload?.category || '新闻' }}
+                    {{ t('common.scheduled_push') }} /
+                    {{ item.payload?.category || t('common.news') }}
                   </text>
                 </view>
               </view>
@@ -306,7 +307,7 @@
                             class="news-digest-read-more"
                             @click.stop="handleNewsCardClick(newsItem)"
                           >
-                            阅读全文 →
+                            {{ t('common.read_full_text') }} →
                           </text>
                         </view>
                       </view>
@@ -342,7 +343,8 @@
                   class="news-card-header-row"
                 >
                   <text class="news-card-header-text">
-                    定时推送 / {{ item.payload?.category || '热点新闻' }}
+                    {{ t('common.scheduled_push') }} /
+                    {{ item.payload?.category || t('common.hot_news') }}
                   </text>
                 </view>
               </view>
@@ -370,7 +372,7 @@
                             class="hot-news-read-more"
                             @click.stop="handleNewsCardClick(newsItem)"
                           >
-                            阅读全文 →
+                            {{ t('common.read_full_text') }} →
                           </text>
                         </view>
                       </view>
@@ -407,7 +409,7 @@
                   class="news-card-header-row"
                   style="position: absolute; top: 0; right: 0"
                 >
-                  <text class="news-card-header-text">定时推送</text>
+                  <text class="news-card-header-text">{{ t('common.scheduled_push') }}</text>
                 </view>
               </view>
               <view class="news-card">
@@ -433,11 +435,11 @@
                         {{ item.payload.category }}
                       </view>
                       <text class="quick-news-title">
-                        {{ item.payload?.title || '今晚快讯' }}
+                        {{ item.payload?.title || t('common.tonight_news') }}
                       </text>
                     </view>
                     <text class="quick-news-update-time">
-                      {{ item.payload?.updateTime || '按时间倒序' }}
+                      {{ item.payload?.updateTime || t('common.reverse_time_order') }}
                     </text>
                   </view>
 
@@ -489,7 +491,7 @@
                   class="news-card-header-row"
                   style="position: absolute; top: 0; right: 0"
                 >
-                  <text class="news-card-header-text">定时推送</text>
+                  <text class="news-card-header-text">{{ t('common.scheduled_push') }}</text>
                 </view>
               </view>
               <view class="news-card">
@@ -515,11 +517,11 @@
                         {{ item.payload.category }}
                       </view>
                       <text class="quick-news-title">
-                        {{ item.payload?.title || '今晚快讯' }}
+                        {{ item.payload?.title || t('common.tonight_news') }}
                       </text>
                     </view>
                     <text class="quick-news-update-time">
-                      {{ item.payload?.updateTime || '按时间倒序' }}
+                      {{ item.payload?.updateTime || t('common.reverse_time_order') }}
                     </text>
                   </view>
                   <!-- wd-steps 时间线展示快讯列表 -->
@@ -559,7 +561,7 @@
                     @click.stop="handleViewAllNews(item)"
                   >
                     <text class="quick-news-footer-text">
-                      {{ item.payload?.viewAllText || '全部快讯 ›' }}
+                      {{ item.payload?.viewAllText || t('common.view_all_flash') + ' ›' }}
                     </text>
                   </view>
                 </view>

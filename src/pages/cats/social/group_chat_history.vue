@@ -815,7 +815,7 @@ const filterStickyHeight = computed(() => {
 /** 筛选栏用户按钮标签 */
 const selectedUserLabel = computed(() => {
   if (confirmedUserIds.value.length === 0) return ''
-  return `${confirmedUserIds.value.length}位用户`
+  return t('social.search.confirmed_users', { count: confirmedUserIds.value.length })
 })
 
 /** 移除已选用户 */

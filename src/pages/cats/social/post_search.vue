@@ -1337,7 +1337,7 @@ const filterStickyHeight = computed(() => (confirmedUserIds.value.length > 0 ? 2
 /** 筛选栏用户按钮标签 */
 const selectedUserLabel = computed(() => {
   if (confirmedUserIds.value.length === 0) return ''
-  return `${confirmedUserIds.value.length}位用户`
+  return t('social.search.confirmed_users', { count: confirmedUserIds.value.length })
 })
 
 /** 移除已选用户 */
@@ -1421,9 +1421,9 @@ const getFollowButtonInfo = (user: any) => {
   if (user.is_special_following)
     return { text: t('social.index.user.special.following'), style: 'followed' }
   if (user.is_mutual) return { text: t('social.index.user.mutual_following'), style: 'followed' }
-  if (user.is_followed) return { text: '已关注', style: 'followed' }
+  if (user.is_followed) return { text: t('social.index.user.followed'), style: 'followed' }
   if (user.is_following_me) return { text: t('social.index.user.follow_back'), style: 'follow' }
-  return { text: '关注', style: 'follow' }
+  return { text: t('social.index.user.follow'), style: 'follow' }
 }
 
 /** 关注/取消关注 */

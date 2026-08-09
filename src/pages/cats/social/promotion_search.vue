@@ -502,7 +502,7 @@ const confirmedUserIds = ref<number[]>([])
 const confirmedUsers = ref<Map<number, any>>(new Map())
 const selectedUserLabel = computed(() => {
   if (confirmedUserIds.value.length === 0) return ''
-  return `${confirmedUserIds.value.length}位用户`
+  return t('social.search.confirmed_users', { count: confirmedUserIds.value.length })
 })
 const selectedUsersCache = computed(() => {
   const map = new Map<number, any>()
