@@ -87,6 +87,7 @@
   "my.post.filter.normal": "普通貼文",
   "my.post.filter.promotion": "推廣貼文",
   "my.post.filter.draft": "草稿",
+  "user.home.unit.wan": "萬",
   "my.menu.my_order": "我的訂單",
   "my.menu.my_wishlist": "我的收藏",
   "my.menu.settings": "設定",
@@ -301,6 +302,8 @@
 
   "follow_list.title": "關注與粉絲",
   "follow_list.search_placeholder": "搜索用戶",
+  "follow_list.fans_count": "粉絲數",
+  "follow_list.unit.wan": "萬",
   "social.index.user.special.cancel": "取消特別關注",
   "social.index.user.special.cancel.confirm": "確定取消特別關注嗎？",
   "social.index.user.special.success": "已設為特別關注",

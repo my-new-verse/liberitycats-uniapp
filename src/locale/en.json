@@ -86,6 +86,7 @@
   "my.post.filter.normal": "Normal",
   "my.post.filter.promotion": "Promotion",
   "my.post.filter.draft": "Draft",
+  "user.home.unit.wan": "K",
   "my.menu.my_order": "My Order",
   "my.menu.my_wishlist": "My Wishlist",
   "my.menu.settings": "Settings",
@@ -319,6 +320,8 @@
 
   "follow_list.title": "Follow & Fans",
   "follow_list.search_placeholder": "Search users",
+  "follow_list.fans_count": "Fans",
+  "follow_list.unit.wan": "K",
   "social.index.user.special.cancel": "Cancel special follow",
   "social.index.user.special.cancel.confirm": "Confirm to cancel special follow?",
   "social.index.user.special.success": "Special follow set",

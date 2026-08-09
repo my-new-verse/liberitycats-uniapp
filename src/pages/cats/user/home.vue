@@ -555,7 +555,7 @@ const stats = ref<{
 } | null>(null)
 
 const formatCount = (count: number) => {
-  if (count >= 10000) return (count / 10000).toFixed(1) + '万'
+  if (count >= 10000) return (count / 10000).toFixed(1) + t('user.home.unit.wan')
   return String(count)
 }
 
@@ -593,8 +593,8 @@ const postFilterCache = ref<Record<string, PostFilterCache>>({
 
 const activePostFilter = ref('normal')
 const postFilterTabs = [
-  { key: 'normal', label: '普通帖' },
-  { key: 'promotion', label: '推广帖' },
+  { key: 'normal', label: t('my.post.filter.normal') },
+  { key: 'promotion', label: t('my.post.filter.promotion') },
 ]
 
 /** 当前分类对应的 post_category 接口参数 */

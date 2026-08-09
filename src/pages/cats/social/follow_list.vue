@@ -69,7 +69,9 @@
           <view class="memberInfo" @click="toUserHome(user.member_id)">
             <text class="memberName">{{ user.nickname }}</text>
             <view class="memberSub">
-              <text>粉丝数: {{ formatFansCount(user.fans_count || 0) }}</text>
+              <text>
+                {{ t('follow_list.fans_count') }}: {{ formatFansCount(user.fans_count || 0) }}
+              </text>
               <text>ID: {{ user.member_id }}</text>
             </view>
           </view>
@@ -292,10 +294,11 @@ const getFollowButtonInfo = (user: any) => {
   if (user.is_self) return null
   if (user.is_special_following)
     return { text: t('social.index.stats.special_following'), style: 'special' }
-  if (user.is_mutual_following) return { text: '互相关注', style: 'followed' }
-  if (user.is_following) return { text: '已关注', style: 'followed' }
-  if (user.is_following_me) return { text: '回关', style: 'follow' }
-  return { text: '关注', style: 'follow' }
+  if (user.is_mutual_following)
+    return { text: t('social.index.user.mutual_following'), style: 'followed' }
+  if (user.is_following) return { text: t('social.index.user.followed'), style: 'followed' }
+  if (user.is_following_me) return { text: t('social.index.user.follow_back'), style: 'follow' }
+  return { text: t('social.index.user.follow'), style: 'follow' }
 }
 
 const syncMemberFollowState = (targetId: number, data: any, user: any) => {
@@ -416,7 +419,7 @@ const getLevelIcon = (member: any): string => {
 }
 
 const formatFansCount = (count: number) => {
-  if (count >= 10000) return (count / 10000).toFixed(1) + '万'
+  if (count >= 10000) return (count / 10000).toFixed(1) + t('follow_list.unit.wan')
   return String(count)
 }
 
