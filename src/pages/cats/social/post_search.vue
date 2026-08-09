@@ -1021,6 +1021,12 @@ const handleFollowClick = async (member: any) => {
       const res = await createFollowApi(member.id)
       if (res.code === 1) {
         syncMemberFollowState(member.id, res.data)
+      } else {
+        uni.showToast({
+          title: res.msg || t('common.request.error'),
+          icon: 'none',
+        })
+        return
       }
       uni.showToast({ title: t('social.index.user.follow.success'), icon: 'none' })
     }
@@ -1454,6 +1460,11 @@ const handleFollow = async (user: any) => {
         user.is_followed = true
         if (user.is_following_me) user.is_mutual = true
         uni.showToast({ title: t('social.index.user.follow.success'), icon: 'none' })
+      } else {
+        uni.showToast({
+          title: res.msg || t('common.request.error'),
+          icon: 'none',
+        })
       }
     }
   } catch (e) {

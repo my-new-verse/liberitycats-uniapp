@@ -715,7 +715,14 @@ const handleFollowClick = async (member: any) => {
     if (res.code === 1) syncMemberFollowState(memberId, res.data)
   } else {
     const res = await createFollowApi(memberId)
-    if (res.code === 1) syncMemberFollowState(memberId, res.data)
+    if (res.code === 1) {
+      syncMemberFollowState(memberId, res.data)
+    } else {
+      uni.showToast({
+        title: res.msg || t('common.request.error'),
+        icon: 'none',
+      })
+    }
   }
 }
 

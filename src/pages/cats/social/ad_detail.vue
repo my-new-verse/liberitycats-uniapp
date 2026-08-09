@@ -1567,6 +1567,11 @@ const handleFollowClick = async (member: any) => {
       if (res.code === 1) {
         syncMemberFollowState(member.id, res.data)
         uni.showToast({ title: t('social.index.user.follow.success'), icon: 'none' })
+      } else {
+        uni.showToast({
+          title: res.msg || t('common.request.error'),
+          icon: 'none',
+        })
       }
     }
   } catch (e) {
