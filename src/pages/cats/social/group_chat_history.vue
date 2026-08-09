@@ -20,7 +20,7 @@
             <wd-input
               type="text"
               v-model="searchText"
-              placeholder="搜索聊天记录"
+              :placeholder="t('group_chat.history.search.placeholder')"
               :no-border="true"
               custom-class="searchInput"
               confirm-type="search"
@@ -88,7 +88,7 @@
       <!-- ========== 搜索状态：初始提示 / 结果列表（暂无数据） ========== -->
       <template v-if="!hasSearched">
         <view class="emptyBox">
-          <view class="emptyText">输入关键词搜索聊天记录</view>
+          <view class="emptyText">{{ t('group_chat.history.search.empty_hint') }}</view>
         </view>
       </template>
       <template v-else>
@@ -991,7 +991,7 @@ const getImageMessageBoxSize = (msg: any) => {
 .typeTabsWrap {
   background-color: var(--liberty-cats-page-background-color);
   padding: 0 32rpx;
-  width: 50%;
+  width: 55%;
   :deep(.typeTabs) {
     background-color: var(--liberty-cats-page-background-color);
     .wd-tabs__nav {

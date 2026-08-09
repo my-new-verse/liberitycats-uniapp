@@ -261,6 +261,8 @@
   "social.search.tab.all": "全部",
   "social.search.tab.message": "消息",
   "social.search.tab.image": "圖片",
+  "group_chat.history.search.placeholder": "搜尋聊天記錄",
+  "group_chat.history.search.empty_hint": "輸入關鍵詞搜尋聊天記錄",
   "social.inFocus.need_view_in_x": "需要在 X 中查看",
   "social.inFocus.translated_from": "翻譯自",
   "social.inFocus.show_original": "顯示原文",
