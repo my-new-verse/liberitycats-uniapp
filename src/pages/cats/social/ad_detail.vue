@@ -720,11 +720,12 @@ onBackPress((options) => {
   return false
 })
 
-// 页面卸载时通知列表更新单项（用详情页结果替换列表项）
+// 页面卸载时通知列表用详情页结果替换列表项（避免全量刷新）
 onUnload(() => {
-  uni.$emit('refreshPromotionTab')
   if (postId.value && postDetail.value) {
     uni.$emit('updatePromotionPostItem', postDetail.value)
+  } else {
+    uni.$emit('refreshPromotionTab')
   }
 })
 
