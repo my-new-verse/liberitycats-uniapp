@@ -1211,7 +1211,8 @@ const toUserHome = (notificationItem: any) => {
     clearSwipeTapSuppressed()
     return
   }
-  const memberId = notificationItem.member_id || notificationItem?.display.titleSegments[2].id
+  const memberId =
+    notificationItem.member.member_id || notificationItem?.display.titleSegments[2].id
   if (notificationItem.opened || notificationItem.offsetX !== 0) {
     // 如果滑块是开着的，则执行关闭逻辑
     closeSwipe(notificationItem)
