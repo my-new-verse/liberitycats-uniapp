@@ -68,6 +68,7 @@
               :item="item"
               :show-delete="item.member_id === userStore.userInfo?.member_id"
               :show-report="item.member_id !== userStore.userInfo?.member_id"
+              :show-refresh="item.can_refresh !== 0"
               @delete="handleDelPost"
               @refresh="debouncedHandleRefreshPost"
               @report="reportPost"

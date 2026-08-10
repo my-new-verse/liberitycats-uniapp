@@ -186,6 +186,7 @@
                 <view class="socialItem">
                   <view v-if="item.member_id === userStore.userInfo?.member_id" class="delBox">
                     <wd-icon
+                      v-if="item.can_refresh !== 0"
                       @click="debouncedHandleRefreshPost(item)"
                       name="refresh1"
                       size="22px"
