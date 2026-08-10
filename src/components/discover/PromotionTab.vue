@@ -884,6 +884,27 @@ watch(
   },
 )
 
+// 监听登录状态变化：退出登录/重新登录后重置缓存并重新加载
+watch(
+  () => userStore.isLogin,
+  (isLogin, wasLogin) => {
+    if (isLogin && !wasLogin) {
+      // 清空所有缓存
+      Object.keys(adListCache.value).forEach((key) => {
+        adListCache.value[key] = createCache()
+      })
+      // 重置筛选条件
+      activeFilter.value = 'latest'
+      activeCardType.value = 0
+      // 重新加载广告类型和列表
+      checkAdEligibility()
+      loadAdTypes()
+      isRefreshing.value = true
+      loadData(1)
+    }
+  },
+)
+
 onShow(() => {
   fetchUnreadCount()
 })
