@@ -272,7 +272,12 @@
             </view>
           </view>
         </scroll-view>
-        <view class="emptyHint" v-else>{{ t('social.search.filter.userHint') }}</view>
+        <view class="emptyHint" v-if="searchedUsers.length === 0 && !memberKeyword">
+          {{ t('social.search.filter.userHint') }}
+        </view>
+        <view class="emptyHint noResult" v-if="memberKeyword && searchedUsers.length === 0">
+          {{ t('social.search.noResults') }}
+        </view>
         <view class="filterActions">
           <wd-button custom-class="cancelBtn" size="large" block @click="showUserFilter = false">
             {{ t('common.cancel') }}
@@ -1903,6 +1908,11 @@ onUnmounted(() => {
     font-size: 28rpx;
     color: #999;
     text-align: center;
+    &.noResult {
+      font-size: 26rpx;
+      font-weight: 500;
+      color: #666;
+    }
   }
 
   .filterActions {

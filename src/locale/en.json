@@ -251,6 +251,7 @@
   "social.search.filter.user": "User",
   "social.search.filter.userPlaceholder": "Search members",
   "social.search.filter.userHint": "Enter keyword to search members",
+  "social.search.noResults": "No users found",
   "social.search.filter.recentMembers": "Recent",
   "social.search.filter.time": "Time",
   "social.search.filter.time.all": "Any",

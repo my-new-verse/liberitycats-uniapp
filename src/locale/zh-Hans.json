@@ -251,6 +251,7 @@
   "social.search.filter.user": "用户",
   "social.search.filter.userPlaceholder": "搜索成员",
   "social.search.filter.userHint": "输入关键词搜索成员",
+  "social.search.noResults": "未找到相关用户",
   "social.search.filter.recentMembers": "最近选择",
   "social.search.filter.time": "时间",
   "social.search.filter.time.all": "不限",
