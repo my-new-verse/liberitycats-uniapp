@@ -776,6 +776,18 @@ onMounted(() => {
       console.error('refreshNormalPost failed', e)
     }
   })
+  // 详情页返回后用详情数据替换列表项（避免全量刷新）
+  uni.$on('updateNormalPostItem', (detail: any) => {
+    if (!detail?.id) return
+    const keys: SocialCacheKey[] = ['hot', 'latest', 'following']
+    keys.forEach((key) => {
+      const list = socialCacheMap.value[key].list
+      const idx = list.data.findIndex((item) => item.id === detail.id)
+      if (idx !== -1) {
+        list.data[idx] = { ...list.data[idx], ...detail }
+      }
+    })
+  })
   uni.$on('discoverActiveTabChange', (tabName: string) => {
     if (tabName === t('discover.tabs.social')) {
       refreshSocialChatData()
@@ -807,6 +819,7 @@ onUnmounted(() => {
   }
   uni.$off('refreshSocialTab')
   uni.$off('refreshNormalPost')
+  uni.$off('updateNormalPostItem')
   uni.$off('discoverActiveTabChange')
   uni.$off('switchToChatGroup')
   uni.$off('followStateChange')

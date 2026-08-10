@@ -922,6 +922,19 @@ onMounted(async () => {
     loadData(1, true)
   })
 
+  // 详情页返回后用详情数据替换列表项（避免全量刷新）
+  uni.$on('updatePromotionPostItem', (detail: any) => {
+    if (!detail?.id) return
+    Object.keys(adListCache.value).forEach((key) => {
+      const cache = adListCache.value[key]
+      const idx = cache.data.findIndex((item) => item.id === detail.id)
+      if (idx !== -1) {
+        cache.data[idx] = { ...cache.data[idx], ...detail }
+      }
+    })
+    syncCurrentCache()
+  })
+
   // 监听刷新未读消息数
   uni.$on('refreshTabMsgUnread', () => {
     fetchUnreadCount()
@@ -939,6 +952,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   uni.$off('refreshPromotionTab')
+  uni.$off('updatePromotionPostItem')
   uni.$off('refreshTabMsgUnread')
   uni.$off('followStateChange')
   debouncedHandleRefreshPost?.cancel()
