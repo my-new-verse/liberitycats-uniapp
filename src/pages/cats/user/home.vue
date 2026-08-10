@@ -183,136 +183,40 @@
             <!-- 推广帖：推广卡片 -->
             <template v-if="activePostFilter === 'promotion'">
               <view class="cell socialBox" v-for="item in socialList.data" :key="item.id">
-                <view class="socialItem">
-                  <view v-if="item.member_id === userStore.userInfo?.member_id" class="delBox">
-                    <wd-icon
-                      v-if="item.can_refresh !== 0"
-                      @click="debouncedHandleRefreshPost(item)"
-                      name="refresh1"
-                      size="22px"
-                      color="#999999"
-                    ></wd-icon>
-                    <view @click="handleDelPost(item.id)" class="del-child"></view>
-                  </view>
-                  <view class="socialHead">
-                    <view
-                      class="avatarBox"
-                      @click="toUrl('/pages/cats/user/home?member_id=' + item.member_id, false)"
-                    >
-                      <image
-                        class="avatar"
-                        :src="getImageUrl(item.member?.avatar + '?x-oss-process=style/jzcq')"
-                      />
-                      <view class="levelIcon">
-                        <image
-                          :src="`/static/images/level/${item.member.level}.png`"
-                          mode="widthFix"
-                        />
-                      </view>
-                    </view>
-                    <view class="nameWrap">
-                      <view class="name">{{ formatNickname(item.member?.nickname, 22) }}</view>
-                      <view
-                        v-if="item.member_id !== userStore.userInfo?.member_id"
-                        class="moreActionsBtn"
-                        @click.stop="openPostActions(item)"
-                      ></view>
-                    </view>
-                  </view>
-                  <view
-                    class="socialCntBox"
-                    @click="toUrl('/pages/cats/social/ad_detail?id=' + item.id, false)"
-                  >
-                    <view class="titleRow" v-if="item.title">
-                      <view v-if="item.ad_type?.name" class="tag tag1">
-                        {{ item.ad_type?.name }}
-                      </view>
-                      <view class="socialCnt text-clamp-4 title">{{ item.title }}</view>
-                    </view>
-                    <view class="socialCnt text-clamp-4 content" v-if="item.content">
-                      {{ item.content }}
-                    </view>
-                    <view class="adTagsRow" v-if="item.ad_tags?.length">
-                      <text v-for="tag in item.ad_tags" :key="tag.id" class="adTagChip">
-                        # {{ tag.display_name }}
-                      </text>
-                    </view>
-                    <view
-                      class="socialMedia"
-                      v-if="item.images?.length > 0"
-                      :class="{
-                        mediaImg4: item.images.length === 4,
-                        singleImg: item.images.length === 1,
-                      }"
-                    >
-                      <view
-                        v-for="(image, index) in item.images"
-                        :key="index"
-                        @tap.stop="doHandlePreview(item.images, index)"
-                      >
-                        <wd-img
-                          :radius="5"
-                          custom-class="mediaImgItem"
-                          :mode="item.images.length === 1 ? 'widthFix' : 'aspectFill'"
-                          :src="getImageUrl(image + '?x-oss-process=style/sqdt')"
-                          :enable-preview="false"
-                        />
-                      </view>
-                    </view>
-                    <view class="socialTime">{{ formatRelativeTime(item.create_time) }}</view>
-                  </view>
-                  <view class="socialFoot">
-                    <view
-                      class="socialBtnBox"
-                      @click="toUrl('/pages/cats/social/ad_detail?id=' + item.id, false)"
-                    >
-                      <view class="socialBtnIcon view"></view>
-                      <view class="socialBtn">{{ item.view_count }}</view>
-                    </view>
-                    <view
-                      class="socialBtnBox"
-                      @click="
-                        toUrl(
-                          '/pages/cats/social/ad_detail?id=' + item.id + '&showComment=false',
-                          false,
-                        )
-                      "
-                    >
-                      <view class="socialBtnIcon quote"></view>
-                      <view class="socialBtn">{{ item.commit_count }}</view>
-                    </view>
-                    <view class="socialBtnBox">
-                      <view class="zanWrapper" @click.stop="likePost(item)">
-                        <image
-                          class="Icon"
-                          :src="
-                            item.is_liked === 1
-                              ? '/static/images/unlike.png'
-                              : '/static/images/zan0.33.png'
-                          "
-                          mode="aspectFit"
-                          :style="{ opacity: item.currentGif ? 0 : 1 }"
-                        />
-                        <image :src="item.currentGif" class="Icon" mode="aspectFit" />
-                      </view>
-                      <view class="socialBtn">{{ item.like_count }}</view>
-                    </view>
-                    <view class="socialBtnBox" @click="handleOpenShare(item)">
-                      <view class="socialBtnIcon share"></view>
-                    </view>
-                  </view>
-                </view>
+                <PromotionPostItem
+                  :ref="
+                    (el) => {
+                      if (el) postItemRefs[item.id] = el
+                    }
+                  "
+                  :item="item"
+                  :show-delete="item.member_id === userStore.userInfo?.member_id"
+                  :show-report="item.member_id !== userStore.userInfo?.member_id"
+                  :show-refresh="item.can_refresh !== 0"
+                  @delete="handleDelPost"
+                  @refresh="debouncedHandleRefreshPost"
+                  @report="openPostActions"
+                  @avatar-click="
+                    (i) => toUrl('/pages/cats/user/home?member_id=' + i.member_id, false)
+                  "
+                  @click="(i) => toUrl('/pages/cats/social/ad_detail?id=' + i.id, false)"
+                  @view-click="(i) => toUrl('/pages/cats/social/ad_detail?id=' + i.id, false)"
+                  @comment-click="
+                    (i) =>
+                      toUrl('/pages/cats/social/ad_detail?id=' + i.id + '&showComment=false', false)
+                  "
+                  @like="likePost"
+                  @share="handleOpenShare"
+                />
               </view>
             </template>
             <!-- 草稿 -->
             <template v-if="activePostFilter === 'draft'">
               <view class="cell socialBox" v-for="item in socialList.data" :key="item.id">
                 <view class="socialItem">
-                  <view
-                    v-if="item.member_id === userStore.userInfo?.member_id"
-                    class="delBox"
-                    @click="handleDelPost(item.id)"
-                  ></view>
+                  <view v-if="item.member_id === userStore.userInfo?.member_id" class="delBox">
+                    <view @click="handleDelPost(item.id)" class="del-child"></view>
+                  </view>
                   <view class="socialHead">
                     <view class="avatarBox">
                       <image
@@ -489,9 +393,11 @@ import {
   banPostApi,
   unbanPostApi,
   refreshAdPostApi,
+  checkAdEligibilityApi,
 } from '@/service/api/community'
 import SharePopup from '@/components/SharePopup/SharePopup.vue'
 import SocialPostItem from '@/components/PostItem/SocialPostItem.vue'
+import PromotionPostItem from '@/components/PostItem/PromotionPostItem.vue'
 
 const userStore = useUserStore()
 const toast = useToast()
@@ -657,6 +563,9 @@ const syncCurrentCache = () => {
 }
 
 const isRefreshing = ref(false)
+
+// PromotionPostItem 组件实例引用（按 item.id 收集）
+const postItemRefs = ref<Record<number, any>>({})
 let hasInitialized = false
 
 onLoad((options) => {
@@ -1203,6 +1112,24 @@ const doHandlePreview = (images: string[], currentIndex: number = 0, needDealImg
   images = images.map((item) => (item = item + '?x-oss-process=style/sqdt'))
   handlePreview(images, currentIndex)
 }
+// 检查推广发布资格，如果不可发布则隐藏当前用户帖子的刷新按钮
+const syncRefreshEligibility = async () => {
+  try {
+    const eligRes = await checkAdEligibilityApi()
+    if (eligRes.code === 1 && eligRes.data.can_publish === false) {
+      const currentMemberId = userStore.userInfo?.member_id
+      // 遍历当前可见列表，通过子组件方法隐藏刷新按钮
+      socialList.value.data.forEach((post: any) => {
+        if (post.member_id === currentMemberId) {
+          postItemRefs.value[post.id]?.hideRefresh()
+        }
+      })
+    }
+  } catch (e) {
+    console.error('checkAdEligibility after refresh failed', e)
+  }
+}
+
 // 刷新推广帖（调用接口，成功后更新当前页列表）
 const handleRefreshPost = async (item: any) => {
   try {
@@ -1211,7 +1138,9 @@ const handleRefreshPost = async (item: any) => {
     if (res.code === 1) {
       uni.showToast({ title: t('social.detail.refresh.success'), icon: 'success', duration: 2000 })
       // 重新拉取当前筛选下的列表
-      loadMoreData(true)
+      await loadMoreData(true)
+      // 刷新后检查推广发布资格，如果不可发布则隐藏当前用户帖子的刷新按钮
+      await syncRefreshEligibility()
     } else {
       console.log(res.msg || t('social.detail.refresh.failed'))
       uni.showToast({
@@ -1219,6 +1148,7 @@ const handleRefreshPost = async (item: any) => {
         icon: 'none',
         duration: 2000,
       })
+      await syncRefreshEligibility()
     }
   } catch (e) {
     console.error('refresh failed:', e)

@@ -23,7 +23,11 @@
             <view class="socialItem">
               <template v-if="postDetail.member_id === userStore.userInfo?.member_id">
                 <view class="delBox" @click="handleDelMainPost"></view>
-                <view class="refreshBox" @click="debouncedHandleRefreshPost">
+                <view
+                  v-if="refreshBoxVisible"
+                  class="refreshBox"
+                  @click="debouncedHandleRefreshPost"
+                >
                   <wd-icon name="refresh1" color="#999999" size="22px"></wd-icon>
                 </view>
               </template>
@@ -604,6 +608,7 @@ import {
   getAdTypeListApi,
   AdTypeItem,
   refreshAdPostApi,
+  checkAdEligibilityApi,
 } from '@/service/api/community'
 import {
   formatNickname,
@@ -1172,6 +1177,7 @@ onLoad((options) => {
       getAdTypeListApi().then((res) => {
         adTypeList.value = res.data
       }),
+      syncRefreshEligibility(),
     ]).finally(() => {
       if (options.showComment === 'true') {
         uni.hideLoading()
@@ -1488,6 +1494,21 @@ const handleDelMainPost = () => {
     .catch(() => {})
 }
 
+// 刷新按钮是否可见（不可发布时隐藏）
+const refreshBoxVisible = ref(true)
+
+// 检查推广发布资格，如果不可发布则隐藏刷新按钮
+const syncRefreshEligibility = async () => {
+  try {
+    const eligRes = await checkAdEligibilityApi()
+    if (eligRes.code === 1 && eligRes.data.can_publish === false) {
+      refreshBoxVisible.value = false
+    }
+  } catch (e) {
+    console.error('checkAdEligibility after refresh failed', e)
+  }
+}
+
 /** 刷新主帖 */
 const handleRefreshPost = async () => {
   if (!userStore.isLogin) {
@@ -1504,9 +1525,12 @@ const handleRefreshPost = async () => {
       // 与 publish.vue 编辑推广帖成功后的逻辑一致：刷新列表并返回列表页
       uni.$emit('refreshPromotionTab')
       uni.$emit('refreshPromotionPost')
+      // 刷新后检查推广发布资格，如果不可发布则隐藏刷新按钮
+      await syncRefreshEligibility()
       setTimeout(() => uni.navigateBack(), 500)
     } else {
       toast.show(res.msg || t('social.detail.refresh.failed'))
+      await syncRefreshEligibility()
     }
   } catch (error) {
     console.error('刷新失败:', error)

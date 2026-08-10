@@ -94,110 +94,22 @@
         <template v-else-if="searchResult.posts.length > 0">
           <view class="socialBox">
             <view class="cell" v-for="post in searchResult.posts" :key="post.id">
-              <view class="socialItem">
-                <view
-                  class="delBox"
-                  v-if="post.member?.is_self"
-                  @click="handleDelPost(post.id)"
-                ></view>
-                <view class="jbBox" v-else @click="reportPost(post)"></view>
-                <!-- <view
-                  v-if="getMemberFollowInfo(post.member)"
-                  class="followBtn"
-                  :class="getMemberFollowInfo(post.member).style"
-                  @click.stop="handleFollowClick(post.member)"
-                >
-                  {{ getMemberFollowInfo(post.member).text }}
-                  <wd-icon
-                    custom-style="margin-left: 12rpx"
-                    name="star-on"
-                    size="22rpx"
-                    color="#ff6b03"
-                    v-if="post.member?.is_special_following === 1"
-                  ></wd-icon>
-                </view> -->
-                <view class="socialHead">
-                  <view class="avatarBox" @click="toPostDetail(post)">
-                    <image class="avatar" :src="post.member?.avatar" />
-                    <view class="levelIcon" v-if="getLevelValue(post.member)">
-                      <image
-                        :src="getLevelIcon(post.member)"
-                        mode="aspectFit"
-                        @error="handleLevelIconError(post.member)"
-                        @load="handleLevelIconLoad(post.member)"
-                      />
-                    </view>
-                  </view>
-                  <view class="nameWrap">
-                    <view class="name">{{ post.member?.nickname }}</view>
-                  </view>
-                  <view v-if="post.tag?.name" class="tag" :class="post.tag?.class">
-                    {{ post.tag.name }}
-                  </view>
-                </view>
-                <view class="socialCntBox" @click="toPostDetail(post)">
-                  <view class="socialCnt text-clamp-4">{{ post.content }}</view>
-                  <view
-                    class="socialMedia"
-                    v-if="post.images.length > 0"
-                    :class="{
-                      mediaImg4: post.images.length === 4,
-                      singleImg: post.images.length === 1,
-                    }"
-                  >
-                    <view
-                      v-for="(image, index) in post.images"
-                      :key="index"
-                      @tap.stop="doHandlePreview(post.images, index)"
-                    >
-                      <wd-img
-                        :radius="5"
-                        custom-class="mediaImgItem"
-                        :mode="post.images.length === 1 ? 'widthFix' : 'aspectFill'"
-                        :src="getImageUrl(image + '?x-oss-process=style/sqdt')"
-                        :enable-preview="false"
-                      />
-                    </view>
-                  </view>
-                  <view class="socialTime">{{ formatRelativeTime(post.create_time) }}</view>
-                </view>
-                <view class="socialFoot">
-                  <view class="socialBtnBox" @click="toPostDetail(post)">
-                    <view class="socialBtnIcon view"></view>
-                    <view class="socialBtn">{{ post.view_count || 0 }}</view>
-                  </view>
-                  <view class="socialBtnBox" @click="toPostDetail(post)">
-                    <view class="socialBtnIcon quote"></view>
-                    <view class="socialBtn">{{ post.commit_count || 0 }}</view>
-                  </view>
-                  <view class="socialBtnBox">
-                    <view class="zanWrapper" @click.stop="likeSearchPost(post)">
-                      <image
-                        class="Icon"
-                        :src="
-                          post.is_liked === 1
-                            ? '/static/images/unlike.png'
-                            : '/static/images/zan0.33.png'
-                        "
-                        mode="aspectFit"
-                        :style="{ opacity: post.currentGif ? 0 : 1 }"
-                      />
-                      <image
-                        v-if="post.currentGif"
-                        :src="post.currentGif"
-                        class="Icon"
-                        mode="aspectFit"
-                      />
-                    </view>
-                    <view class="socialBtn" style="margin-left: 10rpx">
-                      {{ post.like_count || 0 }}
-                    </view>
-                  </view>
-                  <view class="socialBtnBox" @click.stop="handleShare(post)">
-                    <view class="socialBtnIcon share"></view>
-                  </view>
-                </view>
-              </view>
+              <SocialPostItem
+                :item="post"
+                :show-delete="post.member?.is_self"
+                :show-report="!post.member?.is_self"
+                @delete="handleDelPost"
+                @report="reportPost"
+                @avatar-click="
+                  (i) => toUrl('/pages/cats/user/home?member_id=' + i.member_id, false)
+                "
+                @click="(i) => toPostDetail(i)"
+                @view-click="(i) => toPostDetail(i)"
+                @comment-click="(i) => toPostDetail(i)"
+                @like="likeSearchPost"
+                @share="handleShare"
+                @preview="doHandlePreview"
+              />
             </view>
           </view>
         </template>
@@ -451,6 +363,7 @@ import { useUserStore } from '@/store/user'
 import { useMessage, useToast } from 'wot-design-uni'
 import { LoadMoreState } from 'wot-design-uni/components/wd-loadmore/types'
 import SharePopup from '@/components/SharePopup/SharePopup.vue'
+import SocialPostItem from '@/components/PostItem/SocialPostItem.vue'
 
 // ============================================================
 // 导航栏布局

@@ -75,6 +75,11 @@
         <template v-else-if="promoList.length > 0 || !cacheLoaded">
           <view class="cell" v-for="item in promoList" :key="item.id">
             <PromotionPostItem
+              :ref="
+                (el) => {
+                  if (el) postItemRefs[item.id] = el
+                }
+              "
               :item="item"
               :show-delete="item.member_id === userStore.userInfo?.member_id"
               :show-report="item.member_id !== userStore.userInfo?.member_id"
@@ -273,6 +278,9 @@ const emit = defineEmits<{
 const handleOpenShare = (item: any) => {
   emit('open-share', item)
 }
+
+// PromotionPostItem 组件实例引用（按 item.id 收集）
+const postItemRefs = ref<Record<number, any>>({})
 
 const activeFilter = ref('latest')
 
@@ -799,6 +807,24 @@ const handleDelPost = (id: number) => {
     .catch(() => {})
 }
 
+// 检查推广发布资格，如果不可发布则隐藏当前用户帖子的刷新按钮
+const syncRefreshEligibility = async () => {
+  try {
+    const eligRes = await checkAdEligibilityApi()
+    if (eligRes.code === 1 && eligRes.data.can_publish === false) {
+      const currentMemberId = userStore.userInfo?.member_id
+      // 遍历当前可见列表，通过子组件方法隐藏刷新按钮
+      promoList.value.forEach((post: any) => {
+        if (post.member_id === currentMemberId) {
+          postItemRefs.value[post.id]?.hideRefresh()
+        }
+      })
+    }
+  } catch (e) {
+    console.error('checkAdEligibility after refresh failed', e)
+  }
+}
+
 // 刷新推广帖（调用接口，成功后更新当前页列表）
 const handleRefreshPost = async (item: any) => {
   try {
@@ -807,7 +833,9 @@ const handleRefreshPost = async (item: any) => {
     if (res.code === 1) {
       uni.showToast({ title: t('social.detail.refresh.success'), icon: 'success', duration: 2000 })
       // 重新拉取当前筛选下的列表
-      loadData(1, true)
+      await loadData(1, true)
+      // 刷新后检查推广发布资格，如果不可发布则隐藏当前用户帖子的刷新按钮
+      await syncRefreshEligibility()
     } else {
       console.log(res.msg || t('social.detail.refresh.failed'))
       uni.showToast({
@@ -815,6 +843,7 @@ const handleRefreshPost = async (item: any) => {
         icon: 'none',
         duration: 2000,
       })
+      await syncRefreshEligibility()
     }
   } catch (e) {
     console.error('refresh failed:', e)

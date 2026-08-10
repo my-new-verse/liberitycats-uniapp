@@ -2,7 +2,7 @@
   <view class="socialItem">
     <view v-if="showDelete" class="delBox">
       <wd-icon
-        v-if="showRefresh"
+        v-if="refreshVisible"
         @click="$emit('refresh', item)"
         name="refresh1"
         size="22px"
@@ -73,9 +73,10 @@
 </template>
 
 <script lang="ts" setup>
+import { ref, watch } from 'vue'
 import { formatNickname, formatRelativeTime, getImageUrl } from '@/utils'
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     item: any
     showFoot?: boolean
@@ -88,6 +89,21 @@ withDefaults(
     showRefresh: true,
   },
 )
+
+const refreshVisible = ref(props.showRefresh)
+
+watch(
+  () => props.showRefresh,
+  (val) => {
+    refreshVisible.value = val
+  },
+)
+
+const hideRefresh = () => {
+  refreshVisible.value = false
+}
+
+defineExpose({ hideRefresh })
 
 defineEmits<{
   delete: [id: number]

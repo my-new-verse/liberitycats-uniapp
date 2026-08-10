@@ -105,6 +105,11 @@
           <view class="socialBox">
             <view class="cell" v-for="item in searchResult.posts" :key="item.id">
               <PromotionPostItem
+                :ref="
+                  (el) => {
+                    if (el) postItemRefs[item.id] = el
+                  }
+                "
                 :item="item"
                 :show-delete="item.member_id === userStore.userInfo?.member_id"
                 :show-report="item.member_id !== userStore.userInfo?.member_id"
@@ -401,6 +406,7 @@ import {
   banPostApi,
   unbanPostApi,
   refreshAdPostApi,
+  checkAdEligibilityApi,
 } from '@/service/api/community'
 import { useUserStore } from '@/store/user'
 import { useMessage, useToast } from 'wot-design-uni'
@@ -904,6 +910,26 @@ const loadMore = async () => {
 const filterStickyHeight = computed(() => (confirmedUserIds.value.length > 0 ? 260 : 110))
 const scrollViewTop = computed(() => cntPaddingTop.value + filterStickyHeight.value + 'rpx')
 
+// PromotionPostItem 组件实例引用（按 item.id 收集）
+const postItemRefs = ref<Record<number, any>>({})
+
+// 检查推广发布资格，如果不可发布则隐藏当前用户帖子的刷新按钮
+const syncRefreshEligibility = async () => {
+  try {
+    const eligRes = await checkAdEligibilityApi()
+    if (eligRes.code === 1 && eligRes.data.can_publish === false) {
+      const currentMemberId = userStore.userInfo?.member_id
+      searchResult.value.posts.forEach((post: any) => {
+        if (post.member_id === currentMemberId) {
+          postItemRefs.value[post.id]?.hideRefresh()
+        }
+      })
+    }
+  } catch (e) {
+    console.error('checkAdEligibility after refresh failed', e)
+  }
+}
+
 // 刷新推广帖（调用接口，成功后更新当前页搜索结果列表）
 const handleRefreshPost = async (item: any) => {
   try {
@@ -913,9 +939,12 @@ const handleRefreshPost = async (item: any) => {
     if (res.code === 1) {
       toast.show(t('social.detail.refresh.success'))
       // 重新拉取当前搜索条件下的第一页结果
-      if (hasSearched.value) refreshData()
+      if (hasSearched.value) await refreshData()
+      // 刷新后检查推广发布资格，如果不可发布则隐藏当前用户帖子的刷新按钮
+      await syncRefreshEligibility()
     } else {
       toast.show(res.msg || t('social.detail.refresh.failed'))
+      await syncRefreshEligibility()
     }
   } catch (e) {
     uni.hideLoading()
