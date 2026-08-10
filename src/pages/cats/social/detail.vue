@@ -807,6 +807,13 @@ const publishComment = async () => {
     if (res.code === 1) {
       toast.show(t('common.toast.comment_success'))
 
+      // 调用详情接口获取最新评论数
+      getCommunityPostDetailApi(postId.value).then((res) => {
+        if (res.code === 1 && res.data) {
+          postDetail.value.commit_count = res.data.commit_count
+        }
+      })
+
       const type = replyTarget.value.type
 
       if (type === 'l1' || type === 'l2') {
