@@ -68,7 +68,11 @@
         :scroll-top="scrollTopValue"
         @scroll="onScroll"
       >
-        <template v-if="promoList.length > 0 || !cacheLoaded">
+        <!-- Loading 状态 -->
+        <view v-if="isRefreshing" class="loadingBox">
+          <wd-loading color="#ff6b03" size="48px" />
+        </view>
+        <template v-else-if="promoList.length > 0 || !cacheLoaded">
           <view class="cell" v-for="item in promoList" :key="item.id">
             <PromotionPostItem
               :item="item"
@@ -324,6 +328,9 @@ const promoList = ref<AdPostItem[]>([])
 
 const cacheLoaded = computed(() => getCurrentCache().loaded)
 
+// 是否正在刷新
+const isRefreshing = ref(false)
+
 const syncCurrentCache = () => {
   const cache = getCurrentCache()
   promoList.value = cache.data
@@ -345,6 +352,8 @@ const preloadAdTypeIcons = (types: any[]) => {
 // 加载广告类型列表
 const loadAdTypes = async () => {
   try {
+    // 显示全局 loading
+    uni.showLoading()
     const res = await getAdTypeListApi()
     if (res.code === 1 && res.data) {
       cardTypes.value = res.data as any[]
@@ -352,6 +361,9 @@ const loadAdTypes = async () => {
     }
   } catch (e) {
     console.error('loadAdTypes failed', e)
+  } finally {
+    // 隐藏全局 loading
+    uni.hideLoading()
   }
 }
 
@@ -359,15 +371,23 @@ const loadAdTypes = async () => {
 const loadData = async (page = 1, refresh = false) => {
   const cache = getCurrentCache()
   if (cache.loading) return
+
   if (refresh) {
     cache.data = []
     cache.page = 0
     cache.lastPage = 1
     cache.loaded = false
   }
+
+  // 如果是刷新或首次加载，显示 loading
+  if (refresh || cache.page === 0) {
+    isRefreshing.value = true
+  }
+
   if (cache.page >= cache.lastPage && !refresh) {
     cache.state = 'finished'
     syncCurrentCache()
+    isRefreshing.value = false
     return
   }
 
@@ -405,6 +425,7 @@ const loadData = async (page = 1, refresh = false) => {
   } finally {
     cache.loading = false
     syncCurrentCache()
+    isRefreshing.value = false
   }
 }
 
@@ -430,6 +451,8 @@ const handleFilterChange = (filter: string) => {
     syncCurrentCache()
     restoreScrollPosition()
   } else {
+    // 新数据：先清空列表并显示 loading，再滚动到顶部，然后加载
+    isRefreshing.value = true
     loadData(1)
   }
 }
@@ -833,6 +856,8 @@ const handleAdTypeChange = (id: number) => {
     syncCurrentCache()
     restoreScrollPosition()
   } else {
+    // 新数据：先清空列表并显示 loading，再滚动到顶部，然后加载
+    isRefreshing.value = true
     loadData(1)
   }
 }
@@ -872,6 +897,7 @@ onMounted(async () => {
 
   // 监听刷新事件（从编辑页返回后刷新推广列表）
   uni.$on('refreshPromotionTab', () => {
+    isRefreshing.value = true
     loadData(1, true)
   })
 
@@ -1090,6 +1116,14 @@ onUnmounted(() => {
   padding: 4rpx 0;
   border-radius: 8rpx;
   margin-right: 12rpx;
+}
+
+/* Loading 状态样式 */
+.loadingBox {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
 }
 .socialCntBox {
   .titleRow {
