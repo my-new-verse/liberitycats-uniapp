@@ -789,31 +789,15 @@ const loadMoreData = async (refresh = false) => {
 
 const loadAllData = async () => {
   try {
-    // 判断是否为当前登录用户本人
-    const isSelf = !memberId.value || memberId.value === userStore.userInfo?.member_id
-
-    if (isSelf) {
-      // 本人：从 userStore 获取用户信息，用 getMyPostsApi 加载帖子
-      const u = userStore.userInfo as any
-      userInfo.value = {
-        member_id: u.member_id,
-        nickname: u.nickname,
-        avatar: u.avatar,
-        level: u.level || { level: 0, icon: '' },
-        is_self: true,
-        is_following: 0,
-      } as any
-    } else {
-      // 他人：调用 getMemberHomepageApi 获取用户信息和统计数据
-      uni.showLoading()
-      const userRes = await getMemberHomepageApi(memberId.value)
-      uni.hideLoading()
-      if (userRes.code === 1) {
-        userInfo.value = userRes.data.member
-        const data = userRes.data as any
-        if (data.stats) stats.value = data.stats
-      }
+    uni.showLoading()
+    const userRes = await getMemberHomepageApi(memberId.value)
+    uni.hideLoading()
+    if (userRes.code === 1) {
+      userInfo.value = userRes.data.member
+      const data = userRes.data as any
+      if (data.stats) stats.value = data.stats
     }
+    // }
 
     await loadMoreData(true)
   } catch (e) {
