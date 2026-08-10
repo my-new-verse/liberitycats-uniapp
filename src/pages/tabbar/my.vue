@@ -387,28 +387,12 @@
             </view>
           </view>
           <view class="menuBox">
-            <view
-              class="menuItem"
-              @click="
-                toUrl('/pages/cats/user/home?member_id=' + userStore.userInfo?.member_id, true)
-              "
-            >
+            <view class="menuItem" @click="toUrl('/pages/cats/user/home', true)">
               <view class="menuItemTitle">
                 <view class="icon2">
-                  <image class="iconImg" src="@/static/images/homepage.png" mode="widthFix" />
+                  <image class="iconImg" src="@/static/images/home.png" mode="widthFix" />
                 </view>
                 <view class="title">{{ t('my.menu.my_homepage') }}</view>
-              </view>
-              <view class="menuItemRight">
-                <view class="arrow"></view>
-              </view>
-            </view>
-            <view class="menuItem" @click="toUrl('/pages/cats/posts/list', true)">
-              <view class="menuItemTitle">
-                <view class="icon2">
-                  <image class="iconImg" src="@/static/images/posts.png" mode="widthFix" />
-                </view>
-                <view class="title">{{ t('my.menu.my_post') }}</view>
               </view>
               <view class="menuItemRight">
                 <view class="arrow"></view>

@@ -142,7 +142,7 @@
       >
         <view class="scrollCnt">
           <!-- 帖子筛选 tab -->
-          <view class="postFilterBar">
+          <view class="postFilterBar" :class="postFilterTabs.length === 3 ? 'tabs-3' : 'tabs-2'">
             <view
               v-for="tab in postFilterTabs"
               :key="tab.key"
@@ -156,75 +156,28 @@
           </view>
 
           <template v-if="socialList.data?.length > 0">
-            <!-- 普通帖：社交卡片 -->
+            <!-- 普通帖 -->
             <template v-if="activePostFilter === 'normal'">
               <view class="cell socialBox" v-for="item in socialList.data" :key="item.id">
-                <view class="socialItem">
-                  <view
-                    v-if="item.member_id === userStore.userInfo?.member_id"
-                    class="delBox"
-                    @click="handleDelPost(item.id)"
-                  ></view>
-                  <view class="socialHead">
-                    <view class="avatarBox">
-                      <image
-                        class="avatar"
-                        :src="getImageUrl(item.member.avatar + '?x-oss-process=style/jzcq')"
-                      />
-                      <view class="levelIcon">
-                        <image
-                          :src="`/static/images/level/${item.member.level}.png`"
-                          mode="widthFix"
-                        />
-                      </view>
-                    </view>
-                    <view class="nameWrap">
-                      <view class="name">{{ formatNickname(item.member.nickname, 22) }}</view>
-                      <view
-                        v-if="item.member_id !== userStore.userInfo?.member_id"
-                        class="moreActionsBtn"
-                        @click.stop="openPostActions(item)"
-                      ></view>
-                    </view>
-                    <view v-if="item.tag?.name" class="tag" :class="item.tag?.extend_json?.class">
-                      {{ item.tag?.name }}
-                    </view>
-                  </view>
-                  <view
-                    class="socialCntBox"
-                    @click="toUrl('/pages/cats/social/detail?id=' + item.id, false)"
-                  >
-                    <view class="socialCnt text-clamp-4">
-                      <view class="socialTips" v-if="item.is_approved === 0">
-                        {{ t('social.detail.content.not_audit_seed_myself') }}
-                      </view>
-                      {{ item.content }}
-                    </view>
-                    <view
-                      class="socialMedia"
-                      v-if="item.images.length > 0"
-                      :class="{
-                        mediaImg4: item.images.length === 4,
-                        singleImg: item.images.length === 1,
-                      }"
-                    >
-                      <view
-                        v-for="(image, index) in item.images"
-                        :key="index"
-                        @tap.stop="doHandlePreview(item.images, index)"
-                      >
-                        <wd-img
-                          :radius="5"
-                          custom-class="mediaImgItem"
-                          :mode="item.images.length === 1 ? 'widthFix' : 'aspectFill'"
-                          :src="getImageUrl(image + '?x-oss-process=style/sqdt')"
-                          :enable-preview="false"
-                        />
-                      </view>
-                    </view>
-                    <view class="socialTime">{{ formatRelativeTime(item.create_time) }}</view>
-                  </view>
-                </view>
+                <SocialPostItem
+                  :item="item"
+                  :show-delete="item.member_id === userStore.userInfo?.member_id"
+                  :show-report="item.member_id !== userStore.userInfo?.member_id"
+                  @delete="handleDelPost"
+                  @report="openPostActions"
+                  @avatar-click="
+                    (i) => toUrl('/pages/cats/user/home?member_id=' + i.member_id, false)
+                  "
+                  @click="(i) => toUrl('/pages/cats/social/detail?id=' + i.id, false)"
+                  @view-click="(i) => toUrl('/pages/cats/social/detail?id=' + i.id, false)"
+                  @comment-click="
+                    (i) =>
+                      toUrl('/pages/cats/social/detail?id=' + i.id + '&showComment=false', false)
+                  "
+                  @like="likePost"
+                  @share="handleOpenShare"
+                  @preview="doHandlePreview"
+                />
               </view>
             </template>
             <!-- 推广帖：推广卡片 -->
@@ -350,6 +303,80 @@
                 </view>
               </view>
             </template>
+            <!-- 草稿 -->
+            <template v-if="activePostFilter === 'draft'">
+              <view class="cell socialBox" v-for="item in socialList.data" :key="item.id">
+                <view class="socialItem">
+                  <view
+                    v-if="item.member_id === userStore.userInfo?.member_id"
+                    class="delBox"
+                    @click="handleDelPost(item.id)"
+                  ></view>
+                  <view class="socialHead">
+                    <view class="avatarBox">
+                      <image
+                        class="avatar"
+                        :src="getImageUrl(item.member?.avatar + '?x-oss-process=style/jzcq')"
+                      />
+                      <view class="levelIcon">
+                        <image
+                          :src="`/static/images/level/${item.member.level}.png`"
+                          mode="widthFix"
+                        />
+                      </view>
+                    </view>
+                    <view class="nameWrap">
+                      <view class="name">{{ formatNickname(item.member?.nickname, 22) }}</view>
+                    </view>
+                  </view>
+                  <view
+                    class="socialCntBox"
+                    @click="
+                      toUrl(
+                        '/pages/cats/social/publish?id=' +
+                          item.id +
+                          '&draft=true&category=' +
+                          (item.post_category === 'advertisement' ? 'promotion' : 'normal'),
+                        true,
+                      )
+                    "
+                  >
+                    <view class="titleRow" v-if="item.title">
+                      <view v-if="item.ad_type?.name" class="tag tag1">
+                        {{ item.ad_type?.name }}
+                      </view>
+                      <view class="socialCnt text-clamp-4 title">{{ item.title }}</view>
+                    </view>
+                    <view class="socialCnt text-clamp-4 content" v-if="item.content">
+                      {{ item.content }}
+                    </view>
+                    <view
+                      class="socialMedia"
+                      v-if="item.images?.length > 0"
+                      :class="{
+                        mediaImg4: item.images.length === 4,
+                        singleImg: item.images.length === 1,
+                      }"
+                    >
+                      <view
+                        v-for="(image, index) in item.images"
+                        :key="index"
+                        @tap.stop="doHandlePreview(item.images, index)"
+                      >
+                        <wd-img
+                          :radius="5"
+                          custom-class="mediaImgItem"
+                          :mode="item.images.length === 1 ? 'widthFix' : 'aspectFill'"
+                          :src="getImageUrl(image + '?x-oss-process=style/sqdt')"
+                          :enable-preview="false"
+                        />
+                      </view>
+                    </view>
+                    <view class="socialTime">{{ formatRelativeTime(item.create_time) }}</view>
+                  </view>
+                </view>
+              </view>
+            </template>
           </template>
           <template v-else>
             <view class="emptyBox">
@@ -449,6 +476,7 @@ import { LoadMoreState } from 'wot-design-uni/components/wd-loadmore/types'
 import {
   getMemberHomepageApi,
   getCommunityPostListApiResponse,
+  getMyPostsApi,
   getMyPostListApi,
   deleteFollowApi,
   createFollowApi,
@@ -462,6 +490,7 @@ import {
   refreshAdPostApi,
 } from '@/service/api/community'
 import SharePopup from '@/components/SharePopup/SharePopup.vue'
+import SocialPostItem from '@/components/PostItem/SocialPostItem.vue'
 
 const userStore = useUserStore()
 const toast = useToast()
@@ -589,19 +618,28 @@ const createPostFilterCache = (): PostFilterCache => ({
 const postFilterCache = ref<Record<string, PostFilterCache>>({
   normal: createPostFilterCache(),
   promotion: createPostFilterCache(),
+  draft: createPostFilterCache(),
 })
 
 const activePostFilter = ref('normal')
-const postFilterTabs = [
-  { key: 'normal', label: t('my.post.filter.normal') },
-  { key: 'promotion', label: t('my.post.filter.promotion') },
-]
+const postFilterTabs = computed(() => {
+  const tabs = [
+    { key: 'normal', label: t('my.post.filter.normal') },
+    { key: 'promotion', label: t('my.post.filter.promotion') },
+  ]
+  if (userInfo.value.is_self) {
+    tabs.push({ key: 'draft', label: t('my.post.filter.draft') })
+  }
+  return tabs
+})
 
-/** 当前分类对应的 post_category 接口参数 */
-const getPostCategoryParam = (filter: string) => {
-  if (filter === 'normal') return 'social'
-  if (filter === 'promotion') return 'advertisement'
-  return undefined
+/** 根据筛选 key 返回接口参数 */
+const getFilterParams = (filter: string) => {
+  if (filter === 'draft') return { publish_status: 0 }
+  const params: any = { publish_status: 1 }
+  if (filter === 'normal') params.post_category = 'social'
+  if (filter === 'promotion') params.post_category = 'advertisement'
+  return params
 }
 
 const state = computed(() => postFilterCache.value[activePostFilter.value]?.state || 'loading')
@@ -652,7 +690,7 @@ const handlePostFilterChange = (key: string) => {
   activePostFilter.value = key
   syncCurrentCache()
   const cache = getCurrentCache()
-  if (!cache.loaded) loadMoreData()
+  if (!cache.loaded) loadMoreData(true)
 }
 
 const onScrollToLower = () => {
@@ -677,16 +715,19 @@ const loadMoreData = async (refresh = false) => {
 
   cache.loading = true
   cache.state = 'loading'
+  if (refresh) uni.showLoading()
 
   try {
     const params: any = {
       limit: 20,
-      member_id: memberId.value,
+      ...getFilterParams(activePostFilter.value),
     }
-    const category = getPostCategoryParam(activePostFilter.value)
-    if (category) params.post_category = category
 
-    const postRes = await getMyPostListApi(cache.list.current_page + 1, params)
+    // is_self 时用 getMyPostsApi，否则用 getMyPostListApi（带 member_id）
+    const apiCall = userInfo.value.is_self
+      ? getMyPostsApi(cache.list.current_page + 1, params)
+      : getMyPostListApi(cache.list.current_page + 1, { ...params, member_id: memberId.value })
+    const postRes = await apiCall
 
     if (postRes.data) {
       if (postRes.data.current_page === 1) {
@@ -709,20 +750,41 @@ const loadMoreData = async (refresh = false) => {
   } finally {
     cache.loading = false
     syncCurrentCache()
+    if (refresh) uni.hideLoading()
   }
 }
 
 const loadAllData = async () => {
   try {
-    const userRes = await getMemberHomepageApi(memberId.value)
-    if (userRes.code === 1) {
-      userInfo.value = userRes.data.member
-      const data = userRes.data as any
-      if (data.stats) stats.value = data.stats
+    // 判断是否为当前登录用户本人
+    const isSelf = !memberId.value || memberId.value === userStore.userInfo?.member_id
+
+    if (isSelf) {
+      // 本人：从 userStore 获取用户信息，用 getMyPostsApi 加载帖子
+      const u = userStore.userInfo as any
+      userInfo.value = {
+        member_id: u.member_id,
+        nickname: u.nickname,
+        avatar: u.avatar,
+        level: u.level || { level: 0, icon: '' },
+        is_self: true,
+        is_following: 0,
+      } as any
+    } else {
+      // 他人：调用 getMemberHomepageApi 获取用户信息和统计数据
+      uni.showLoading()
+      const userRes = await getMemberHomepageApi(memberId.value)
+      uni.hideLoading()
+      if (userRes.code === 1) {
+        userInfo.value = userRes.data.member
+        const data = userRes.data as any
+        if (data.stats) stats.value = data.stats
+      }
     }
 
     await loadMoreData(true)
   } catch (e) {
+    uni.hideLoading()
     getCurrentCache().state = 'error'
     syncCurrentCache()
   }
@@ -1132,7 +1194,7 @@ const handleRefreshPost = async (item: any) => {
     if (res.code === 1) {
       uni.showToast({ title: t('social.detail.refresh.success'), icon: 'success', duration: 2000 })
       // 重新拉取当前筛选下的列表
-      loadData(1, true)
+      loadMoreData(true)
     } else {
       console.log(res.msg || t('social.detail.refresh.failed'))
       uni.showToast({
@@ -1351,17 +1413,32 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
     position: absolute;
     top: 6rpx;
     height: 64rpx;
-    width: calc((100% - 12rpx) / 2);
     background: #ff6b03;
     border-radius: 26rpx;
     transition: left 0.15s ease;
     z-index: 0;
+  }
 
+  &.tabs-2 .postFilterSlider {
+    width: calc((100% - 12rpx) / 2);
     &.slider--normal {
       left: 6rpx;
     }
     &.slider--promotion {
       left: calc((100% - 12rpx) / 2 + 6rpx);
+    }
+  }
+
+  &.tabs-3 .postFilterSlider {
+    width: calc((100% - 12rpx) / 3);
+    &.slider--normal {
+      left: 6rpx;
+    }
+    &.slider--promotion {
+      left: calc((100% - 12rpx) / 3 + 6rpx);
+    }
+    &.slider--draft {
+      left: calc((100% - 12rpx) / 3 * 2 + 6rpx);
     }
   }
 }
@@ -1472,10 +1549,12 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
     align-items: center;
     gap: 8rpx;
     margin-bottom: 8rpx;
+    flex-direction: column;
+    align-items: flex-start;
     .tag {
       padding: 4rpx 16rpx;
       font-size: 24rpx;
-      text-transform: uppercase;
+      // text-transform: uppercase;
       border-radius: 8rpx;
       line-height: 1.4;
     }
