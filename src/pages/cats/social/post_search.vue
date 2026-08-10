@@ -3,6 +3,14 @@
   style: {
     navigationStyle: 'custom',
     softinputMode: 'adjustResize',
+    enablePullDownRefresh: true,
+    'app-plus': {
+      pullToRefresh: {
+        style: 'circle',
+        color: '#ff6b03',
+        offset: '80rpx',
+      },
+    },
   },
 }
 </route>
@@ -75,19 +83,8 @@
     </view>
 
     <!-- ========== 滚动内容区 ========== -->
-    <view class="cntScrollWrap" :style="{ top: scrollViewTop, height: scrollViewHeight }">
-      <scroll-view
-        class="cntScroll"
-        :scroll-y="true"
-        refresher-background="transparent"
-        :refresher-enabled="true"
-        refresher-color="#ff6b03"
-        :refresher-triggered="isRefreshing"
-        @refresherrefresh="onRefresh"
-        @refresherrestore="onRefreshRestore"
-        @refresherabort="onRefreshAbort"
-        @scrolltolower="onScrollToLower"
-      >
+    <view class="cntScrollWrap" :style="{ paddingTop: scrollViewTop }">
+      <scroll-view class="cntScroll">
         <!-- ========== 搜索状态：初始提示 / 结果列表（暂无数据） ========== -->
         <template v-if="!hasSearched">
           <view class="emptyBox">
@@ -885,27 +882,6 @@ const toPostDetail = (post: any) => {
 
 // ========== 滚动区域定位 ==========
 const scrollViewTop = computed(() => cntPaddingTop.value + filterStickyHeight.value + 'rpx')
-const scrollViewHeight = computed(
-  () => `calc(100vh - ${cntPaddingTop.value + filterStickyHeight.value}rpx)`,
-)
-
-// ========== scroll-view 下拉刷新 ==========
-const isRefreshing = ref(false)
-
-const onRefresh = () => {
-  if (!hasSearched.value) {
-    isRefreshing.value = false
-    return
-  }
-  isRefreshing.value = true
-  refreshData()
-}
-
-const onRefreshRestore = () => {}
-
-const onRefreshAbort = () => {
-  isRefreshing.value = false
-}
 
 const refreshData = async () => {
   if (isLoading.value) return
@@ -923,16 +899,23 @@ const refreshData = async () => {
     loadMoreState.value = 'error'
   } finally {
     isLoading.value = false
-    isRefreshing.value = false
   }
 }
 
-// ========== scroll-view 触底加载更多 ==========
-const onScrollToLower = () => {
+// ========== 页面级下拉刷新 ==========
+onPullDownRefresh(() => {
+  if (hasSearched.value) {
+    refreshData()
+  }
+  uni.stopPullDownRefresh()
+})
+
+// ========== 页面级上拉加载更多 ==========
+onReachBottom(() => {
   if (loadMoreState.value !== 'finished' && loadMoreState.value !== 'error') {
     loadMore()
   }
-}
+})
 
 const GIF_LIKE = '/static/images/like_action.gif'
 const GIF_UNLIKE = '/static/images/unlike_action.gif'
@@ -1652,16 +1635,11 @@ const handleLevelIconError = (member: any) => {
 
 /* ========== 滚动内容区 ========== */
 .cntScrollWrap {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  overflow: hidden;
+  position: relative;
 }
 
 .cntScroll {
   width: 100%;
-  height: 100%;
   padding-left: 32rpx;
   padding-right: 32rpx;
   box-sizing: border-box;

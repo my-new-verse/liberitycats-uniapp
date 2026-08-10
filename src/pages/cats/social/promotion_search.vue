@@ -3,6 +3,14 @@
   style: {
     navigationStyle: 'custom',
     softinputMode: 'adjustResize',
+    enablePullDownRefresh: true,
+    'app-plus': {
+      pullToRefresh: {
+        style: 'circle',
+        color: '#ff6b03',
+        offset: '80rpx',
+      },
+    },
   },
 }
 </route>
@@ -85,19 +93,8 @@
     </view>
 
     <!-- ========== 滚动内容区 ========== -->
-    <view class="cntScrollWrap" :style="{ top: scrollViewTop, height: scrollViewHeight }">
-      <scroll-view
-        class="cntScroll"
-        :scroll-y="true"
-        refresher-background="transparent"
-        :refresher-enabled="true"
-        refresher-color="#ff6b03"
-        :refresher-triggered="isRefreshing"
-        @refresherrefresh="onRefresh"
-        @refresherrestore="onRefreshRestore"
-        @refresherabort="onRefreshAbort"
-        @scrolltolower="onScrollToLower"
-      >
+    <view class="cntScrollWrap" :style="{ paddingTop: scrollViewTop }">
+      <view class="cntScroll">
         <!-- ========== 搜索状态：初始提示 / 结果列表（暂无数据） ========== -->
         <template v-if="!hasSearched">
           <view class="emptyBox">
@@ -130,7 +127,7 @@
             <view class="emptyText">{{ t('common.no_data') }}</view>
           </view>
         </template>
-      </scroll-view>
+      </view>
     </view>
 
     <!-- ========== 时间筛选弹窗 ========== -->
@@ -901,12 +898,6 @@ const loadMore = async () => {
 // ========== 滚动区域定位 ==========
 const filterStickyHeight = computed(() => (confirmedUserIds.value.length > 0 ? 260 : 110))
 const scrollViewTop = computed(() => cntPaddingTop.value + filterStickyHeight.value + 'rpx')
-const scrollViewHeight = computed(
-  () => `calc(100vh - ${cntPaddingTop.value + filterStickyHeight.value}rpx)`,
-)
-
-// ========== scroll-view 下拉刷新 ==========
-const isRefreshing = ref(false)
 
 // 刷新推广帖（调用接口，成功后更新当前页搜索结果列表）
 const handleRefreshPost = async (item: any) => {
@@ -928,21 +919,6 @@ const handleRefreshPost = async (item: any) => {
 }
 const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
 
-const onRefresh = () => {
-  if (!hasSearched.value) {
-    isRefreshing.value = false
-    return
-  }
-  isRefreshing.value = true
-  refreshData()
-}
-
-const onRefreshRestore = () => {}
-
-const onRefreshAbort = () => {
-  isRefreshing.value = false
-}
-
 const refreshData = async () => {
   if (isLoading.value) return
   isLoading.value = true
@@ -959,16 +935,23 @@ const refreshData = async () => {
     loadMoreState.value = 'error'
   } finally {
     isLoading.value = false
-    isRefreshing.value = false
   }
 }
 
-// ========== scroll-view 触底加载更多 ==========
-const onScrollToLower = () => {
+// ========== 页面级下拉刷新 ==========
+onPullDownRefresh(() => {
+  if (hasSearched.value) {
+    refreshData()
+  }
+  uni.stopPullDownRefresh()
+})
+
+// ========== 页面级上拉加载更多 ==========
+onReachBottom(() => {
   if (loadMoreState.value !== 'finished' && loadMoreState.value !== 'error') {
     loadMore()
   }
-}
+})
 
 // ========== 点赞 ==========
 const likeSearchPost = async (post: any) => {
@@ -1507,16 +1490,11 @@ onUnmounted(() => {
 
 /* ========== 滚动内容区 ========== */
 .cntScrollWrap {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  overflow: hidden;
+  position: relative;
 }
 
 .cntScroll {
   width: 100%;
-  height: 100%;
   padding-left: 32rpx;
   padding-right: 32rpx;
   box-sizing: border-box;
