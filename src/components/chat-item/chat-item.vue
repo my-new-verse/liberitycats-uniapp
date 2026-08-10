@@ -1384,6 +1384,8 @@ const handleAvatarClick = (memberId: number | undefined) => {
   display: flex;
   flex-direction: column;
   margin-top: 10rpx;
+  width: 100%;
+  max-width: 100%;
 }
 
 .news-top-row {
