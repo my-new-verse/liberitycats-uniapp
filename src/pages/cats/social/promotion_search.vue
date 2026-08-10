@@ -539,7 +539,7 @@ const addToRecentMembers = (member: any) => {
 const searchUsers = async () => {
   if (!memberKeyword.value.trim()) return
   try {
-    const res = await searchMembersApi(memberKeyword.value.trim())
+    const res = await searchMembersApi(memberKeyword.value.trim(), 'advertisement')
     if (res.code === 1 && res.data) searchedUsers.value = (res.data as any).list || []
   } catch (e) {
     /* ignore */

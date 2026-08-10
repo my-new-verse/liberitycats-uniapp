@@ -479,9 +479,15 @@ export const setSpecialFollowApi = (memberId: number, isSpecial: number) => {
 }
 
 /** 搜索成员 */
-export const searchMembersApi = (keyword: string, page = 1, limit = 50) => {
+export const searchMembersApi = (
+  keyword: string,
+  postCategory: string = '',
+  page = 1,
+  limit = 50,
+) => {
   return http.get<{ list: any[] }>('/v1/member/user/search-members', {
     keyword,
+    post_category: postCategory,
     page,
     limit,
   })
