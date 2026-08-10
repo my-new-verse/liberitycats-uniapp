@@ -489,10 +489,20 @@ onMounted(() => {
       search()
     }
   })
+
+  // 监听单项更新事件（用详情页结果替换列表项）
+  uni.$on('updateNormalPostItem', (data: any) => {
+    if (!hasSearched.value || !data?.id) return
+    const index = searchResult.value.posts.findIndex((p) => p.id === data.id)
+    if (index !== -1) {
+      Object.assign(searchResult.value.posts[index], data)
+    }
+  })
 })
 
 onUnmounted(() => {
   uni.$off('refreshNormalPost')
+  uni.$off('updateNormalPostItem')
   if (typeof uni.offKeyboardHeightChange === 'function') {
     uni.offKeyboardHeightChange()
   }

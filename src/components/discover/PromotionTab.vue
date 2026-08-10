@@ -61,7 +61,13 @@
 
     <view :style="{ paddingTop: cntPaddingTop + 180 + 36 + 24 + 'rpx' }">
       <!-- 推广卡片列表（可滚动区域） -->
-      <scroll-view class="promoListScroll" scroll-y :style="{ height: scrollHeight }">
+      <scroll-view
+        class="promoListScroll"
+        scroll-y
+        :style="{ height: scrollHeight }"
+        :scroll-top="scrollTopValue"
+        @scroll="onScroll"
+      >
         <template v-if="promoList.length > 0 || !cacheLoaded">
           <view class="cell" v-for="item in promoList" :key="item.id">
             <PromotionPostItem
@@ -266,6 +272,16 @@ const handleOpenShare = (item: any) => {
 
 const activeFilter = ref('latest')
 
+// 各 tab 独立滚动位置
+const scrollTopMap = ref<Record<string, number>>({})
+const scrollTopValue = ref(0)
+let isRestoring = false
+const onScroll = (e: any) => {
+  if (isRestoring) return
+  const key = getCacheKey(activeFilter.value, activeCardType.value)
+  scrollTopMap.value[key] = e.detail.scrollTop
+}
+
 // 推广发布权限
 const hasPermission = ref(true)
 
@@ -392,12 +408,27 @@ const loadData = async (page = 1, refresh = false) => {
   }
 }
 
+const restoreScrollPosition = () => {
+  const key = getCacheKey(activeFilter.value, activeCardType.value)
+  const saved = scrollTopMap.value[key] || 0
+  isRestoring = true
+  // 先设为0再设为目标值，确保值变化触发滚动
+  scrollTopValue.value = 0
+  setTimeout(() => {
+    scrollTopValue.value = saved
+    setTimeout(() => {
+      isRestoring = false
+    }, 200)
+  }, 100)
+}
+
 const handleFilterChange = (filter: string) => {
   if (activeFilter.value === filter) return
   activeFilter.value = filter
   const cache = getCurrentCache()
   if (cache.loaded) {
     syncCurrentCache()
+    restoreScrollPosition()
   } else {
     loadData(1)
   }
@@ -800,6 +831,7 @@ const handleAdTypeChange = (id: number) => {
   const cache = getCurrentCache()
   if (cache.loaded) {
     syncCurrentCache()
+    restoreScrollPosition()
   } else {
     loadData(1)
   }

@@ -663,6 +663,13 @@ onBackPress((options) => {
   return false
 })
 
+// 页面卸载时通知列表更新单项（用详情页结果替换列表项）
+onUnload(() => {
+  if (postId.value && postDetail.value) {
+    uni.$emit('updateNormalPostItem', postDetail.value)
+  }
+})
+
 function reportSheetClose() {
   reportShow.value = false
 }
