@@ -395,7 +395,7 @@
             >
               <view class="menuItemTitle">
                 <view class="icon2">
-                  <image class="iconImg" src="@/static/images/posts.png" mode="widthFix" />
+                  <image class="iconImg" src="@/static/images/homepage.png" mode="widthFix" />
                 </view>
                 <view class="title">{{ t('my.menu.my_homepage') }}</view>
               </view>
