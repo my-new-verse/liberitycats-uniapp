@@ -657,13 +657,18 @@ const syncCurrentCache = () => {
 }
 
 const isRefreshing = ref(false)
+let hasInitialized = false
 
 onLoad((options) => {
   memberId.value = Number(options.member_id || 0)
 })
 
 onShow(() => {
-  loadAllData()
+  // 仅首次进入时全量加载，从详情页返回时通过事件单项更新列表项
+  if (!hasInitialized) {
+    hasInitialized = true
+    loadAllData()
+  }
 })
 
 onMounted(() => {
@@ -678,9 +683,36 @@ onMounted(() => {
   kfBoxTop.value = (safeAreaInsets?.top || 0) + 36 + 'rpx'
   cntHeight.value = 'calc(100vh - ' + headBoxHeight.value + ' + 64rpx)'
   // #endif
+
+  // 详情页返回后用详情数据替换列表项（避免全量刷新）
+  uni.$on('updateNormalPostItem', (detail: any) => {
+    if (!detail?.id) return
+    const cache = postFilterCache.value.normal
+    const idx = cache.list.data.findIndex((item) => item.id === detail.id)
+    if (idx !== -1) {
+      cache.list.data[idx] = { ...cache.list.data[idx], ...detail }
+    }
+    syncCurrentCache()
+  })
+  uni.$on('updatePromotionPostItem', (detail: any) => {
+    if (!detail?.id) return
+    const cache = postFilterCache.value.promotion
+    const idx = cache.list.data.findIndex((item) => item.id === detail.id)
+    if (idx !== -1) {
+      cache.list.data[idx] = { ...cache.list.data[idx], ...detail }
+    }
+    syncCurrentCache()
+  })
+  // 关注状态变化时同步用户信息（避免从详情页返回时重新调接口）
+  uni.$on('followStateChange', ({ memberId, data }) => {
+    if (memberId === memberId.value) syncUserFollowState(data)
+  })
 })
 
 onUnmounted(() => {
+  uni.$off('updateNormalPostItem')
+  uni.$off('updatePromotionPostItem')
+  uni.$off('followStateChange')
   debouncedHandleRefreshPost?.cancel()
 })
 
