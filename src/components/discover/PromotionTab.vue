@@ -807,21 +807,69 @@ const handleDelPost = (id: number) => {
     .catch(() => {})
 }
 
-// 检查推广发布资格，如果不可发布则隐藏当前用户帖子的刷新按钮
-const syncRefreshEligibility = async () => {
+// 构建列表请求参数
+const buildListParams = (page: number) => {
+  const params: any = { page, limit: 30, sort: activeFilter.value as any }
+  if (activeCardType.value !== 0) {
+    params.ad_type_id = activeCardType.value
+  }
+  if (activeFilter.value === 'following') {
+    params.scope = 'following'
+    delete params.sort
+  }
+  return params
+}
+
+// 刷新后调用列表接口获取 can_refresh，不全量更新列表，只更新所有帖子的刷新按钮
+// moveToTop=true 时把被刷新的帖子移到列表第一项
+const syncRefreshEligibility = async (postId: number, moveToTop = false) => {
   try {
-    const eligRes = await checkAdEligibilityApi()
-    if (eligRes.code === 1 && eligRes.data.can_publish === false) {
-      const currentMemberId = userStore.userInfo?.member_id
-      // 遍历当前可见列表，通过子组件方法隐藏刷新按钮
-      promoList.value.forEach((post: any) => {
-        if (post.member_id === currentMemberId) {
-          postItemRefs.value[post.id]?.hideRefresh()
+    const cache = getCurrentCache()
+    const totalPages = cache.page || 1
+    const requests = []
+    for (let page = 1; page <= totalPages; page++) {
+      requests.push(getAdPostListApi(buildListParams(page)))
+    }
+    const results = await Promise.all(requests)
+    // 收集所有返回的帖子
+    const returnedPosts: Record<number, any> = {}
+    for (const res of results) {
+      if (res.code === 1 && res.data?.data) {
+        for (const post of res.data.data) {
+          returnedPosts[post.id] = post
         }
-      })
+      }
+    }
+    // 更新当前列表中所有帖子的 can_refresh
+    promoList.value = promoList.value.map((item: any) => {
+      const returnedPost = returnedPosts[item.id]
+      if (returnedPost) {
+        if (item.member_id === userStore.userInfo?.member_id) {
+          if (item.can_refresh === 0) postItemRefs.value[item.id]?.hideRefresh()
+        }
+        return { ...item, can_refresh: returnedPost.can_refresh }
+      }
+      return item
+    })
+    // 把被刷新的帖子移到列表第一项
+    if (moveToTop) {
+      const idx = promoList.value.findIndex((p: any) => p.id === postId)
+      if (idx > 0) {
+        const newList = [...promoList.value]
+        const [movedItem] = newList.splice(idx, 1)
+        newList.unshift(movedItem)
+        promoList.value = newList
+        // 同时更新缓存，避免 syncCurrentCache 恢复顺序
+        const currentCache = getCurrentCache()
+        const cacheIdx = currentCache.data.findIndex((p: any) => p.id === postId)
+        if (cacheIdx > 0) {
+          const [cacheMovedItem] = currentCache.data.splice(cacheIdx, 1)
+          currentCache.data.unshift(cacheMovedItem)
+        }
+      }
     }
   } catch (e) {
-    console.error('checkAdEligibility after refresh failed', e)
+    console.error('getList after refresh failed', e)
   }
 }
 
@@ -832,10 +880,8 @@ const handleRefreshPost = async (item: any) => {
     const res = await refreshAdPostApi(item.id)
     if (res.code === 1) {
       uni.showToast({ title: t('social.detail.refresh.success'), icon: 'success', duration: 2000 })
-      // 重新拉取当前筛选下的列表
-      await loadData(1, true)
-      // 刷新后检查推广发布资格，如果不可发布则隐藏当前用户帖子的刷新按钮
-      await syncRefreshEligibility()
+      // 刷新后调用列表接口获取 can_refresh，并把操作项移到列表第一项
+      await syncRefreshEligibility(item.id, true)
     } else {
       console.log(res.msg || t('social.detail.refresh.failed'))
       uni.showToast({
@@ -843,7 +889,7 @@ const handleRefreshPost = async (item: any) => {
         icon: 'none',
         duration: 2000,
       })
-      await syncRefreshEligibility()
+      await syncRefreshEligibility(item.id)
     }
   } catch (e) {
     console.error('refresh failed:', e)

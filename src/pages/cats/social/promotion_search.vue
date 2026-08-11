@@ -406,7 +406,6 @@ import {
   banPostApi,
   unbanPostApi,
   refreshAdPostApi,
-  checkAdEligibilityApi,
 } from '@/service/api/community'
 import { useUserStore } from '@/store/user'
 import { useMessage, useToast } from 'wot-design-uni'
@@ -913,20 +912,37 @@ const scrollViewTop = computed(() => cntPaddingTop.value + filterStickyHeight.va
 // PromotionPostItem 组件实例引用（按 item.id 收集）
 const postItemRefs = ref<Record<number, any>>({})
 
-// 检查推广发布资格，如果不可发布则隐藏当前用户帖子的刷新按钮
-const syncRefreshEligibility = async () => {
+// 刷新后调用列表接口获取 can_refresh，不全量更新列表，只更新所有帖子的刷新按钮
+const syncRefreshEligibility = async (postId: number) => {
   try {
-    const eligRes = await checkAdEligibilityApi()
-    if (eligRes.code === 1 && eligRes.data.can_publish === false) {
-      const currentMemberId = userStore.userInfo?.member_id
-      searchResult.value.posts.forEach((post: any) => {
-        if (post.member_id === currentMemberId) {
-          postItemRefs.value[post.id]?.hideRefresh()
-        }
-      })
+    const totalPages = searchResult.value.page || 1
+    const requests = []
+    for (let page = 1; page <= totalPages; page++) {
+      requests.push(searchPostsApi(buildSearchParams(page)))
     }
+    const results = await Promise.all(requests)
+    // 收集所有返回的帖子
+    const returnedPosts: Record<number, any> = {}
+    for (const res of results) {
+      if (res.code === 1 && res.data?.posts) {
+        for (const post of res.data.posts) {
+          returnedPosts[post.id] = post
+        }
+      }
+    }
+    // 更新当前列表中所有帖子的 can_refresh
+    searchResult.value.posts = searchResult.value.posts.map((item: any) => {
+      const returnedPost = returnedPosts[item.id]
+      if (returnedPost) {
+        if (item.member_id === userStore.userInfo?.member_id) {
+          if (item.can_refresh === 0) postItemRefs.value[item.id]?.hideRefresh()
+        }
+        return { ...item, can_refresh: returnedPost.can_refresh }
+      }
+      return item
+    })
   } catch (e) {
-    console.error('checkAdEligibility after refresh failed', e)
+    console.error('getList after refresh failed', e)
   }
 }
 
@@ -938,13 +954,11 @@ const handleRefreshPost = async (item: any) => {
     uni.hideLoading()
     if (res.code === 1) {
       toast.show(t('social.detail.refresh.success'))
-      // 重新拉取当前搜索条件下的第一页结果
-      if (hasSearched.value) await refreshData()
-      // 刷新后检查推广发布资格，如果不可发布则隐藏当前用户帖子的刷新按钮
-      await syncRefreshEligibility()
+      // 刷新后调用列表接口获取 can_refresh，不全量更新列表，只隐藏刷新按钮
+      await syncRefreshEligibility(item.id)
     } else {
       toast.show(res.msg || t('social.detail.refresh.failed'))
-      await syncRefreshEligibility()
+      await syncRefreshEligibility(item.id)
     }
   } catch (e) {
     uni.hideLoading()

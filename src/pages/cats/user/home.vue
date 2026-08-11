@@ -394,6 +394,7 @@ import {
   unbanPostApi,
   refreshAdPostApi,
   checkAdEligibilityApi,
+  getCommunityPostDetailApi,
 } from '@/service/api/community'
 import SharePopup from '@/components/SharePopup/SharePopup.vue'
 import SocialPostItem from '@/components/PostItem/SocialPostItem.vue'
@@ -566,6 +567,7 @@ const isRefreshing = ref(false)
 
 // PromotionPostItem 组件实例引用（按 item.id 收集）
 const postItemRefs = ref<Record<number, any>>({})
+
 let hasInitialized = false
 
 onLoad((options) => {
@@ -1112,21 +1114,43 @@ const doHandlePreview = (images: string[], currentIndex: number = 0, needDealImg
   images = images.map((item) => (item = item + '?x-oss-process=style/sqdt'))
   handlePreview(images, currentIndex)
 }
-// 检查推广发布资格，如果不可发布则隐藏当前用户帖子的刷新按钮
-const syncRefreshEligibility = async () => {
+// 刷新后调用列表接口获取 can_refresh，不全量更新列表，只更新所有帖子的刷新按钮
+const syncRefreshEligibility = async (postId: number) => {
   try {
-    const eligRes = await checkAdEligibilityApi()
-    if (eligRes.code === 1 && eligRes.data.can_publish === false) {
-      const currentMemberId = userStore.userInfo?.member_id
-      // 遍历当前可见列表，通过子组件方法隐藏刷新按钮
-      socialList.value.data.forEach((post: any) => {
-        if (post.member_id === currentMemberId) {
-          postItemRefs.value[post.id]?.hideRefresh()
-        }
-      })
+    const cache = postFilterCache.value.promotion
+    const totalPages = cache.list.current_page || 1
+    const params: any = { limit: 20, ...getFilterParams('promotion') }
+    const requests = []
+    for (let page = 1; page <= totalPages; page++) {
+      const apiCall = userInfo.value.is_self
+        ? getMyPostsApi(page, params)
+        : getMyPostListApi(page, { ...params, member_id: memberId.value })
+      requests.push(apiCall)
     }
+    const results = await Promise.all(requests)
+    // 收集所有返回的帖子
+    const returnedPosts: Record<number, any> = {}
+    for (const res of results) {
+      if (res.data?.data) {
+        for (const post of res.data.data) {
+          returnedPosts[post.id] = post
+        }
+      }
+    }
+    // 更新当前列表中所有帖子的 can_refresh
+    cache.list.data = cache.list.data.map((item: any) => {
+      const returnedPost = returnedPosts[item.id]
+      if (returnedPost) {
+        if (item.member_id === userStore.userInfo?.member_id) {
+          if (item.can_refresh === 0) postItemRefs.value[item.id]?.hideRefresh()
+        }
+        return { ...item, can_refresh: returnedPost.can_refresh }
+      }
+      return item
+    })
+    syncCurrentCache()
   } catch (e) {
-    console.error('checkAdEligibility after refresh failed', e)
+    console.error('getList after refresh failed', e)
   }
 }
 
@@ -1137,10 +1161,8 @@ const handleRefreshPost = async (item: any) => {
     const res = await refreshAdPostApi(item.id)
     if (res.code === 1) {
       uni.showToast({ title: t('social.detail.refresh.success'), icon: 'success', duration: 2000 })
-      // 重新拉取当前筛选下的列表
-      await loadMoreData(true)
-      // 刷新后检查推广发布资格，如果不可发布则隐藏当前用户帖子的刷新按钮
-      await syncRefreshEligibility()
+      // 刷新后调用列表接口获取 can_refresh，不全量更新列表，只隐藏刷新按钮
+      await syncRefreshEligibility(item.id)
     } else {
       console.log(res.msg || t('social.detail.refresh.failed'))
       uni.showToast({
@@ -1148,7 +1170,7 @@ const handleRefreshPost = async (item: any) => {
         icon: 'none',
         duration: 2000,
       })
-      await syncRefreshEligibility()
+      await syncRefreshEligibility(item.id)
     }
   } catch (e) {
     console.error('refresh failed:', e)

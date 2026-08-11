@@ -24,7 +24,7 @@
               <template v-if="postDetail.member_id === userStore.userInfo?.member_id">
                 <view class="delBox" @click="handleDelMainPost"></view>
                 <view
-                  v-if="refreshBoxVisible"
+                  v-if="postDetail.can_refresh !== 0"
                   class="refreshBox"
                   @click="debouncedHandleRefreshPost"
                 >
@@ -608,7 +608,6 @@ import {
   getAdTypeListApi,
   AdTypeItem,
   refreshAdPostApi,
-  checkAdEligibilityApi,
 } from '@/service/api/community'
 import {
   formatNickname,
@@ -1177,7 +1176,6 @@ onLoad((options) => {
       getAdTypeListApi().then((res) => {
         adTypeList.value = res.data
       }),
-      syncRefreshEligibility(),
     ]).finally(() => {
       if (options.showComment === 'true') {
         uni.hideLoading()
@@ -1494,18 +1492,15 @@ const handleDelMainPost = () => {
     .catch(() => {})
 }
 
-// 刷新按钮是否可见（不可发布时隐藏）
-const refreshBoxVisible = ref(true)
-
-// 检查推广发布资格，如果不可发布则隐藏刷新按钮
+// 刷新后调用详情接口更新 postDetail（包含最新 can_refresh）
 const syncRefreshEligibility = async () => {
   try {
-    const eligRes = await checkAdEligibilityApi()
-    if (eligRes.code === 1 && eligRes.data.can_publish === false) {
-      refreshBoxVisible.value = false
+    const res = await getCommunityPostDetailApi(postId.value)
+    if (res.code === 1 && res.data) {
+      postDetail.value = res.data
     }
   } catch (e) {
-    console.error('checkAdEligibility after refresh failed', e)
+    console.error('getDetail after refresh failed', e)
   }
 }
 
@@ -1525,11 +1520,12 @@ const handleRefreshPost = async () => {
       // 与 publish.vue 编辑推广帖成功后的逻辑一致：刷新列表并返回列表页
       uni.$emit('refreshPromotionTab')
       uni.$emit('refreshPromotionPost')
-      // 刷新后检查推广发布资格，如果不可发布则隐藏刷新按钮
+      // 调用详情接口更新 postDetail
       await syncRefreshEligibility()
       setTimeout(() => uni.navigateBack(), 500)
     } else {
       toast.show(res.msg || t('social.detail.refresh.failed'))
+      // 调用详情接口更新 postDetail
       await syncRefreshEligibility()
     }
   } catch (error) {

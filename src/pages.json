@@ -697,7 +697,15 @@
       "type": "page",
       "style": {
         "navigationStyle": "custom",
-        "softinputMode": "adjustResize"
+        "softinputMode": "adjustResize",
+        "enablePullDownRefresh": true,
+        "app-plus": {
+          "pullToRefresh": {
+            "style": "circle",
+            "color": "#ff6b03",
+            "offset": "80rpx"
+          }
+        }
       }
     },
     {
@@ -705,7 +713,15 @@
       "type": "page",
       "style": {
         "navigationStyle": "custom",
-        "softinputMode": "adjustResize"
+        "softinputMode": "adjustResize",
+        "enablePullDownRefresh": true,
+        "app-plus": {
+          "pullToRefresh": {
+            "style": "circle",
+            "color": "#ff6b03",
+            "offset": "80rpx"
+          }
+        }
       }
     },
     {
