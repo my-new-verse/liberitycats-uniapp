@@ -1115,7 +1115,8 @@ const doHandlePreview = (images: string[], currentIndex: number = 0, needDealImg
   handlePreview(images, currentIndex)
 }
 // 刷新后调用列表接口获取 can_refresh，不全量更新列表，只更新所有帖子的刷新按钮
-const syncRefreshEligibility = async (postId: number) => {
+// moveToTop=true 时把被刷新的帖子移到列表第一项
+const syncRefreshEligibility = async (postId: number, moveToTop = false) => {
   try {
     const cache = postFilterCache.value.promotion
     const totalPages = cache.list.current_page || 1
@@ -1148,6 +1149,16 @@ const syncRefreshEligibility = async (postId: number) => {
       }
       return item
     })
+    // 把被刷新的帖子移到列表第一项
+    if (moveToTop) {
+      syncCurrentCache() // 先更新缓存
+      const idx = cache.list.data.findIndex((p: any) => p.id === postId)
+      if (idx > 0 && idx < cache.list.data.length) {
+        const movedItem = cache.list.data[idx]
+        cache.list.data.splice(idx, 1)
+        cache.list.data.unshift(movedItem)
+      }
+    }
     syncCurrentCache()
   } catch (e) {
     console.error('getList after refresh failed', e)
@@ -1161,8 +1172,8 @@ const handleRefreshPost = async (item: any) => {
     const res = await refreshAdPostApi(item.id)
     if (res.code === 1) {
       uni.showToast({ title: t('social.detail.refresh.success'), icon: 'success', duration: 2000 })
-      // 刷新后调用列表接口获取 can_refresh，不全量更新列表，只隐藏刷新按钮
-      await syncRefreshEligibility(item.id)
+      // 刷新后调用列表接口获取 can_refresh，并把操作项移到列表第一项
+      await syncRefreshEligibility(item.id, true)
     } else {
       console.log(res.msg || t('social.detail.refresh.failed'))
       uni.showToast({
