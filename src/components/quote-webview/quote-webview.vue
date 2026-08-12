@@ -25,9 +25,10 @@
       <!-- #endif -->
 
       <!-- #ifdef H5 -->
-      <web-view
+      <iframe
         v-if="active && shouldRender && !hasError"
         :src="url"
+        class="quote-iframe"
         @load="handleLoaded"
         @error="handleError"
       />
@@ -315,6 +316,14 @@ defineExpose({
   web-view {
     width: 100%;
     height: 100%;
+    border-radius: 24rpx;
+    overflow: hidden;
+  }
+
+  .quote-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
     border-radius: 24rpx;
     overflow: hidden;
   }
