@@ -1453,15 +1453,15 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
   position: absolute;
   top: 36rpx;
   left: 32rpx;
-  width: 48rpx;
-  height: 48rpx;
+  width: 64rpx; // >= padding，保证不重叠
+  height: 44rpx;
   display: flex;
   align-items: center;
   justify-content: flex-start;
   z-index: 99;
   image {
-    width: 36rpx;
-    height: 36rpx;
+    width: 44rpx;
+    height: 44rpx;
   }
 }
 
