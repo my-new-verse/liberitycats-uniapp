@@ -101,10 +101,12 @@ const rawRequest = <T>(options: CustomRequestOptions): Promise<IResData<T>> => {
         const duration = Date.now() - start
         console.error(`[Trace][${options.url}]    ${Date.now()}. 接口耗时：${duration}ms`)
         let errorMsg = ''
-        if (err.errMsg.indexOf('timeout')) {
+        if (err.errMsg.indexOf('timeout') !== -1) {
           errorMsg = t('common.request.network.slow')
         } else if (err.errMsg.indexOf('abort') !== -1) {
           errorMsg = t('common.request.cancelled')
+        } else if (err.errMsg.indexOf('404') !== -1) {
+          errorMsg = t('common.request.not_found')
         } else {
           errorMsg = t('common.request.network.error')
         }
