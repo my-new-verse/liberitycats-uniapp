@@ -10,7 +10,7 @@
 
     <wd-toast />
     <wd-message-box />
-    <ActivityPopup ref="activityPopup" />
+    <ActivityPopupHost />
     <AppUpdatePopup
       :model-value="appUpdatePopupShow"
       :title="appUpdatePopupTitle"
@@ -26,44 +26,18 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import type { ConfigProviderThemeVars } from 'wot-design-uni'
 import CustomTabbar from '@/components/CustomTabbar.vue'
 import AppUpdatePopup from '@/components/AppUpdatePopup.vue'
-import ActivityPopup from '@/components/ActivityPopup/ActivityPopup.vue'
+import ActivityPopupHost from '@/components/ActivityPopup/ActivityPopupHost.vue'
 import { openUrl } from '@/utils'
 import buildInfo from '@/../build-info.json'
 import { getSystemConfigApiV2 } from '@/service/api/user'
-import { getPopupCurrentApi } from '@/service/api/popup'
 import { useSystemStore } from '@/store/system'
 import { t } from '@/locale'
 const version = `${buildInfo.version}`
 const systemStore = useSystemStore()
-
-// 活动弹窗
-const activityPopup = ref<InstanceType<typeof ActivityPopup> | null>(null)
-
-/** uni locale 映射为接口需要的 locale */
-const getApiLocale = () => {
-  const map: Record<string, string> = {
-    'zh-Hans': 'zh-CN',
-    'zh-Hant': 'zh-TW',
-    en: 'en-US',
-  }
-  return map[uni.getLocale()] || 'en-US'
-}
-
-/** 获取活动弹窗数据并展示 */
-const fetchPopupData = async () => {
-  try {
-    const res = await getPopupCurrentApi(getApiLocale())
-    if (res.code === 1 && res.data) {
-      activityPopup.value?.show(res.data)
-    }
-  } catch (e) {
-    console.error('fetchPopupData failed', e)
-  }
-}
 
 const themeVars: ConfigProviderThemeVars = {
   // 主题变量配置
@@ -106,13 +80,6 @@ const systemConfig = computed(() => systemStore.config)
 let lastConfigFetchTime = 0
 
 onShow(() => {
-  // 活动弹窗：每次进入 tabbar/home 时调用接口
-  const pages = getCurrentPages()
-  const curPath = pages.length ? '/' + pages[pages.length - 1].route : ''
-  if (curPath === '/pages/tabbar/home' || curPath === '/') {
-    fetchPopupData()
-  }
-
   const now = Date.now()
   if (now - lastConfigFetchTime < 5000) return
   lastConfigFetchTime = now

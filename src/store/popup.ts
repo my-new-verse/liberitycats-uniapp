@@ -1,141 +1,67 @@
-import { ref, computed } from 'vue'
-import { getPopupCurrentApi, PopupData } from '@/service/api/popup'
+import { ref } from 'vue'
+import { getPopupCurrentApi, type PopupCurrentData } from '@/service/api/popup'
 
-export interface PopupItem {
-  id: number
-  code: string
-  title: string
-  subtitle: string
-  images: string[]
-  buttonText: string
-  dismissible: boolean
-  clickType: 'internal' | 'external' | 'webview' | 'none'
-  clickUrl: string
-  backgroundColor?: string
-  displayFrequency: string
-  revision: number
-}
+const current = ref<PopupCurrentData | null>(null)
+const fetched = ref(false)
+const claimed = ref(false)
+const forceShow = ref(false)
+let fetching: Promise<void> | null = null
 
-const queue = ref<PopupItem[]>([])
-const current = computed<PopupItem | null>(() => {
-  return queue.value.length > 0 ? queue.value[0] : null
-})
-
-function shouldShow(frequency: string, code: string, revision: number): boolean {
-  if (frequency === 'every_entry') return true
-
-  const key = `popup_${code}`
-  const record = uni.getStorageSync(key)
-
-  if (frequency === 'once') {
-    if (!record) return true
-    return record.revision !== revision
+const getApiLocale = () => {
+  const localeMap: Record<string, string> = {
+    'zh-Hans': 'zh-CN',
+    'zh-Hant': 'zh-TW',
+    en: 'en-US',
+    ja: 'ja-JP',
   }
-
-  if (frequency === 'daily') {
-    if (!record) return true
-    const today = new Date().toDateString()
-    return record.date !== today || record.revision !== revision
-  }
-
-  return false
+  return localeMap[uni.getLocale()] || 'en-US'
 }
 
-function markShown(code: string, revision: number) {
-  uni.setStorageSync(`popup_${code}`, {
-    date: new Date().toDateString(),
-    revision,
-  })
+/** 开启一轮新的弹窗展示，用于冷启动及从后台回到前台。 */
+function resetStartupSession(force = false) {
+  current.value = null
+  fetched.value = false
+  claimed.value = false
+  forceShow.value = force
+  fetching = null
 }
 
-function isInTimeWindow(startAt: string | null, endAt: string | null): boolean {
-  const now = Date.now()
-  if (startAt && now < new Date(startAt).getTime()) return false
-  if (endAt && now > new Date(endAt).getTime()) return false
-  return true
-}
+/** 当前展示轮次只请求一次活动数据。 */
+async function fetchForStartup() {
+  if (fetched.value) return
+  if (fetching) return fetching
 
-function mapTarget(target: PopupData['target']): { clickType: string; clickUrl: string } {
-  switch (target.type) {
-    case 'post':
-      return { clickType: 'internal', clickUrl: `/pages/cats/social/detail?id=${target.id || ''}` }
-    case 'comment':
-      const postId = target.params?.root_post_id || target.id || ''
-      return { clickType: 'internal', clickUrl: `/pages/cats/social/detail?id=${postId}` }
-    case 'member':
-      return {
-        clickType: 'internal',
-        clickUrl: `/pages/cats/user/home?member_id=${target.id || ''}`,
-      }
-    case 'webview':
-      return { clickType: 'webview', clickUrl: target.url || '' }
-    case 'external_url':
-      return { clickType: 'external', clickUrl: target.url || '' }
-    default:
-      return { clickType: 'none', clickUrl: '' }
-  }
-}
-
-async function fetchAndSet() {
-  try {
-    const res = await getPopupCurrentApi()
-    if (res.code !== 1 || !res.data) {
-      queue.value = []
-      return
+  fetching = (async () => {
+    try {
+      const res = await getPopupCurrentApi(getApiLocale())
+      current.value = res.code === 1 ? res.data || null : null
+    } catch (error) {
+      console.error('fetch activity popup failed', error)
+      current.value = null
+    } finally {
+      fetched.value = true
+      fetching = null
     }
+  })()
 
-    const data = res.data
-
-    if (!isInTimeWindow(data.active_time.start_at, data.active_time.end_at)) {
-      queue.value = []
-      return
-    }
-
-    if (!shouldShow(data.display_frequency, data.code, data.revision)) {
-      queue.value = []
-      return
-    }
-
-    const { clickType, clickUrl } = mapTarget(data.target)
-    const images = data.media.map((m) => m.url)
-
-    queue.value = [
-      {
-        id: data.id,
-        code: data.code,
-        title: data.title,
-        subtitle: data.subtitle,
-        images,
-        buttonText: data.button_text,
-        dismissible: true,
-        clickType: clickType as PopupItem['clickType'],
-        clickUrl,
-        displayFrequency: data.display_frequency,
-        revision: data.revision,
-      },
-    ]
-  } catch {
-    queue.value = []
-  }
+  return fetching
 }
 
-function dismissCurrent() {
-  const item = queue.value.shift()
-  if (item) {
-    markShown(item.code, item.revision)
-  }
-}
-
-function clear() {
-  queue.value = []
+/** 第一个可用布局领取展示权，避免切换布局或 tabbar 重复弹出。 */
+function claimCurrent() {
+  if (!current.value || claimed.value) return null
+  claimed.value = true
+  return current.value
 }
 
 export function usePopupStore() {
   return {
-    queue,
     current,
-    fetchAndSet,
-    dismissCurrent,
-    clear,
+    fetched,
+    claimed,
+    forceShow,
+    resetStartupSession,
+    fetchForStartup,
+    claimCurrent,
   }
 }

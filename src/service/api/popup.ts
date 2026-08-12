@@ -11,7 +11,7 @@ export interface PopupMediaItem {
 }
 
 export interface PopupTarget {
-  type: 'none' | 'post' | 'comment' | 'member' | 'external_url'
+  type: 'none' | 'post' | 'comment' | 'member' | 'external_url' | 'agreement'
   id?: number | string
   url?: string
   params?: Record<string, any>

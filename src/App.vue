@@ -11,6 +11,7 @@ import { useSystemStore } from '@/store/system'
 import { getGameParamsApi } from '@/service/api/game'
 // import { scheduleDualGamePreload } from '@/utils/plusGameWebViewPool'
 import { useGameWebViewStore } from '@/store/gameWebview'
+import { usePopupStore } from '@/store/popup'
 import {
   downloadGameResources,
   resumeBackgroundDownloadIfNeeded,
@@ -28,6 +29,7 @@ interface GameConfig {
 
 const systemStore = useSystemStore()
 const gameWebviewStore = useGameWebViewStore()
+const popupStore = usePopupStore()
 
 // 平台类型（避免多次调用 getSystemInfoSync）
 const platform = uni.getSystemInfoSync().platform || ''
@@ -36,9 +38,13 @@ const version = `${buildInfo.version}`
 const userStore = useUserStore()
 const systemReady = ref(false)
 const hasPendingIntent = ref(true) // 首次启动默认需要处理深链
+let hasEnteredBackground = false
 
 onLaunch(() => {
   console.log('App Launch', uni.getSystemInfoSync())
+
+  // 冷启动时重置活动弹窗会话；切换页面和 App 前后台切换不会重置。
+  popupStore.resetStartupSession()
 
   const systemInfo = uni.getSystemInfoSync()
   const platform = systemInfo.platform?.toLowerCase() || systemInfo.osName?.toLowerCase()
@@ -69,9 +75,11 @@ onLaunch(() => {
   }
 
   waitForNetwork().then(() => {
-    // @ts-ignore 全局标记，供页面通过 uni.$on('networkReady') 监听
     globalThis.__networkReady = true
     uni.$emit('networkReady')
+
+    // 全局只请求一次，首个已挂载的页面布局负责展示。
+    popupStore.fetchForStartup()
 
     uni.removeStorageSync('app_update_close')
     getSystemConfigApiV2(version, platform).then((res) => {
@@ -119,6 +127,13 @@ onLaunch(() => {
 })
 
 onShow(() => {
+  // 首次启动由 onLaunch 请求；只有确实进入过后台，回到前台时才开启新一轮展示。
+  if (hasEnteredBackground) {
+    hasEnteredBackground = false
+    popupStore.resetStartupSession(true)
+    popupStore.fetchForStartup()
+  }
+
   // #ifdef APP-PLUS
   if (hasPendingIntent.value) {
     hasPendingIntent.value = false
@@ -152,6 +167,7 @@ onShow(() => {
 
 onHide(() => {
   console.log('App Hide')
+  hasEnteredBackground = true
   // App进入后台时，重置 downloading 状态为 pending，避免状态卡住（仅 Android）
   // #ifdef APP-PLUS
   if (isAndroid) {

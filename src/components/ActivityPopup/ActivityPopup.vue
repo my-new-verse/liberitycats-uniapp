@@ -34,6 +34,9 @@
                 <view v-if="popupSubtitle" class="activity-popup__subtitle">
                   {{ popupSubtitle }}
                 </view>
+                <!-- <view class="activity-popup__rules-link" @click.stop="handleRulesClick">
+                  查看完整活动规则 ›
+                </view> -->
               </view>
             </swiper-item>
           </swiper>
@@ -54,6 +57,9 @@
             <view v-if="popupSubtitle" class="activity-popup__subtitle">
               {{ popupSubtitle }}
             </view>
+            <!-- <view class="activity-popup__rules-link" @click.stop="handleRulesClick">
+              查看完整活动规则 ›
+            </view> -->
           </view>
 
           <view v-if="popupMedia.length > 1" class="activity-popup__dots">
@@ -74,13 +80,20 @@
       >
         {{ popupButtonText }}
       </button>
+      <button
+        class="activity-popup__no-remind"
+        hover-class="activity-popup__no-remind--pressed"
+        @click="handleNeverRemind"
+      >
+        {{ popupNoRemindButtonText }}
+      </button>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { PopupTarget, PopupCurrentData, PopupMediaItem } from '@/service/api/announcement'
+import type { PopupTarget, PopupCurrentData, PopupMediaItem } from '@/service/api/popup'
 import { openUrl } from '@/utils'
 import { t } from '@/locale'
 
@@ -106,12 +119,28 @@ const popupTitle = ref('')
 const popupSubtitle = ref('')
 const popupRichContent = ref('')
 const popupButtonText = ref(t('common.btn.got_it'))
+const popupNoRemindButtonText = ref(t('activityPopup.no_remind'))
 const popupId = ref<number | string>('')
 const popupFrequency = ref<'once' | 'daily' | 'every_entry'>('every_entry')
 const popupTarget = ref<PopupTarget | null>(null)
 
 const ACTIVITY_CACHE_KEY = 'activity_popup_clicked'
 const ACTIVITY_DAILY_KEY = 'activity_popup_daily'
+const ACTIVITY_NEVER_REMIND_KEY = 'activity_popup_never_remind'
+
+type ActivityCache = Record<string, boolean>
+
+/** 用户主动设置当前活动不再提醒 */
+const isActivityNeverRemind = (id: number | string) => {
+  const cache = (uni.getStorageSync(ACTIVITY_NEVER_REMIND_KEY) || {}) as ActivityCache
+  return cache[String(id)] === true
+}
+
+const markActivityNeverRemind = (id: number | string) => {
+  const cache = (uni.getStorageSync(ACTIVITY_NEVER_REMIND_KEY) || {}) as ActivityCache
+  cache[String(id)] = true
+  uni.setStorageSync(ACTIVITY_NEVER_REMIND_KEY, cache)
+}
 
 /** 获取当天日期字符串 */
 const getToday = () => {
@@ -164,13 +193,16 @@ const navigateByTarget = (target: PopupTarget) => {
       uni.navigateTo({ url: `/pages/cats/social/detail?id=${target.id}${query}` })
       break
     case 'comment':
-      uni.navigateTo({ url: `/pages/cats/social/detail?id=${target.id}&showComment=false${query}` })
+      uni.navigateTo({ url: `/pages/cats/social/detail?id=${target.id}&showComment=true${query}` })
       break
     case 'member':
       uni.navigateTo({ url: `/pages/cats/user/home?member_id=${target.id}${query}` })
       break
     case 'external_url':
       if (target.url) openUrl(target.url)
+      break
+    case 'agreement':
+      uni.navigateTo({ url: `/pages/cats/agreement/detail?id=${target.id}${query}` })
       break
   }
 }
@@ -189,6 +221,17 @@ const handleAction = () => {
   }
 }
 
+const handleRulesClick = () => {
+  emit('rules', popupId.value)
+}
+
+const handleNeverRemind = () => {
+  if (!popupId.value) return
+  markActivityNeverRemind(popupId.value)
+  visible.value = false
+  emit('dismiss', popupId.value)
+}
+
 function handleMaskClick() {
   if (props.closeOnClickMask) {
     visible.value = false
@@ -200,14 +243,21 @@ function handleSwiperChange(e: any) {
 }
 
 /** 接收数据并展示 */
-const show = (data: PopupCurrentData) => {
-  // once 模式：已点击过则不展示
-  if (data.display_frequency === 'once' && isActivityClicked(data.id)) {
+const show = (data: PopupCurrentData, force = false) => {
+  // 用户主动设置过“不再提醒”，优先于后端展示频率
+  if (isActivityNeverRemind(data.id)) {
     return
   }
-  // daily 模式：当天已展示过则不展示
-  if (data.display_frequency === 'daily' && isActivityShownToday(data.id)) {
-    return
+  // 从后台回到前台时按产品要求重新展示；冷启动仍遵循接口频率。
+  if (!force) {
+    // once 模式：已点击过则不展示
+    if (data.display_frequency === 'once' && isActivityClicked(data.id)) {
+      return
+    }
+    // daily 模式：当天已展示过则不展示
+    if (data.display_frequency === 'daily' && isActivityShownToday(data.id)) {
+      return
+    }
   }
   popupId.value = data.id
   popupFrequency.value = data.display_frequency
@@ -220,6 +270,11 @@ const show = (data: PopupCurrentData) => {
   popupButtonText.value = data.button_text || t('common.btn.got_it')
   visible.value = true
 }
+
+const emit = defineEmits<{
+  rules: [id: number | string]
+  dismiss: [id: number | string]
+}>()
 
 defineExpose({ show })
 </script>
@@ -347,6 +402,16 @@ defineExpose({ show })
   white-space: nowrap;
 }
 
+.activity-popup__rules-link {
+  margin-top: 14rpx;
+  font-size: 22rpx;
+  font-weight: 750;
+  line-height: 1.3;
+  color: #e95800;
+  text-decoration: underline;
+  text-underline-offset: 5rpx;
+}
+
 .activity-popup__rich {
   padding: 36rpx 48rpx;
   text-align: left;
@@ -417,6 +482,36 @@ defineExpose({ show })
 
 .activity-popup__action--pressed {
   transform: scale(0.98);
+}
+
+.activity-popup__no-remind {
+  display: flex;
+  min-width: 300rpx;
+  height: 68rpx;
+  align-items: center;
+  justify-content: center;
+  padding: 0 32rpx;
+  margin: 20rpx auto 0;
+  font-family: inherit;
+  font-size: 24rpx;
+  font-weight: 650;
+  line-height: 68rpx;
+  color: rgba(255, 255, 255, 0.88);
+  text-decoration: underline;
+  text-underline-offset: 6rpx;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2rpx solid rgba(255, 255, 255, 0.28);
+  border-radius: 999rpx;
+  backdrop-filter: blur(12rpx);
+  width: 50%;
+}
+
+.activity-popup__no-remind::after {
+  border: 0;
+}
+
+.activity-popup__no-remind--pressed {
+  opacity: 0.72;
 }
 
 @keyframes activity-popup-in {

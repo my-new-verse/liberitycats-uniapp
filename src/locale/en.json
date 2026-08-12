@@ -57,6 +57,7 @@
   "common.network.error.refresh": "Refresh",
   "common.btn.update_btn_txt": "Update Now",
   "common.btn.got_it": "Got it",
+  "activityPopup.no_remind": "Don't remind me again",
   "common.cancel": "Cancel",
   "common.confirm": "Confirm",
   "common.processing": "Processing...",
