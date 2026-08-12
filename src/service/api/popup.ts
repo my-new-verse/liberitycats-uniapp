@@ -25,6 +25,7 @@ export interface PopupCurrentData {
   button_text: string
   display_frequency: 'once' | 'daily' | 'every_entry'
   target: PopupTarget
+  rich_content?: string
 }
 
 /**

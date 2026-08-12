@@ -747,6 +747,14 @@
       }
     },
     {
+      "path": "pages/cats/user/mine",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "%user.homepage%"
+      }
+    },
+    {
       "path": "pages/cats/webview/webview",
       "type": "page",
       "layout": "default",

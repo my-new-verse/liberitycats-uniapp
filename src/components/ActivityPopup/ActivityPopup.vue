@@ -4,56 +4,67 @@
       <view class="activity-popup__card-wrap">
         <view class="activity-popup__back"></view>
 
-        <swiper
-          v-if="popupMedia.length > 1"
-          class="activity-popup__swiper"
-          :current="current"
-          :circular="false"
-          @change="handleSwiperChange"
-        >
-          <swiper-item v-for="(item, index) in popupMedia" :key="index">
-            <view class="activity-popup__front activity-popup__image-content">
-              <wd-img
-                v-if="item.url"
-                custom-class="activity-popup__image"
-                mode="widthFix"
-                width="42vw"
-                :src="item.url"
-              />
-              <view v-if="popupTitle" class="activity-popup__title">{{ popupTitle }}</view>
-              <view v-if="popupSubtitle" class="activity-popup__subtitle">
-                {{ popupSubtitle }}
-              </view>
-            </view>
-          </swiper-item>
-        </swiper>
-
-        <view v-else class="activity-popup__front activity-popup__image-content">
-          <wd-img
-            v-if="popupMedia[0]?.url"
-            custom-class="activity-popup__image"
-            mode="widthFix"
-            width="42vw"
-            :src="
-              popupMedia[0]?.url ||
-              'https://liberycats.oss-accelerate.aliyuncs.com/social/20260812/6660_1786511533285_kavlzmzs_2a1e2b14-613c-4954-abf3-cf8c78b45134gift-box-3d.png?x-oss-process=style/sqdt'
-            "
-          />
-
-          <view v-if="popupTitle" class="activity-popup__title">{{ popupTitle }}</view>
-          <view v-if="popupSubtitle" class="activity-popup__subtitle">
-            {{ popupSubtitle }}
+        <!-- 富文本内容展示 -->
+        <template v-if="popupRichContent">
+          <view class="activity-popup__front activity-popup__rich">
+            <view v-if="popupTitle" class="activity-popup__rich-title">{{ popupTitle }}</view>
+            <rich-text :nodes="popupRichContent" class="activity-popup__rich-content" />
           </view>
-        </view>
+        </template>
 
-        <view v-if="popupMedia.length > 1" class="activity-popup__dots">
-          <view
-            v-for="(_, index) in popupMedia"
-            :key="index"
-            class="activity-popup__dot"
-            :class="{ 'activity-popup__dot--active': current === index }"
-          ></view>
-        </view>
+        <!-- 图片内容展示 -->
+        <template v-else>
+          <swiper
+            v-if="popupMedia.length > 1"
+            class="activity-popup__swiper"
+            :current="current"
+            :circular="false"
+            @change="handleSwiperChange"
+          >
+            <swiper-item v-for="(item, index) in popupMedia" :key="index">
+              <view class="activity-popup__front activity-popup__image-content">
+                <wd-img
+                  v-if="item.url"
+                  custom-class="activity-popup__image"
+                  mode="widthFix"
+                  width="42vw"
+                  :src="item.url"
+                />
+                <view v-if="popupTitle" class="activity-popup__title">{{ popupTitle }}</view>
+                <view v-if="popupSubtitle" class="activity-popup__subtitle">
+                  {{ popupSubtitle }}
+                </view>
+              </view>
+            </swiper-item>
+          </swiper>
+
+          <view v-else class="activity-popup__front activity-popup__image-content">
+            <wd-img
+              v-if="popupMedia[0]?.url"
+              custom-class="activity-popup__image"
+              mode="widthFix"
+              width="42vw"
+              :src="
+                popupMedia[0]?.url ||
+                'https://liberycats.oss-accelerate.aliyuncs.com/social/20260812/6660_1786511533285_kavlzmzs_2a1e2b14-613c-4954-abf3-cf8c78b45134gift-box-3d.png?x-oss-process=style/sqdt'
+              "
+            />
+
+            <view v-if="popupTitle" class="activity-popup__title">{{ popupTitle }}</view>
+            <view v-if="popupSubtitle" class="activity-popup__subtitle">
+              {{ popupSubtitle }}
+            </view>
+          </view>
+
+          <view v-if="popupMedia.length > 1" class="activity-popup__dots">
+            <view
+              v-for="(_, index) in popupMedia"
+              :key="index"
+              class="activity-popup__dot"
+              :class="{ 'activity-popup__dot--active': current === index }"
+            ></view>
+          </view>
+        </template>
       </view>
 
       <button
@@ -93,6 +104,7 @@ const current = ref(0)
 const popupMedia = ref<PopupMediaItem[]>([])
 const popupTitle = ref('')
 const popupSubtitle = ref('')
+const popupRichContent = ref('')
 const popupButtonText = ref(t('common.btn.got_it'))
 const popupId = ref<number | string>('')
 const popupFrequency = ref<'once' | 'daily' | 'every_entry'>('every_entry')
@@ -189,23 +201,23 @@ function handleSwiperChange(e: any) {
 
 /** 接收数据并展示 */
 const show = (data: PopupCurrentData) => {
-  const { id, title, subtitle, media, button_text, display_frequency, target } = data
   // once 模式：已点击过则不展示
-  if (display_frequency === 'once' && isActivityClicked(id)) {
+  if (data.display_frequency === 'once' && isActivityClicked(data.id)) {
     return
   }
   // daily 模式：当天已展示过则不展示
-  if (display_frequency === 'daily' && isActivityShownToday(id)) {
+  if (data.display_frequency === 'daily' && isActivityShownToday(data.id)) {
     return
   }
-  popupId.value = id
-  popupFrequency.value = display_frequency
-  popupTarget.value = target
-  popupMedia.value = media || []
+  popupId.value = data.id
+  popupFrequency.value = data.display_frequency
+  popupTarget.value = data.target
+  popupMedia.value = data.media || []
   current.value = 0
-  popupTitle.value = title || ''
-  popupSubtitle.value = subtitle || ''
-  popupButtonText.value = button_text || t('common.btn.got_it')
+  popupTitle.value = data.title || ''
+  popupSubtitle.value = data.subtitle || ''
+  popupRichContent.value = data.rich_content || ''
+  popupButtonText.value = data.button_text || t('common.btn.got_it')
   visible.value = true
 }
 
@@ -254,8 +266,7 @@ defineExpose({ show })
   top: 54rpx;
   left: 50%;
   width: 580rpx;
-  height: 436rpx;
-  height: auto;
+  height: 456rpx;
   border-radius: 56rpx;
 }
 
@@ -285,6 +296,8 @@ defineExpose({ show })
 
 .activity-popup__image-content {
   display: flex;
+  width: 580rpx;
+  height: 456rpx;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -295,8 +308,7 @@ defineExpose({ show })
 .activity-popup__image {
   width: 264rpx;
   height: 264rpx;
-  height: auto;
-  flex: 0 0 224rpx;
+  flex: 0 0 264rpx;
   margin-bottom: 24rpx;
   // background: #fff;
   // box-shadow: 0 16rpx 36rpx rgba(170, 69, 0, 0.18);
@@ -341,7 +353,7 @@ defineExpose({ show })
 }
 
 .activity-popup__rich-title {
-  margin-bottom: 16rpx;
+  margin-bottom: 24rpx;
   font-size: 40rpx;
   font-weight: 800;
   line-height: 1.25;
@@ -351,8 +363,8 @@ defineExpose({ show })
 .activity-popup__rich-content {
   display: block;
   overflow: hidden;
-  font-size: 24rpx;
-  line-height: 1.6;
+  font-size: 28rpx;
+  line-height: 1.8;
   color: #725e51;
 }
 
