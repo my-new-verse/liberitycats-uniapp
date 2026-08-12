@@ -4,37 +4,32 @@ export interface PopupMedia {
   type: 'gif' | 'image'
   url: string
 }
+export interface PopupMediaItem {
+  url: string
+  type?: string
+  [key: string]: unknown
+}
 
 export interface PopupTarget {
-  type: 'none' | 'post' | 'comment' | 'member' | 'webview' | 'external_url'
-  id?: string
+  type: 'none' | 'post' | 'comment' | 'member' | 'external_url'
+  id?: number | string
   url?: string
-  params?: Record<string, string>
+  params?: Record<string, any>
 }
 
-export interface PopupActiveTime {
-  start_at: string | null
-  end_at: string | null
-}
-
-export interface PopupData {
-  id: number
-  code: string
-  scene: string
-  content_type: string
+export interface PopupCurrentData {
+  id: number | string
   title: string
   subtitle: string
-  media: PopupMedia[]
-  rich_content: any
+  media: PopupMediaItem[]
   button_text: string
-  target: PopupTarget
-  active_time: PopupActiveTime
   display_frequency: 'once' | 'daily' | 'every_entry'
-  revision: number
+  target: PopupTarget
 }
 
-export const getCurrentPopupApi = (locale?: string) => {
-  const params: any = {}
-  if (locale) params.locale = locale
-  return http.get<PopupData>('/v1/system/popup/current', params)
+/**
+ * 获取当前活动弹窗内容
+ */
+export const getPopupCurrentApi = () => {
+  return http.get<PopupCurrentData | null>('/v1/system/popup/current', {})
 }

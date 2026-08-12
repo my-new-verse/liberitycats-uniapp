@@ -10,6 +10,7 @@
 
     <wd-toast />
     <wd-message-box />
+    <ActivityPopup ref="activityPopup" />
     <AppUpdatePopup
       :model-value="appUpdatePopupShow"
       :title="appUpdatePopupTitle"
@@ -29,13 +30,30 @@ import { ref, computed, onMounted, watch } from 'vue'
 import type { ConfigProviderThemeVars } from 'wot-design-uni'
 import CustomTabbar from '@/components/CustomTabbar.vue'
 import AppUpdatePopup from '@/components/AppUpdatePopup.vue'
+import ActivityPopup from '@/components/ActivityPopup/ActivityPopup.vue'
 import { openUrl } from '@/utils'
 import buildInfo from '@/../build-info.json'
 import { getSystemConfigApiV2 } from '@/service/api/user'
+import { getPopupCurrentApi } from '@/service/api/popup'
 import { useSystemStore } from '@/store/system'
 import { t } from '@/locale'
 const version = `${buildInfo.version}`
 const systemStore = useSystemStore()
+
+// 活动弹窗
+const activityPopup = ref<InstanceType<typeof ActivityPopup> | null>(null)
+
+/** 获取活动弹窗数据并展示 */
+const fetchPopupData = async () => {
+  try {
+    const res = await getPopupCurrentApi()
+    if (res.code === 1 && res.data) {
+      activityPopup.value?.show(res.data)
+    }
+  } catch (e) {
+    console.error('fetchPopupData failed', e)
+  }
+}
 
 const themeVars: ConfigProviderThemeVars = {
   // 主题变量配置
@@ -65,6 +83,9 @@ watch(
     showTabbar.value = tabbarPages.some(
       (path) => newPath.startsWith(path) || (newPath === '/' && path === '/pages/tabbar/home'),
     )
+    // 只有切换到 tabbar/home 时调用活动弹窗接口
+    // 注意：currentPath 基于 getCurrentPages() 非响应式，watch 不可靠
+    // 实际在 onShow 中处理
   },
   { immediate: true },
 )
@@ -75,6 +96,13 @@ const systemConfig = computed(() => systemStore.config)
 let lastConfigFetchTime = 0
 
 onShow(() => {
+  // 活动弹窗：每次进入 tabbar/home 时调用接口
+  const pages = getCurrentPages()
+  const curPath = pages.length ? '/' + pages[pages.length - 1].route : ''
+  if (curPath === '/pages/tabbar/home' || curPath === '/') {
+    fetchPopupData()
+  }
+
   const now = Date.now()
   if (now - lastConfigFetchTime < 5000) return
   lastConfigFetchTime = now

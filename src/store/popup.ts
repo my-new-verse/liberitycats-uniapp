@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue'
-import { getCurrentPopupApi, PopupData } from '@/service/api/popup'
+import { getPopupCurrentApi, PopupData } from '@/service/api/popup'
 
 export interface PopupItem {
   id: number
@@ -78,7 +78,7 @@ function mapTarget(target: PopupData['target']): { clickType: string; clickUrl: 
 
 async function fetchAndSet() {
   try {
-    const res = await getCurrentPopupApi()
+    const res = await getPopupCurrentApi()
     if (res.code !== 1 || !res.data) {
       queue.value = []
       return
