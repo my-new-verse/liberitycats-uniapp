@@ -76,6 +76,7 @@ interface NavigateToOptions {
        "/pages/cats/social/publish" |
        "/pages/cats/upload/upload" |
        "/pages/cats/user/home" |
+       "/pages/cats/user/mine" |
        "/pages/cats/webview/webview" |
        "/pages/cats/login/virtual/bind" |
        "/pages/cats/login/virtual/bind_code" |

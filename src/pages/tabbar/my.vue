@@ -387,7 +387,7 @@
             </view>
           </view>
           <view class="menuBox">
-            <view class="menuItem" @click="toUrl('/pages/cats/user/home', true)">
+            <view class="menuItem" @click="toUrl('/pages/cats/user/mine', true)">
               <view class="menuItemTitle">
                 <view class="icon2">
                   <image class="iconImg" src="@/static/images/home.png" mode="widthFix" />

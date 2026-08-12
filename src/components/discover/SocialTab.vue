@@ -90,7 +90,7 @@
             :show-report="item.member_id !== userStore.userInfo?.member_id"
             @delete="handleDelPost"
             @report="reportPost"
-            @avatar-click="(i) => toUserHome(i.member_id)"
+            @avatar-click="(i) => toUserHome(i.member)"
             @click="(i) => toUrl('/pages/cats/social/detail?id=' + i.id, false)"
             @view-click="(i) => toUrl('/pages/cats/social/detail?id=' + i.id, false)"
             @comment-click="
@@ -1132,9 +1132,13 @@ const handleReportUser = () => {
 }
 
 // 跳转用户主页
-const toUserHome = (memberId: number) => {
+const toUserHome = (member: any) => {
+  if (member?.is_self) {
+    uni.navigateTo({ url: '/pages/cats/user/mine' })
+    return
+  }
   uni.navigateTo({
-    url: `/pages/cats/user/home?member_id=${memberId}`,
+    url: `/pages/cats/user/home?member_id=${member.id}`,
   })
 }
 

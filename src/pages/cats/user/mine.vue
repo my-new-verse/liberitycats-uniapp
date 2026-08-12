@@ -110,21 +110,6 @@
             <text class="statLabel">{{ t('social.index.stats.special_following') }}</text>
           </view>
         </view>
-        <view class="followActions">
-          <view class="followBtn" :class="followBtnInfo.style" @click="handleFollow">
-            <wd-button plain custom-class="follow-btn" size="small">
-              {{ followBtnInfo.text }}
-              <wd-icon
-                custom-style="margin-left: 8rpx"
-                name="star-on"
-                size="22rpx"
-                color="#ff6b03"
-                v-if="userInfo.is_special_following === 1"
-              ></wd-icon>
-            </wd-button>
-          </view>
-          <view class="moreActionsBtn" @click="openMoreActions"></view>
-        </view>
       </view>
     </view>
 
@@ -483,7 +468,7 @@ const dataList = reactive([
   },
 ])
 
-const memberId = ref(0)
+const memberId = ref(userStore.userInfo?.member_id || 0)
 
 const stats = ref<{
   following_count: number
@@ -505,7 +490,7 @@ const userInfo = ref({
     level: 0,
     icon: '',
   },
-  is_self: false,
+  is_self: true,
   is_following: 0,
 })
 
@@ -534,6 +519,7 @@ const postFilterTabs = computed(() => {
   return [
     { key: 'normal', label: t('my.post.filter.normal') },
     { key: 'promotion', label: t('my.post.filter.promotion') },
+    { key: 'draft', label: t('my.post.filter.draft') },
   ]
 })
 
@@ -566,10 +552,6 @@ const postItemRefs = ref<Record<number, any>>({})
 
 let hasInitialized = false
 
-onLoad((options) => {
-  memberId.value = Number(options.member_id || 0)
-})
-
 onShow(() => {
   // 仅首次进入时全量加载，从详情页返回时通过事件单项更新列表项
   if (!hasInitialized) {
@@ -578,9 +560,9 @@ onShow(() => {
   }
 })
 
-/** 固定头部高度（别人主页 508rpx） */
+/** 固定头部高度（自己主页 460rpx） */
 const updateHeadBoxHeight = () => {
-  const baseHeight = 508
+  const baseHeight = 420
   // #ifdef H5
   headBoxHeight.value = (safeAreaInsets?.top || 0) / uni.rpx2px(1) + baseHeight + 'rpx'
   kfBoxTop.value = (safeAreaInsets?.top || 0) / uni.rpx2px(1) + 36 + 'rpx'
@@ -669,11 +651,8 @@ const loadMoreData = async (refresh = false) => {
       ...getFilterParams(activePostFilter.value),
     }
 
-    // 别人主页统一用 getMyPostListApi（带 member_id）
-    const postRes = await getMyPostListApi(cache.list.current_page + 1, {
-      ...params,
-      member_id: memberId.value,
-    })
+    // 自己主页统一用 getMyPostsApi
+    const postRes = await getMyPostsApi(cache.list.current_page + 1, params)
 
     if (postRes.data) {
       if (postRes.data.current_page === 1) {
@@ -707,6 +686,7 @@ const loadAllData = async () => {
     uni.hideLoading()
     if (userRes.code === 1) {
       userInfo.value = userRes.data.member
+      updateHeadBoxHeight()
       const data = userRes.data as any
       if (data.stats) stats.value = data.stats
     }
@@ -1125,7 +1105,7 @@ const syncRefreshEligibility = async (postId: number, moveToTop = false) => {
     const params: any = { limit: 20, ...getFilterParams('promotion') }
     const requests = []
     for (let page = 1; page <= totalPages; page++) {
-      const apiCall = getMyPostListApi(page, { ...params, member_id: memberId.value })
+      const apiCall = getMyPostsApi(page, params)
       requests.push(apiCall)
     }
     const results = await Promise.all(requests)

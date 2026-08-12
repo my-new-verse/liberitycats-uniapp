@@ -117,7 +117,7 @@
                 @delete="handleDelPost"
                 @refresh="debouncedHandleRefreshPost"
                 @report="reportPost"
-                @avatar-click="(i) => toUserHome(i.member_id)"
+                @avatar-click="(i) => toUserHome(i.member)"
                 @click="(i) => toUrl('/pages/cats/social/ad_detail?id=' + i.id, false)"
                 @view-click="(i) => toUrl('/pages/cats/social/ad_detail?id=' + i.id, false)"
                 @comment-click="(i) => toUrl('/pages/cats/social/ad_detail?id=' + i.id, false)"
@@ -449,8 +449,12 @@ onMounted(() => {
 const navigateBack = () => {
   uni.navigateBack({ delta: 1 })
 }
-const toUserHome = (memberId: number) => {
-  uni.navigateTo({ url: `/pages/cats/user/home?member_id=${memberId}` })
+const toUserHome = (member: any) => {
+  if (member?.is_self) {
+    uni.navigateTo({ url: '/pages/cats/user/mine' })
+    return
+  }
+  uni.navigateTo({ url: `/pages/cats/user/home?member_id=${member.id}` })
 }
 
 // ============================================================

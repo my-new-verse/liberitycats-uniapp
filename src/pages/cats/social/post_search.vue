@@ -100,9 +100,7 @@
                 :show-report="!post.member?.is_self"
                 @delete="handleDelPost"
                 @report="reportPost"
-                @avatar-click="
-                  (i) => toUrl('/pages/cats/user/home?member_id=' + i.member_id, false)
-                "
+                @avatar-click="(i) => toUserHome(i.member)"
                 @click="(i) => toPostDetail(i)"
                 @view-click="(i) => toPostDetail(i)"
                 @comment-click="(i) => toPostDetail(i)"
@@ -345,7 +343,7 @@
 
 <script lang="ts" setup>
 import { t } from '@/locale/index'
-import { formatRelativeTime, getImageUrl, handlePreview } from '@/utils'
+import { formatRelativeTime, getImageUrl, handlePreview, toUrl } from '@/utils'
 import {
   createFollowApi,
   deleteFollowApi,
@@ -426,6 +424,15 @@ onUnmounted(() => {
 
 const navigateBack = () => {
   uni.navigateBack({ delta: 1 })
+}
+
+// 跳转用户主页
+const toUserHome = (member: any) => {
+  if (member?.is_self) {
+    toUrl('/pages/cats/user/mine', false)
+    return
+  }
+  toUrl('/pages/cats/user/home?member_id=' + member.id, false)
 }
 
 // ============================================================
