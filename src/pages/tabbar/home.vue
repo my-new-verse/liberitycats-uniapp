@@ -179,12 +179,31 @@
         </view>
       </view>
     </scroll-view>
+
+    <!-- 活动弹窗 -->
+    <ActivityPopup
+      v-if="activeItem"
+      :visible="activityPopupVisible"
+      :title="activeItem.title"
+      :subtitle="activeItem.subtitle"
+      :image-url="activeItem.imageUrl"
+      :images="activeItem.images"
+      :button-text="activeItem.buttonText"
+      :dismissible="activeItem.dismissible"
+      :click-type="activeItem.clickType"
+      :click-url="activeItem.clickUrl"
+      :background-color="activeItem.backgroundColor"
+      @close="activityPopupVisible = false"
+    />
   </view>
 </template>
 
 <script lang="ts" setup>
 //
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
+import ActivityPopup from '@/components/ActivityPopup/ActivityPopup.vue'
+import { usePopupStore } from '@/store/popup'
+import type { PopupItem } from '@/store/popup'
 
 import i18n, { t } from '@/locale/index'
 import { formatTime, getImageUrl, toAdUrl, toUrl } from '@/utils'
@@ -203,6 +222,36 @@ const locale = uni.getLocale()
 const message = useMessage()
 const userStore = useUserStore()
 const toast = useToast()
+
+// ========== 活动弹窗 ==========
+const popupStore = usePopupStore()
+const activityPopupVisible = ref(false)
+const activeItem = ref<PopupItem | null>(null)
+
+watch(activityPopupVisible, (val) => {
+  if (!val) {
+    setTimeout(() => {
+      popupStore.dismissCurrent()
+      if (popupStore.current.value) {
+        activeItem.value = popupStore.current.value
+        setTimeout(() => {
+          activityPopupVisible.value = true
+        }, 100)
+      } else {
+        setTimeout(() => {
+          activeItem.value = null
+        }, 300)
+      }
+    }, 300)
+  }
+})
+
+popupStore.fetchAndSet().then(() => {
+  activeItem.value = popupStore.current.value
+  if (activeItem.value) {
+    activityPopupVisible.value = true
+  }
+})
 
 const { safeAreaInsets } = uni.getSystemInfoSync()
 const headBoxHeight = ref<string>('')
