@@ -115,6 +115,7 @@ import {
   deleteFollowApi,
   setSpecialFollowApi,
   getFollowMembersApi,
+  getMemberHomepageApi,
 } from '@/service/api/community'
 import { toUrl } from '@/utils'
 
@@ -289,6 +290,23 @@ const onScrollToLower = () => {
   }
 }
 
+// ========== 关注/取关后刷新统计数据 ==========
+const refreshMemberStats = async () => {
+  const targetId = memberId.value || userStore.userInfo?.member_id
+  if (!targetId) return
+  try {
+    const res = await getMemberHomepageApi(targetId)
+    if (res.code === 1 && res.data?.stats) {
+      const s = res.data.stats
+      tabCounts.value.following = s.following_count ?? tabCounts.value.following
+      tabCounts.value.fans = s.fans_count ?? tabCounts.value.fans
+      tabCounts.value.special = s.special_following_count ?? tabCounts.value.special
+    }
+  } catch (e) {
+    console.error('refreshMemberStats failed', e)
+  }
+}
+
 // ========== 关注/取关 ==========
 const getFollowButtonInfo = (user: any) => {
   if (user.is_self) return null
@@ -355,6 +373,7 @@ const handleFollowClick = (user: any) => {
                 },
                 user,
               )
+              refreshMemberStats()
               uni.showToast({ title: t('social.index.user.special.canceled'), icon: 'none' })
             } else {
               uni.showToast({
@@ -379,6 +398,7 @@ const handleFollowClick = (user: any) => {
         deleteFollowApi(user.member_id).then((res) => {
           if (res.code === 1) {
             syncMemberFollowState(user.member_id, res.data, user)
+            refreshMemberStats()
             uni.showToast({ title: t('social.index.user.follow.canceled'), icon: 'none' })
           }
         })
@@ -388,6 +408,7 @@ const handleFollowClick = (user: any) => {
     createFollowApi(user.member_id).then((res) => {
       if (res.code === 1) {
         syncMemberFollowState(user.member_id, res.data, user)
+        refreshMemberStats()
         uni.showToast({ title: t('social.index.user.follow.success'), icon: 'none' })
       } else {
         uni.showToast({
