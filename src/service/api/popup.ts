@@ -29,7 +29,8 @@ export interface PopupCurrentData {
 
 /**
  * 获取当前活动弹窗内容
+ * @param locale 语言标识 zh-CN / zh-TW / en-US
  */
-export const getPopupCurrentApi = () => {
-  return http.get<PopupCurrentData | null>('/v1/system/popup/current', {})
+export const getPopupCurrentApi = (locale: string) => {
+  return http.get<PopupCurrentData | null>('/v1/system/popup/current', { locale })
 }

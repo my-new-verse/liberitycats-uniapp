@@ -71,6 +71,7 @@
 import { ref } from 'vue'
 import type { PopupTarget, PopupCurrentData, PopupMediaItem } from '@/service/api/announcement'
 import { openUrl } from '@/utils'
+import { t } from '@/locale'
 
 type ActivityPopupImageShape = 'circle' | 'square'
 
@@ -92,7 +93,7 @@ const current = ref(0)
 const popupMedia = ref<PopupMediaItem[]>([])
 const popupTitle = ref('')
 const popupSubtitle = ref('')
-const popupButtonText = ref('知道了')
+const popupButtonText = ref(t('common.btn.got_it'))
 const popupId = ref<number | string>('')
 const popupFrequency = ref<'once' | 'daily' | 'every_entry'>('every_entry')
 const popupTarget = ref<PopupTarget | null>(null)
@@ -204,7 +205,7 @@ const show = (data: PopupCurrentData) => {
   current.value = 0
   popupTitle.value = title || ''
   popupSubtitle.value = subtitle || ''
-  popupButtonText.value = button_text || '知道了'
+  popupButtonText.value = button_text || t('common.btn.got_it')
   visible.value = true
 }
 

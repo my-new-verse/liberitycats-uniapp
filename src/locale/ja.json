@@ -7,6 +7,7 @@
   "introduction": "我是 {name},身高:{detail.height},体重:{detail.weight}",
   "home.title.newArrivals": "最新商品",
   "common.title.more": "更多",
+  "common.btn.got_it": "了解",
   "home.title.nftTradings": "NFT交易",
   "home.title.groupChat": "LCAT Club",
   "home.title.bulletins": "消息",

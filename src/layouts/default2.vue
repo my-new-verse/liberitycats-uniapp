@@ -43,10 +43,20 @@ const systemStore = useSystemStore()
 // 活动弹窗
 const activityPopup = ref<InstanceType<typeof ActivityPopup> | null>(null)
 
+/** uni locale 映射为接口需要的 locale */
+const getApiLocale = () => {
+  const map: Record<string, string> = {
+    'zh-Hans': 'zh-CN',
+    'zh-Hant': 'zh-TW',
+    en: 'en-US',
+  }
+  return map[uni.getLocale()] || 'en-US'
+}
+
 /** 获取活动弹窗数据并展示 */
 const fetchPopupData = async () => {
   try {
-    const res = await getPopupCurrentApi()
+    const res = await getPopupCurrentApi(getApiLocale())
     if (res.code === 1 && res.data) {
       activityPopup.value?.show(res.data)
     }
