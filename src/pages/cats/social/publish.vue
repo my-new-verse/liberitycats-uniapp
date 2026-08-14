@@ -120,6 +120,7 @@
               :file-list="fileList"
               multiple
               :limit="9"
+              :size-type="['original']"
               :action="ossConfig?.host"
               :build-form-data="buildFormData"
               @change="handleChange"
@@ -1890,5 +1891,8 @@ $minor-color: #666666;
     font-family: 'Alibaba PuHuiTi2' !important;
     color: var(--wot-color-theme) !important;
   }
+}
+.uploadBox {
+  margin-top: 12rpx;
 }
 </style>

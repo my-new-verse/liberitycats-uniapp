@@ -96,6 +96,7 @@ import { ref } from 'vue'
 import type { PopupTarget, PopupCurrentData, PopupMediaItem } from '@/service/api/popup'
 import { openUrl } from '@/utils'
 import { t } from '@/locale'
+import { useUserStore } from '@/store/user'
 
 type ActivityPopupImageShape = 'circle' | 'square'
 
@@ -111,6 +112,7 @@ const props = withDefaults(
     zIndex: 10000,
   },
 )
+const userStore = useUserStore()
 
 const visible = ref(false)
 const current = ref(0)
@@ -126,19 +128,25 @@ const popupTarget = ref<PopupTarget | null>(null)
 
 const ACTIVITY_CACHE_KEY = 'activity_popup_clicked'
 const ACTIVITY_DAILY_KEY = 'activity_popup_daily'
-const ACTIVITY_NEVER_REMIND_KEY = 'activity_popup_never_remind'
+const ACTIVITY_NEVER_REMIND_KEY = 'activity_popup_never_remind_v2'
 
 type ActivityCache = Record<string, boolean>
+
+/** 不同登录用户分别保存；未登录状态使用独立访客标识。 */
+const getNeverRemindCacheKey = (activityId: number | string) => {
+  const userId = userStore.userInfo?.member_id || 'guest'
+  return `${userId}:${activityId}`
+}
 
 /** 用户主动设置当前活动不再提醒 */
 const isActivityNeverRemind = (id: number | string) => {
   const cache = (uni.getStorageSync(ACTIVITY_NEVER_REMIND_KEY) || {}) as ActivityCache
-  return cache[String(id)] === true
+  return cache[getNeverRemindCacheKey(id)] === true
 }
 
 const markActivityNeverRemind = (id: number | string) => {
   const cache = (uni.getStorageSync(ACTIVITY_NEVER_REMIND_KEY) || {}) as ActivityCache
-  cache[String(id)] = true
+  cache[getNeverRemindCacheKey(id)] = true
   uni.setStorageSync(ACTIVITY_NEVER_REMIND_KEY, cache)
 }
 
@@ -381,25 +389,21 @@ defineExpose({ show })
 
 .activity-popup__title {
   max-width: 100%;
-  overflow: hidden;
   font-size: 44rpx;
   font-weight: 900;
   line-height: 1.12;
   color: #17120f;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  word-break: break-all;
 }
 
 .activity-popup__subtitle {
   max-width: 100%;
   margin-top: 18rpx;
-  overflow: hidden;
   font-size: 30rpx;
   font-weight: 750;
   line-height: 1.3;
   color: #e95800;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  word-break: break-all;
 }
 
 .activity-popup__rules-link {
@@ -503,7 +507,7 @@ defineExpose({ show })
   border: 2rpx solid rgba(255, 255, 255, 0.28);
   border-radius: 999rpx;
   backdrop-filter: blur(12rpx);
-  width: 50%;
+  width: 60%;
 }
 
 .activity-popup__no-remind::after {

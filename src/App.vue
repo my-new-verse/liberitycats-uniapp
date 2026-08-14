@@ -40,6 +40,17 @@ const systemReady = ref(false)
 const hasPendingIntent = ref(true) // 首次启动默认需要处理深链
 let hasEnteredBackground = false
 
+// 登录成功或切换账号后，以新用户身份立即尝试展示一次活动弹窗。
+// ActivityPopup 会继续按“用户 ID + 活动 ID”判断该用户是否设置过不再提醒。
+watch(
+  () => userStore.userInfo.member_id,
+  (userId, previousUserId) => {
+    if (!userId || userId === previousUserId) return
+    popupStore.resetStartupSession(true)
+    popupStore.fetchForStartup()
+  },
+)
+
 onLaunch(() => {
   console.log('App Launch', uni.getSystemInfoSync())
 

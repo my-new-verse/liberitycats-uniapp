@@ -83,6 +83,14 @@ const rawRequest = <T>(options: CustomRequestOptions): Promise<IResData<T>> => {
           // uni.navigateTo({ url: '/pages/login/login' })
           console.log('401错误dddddddddddddddddddddd,清空登录')
           reject(res)
+        } else if (res.statusCode === 404) {
+          // 404错误 -> 提示资源不存在
+          !options.hideErrorToast &&
+            uni.showToast({
+              icon: 'none',
+              title: t('common.request.not_found'),
+            })
+          reject(res)
         } else {
           // 其他错误 -> 根据后端错误信息轻提示
           !options.hideErrorToast &&
@@ -105,7 +113,10 @@ const rawRequest = <T>(options: CustomRequestOptions): Promise<IResData<T>> => {
           errorMsg = t('common.request.network.slow')
         } else if (err.errMsg.indexOf('abort') !== -1) {
           errorMsg = t('common.request.cancelled')
-        } else if (err.errMsg.indexOf('404') !== -1) {
+        } else if (
+          err.errMsg.indexOf('404') !== -1 ||
+          err.errMsg.indexOf('could not be found') !== -1
+        ) {
           errorMsg = t('common.request.not_found')
         } else {
           errorMsg = t('common.request.network.error')

@@ -49,6 +49,7 @@
   "common.no_data": "沒有數據",
   "common.noMore": "沒有更多了",
   "common.request.error": "請求錯誤",
+  "common.request.not_found": "資源不存在",
   "common.request.network.error": "網絡錯誤,請切換網絡再試",
   "common.request.network.disconnected": "似乎已斷開與互聯網的連接",
   "common.request.network.slow": "當前網路較慢，請稍後重試",

@@ -48,6 +48,7 @@
   "common.no_data": "No Data",
   "common.noMore": "No more",
   "common.request.error": "Request Error",
+  "common.request.not_found": "Resource not found",
   "common.request.network.error": "Network Error,Change Network and Try Again",
   "common.request.network.disconnected": "Seems to be disconnected from the internet",
   "common.request.network.slow": "Network slow, please retry later",

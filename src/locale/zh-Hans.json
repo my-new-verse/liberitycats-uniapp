@@ -49,6 +49,7 @@
   "common.no_data": "无数据",
   "common.noMore": "没有更多了",
   "common.request.error": "请求错误",
+  "common.request.not_found": "资源不存在",
   "common.request.network.error": "网络错误,请切换网络再试",
   "common.request.network.disconnected": "似乎已断开与互联网的连接",
   "common.request.network.slow": "当前网络较慢，请稍后重试",
