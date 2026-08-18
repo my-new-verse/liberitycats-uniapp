@@ -1,0 +1,4 @@
+interface:
+  display_name: "uni-app Official Docs"
+  short_description: "Use scoped DCloud docs for this uni-app project"
+  default_prompt: "Use $using-uni-app-official-docs to verify this change against official uni-app documentation."

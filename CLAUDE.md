@@ -6,7 +6,7 @@
 
 - **Name**: EasyUniapp2 / liberitycats-uniapp
 - **Stack**: UniApp + Vue 3 + TypeScript + UnoCSS + wot-design-uni + Pinia
-- **Platforms**: iOS/Android App (also supports H5, WeChat miniprogram)
+- **Platforms**: H5 and iOS/Android App; mini programs and HarmonyOS are out of scope
 - **Package manager**: pnpm (enforced via preinstall)
 
 ## Key Directories
@@ -27,7 +27,6 @@
 
 ```bash
 pnpm dev:h5          # H5 dev server (localhost)
-pnpm dev:mp-weixin   # WeChat miniprogram → dist/dev/mp-weixin
 pnpm dev:app         # App → dist/dev/app (import in HBuilderX)
 pnpm build:app       # App production build (runs build-app.sh)
 pnpm build:h5        # H5 production build → dist/build/h5

@@ -4,34 +4,68 @@
 
 This is a uni-app cross-platform frontend project built with Vue 3, TypeScript, Vite, Pinia, UnoCSS, SCSS, and modern uni-app tooling.
 
-Agents must preserve compatibility across the platforms this project targets, especially H5, mini programs, and App builds. Treat uni-app runtime behavior as the boundary for architectural decisions: a solution that works in a browser only is not complete unless it is guarded or intentionally scoped to H5.
+Agents must preserve compatibility across the platforms this project targets: H5 and App (Android/iOS). This project does not currently target mini programs (`mp`, `mp-weixin`, or `mp-alipay`) or HarmonyOS; do not add compatibility branches, implementation work, or validation requirements for those platforms unless the project scope changes explicitly. Treat uni-app runtime behavior as the boundary for architectural decisions: a solution that works in a browser only is not complete unless it is guarded or intentionally scoped to H5.
 
 ## Source Of Truth And Precedence
 
 1. The current repository configuration and code are the source of truth.
-2. uni-app platform constraints take precedence over generic Vue, Vite, or browser assumptions.
-3. Existing project patterns take precedence over new abstractions or external preferences.
-4. The [feige996/unibest](https://github.com/feige996/unibest) repository is the primary concrete reference for uni-app project structure, workflow, Vue TypeScript patterns, API conventions, styling conventions, and platform handling.
-5. The [antfu/skills](https://github.com/antfu/skills) repository is an external skill reference only. Do not copy its detailed rules into this project or treat them as embedded project rules.
+2. For framework behavior, APIs, components, lifecycle, configuration, and platform compatibility, use the traditional Vue 3 uni-app content from DCloud's [unidocs-zh](https://gitcode.com/dcloud/unidocs-zh) through the repository skill described below.
+3. uni-app platform constraints take precedence over generic Vue, Vite, or browser assumptions.
+4. Existing project patterns take precedence over new abstractions or external preferences. Use [feige996/unibest](https://github.com/feige996/unibest) as the concrete secondary reference for project structure, workflow, Vue TypeScript patterns, API conventions, styling, and platform handling.
+5. Use [antfu/skills](https://github.com/antfu/skills) only for general Vue, Vite, Pinia, Vitest, and TypeScript guidance after checking this repository and the scoped official DCloud material.
 6. When references conflict, prefer this repository's actual `package.json`, config files, runtime constraints, and established code style.
+
+## Official DCloud Knowledge Skill
+
+This repository includes the `using-uni-app-official-docs` Agent Skill at `.agents/skills/using-uni-app-official-docs/`. Use it when implementing, reviewing, or diagnosing uni-app framework behavior, APIs, components, lifecycle, configuration, H5/App compatibility, or an explicitly requested uniCloud feature.
+
+The generated official-document cache lives at `.agent-knowledge/dcloud/` and is intentionally ignored by Git. Check whether it is initialized with:
+
+```bash
+test -f .agent-knowledge/dcloud/current.json
+```
+
+If the check fails, or before a documentation-dependent task when network access is available and current upstream documentation matters, initialize or refresh it with:
+
+```bash
+node .agents/skills/using-uni-app-official-docs/scripts/sync-sources.mjs
+```
+
+The sync command atomically records source commits in `.agent-knowledge/dcloud/current.json`. A failed refresh leaves the prior valid cache available. Explicit invocation is `$using-uni-app-official-docs` in Codex and `/using-uni-app-official-docs` in Claude Code. The skill provides filtered search commands and records the synchronized source commits.
+
+- Traditional uni-app source: DCloud [`unidocs-zh`](https://gitcode.com/dcloud/unidocs-zh), `master` branch, plus its declared [`docs-common`](https://gitcode.com/dcloud/docs-common) `main` dependency for shared pages such as conditional compilation. Use only Vue 3 traditional uni-app content applicable to H5 and App.
+- Optional uniCloud source: DCloud [`uni-agent-knowledges`](https://gitcode.com/dcloud/uni-agent-knowledges), `main` branch, sparse-checkout of `knowledges/unicloud` only. Use it only when the user explicitly asks about uniCloud or the repository contains real uniCloud integration.
+- Never use `uni-app x`, UTS, UVue, HarmonyOS, or mini-program material for this project. Do not install `unidocs-zh`, `docs-common`, or `uni-agent-knowledges` with a skill installer: they are source documentation/knowledge repositories without a `SKILL.md`, not Agent Skills.
+
+Codex discovers repository skills directly from `.agents/skills`; do not create a redundant `.codex/skills` copy. Claude Code discovers the same canonical skill through the committed `.claude/skills/using-uni-app-official-docs` symbolic link. Other Agent Skills-compatible tools should reference the same canonical folder instead of copying it.
 
 ## Required External Skills
 
-Developers and agents should install or make available [antfu/skills](https://github.com/antfu/skills):
+This project uses exactly these external skills from [antfu/skills](https://github.com/antfu/skills): `antfu`, `vue`, `vue-best-practices`, `pinia`, `vite`, and `vitest`. Do not install the repository wildcard set unless this list is intentionally expanded.
+
+On a fresh checkout, restore the pinned set from the committed `skills-lock.json`:
 
 ```bash
-pnpx skills add antfu/skills --skill='*'
+pnpx skills experimental_install
 ```
 
-This installs skills into `.agents/skills/` only. Claude Code, Codex, and Cursor each read their own skill directory (`.claude/skills/`, `.codex/skills/`, `.cursor/skills/` respectively) and do not look inside `.agents/skills/`. After installing or updating skills, link `.agents/skills/` into whichever tool directories are in use, for example:
+Only when intentionally creating or changing the required set, regenerate it explicitly and review the resulting `skills-lock.json` diff:
 
 ```bash
-ln -s ../.agents/skills .claude/skills
-ln -s ../.agents/skills .codex/skills
-ln -s ../.agents/skills .cursor/skills
+pnpx skills add antfu/skills \
+  --skill antfu vue vue-best-practices pinia vite vitest \
+  --yes
 ```
 
-Then reload skills in the running tool (e.g. restart the session or re-run its skill discovery) so the linked skills are picked up.
+The generated external skill directories under `.agents/skills/` are ignored by Git; `skills-lock.json` is the reproducible source of truth. Codex discovers them directly from `.agents/skills/`. Claude Code uses the committed per-skill links under `.claude/skills/`, all pointing back to the same canonical directories. Do not copy skill directories into tool-specific locations.
+
+Verify the installed project skills with:
+
+```bash
+pnpx skills list --json
+```
+
+The output must contain the six required external skills plus the repository-owned `using-uni-app-official-docs` skill, and no other external skills. Restart an already-running agent only if its skill list does not refresh.
 
 Consult these skills when relevant, but do not paste their detailed contents into this file:
 
@@ -102,10 +136,10 @@ This checkout does not currently expose `lint`, `lint:fix`, `test`, or `test:run
 Before claiming a task is complete:
 
 - Run `pnpm type-check` for TypeScript or Vue changes when feasible.
-- Run the relevant build command for platform-sensitive changes, for example `pnpm build:h5`, `pnpm build:mp`, or `pnpm build:app`.
+- Run the relevant build command for platform-sensitive changes, for example `pnpm build:h5` or `pnpm build:app`.
 - If a branch adds real lint or test scripts, run the exact script names from `package.json`.
 - For App-specific changes, check `APP-PLUS` branches and report whether device or HBuilderX validation was performed.
-- For mini program changes, check conditional compilation and report whether a mini program build was run.
+- Mini program and HarmonyOS builds are outside the current project scope and are not required for validation.
 - If validation cannot be run, state why and list the commands or platforms that were not verified.
 
 Documentation-only changes do not require app builds, but still require reading the changed file before finishing.
@@ -126,10 +160,14 @@ Documentation-only changes do not require app builds, but still require reading 
 
 ## uni-app Conventions
 
+- Treat this checkout as a Vue 3 CLI/Vite uni-app project. Use the checked-in pnpm scripts and source configuration; do not apply HBuilderX-only project layout or workflows unless an App validation step explicitly requires HBuilderX.
+- Put page lifecycle behavior such as `onLoad`, `onShow`, and `onUnload` in page SFCs. Use Vue component lifecycle hooks for reusable components, and move reusable stateful behavior into composables without pretending component hooks are page hooks.
 - Use uni-app APIs such as `uni.request`, `uni.navigateTo`, `uni.showToast`, and page lifecycle hooks instead of browser-only APIs.
 - Guard browser-only APIs with platform checks or conditional compilation.
 - Preserve conditional compilation blocks such as `#ifdef H5`, `#ifdef APP-PLUS`, and `#ifndef H5`.
-- Keep H5, mini program, and App behavior separate when their runtime APIs differ.
+- Keep H5 and App behavior separate when their runtime APIs differ.
+- Before adopting an unfamiliar component, API, manifest option, or platform-sensitive pattern, use `using-uni-app-official-docs` and verify the official compatibility information for both H5 and App. Ignore rows for excluded targets.
+- Treat App WebView APIs, `plus` APIs, native plugins, permissions, and packaging as App-only boundaries. Do not expose them to H5 code without a guarded interface and an intentional fallback.
 - Define page route metadata in page route blocks or `pages.config.ts` according to the existing pattern.
 - Do not manually edit generated page or manifest output when the source config is available.
 - Respect `easycom` usage for Wot Design Uni and z-paging components.
@@ -162,7 +200,7 @@ Documentation-only changes do not require app builds, but still require reading 
 - Prefer utility classes for layout and common styling when they are already used in the surrounding file.
 - Use scoped `lang="scss"` styles for component-specific CSS.
 - Put shared global styles under `src/style/`.
-- Keep mini program limitations in mind. The UnoCSS config uses applet presets for mini program platforms and different presets for non-mini-program platforms.
+- Existing mini program-related UnoCSS configuration may remain, but mini program compatibility is outside the current project scope.
 - Prefer `rpx` for cross-device uni-app sizing where appropriate.
 - Do not introduce a new styling system without a strong reason and explicit approval.
 - Avoid broad visual rewrites when the task is a targeted behavior or data change.
@@ -196,6 +234,6 @@ When changing architecture, explain the tradeoffs and why the new boundary fits 
 - Keep changes scoped to the requested behavior.
 - Prefer conventional commit style if the surrounding history uses it.
 - Mention validation commands and their results.
-- Mention platform impact for H5, mini program, and App when relevant.
+- Mention platform impact for H5 and App when relevant.
 - Call out generated files separately if they changed.
 - Do not mix unrelated cleanup with feature work.

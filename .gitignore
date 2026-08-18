@@ -52,13 +52,28 @@ mp-360/
 *.local
 
 # 外部技能（antfu/skills 通过 skills-lock.json 复现）
-.agents/
-.claude/
+.agents/*
+!.agents/skills/
+.agents/skills/*
+!.agents/skills/using-uni-app-official-docs/
+!.agents/skills/using-uni-app-official-docs/**
+.claude/*
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/antfu
+!.claude/skills/pinia
+!.claude/skills/using-uni-app-official-docs
+!.claude/skills/vite
+!.claude/skills/vitest
+!.claude/skills/vue
+!.claude/skills/vue-best-practices
 .codex/
 .cursor/
 .codegraph/
 
+# 可从 DCloud 官方源重新同步的 Agent 知识缓存
+.agent-knowledge/
+
 # WeChat Mini Program & Others
 project.config.json
 project.private.config.json
-
