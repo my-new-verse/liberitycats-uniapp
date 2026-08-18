@@ -14,10 +14,12 @@
       <view class="version" v-if="version">{{ version }}</view>
     </view>
     <view class="contentBox">
-      <view>{{ t('my.menu.update.popup.current_version') }}:{{ currentVersion }}</view>
+      <view style="color: #000">
+        {{ t('my.menu.update.popup.current_version') }}:{{ currentVersion }}
+      </view>
       <view class="content-title">{{ t('my.menu.update.popup.content_title') }}</view>
       <scroll-view class="scrollBox" :scroll-y="true">
-        <rich-text :nodes="content"></rich-text>
+        <rich-text :nodes="content" style="color: #333"></rich-text>
       </scroll-view>
     </view>
     <view v-if="isDownloading" class="progress">
