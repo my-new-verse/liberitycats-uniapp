@@ -19,7 +19,7 @@
       </view>
       <view class="content-title">{{ t('my.menu.update.popup.content_title') }}</view>
       <scroll-view class="scrollBox" :scroll-y="true">
-        <rich-text :nodes="content" style="color: #333"></rich-text>
+        <rich-text :nodes="content" style="color: #000"></rich-text>
       </scroll-view>
     </view>
     <view v-if="isDownloading" class="progress">
