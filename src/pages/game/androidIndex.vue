@@ -11,7 +11,6 @@
             text: '关闭',
             fontSize: '14px',
             width: '80rpx',
-            onclick: 'closeGame',
           },
         ],
       },
@@ -44,14 +43,10 @@
       </view>
     </view>
 
-    <!-- 交互提示层：用户点击后才展示 WebView -->
-    <view
-      v-if="showInteractionHint && !resourceDownloading"
-      class="interaction-hint"
-      @click="handleUserInteraction"
-    >
-      <view class="hint-content">
-        <text>{{ t('game.opening') }}</text>
+    <!-- 游戏 WebView 加载完成前的居中提示 -->
+    <view v-if="showEnteringGame && !resourceDownloading" class="entering-game">
+      <view class="entering-game-content">
+        <text>{{ t('game.entering') }}</text>
       </view>
     </view>
 
@@ -64,23 +59,24 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
-import { onLoad, onUnload } from '@dcloudio/uni-app'
+import { onLoad, onNavigationBarButtonTap, onUnload } from '@dcloudio/uni-app'
 import {
   applyResourceOverride,
   ensureGameResourcesReady,
   backgroundDownloadState,
+  gameResourceLoadState,
 } from '@/utils/webviewResourceCache'
 import { t } from '@/locale/index'
 
 declare const plus: any
 
 const gameUrl = ref('')
-const showInteractionHint = ref(true)
+const showEnteringGame = ref(true)
 const debugInfo = ref('')
 
 // 资源下载状态
 // 仅在实际下载时展示 loading，避免 API 检查阶段闪烁
-const resourceDownloading = computed(() => backgroundDownloadState.value.running)
+const resourceDownloading = computed(() => gameResourceLoadState.value !== 'ready')
 const resourceProgress = ref(0)
 
 // 监听后台下载进度
@@ -94,6 +90,11 @@ watch(
 
 // 原生 WebView 实例
 let nativeWebview: any = null
+let gameLoadStarted = false
+let nativeWebviewId = ''
+let closingPage = false
+let gestureStartX = 0
+let gestureStartY = 0
 
 /** 获取当前页面 WebView */
 const getCurrentPageWebview = () => {
@@ -104,39 +105,80 @@ const getCurrentPageWebview = () => {
 
 /** 加载成功回调 */
 const handleLoaded = () => {
+  if (!gameLoadStarted) return
   debugInfo.value = ''
-  // WebView 已加载完毕，若用户已点击交互层则立即显示，否则等待用户点击
-  if (!showInteractionHint.value) {
-    // #ifdef APP-PLUS
-    try {
-      nativeWebview?.setVisible(true)
-    } catch (_) {}
-    // #endif
-  }
+  // #ifdef APP-PLUS
+  try {
+    nativeWebview?.setVisible(true)
+    showEnteringGame.value = false
+  } catch (_) {}
+  // #endif
 }
 
 /** 加载失败回调 */
 const handleError = (err?: any) => {
   console.warn('[GameIndex] webview load error', err)
   debugInfo.value = `加载失败: ${JSON.stringify(err)}`
+  showEnteringGame.value = false
   uni.showToast({ title: '游戏加载失败，请重试', icon: 'none' })
 }
-const currentWebview = getCurrentPageWebview()
 
+function closeGamePage() {
+  if (closingPage) return
+  closingPage = true
+  destroyNativeWebview()
+  uni.navigateBack({ delta: 1 })
+}
+
+const handleTouchStart = (event: any) => {
+  const touch = event?.touches?.[0]
+  gestureStartX = Number(touch?.clientX ?? touch?.screenX ?? 0)
+  gestureStartY = Number(touch?.clientY ?? touch?.screenY ?? 0)
+}
+
+const handleTouchEnd = (event: any) => {
+  const touch = event?.changedTouches?.[0]
+  const endX = Number(touch?.clientX ?? touch?.screenX ?? 0)
+  const endY = Number(touch?.clientY ?? touch?.screenY ?? 0)
+  const deltaX = endX - gestureStartX
+  const deltaY = endY - gestureStartY
+  const screenWidth = uni.getSystemInfoSync().windowWidth || 375
+  const fromLeftEdge = gestureStartX <= 32 && deltaX >= 60
+  const fromRightEdge = gestureStartX >= screenWidth - 32 && deltaX <= -60
+
+  if ((fromLeftEdge || fromRightEdge) && Math.abs(deltaX) > Math.abs(deltaY)) {
+    closeGamePage()
+  }
+}
+
+const handleNativeWebviewClose = () => {
+  nativeWebview = null
+  nativeWebviewId = ''
+  gameLoadStarted = false
+  if (!closingPage) {
+    closingPage = true
+    uni.navigateBack({ delta: 1 })
+  }
+}
 /** 创建原生 WebView，在 loadURL 前注入 overrideResourceRequest */
 async function createNativeWebview(url: string) {
-  if (typeof plus === 'undefined') return
+  if (typeof plus === 'undefined' || closingPage) return
 
+  const currentWebview = getCurrentPageWebview()
   if (!currentWebview) {
     console.warn('[GameIndex] 无法获取当前页面 webview')
     return
   }
 
+  nativeWebviewId = `game-native-webview-${Date.now()}`
+
   // 创建时不传 url，初始隐藏，等注入拦截规则后再 loadURL
-  nativeWebview = plus.webview.create('', 'game-native-webview', {
+  nativeWebview = plus.webview.create('', nativeWebviewId, {
     top: '0px',
     bottom: '0px',
     width: '100%',
+    // background: '#fff8f2',
+    // background: ' #ff6b03',
     background: 'transparent',
     hardwareAccelerated: true,
     domStorage: true,
@@ -161,6 +203,9 @@ async function createNativeWebview(url: string) {
   nativeWebview.addEventListener?.('error', handleError)
   nativeWebview.addEventListener?.('loaderror', handleError)
   nativeWebview.addEventListener?.('receivedError', handleError)
+  nativeWebview.addEventListener?.('touchstart', handleTouchStart)
+  nativeWebview.addEventListener?.('touchend', handleTouchEnd)
+  nativeWebview.addEventListener?.('close', handleNativeWebviewClose)
 
   // 在 loadURL 前注入资源拦截规则（先验证文件存在）
   currentWebview.append(nativeWebview)
@@ -168,6 +213,7 @@ async function createNativeWebview(url: string) {
   console.log('[GameIndex] 已注入资源拦截，开始加载 URL:', url)
 
   // 拦截规则注入后再加载 URL
+  gameLoadStarted = true
   nativeWebview.loadURL(url)
 }
 
@@ -180,20 +226,15 @@ function destroyNativeWebview() {
   nativeWebview.removeEventListener?.('error', handleError)
   nativeWebview.removeEventListener?.('loaderror', handleError)
   nativeWebview.removeEventListener?.('receivedError', handleError)
+  nativeWebview.removeEventListener?.('touchstart', handleTouchStart)
+  nativeWebview.removeEventListener?.('touchend', handleTouchEnd)
+  nativeWebview.removeEventListener?.('close', handleNativeWebviewClose)
   try {
-    nativeWebview.close?.()
+    nativeWebview.close?.('none')
   } catch (_) {}
   nativeWebview = null
-}
-
-/** 用户点击交互层，展示已预加载的 WebView */
-const handleUserInteraction = () => {
-  showInteractionHint.value = false
-  // #ifdef APP-PLUS
-  try {
-    nativeWebview?.setVisible(true)
-  } catch (_) {}
-  // #endif
+  nativeWebviewId = ''
+  gameLoadStarted = false
 }
 
 onLoad(async (options: any) => {
@@ -208,7 +249,9 @@ onLoad(async (options: any) => {
       try {
         await ensureGameResourcesReady(gameType)
       } catch (e) {
-        console.warn('[GameIndex] 资源准备失败，降级直接加载', e)
+        console.warn('[GameIndex] 资源准备失败，阻止展示游戏 WebView', e)
+        uni.showToast({ title: '游戏资源尚未准备完成', icon: 'none' })
+        return
       }
     }
 
@@ -223,7 +266,12 @@ onLoad(async (options: any) => {
 })
 
 onUnload(() => {
+  closingPage = true
   destroyNativeWebview()
+})
+
+onNavigationBarButtonTap(() => {
+  closeGamePage()
 })
 </script>
 
@@ -233,7 +281,8 @@ onUnload(() => {
   width: 100%;
   height: 100vh;
   overflow: hidden;
-  background-color: #000;
+  // background-color: #fff8f2;
+  background: linear-gradient(329deg, #ff6b03 0%, #ee941a 100%);
 }
 
 /* 资源下载中 */
@@ -290,7 +339,7 @@ onUnload(() => {
   }
 }
 
-.interaction-hint {
+.entering-game {
   position: fixed;
   top: 0;
   right: 0;
@@ -302,7 +351,7 @@ onUnload(() => {
   justify-content: center;
   background-color: rgba(0, 0, 0, 0.85);
 
-  .hint-content {
+  .entering-game-content {
     font-size: 32rpx;
     font-weight: 600;
     color: #fff;

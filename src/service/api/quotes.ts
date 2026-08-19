@@ -37,6 +37,8 @@ export const getCollectionDetailApi = () => {
 
 export interface getInvestmentPortfolioEntryTokenApiResponse {
   jumpUrl: string
+  /** 临时 token 有效期，单位：秒 */
+  tempTokenExpiresIn: number
 }
 
 export const getInvestmentPortfolioEntryTokenApi = () => {

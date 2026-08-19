@@ -58,3 +58,15 @@ export const buildGameUrlWithToken = (jumpUrl: string, tempToken: string) => {
   const nextQuery = buildQuery(params)
   return `${path}${nextQuery ? `?${nextQuery}` : ''}${hash}`
 }
+
+/** 在小游戏 URL 中写入音频开关参数，并替换已有的同名参数。 */
+export const buildGameUrlWithAudioSetting = (jumpUrl: string, isAudioOn = false) => {
+  if (!jumpUrl) return ''
+
+  const { path, query, hash } = splitUrlParts(jumpUrl)
+  const params = parseQuery(query)
+  params.isAudioOn = String(isAudioOn)
+
+  const nextQuery = buildQuery(params)
+  return `${path}${nextQuery ? `?${nextQuery}` : ''}${hash}`
+}

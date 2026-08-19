@@ -114,8 +114,7 @@
               {
                 "text": "关闭",
                 "fontSize": "14px",
-                "width": "80rpx",
-                "onclick": "closeGame"
+                "width": "80rpx"
               }
             ]
           },

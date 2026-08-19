@@ -1,0 +1,217 @@
+<script setup lang="ts">
+import { computed } from 'vue'
+import { t } from '@/locale/index'
+
+type ResourceLoadState = 'idle' | 'loading' | 'ready' | 'failed'
+
+const props = defineProps<{
+  modelValue: boolean
+  state: ResourceLoadState
+}>()
+
+const emit = defineEmits<{
+  (event: 'update:modelValue', value: boolean): void
+  (event: 'retry'): void
+  (event: 'enter'): void
+}>()
+
+const isLoading = computed(() => props.state !== 'ready' && props.state !== 'failed')
+const dialogTitle = computed(() => {
+  if (props.state === 'ready') return t('game.resource.dialog.title.ready')
+  if (props.state === 'failed') return t('game.resource.dialog.title.failed')
+  return t('game.resource.dialog.title.loading')
+})
+const close = () => emit('update:modelValue', false)
+</script>
+
+<template>
+  <view v-if="modelValue" class="resource-dialog-mask">
+    <view class="resource-dialog">
+      <view class="resource-dialog-close" @click="close">
+        <wd-icon name="close" size="22px" color="#7f7f7f" />
+      </view>
+
+      <view class="resource-dialog-status">
+        <view v-if="isLoading" class="resource-dialog-spinner" />
+        <wd-icon
+          v-else-if="state === 'ready'"
+          name="check-circle-filled"
+          size="58rpx"
+          color="#35b779"
+        />
+        <wd-icon v-else name="warning" size="58rpx" color="#ff6b03" />
+      </view>
+
+      <view class="resource-dialog-title">{{ dialogTitle }}</view>
+
+      <template v-if="isLoading">
+        <view class="resource-dialog-description">
+          <text>{{ t('game.resource.dialog.first_download') }}</text>
+          <text>{{ t('game.resource.dialog.estimated_time_prefix') }}</text>
+          <text class="resource-dialog-highlight">
+            {{ t('game.resource.dialog.estimated_time') }}
+          </text>
+          <text>{{ t('game.resource.dialog.estimated_time_suffix') }}</text>
+          <text class="resource-dialog-description-line">
+            {{ t('game.resource.dialog.please_wait') }}
+          </text>
+        </view>
+
+        <view class="resource-dialog-network">{{ t('game.resource.dialog.network_tip') }}</view>
+
+        <view class="resource-dialog-notice">
+          <wd-icon name="warning" size="34rpx" color="#ff6b03" />
+          <view class="resource-dialog-notice-text">
+            <text>{{ t('game.resource.dialog.notice_prefix') }}</text>
+            <text class="resource-dialog-highlight">
+              {{ t('game.resource.dialog.notice_highlight') }}
+            </text>
+            <text class="resource-dialog-notice-line">
+              {{ t('game.resource.dialog.notice_suffix') }}
+            </text>
+          </view>
+        </view>
+      </template>
+
+      <template v-else>
+        <view class="resource-dialog-result">
+          {{
+            state === 'ready'
+              ? t('game.resource.dialog.content.ready')
+              : t('game.resource.dialog.content.failed')
+          }}
+        </view>
+        <view v-if="state === 'ready'" class="resource-dialog-action" @click="emit('enter')">
+          {{ t('game.resource.dialog.enter') }}
+        </view>
+        <view v-else class="resource-dialog-action" @click="emit('retry')">
+          {{ t('game.resource.dialog.retry') }}
+        </view>
+      </template>
+    </view>
+  </view>
+</template>
+
+<style lang="scss" scoped>
+.resource-dialog-mask {
+  position: fixed;
+  z-index: 9999;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32rpx;
+  background: rgba(0, 0, 0, 0.42);
+}
+
+.resource-dialog {
+  position: relative;
+  box-sizing: border-box;
+  width: 620rpx;
+  padding: 58rpx 40rpx 34rpx;
+  overflow: hidden;
+  text-align: center;
+  background: #ffffff;
+  border-radius: 34rpx;
+  box-shadow: 0 24rpx 80rpx rgba(35, 20, 10, 0.18);
+}
+
+.resource-dialog-close {
+  position: absolute;
+  top: 18rpx;
+  right: 18rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64rpx;
+  height: 64rpx;
+}
+
+.resource-dialog-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 64rpx;
+}
+
+.resource-dialog-spinner {
+  box-sizing: border-box;
+  width: 58rpx;
+  height: 58rpx;
+  border: 6rpx solid #ffe1ce;
+  border-top-color: #ff6b03;
+  border-radius: 50%;
+  animation: resource-dialog-spin 0.9s linear infinite;
+}
+
+.resource-dialog-title {
+  margin-top: 30rpx;
+  font-size: 38rpx;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #333333;
+}
+
+.resource-dialog-description {
+  margin-top: 22rpx;
+  font-size: 27rpx;
+  line-height: 1.65;
+  color: #888888;
+}
+
+.resource-dialog-description-line,
+.resource-dialog-notice-line {
+  display: block;
+}
+
+.resource-dialog-highlight {
+  font-weight: 600;
+  color: #ff6b03;
+}
+
+.resource-dialog-network {
+  margin-top: 20rpx;
+  padding: 0 30rpx;
+  font-size: 24rpx;
+  line-height: 1.6;
+  color: #999999;
+}
+
+.resource-dialog-notice {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 12rpx;
+  margin-top: 28rpx;
+  padding-top: 24rpx;
+  border-top: 1rpx solid #eeeeee;
+}
+
+.resource-dialog-notice-text {
+  font-size: 23rpx;
+  line-height: 1.55;
+  color: #888888;
+  text-align: left;
+}
+
+.resource-dialog-result {
+  padding: 22rpx 20rpx 36rpx;
+  font-size: 28rpx;
+  line-height: 1.6;
+  color: #888888;
+}
+
+.resource-dialog-action {
+  padding: 22rpx 20rpx 0;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #ff6b03;
+  border-top: 1rpx solid #eeeeee;
+}
+
+@keyframes resource-dialog-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+</style>

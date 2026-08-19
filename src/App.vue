@@ -9,9 +9,11 @@ import { t } from './locale'
 import buildInfo from '@/../build-info.json'
 import { useSystemStore } from '@/store/system'
 import { getGameParamsApi } from '@/service/api/game'
+import { buildGameUrlWithAudioSetting } from '@/utils/gameUrl'
 // import { scheduleDualGamePreload } from '@/utils/plusGameWebViewPool'
 import { useGameWebViewStore } from '@/store/gameWebview'
 import { usePopupStore } from '@/store/popup'
+import { preloadIosGameWebView } from '@/utils/iosGameWebviewPreload'
 import {
   downloadGameResources,
   resumeBackgroundDownloadIfNeeded,
@@ -20,12 +22,6 @@ import {
 
 // 扩展 Plus 对象类型，避免 TS 报错
 declare const plus: any
-
-interface GameConfig {
-  gameType: string
-  url: string
-  tempToken?: string
-}
 
 const systemStore = useSystemStore()
 const gameWebviewStore = useGameWebViewStore()
@@ -92,6 +88,28 @@ onLaunch(() => {
     // 全局只请求一次，首个已挂载的页面布局负责展示。
     popupStore.fetchForStartup()
 
+    // #ifdef APP-PLUS
+    // 获取推送CID，用于定向推送（需在网络就绪后调用）
+    // uni.getPushClientId({
+    //   success: (res) => {
+    //     const cid = res.clientId
+    //     console.log('推送CID：', cid)
+    //     uni.showModal({
+    //       title:'',
+    //       content: cid
+    //     })
+    //     // TODO: 把 cid 传给后端，用于定向推送
+    //   },
+    //   fail: (err) => {
+    //     console.error('获取CID失败：', err)
+    //       uni.showToast({
+    //               icon: 'none',
+    //               title: '获取CID失败',
+    //             })
+    //   },
+    // })
+    // #endif
+
     uni.removeStorageSync('app_update_close')
     getSystemConfigApiV2(version, platform).then((res) => {
       uni.setStorageSync('systemConfigV2', res.data)
@@ -105,6 +123,8 @@ onLaunch(() => {
       uni.setStorageSync('agreements', res.data)
       systemStore.setAgreements(res.data)
     })
+    getGameParamsApi('MATCH_THREE')
+
     // #ifdef APP-PLUS
     // Android: 预下载游戏资源（用于 overrideResourceRequest 重定向）
     if (isAndroid) {
@@ -112,7 +132,7 @@ onLaunch(() => {
     } else {
       // iOS: 预加载游戏 WebView
       setTimeout(() => {
-        preloadGameWebViews()
+        preloadIosGameWebView()
       }, 3000)
     }
     // #endif
@@ -270,51 +290,6 @@ const handleSchemaArgs = (args) => {
   }
 }
 
-// 预加载游戏 WebView：依次获取 MATCH_THREE 和 JUMP 的 jumpUrl 并创建隐藏 WebView
-const preloadGameWebViews = async () => {
-  // #ifdef APP-PLUS
-  const gameTypes = ['MATCH_THREE', 'JUMP'] as const
-  // 记录第一个游戏类型的 preloadResources，用于去重判断
-  let firstPreloadResourcesKey: string | null = null
-  for (const gameType of gameTypes) {
-    try {
-      console.log(`[Preload] 开始获取 ${gameType} 游戏参数...`)
-      const res = await getGameParamsApi(gameType)
-      const jumpUrl = res.data.jumpUrl || ''
-      const preloadResources = res.data.preloadResources || []
-      const preloadResourcesKey = JSON.stringify(preloadResources)
-
-      // 如果是第二个游戏且 preloadResources 与第一个相同，跳过创建
-      if (firstPreloadResourcesKey !== null && preloadResourcesKey === firstPreloadResourcesKey) {
-        console.log(`[Preload] ${gameType} 的 preloadResources 与前一个游戏相同，跳过 WebView 创建`)
-      } else if (!jumpUrl) {
-        console.warn(`[Preload] ${gameType} jumpUrl 为空，跳过`)
-      } else {
-        console.log(`[Preload] ${gameType} jumpUrl:`, jumpUrl)
-        plus.webview.create(jumpUrl, `preload-webview-${gameType}`, {
-          top: '-9999px',
-          left: '-9999px',
-          width: '1px',
-          height: '1px',
-        })
-        console.log(`[Preload] ${gameType} WebView 已创建`)
-      }
-
-      // 记录第一个游戏类型的 preloadResources
-      if (firstPreloadResourcesKey === null) {
-        firstPreloadResourcesKey = preloadResourcesKey
-      }
-    } catch (error) {
-      console.error(`[Preload] ${gameType} 预加载失败:`, error)
-    }
-    // 两个游戏之间间隔 3s
-    if (gameType === 'MATCH_THREE') {
-      await new Promise((resolve) => setTimeout(resolve, 3000))
-    }
-  }
-  // #endif
-}
-
 // 测试:创建并销毁 WebView
 const testCreateAndDestroyWebview = async () => {
   // #ifdef APP-PLUS
@@ -325,7 +300,7 @@ const testCreateAndDestroyWebview = async () => {
     const res = await getGameParamsApi('MATCH_THREE')
     console.log('[WebView测试] 获取游戏参数成功:', res)
     const gameVersion = res.data.gameVersion || ''
-    const jumpUrl = res.data.jumpUrl || ''
+    const jumpUrl = buildGameUrlWithAudioSetting(res.data.jumpUrl || '')
     // 构建游戏 URL
 
     console.log('[WebView测试] 开始创建 WebView, URL:', jumpUrl)

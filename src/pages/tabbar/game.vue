@@ -35,20 +35,26 @@
         @click="openMiniProgram"
       />
     </view>
-    <view class="gameBox gameBox1" @click="openGameUrl('MATCH_THREE')">
+    <view class="gameBox gameBox1" @click="handleGameClick('MATCH_THREE')">
       <view class="gameInfo">
         <view class="name">消消乐</view>
         <view class="memo">Matchin’ CAT</view>
       </view>
       <view class="icon icon1"></view>
     </view>
-    <view class="gameBox gameBox2" @click="openGameUrl('JUMP')">
+    <view class="gameBox gameBox2" @click="handleGameClick('JUMP')">
       <view class="gameInfo">
         <view class="name">跳一跳</view>
         <view class="memo">JUMPIN’ CAT</view>
       </view>
       <view class="icon icon2"></view>
     </view>
+    <game-resource-dialog
+      v-model="showResourceDialog"
+      :state="activeGameResourceLoadState"
+      @retry="retryGameResources"
+      @enter="enterSelectedGame"
+    />
     <wd-message-box selector="wd-message-box-slot2"></wd-message-box>
   </view>
 </template>
@@ -56,18 +62,73 @@
 <script lang="ts" setup>
 import i18n, { t } from '@/locale/index'
 import { getImageUrl, getServerOnOff, toUrl } from '@/utils'
+import GameResourceDialog from '@/components/GameResourceDialog.vue'
 
 import { useUserStore } from '@/store/user'
 import { useMessage, useToast } from 'wot-design-uni'
 import { getGameParamsApi } from '@/service/api/game'
+import { buildGameUrlWithAudioSetting } from '@/utils/gameUrl'
 import { bindArGameApi } from '@/service/api/user'
-import { debounce } from 'lodash-es'
+import {
+  backgroundDownloadState,
+  ensureGameResourcesReady,
+  gameResourceLoadState,
+  iosGameResourceLoadState,
+  retryFailed,
+} from '@/utils/webviewResourceCache'
 // import { updateGameConfigUrl } from '@/utils/plusGameWebViewPool'
 // import { buildGameUrlWithToken } from '@/utils/gameUrl'
 uni.hideTabBar()
 const userStore = useUserStore()
 const toast = useToast()
 const message2 = useMessage('wd-message-box-slot2')
+const showResourceDialog = ref(false)
+const isCheckingGameResources = ref(false)
+const currentPlatform = uni.getSystemInfoSync().platform || ''
+const activeGameResourceLoadState = computed(() =>
+  currentPlatform === 'ios'
+    ? iosGameResourceLoadState.value
+    : isCheckingGameResources.value
+      ? 'loading'
+      : gameResourceLoadState.value,
+)
+watch(
+  () => iosGameResourceLoadState.value,
+  (state) => {
+    if (currentPlatform === 'ios' && state === 'failed') {
+      showResourceDialog.value = true
+    }
+  },
+)
+const retryGameResources = () => {
+  if (currentPlatform === 'ios') {
+    userStore.preloadGameWebViews()
+    return
+  }
+
+  retryFailed().catch((error) => {
+    console.warn('[Game] 重新下载游戏资源失败:', error)
+  })
+}
+
+/** iOS 进入正式游戏前销毁 App 启动时创建的资源预加载 WebView。 */
+const destroyIosPreloadedGameWebviews = () => {
+  // #ifdef APP-PLUS
+  if (currentPlatform !== 'ios' || typeof plus === 'undefined') return
+
+  const preloadWebviewIds = ['preload-webview-MATCH_THREE', 'preload-webview-JUMP']
+  preloadWebviewIds.forEach((webviewId) => {
+    try {
+      const webview = plus.webview.getWebviewById(webviewId)
+      if (!webview) return
+      webview.close('none')
+      console.log(`[Game] 已销毁 iOS 预加载 WebView: ${webviewId}`)
+    } catch (error) {
+      console.warn(`[Game] 销毁 iOS 预加载 WebView 失败: ${webviewId}`, error)
+    }
+  })
+  // #endif
+}
 
 // 语言
 const locale = uni.getLocale()
@@ -199,13 +260,64 @@ const bindArGame = () => {
   }
 }
 
-const openGameUrl = debounce(
-  (gameType: string) => {
-    if (!userStore.isLogin) {
-      toUrl('/pages/cats/login/login', true, false)
+let preparingGame = false
+let currentDownloadRequired = false
+const selectedGameType = ref('')
+
+const handleGameClick = async (gameType: string) => {
+  if (!userStore.isLogin) {
+    toUrl('/pages/cats/login/login', true, false)
+    return
+  }
+  if (currentPlatform === 'android') {
+    if (preparingGame) {
+      // 纯检测阶段保持静默；已确认缺失且正在下载时，每次点击都重新展示弹窗。
+      if (currentDownloadRequired) showResourceDialog.value = true
       return
     }
+    selectedGameType.value = gameType
+    preparingGame = true
+    currentDownloadRequired = false
+    isCheckingGameResources.value = true
+    showResourceDialog.value = false
+    let downloadRequired = false
+    try {
+      await ensureGameResourcesReady(gameType, {
+        onDownloadRequired: () => {
+          downloadRequired = true
+          currentDownloadRequired = true
+          showResourceDialog.value = true
+        },
+      })
+      if (!downloadRequired) {
+        await openGameUrl(gameType, currentPlatform)
+      }
+    } catch (error) {
+      console.warn('[Game] 校验游戏资源失败:', error)
+    } finally {
+      isCheckingGameResources.value = false
+      preparingGame = false
+    }
+    return
+  }
 
+  selectedGameType.value = gameType
+
+  if (currentPlatform === 'ios' && iosGameResourceLoadState.value !== 'ready') {
+    showResourceDialog.value = true
+    return
+  }
+
+  showResourceDialog.value = false
+  openGameUrl(gameType, currentPlatform)
+}
+
+let openingGame = false
+
+const openGameUrl = async (gameType: string, platform: string) => {
+  if (openingGame) return
+  openingGame = true
+  try {
     //   const gameEnableKey = 'game_' + gameType + '_enable'
     //   const gameEnable = getServerOnOff(gameEnableKey, 'common')
     //   const gameUrlKey = 'game_' + gameType + '_url'
@@ -217,24 +329,36 @@ const openGameUrl = debounce(
     //     return
     //   }
 
-    getGameParamsApi(gameType).then((res) => {
-      const token = res.data.tempToken || ''
-      console.log('token', token)
-      if (!token) {
-        toast.show(t('game.toast.game_not_open'))
-        return
-      }
-      // 把token拼接到url上，注意url本身可能带参数
-      // const url = gameUrl + (gameUrl.includes('?') ? '&' : '?') + 'token=' + token
-      const url = res.data.jumpUrl
-      const platform = uni.getSystemInfoSync().platform || ''
-      const gamePage = platform === 'android' ? '/pages/game/androidIndex' : '/pages/game/index'
-      toUrl(gamePage + '?url=' + encodeURIComponent(url) + '&gameType=' + gameType)
-    })
-  },
-  3000,
-  { leading: true, trailing: false },
-)
+    const res = await getGameParamsApi(gameType)
+    const token = res.data.tempToken || ''
+    console.log('token', token)
+    if (!token) {
+      toast.show(t('game.toast.game_not_open'))
+      return
+    }
+    // 把token拼接到url上，注意url本身可能带参数
+    // const url = gameUrl + (gameUrl.includes('?') ? '&' : '?') + 'token=' + token
+    const url = buildGameUrlWithAudioSetting(res.data.jumpUrl || '', true)
+    const gamePage = platform === 'android' ? '/pages/game/androidIndex' : '/pages/game/index'
+    if (platform === 'ios') {
+      destroyIosPreloadedGameWebviews()
+    }
+    toUrl(
+      gamePage + '?url=' + encodeURIComponent(url) + '&gameType=' + gameType + '&isAudioOn=false',
+    )
+  } catch (error) {
+    console.warn('[Game] 获取游戏参数失败:', error)
+    toast.show(t('game.toast.game_not_open'))
+  } finally {
+    openingGame = false
+  }
+}
+
+const enterSelectedGame = async () => {
+  if (!selectedGameType.value || activeGameResourceLoadState.value !== 'ready') return
+  showResourceDialog.value = false
+  await openGameUrl(selectedGameType.value, currentPlatform)
+}
 </script>
 
 <style lang="scss" scoped>
