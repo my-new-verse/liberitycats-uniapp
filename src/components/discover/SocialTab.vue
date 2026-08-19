@@ -793,7 +793,7 @@ onMounted(() => {
       refreshSocialChatData()
     }
   })
-  uni.$on('switchToChatGroup', () => {
+  uni.$on('activateSocialGroupChat', () => {
     uni.removeStorageSync('pendingSwitchToChatGroup')
     handleFilterChange('groupChat')
   })
@@ -821,7 +821,7 @@ onUnmounted(() => {
   uni.$off('refreshNormalPost')
   uni.$off('updateNormalPostItem')
   uni.$off('discoverActiveTabChange')
-  uni.$off('switchToChatGroup')
+  uni.$off('activateSocialGroupChat')
   uni.$off('followStateChange')
 })
 

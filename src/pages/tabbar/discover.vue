@@ -118,6 +118,7 @@ onMounted(() => {
   uni.$on('switchToSocialTab', () => {
     activeTab.value = t('discover.tabs.social')
   })
+  uni.$on('switchToChatGroup', handleSwitchToChatGroup)
   uni.$on('switchToPromotionTab', () => {
     activeTab.value = t('discover.tabs.promotion')
   })
@@ -134,6 +135,9 @@ onMounted(() => {
 })
 
 onShow(() => {
+  if (uni.getStorageSync('pendingSwitchToChatGroup')) {
+    handleSwitchToChatGroup()
+  }
   uni.$emit('discoverPageVisibilityChange', true)
   uni.$emit('discoverActiveTabChange', activeTab.value)
 })
@@ -165,6 +169,17 @@ const tabs = computed(() => [
 ])
 const activeTab = ref(t('discover.tabs.social'))
 const activatedTabs = ref<string[]>([activeTab.value])
+
+/** 先切换 Discover 主 Tab，再通知 SocialTab 定位群聊。 */
+function handleSwitchToChatGroup() {
+  const socialTab = t('discover.tabs.social')
+  activeTab.value = socialTab
+  // 立即通知 QuotesTab 隐藏原生 WebView，不等待 watch 调度。
+  uni.$emit('discoverActiveTabChange', socialTab)
+  nextTick(() => {
+    uni.$emit('activateSocialGroupChat')
+  })
+}
 
 // tab组件映射
 const tabComponents = computed(() => ({
@@ -274,6 +289,7 @@ const handleRefreshError = () => {
 onUnmounted(() => {
   uni.$emit('discoverPageVisibilityChange', false)
   uni.$off('switchToSocialTab')
+  uni.$off('switchToChatGroup', handleSwitchToChatGroup)
   uni.$off('switchToPromotionTab')
   uni.$off('switchToNewsTabFromChat')
   uni.$off('switchToLibertyCatsTab')

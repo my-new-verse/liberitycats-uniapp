@@ -341,14 +341,14 @@ const onRefresh = async () => {
 }
 // 跳转群聊tab
 const toChatGroup = () => {
-  // 标记待切换群聊（SocialTab 可能还未挂载，无法接收事件）
+  // Discover / SocialTab 可能还未挂载，用持久化意图作为兜底。
   uni.setStorageSync('pendingSwitchToChatGroup', true)
   uni.switchTab({
     url: '/pages/tabbar/discover',
+    success: () => {
+      uni.$emit('switchToChatGroup')
+    },
   })
-  // 同时 emit 事件，覆盖 SocialTab 已挂载的场景
-  // uni.$emit('switchToSocialTab')
-  uni.$emit('switchToChatGroup')
 }
 </script>
 

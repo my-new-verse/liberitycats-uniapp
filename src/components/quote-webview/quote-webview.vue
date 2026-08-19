@@ -16,7 +16,7 @@
           bottom: 0;
           border-radius: 32rpx;
           background-color: #ffffff;
-          z-index: 999;
+          z-index: 1;
         "
       >
         <NetworkError @refresh="handleReload" />
@@ -43,7 +43,7 @@
           bottom: 0;
           border-radius: 32rpx;
           background-color: #ffffff;
-          z-index: 999;
+          z-index: 1;
         "
       >
         <NetworkError @refresh="handleReload" />
@@ -56,6 +56,7 @@
 <script lang="ts" setup>
 import { ref, watch, onUnmounted, nextTick, getCurrentInstance } from 'vue'
 import NetworkError from '@/components/NetworkError.vue'
+import { nativeOverlayVisible } from '@/utils/nativeOverlayState'
 
 const props = defineProps<{
   type: string
@@ -186,6 +187,8 @@ const create = async (): Promise<void> => {
       borderRadius: radiusPx,
       scalable: true,
       progress: { color: '#ff6b03', height: '2px' },
+      zIndex: '1' /* 创建时就设置低层级，让位于弹窗 */,
+      visible: false,
     }
 
     console.log(`[QuoteWebview:${props.type}] 创建 native webview, url:`, props.url)
@@ -209,6 +212,7 @@ const create = async (): Promise<void> => {
     const currentWebview = page.$getAppWebview()
     if (currentWebview) {
       currentWebview.append(webviewInstance.value)
+      if (!props.active) hide()
     } else {
       console.log(`[QuoteWebview:${props.type}] 无法获取当前页面 webview`)
       hasError.value = true
@@ -223,6 +227,15 @@ const create = async (): Promise<void> => {
 /** 显示当前 WebView */
 const show = (): void => {
   // #ifdef APP-PLUS
+  if (!props.active) {
+    hide()
+    return
+  }
+  // plus.webview 不受 Vue 层 z-index 控制，弹窗展示时禁止任何异步流程将它重新显示。
+  if (nativeOverlayVisible.value) {
+    hide()
+    return
+  }
   if (hasError.value) return // 有错误时禁止显示，避免原生错误页露出
   if (webviewInstance.value) {
     try {
@@ -230,6 +243,7 @@ const show = (): void => {
       webviewInstance.value.setStyle({
         top: _lastPosition.top,
         left: _lastPosition.left,
+        zIndex: '1' /* 降低层级，让位于弹窗 */,
       })
     } catch (e) {}
     try {
@@ -290,6 +304,16 @@ watch(
     }
   },
   { immediate: true },
+)
+
+// Vue 弹窗打开时隐藏原生 WebView；关闭后只恢复当前仍激活的行情页。
+watch(
+  nativeOverlayVisible,
+  (isVisible) => {
+    if (isVisible) hide()
+    else if (props.active && !hasError.value) show()
+  },
+  { immediate: true, flush: 'sync' },
 )
 
 // ========== 生命周期 ==========

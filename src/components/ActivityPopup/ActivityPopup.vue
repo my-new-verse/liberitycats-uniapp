@@ -92,11 +92,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onUnmounted, ref, watch } from 'vue'
 import type { PopupTarget, PopupCurrentData, PopupMediaItem } from '@/service/api/popup'
 import { openUrl } from '@/utils'
 import { t } from '@/locale'
 import { useUserStore } from '@/store/user'
+import { setNativeOverlayVisible } from '@/utils/nativeOverlayState'
 
 type ActivityPopupImageShape = 'circle' | 'square'
 
@@ -115,6 +116,18 @@ const props = withDefaults(
 const userStore = useUserStore()
 
 const visible = ref(false)
+
+watch(
+  visible,
+  (isVisible) => {
+    setNativeOverlayVisible(isVisible)
+  },
+  { flush: 'sync' },
+)
+
+onUnmounted(() => {
+  if (visible.value) setNativeOverlayVisible(false)
+})
 const current = ref(0)
 const popupMedia = ref<PopupMediaItem[]>([])
 const popupTitle = ref('')
@@ -329,12 +342,13 @@ defineExpose({ show })
   top: 54rpx;
   left: 50%;
   width: 580rpx;
+  z-index: 9999; /* 确保高于 WebView */
   height: 456rpx;
   border-radius: 56rpx;
 }
 
 .activity-popup__back {
-  z-index: 1;
+  z-index: 9997; /* 后层 */
   background: #ff6b03;
   box-shadow: 0 36rpx 84rpx rgba(170, 69, 0, 0.24);
   transform: translate(-50%, 12rpx) rotate(8deg);
@@ -342,7 +356,7 @@ defineExpose({ show })
 }
 
 .activity-popup__front {
-  z-index: 2;
+  z-index: 9998; /* 前层 */
   overflow: hidden;
   background: linear-gradient(160deg, #f8eedc 0%, #fffefd 100%);
   box-shadow: 0 24rpx 56rpx rgba(51, 94, 30, 0.14);
@@ -352,7 +366,7 @@ defineExpose({ show })
 .activity-popup__swiper {
   position: absolute;
   inset: 0;
-  z-index: 2;
+  z-index: 9996;
   width: 100%;
   height: 100%;
 }
@@ -441,7 +455,7 @@ defineExpose({ show })
   position: absolute;
   bottom: 28rpx;
   left: 50%;
-  z-index: 4;
+  z-index: 10000;
   display: flex;
   gap: 12rpx;
   align-items: center;
