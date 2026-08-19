@@ -134,6 +134,7 @@ import {
   getCollectionDetailApi,
   getCollectionDetailApiResponse,
   getInvestmentPortfolioEntryTokenApi,
+  getInvestmentPortfolioEntryTokenApiResponse,
 } from '@/service/api/quotes'
 import { formatNumber, getImageUrl, getServerOnOff, openUrl } from '@/utils'
 import { t } from '@/locale'
@@ -186,6 +187,9 @@ const PORTFOLIO_WEBVIEW_URL = 'http://47.236.146.191:3000/#analysis-section'
 // 存储 portfolio 的 jumpUrl
 const portfolioJumpUrl = ref<string>('')
 let isFetchingPortfolioToken = false
+let portfolioActivationTask: Promise<void> | null = null
+let portfolioTokenFetchedAt = 0
+let portfolioTokenExpiresInMs = 0
 
 const getWebviewUrl = (type: WebviewTabType): string => {
   if (type === 'portfolio') {
@@ -206,25 +210,122 @@ const getActiveWebviewRef = () => {
 }
 
 /** 获取 portfolio 入口 token */
-const fetchPortfolioToken = async () => {
-  if (isFetchingPortfolioToken) {
-    return portfolioJumpUrl.value
-  }
-
-  try {
-    isFetchingPortfolioToken = true
-    const res = await getInvestmentPortfolioEntryTokenApi()
-    if (res.data?.jumpUrl) {
-      portfolioJumpUrl.value = res.data.jumpUrl
-      console.log('[QuotesTab] 获取 portfolio 入口 token 成功:', portfolioJumpUrl.value)
+const fetchPortfolioToken =
+  async (): Promise<getInvestmentPortfolioEntryTokenApiResponse | null> => {
+    if (isFetchingPortfolioToken) {
+      return null
     }
-  } catch (error) {
-    console.error('[QuotesTab] 获取 portfolio 入口 token 失败:', error)
-  } finally {
-    isFetchingPortfolioToken = false
+
+    try {
+      isFetchingPortfolioToken = true
+      const res = await getInvestmentPortfolioEntryTokenApi()
+      if (res.data?.jumpUrl) {
+        console.log('[QuotesTab] 获取 portfolio 入口 token 成功:', res.data.jumpUrl)
+        return res.data
+      }
+    } catch (error) {
+      console.error('[QuotesTab] 获取 portfolio 入口 token 失败:', error)
+    } finally {
+      isFetchingPortfolioToken = false
+    }
+
+    return null
   }
 
-  return portfolioJumpUrl.value
+/** portfolio token 是否仍在接口声明的有效期内。 */
+const isPortfolioTokenCacheValid = () => {
+  if (!portfolioJumpUrl.value || !portfolioTokenFetchedAt || portfolioTokenExpiresInMs <= 0) {
+    return false
+  }
+  return Date.now() - portfolioTokenFetchedAt < portfolioTokenExpiresInMs
+}
+
+/**
+ * 进入 portfolio 时重新获取入口 URL。
+ * URL 变化时重建 WebView，未变化时复用已有实例。
+ * 多个页面生命周期事件可能在同一时刻触发，这里合并为一次请求和刷新。
+ */
+const activatePortfolioWebview = async () => {
+  if (portfolioActivationTask) return portfolioActivationTask
+
+  portfolioActivationTask = (async () => {
+    const wvRef = zhuangeWVRef.value
+    if (!wvRef) return
+
+    // token 仍在有效期内，不调用接口，直接展示缓存 WebView。
+    if (isPortfolioTokenCacheValid()) {
+      await wvRef.create()
+      wvRef.show()
+      return
+    }
+
+    const previousUrl = portfolioJumpUrl.value
+    const tokenData = await fetchPortfolioToken()
+    const nextUrl = tokenData?.jumpUrl
+
+    // 请求期间用户可能已离开 portfolio，不再显示原生 WebView。
+    if (
+      tabType.value !== 'portfolio' ||
+      !isQuotesParentTabActive.value ||
+      !getServerOnOff('portfolio_chart_enable', 'common')
+    ) {
+      return
+    }
+
+    // 请求失败时保留并展示已有缓存，不破坏当前 WebView。
+    if (!nextUrl || !tokenData) {
+      if (previousUrl) {
+        await wvRef.create()
+        wvRef.show()
+      }
+      return
+    }
+
+    portfolioTokenFetchedAt = Date.now()
+    // const expiresInSeconds = 60
+    const expiresInSeconds = Number(tokenData.tempTokenExpiresIn)
+    portfolioTokenExpiresInMs =
+      Number.isFinite(expiresInSeconds) && expiresInSeconds > 0 ? expiresInSeconds * 1000 : 0
+
+    if (previousUrl && nextUrl !== previousUrl) {
+      console.log('[QuotesTab] portfolio 入口 URL 已变化，销毁并重建 WebView')
+      // 先销毁使用旧 URL 的实例，再更新 prop，防止 iframe 提前自动导航。
+      wvRef.destroy()
+      portfolioJumpUrl.value = nextUrl
+      await nextTick()
+      await wvRef.create()
+      wvRef.show()
+      return
+    }
+
+    // 首次获取 URL 时直接创建；后续 URL 相同则不会修改响应式值。
+    if (!previousUrl) {
+      portfolioJumpUrl.value = nextUrl
+      await nextTick()
+    }
+    // URL 未变化时 create() 只会复用已有实例，直接展示缓存页面。
+    await wvRef.create()
+    wvRef.show()
+  })().finally(() => {
+    portfolioActivationTask = null
+  })
+
+  return portfolioActivationTask
+}
+
+/** 显示当前子 Tab 的 WebView，portfolio 每次都先刷新 token。 */
+const activateCurrentWebview = async () => {
+  if (tabType.value === 'portfolio') {
+    await activatePortfolioWebview()
+    return
+  }
+
+  const wvRef = getActiveWebviewRef()
+  if (wvRef) {
+    // liberty 始终复用已有 WebView，只做显示/隐藏，不主动刷新。
+    await wvRef.create()
+    wvRef.show()
+  }
 }
 
 /** 批量操作所有 WebView 组件 */
@@ -242,6 +343,9 @@ watch(
       forEachWebviewRef((wv) => wv.destroy())
       portfolioJumpUrl.value = ''
       isFetchingPortfolioToken = false
+      portfolioActivationTask = null
+      portfolioTokenFetchedAt = 0
+      portfolioTokenExpiresInMs = 0
     }
   },
 )
@@ -481,14 +585,7 @@ const changeTab = async (type: QuotesTabType) => {
 
   // portfolio 需要先获取 token
   if (type === 'portfolio' && getServerOnOff('portfolio_chart_enable', 'common')) {
-    const token = await fetchPortfolioToken()
-    if (token) {
-      const wvRef = getActiveWebviewRef()
-      if (wvRef) {
-        await wvRef.create()
-        wvRef.show()
-      }
-    }
+    await activatePortfolioWebview()
   }
 
   if (type === 'hot' && !quotesCacheMap.value.hot.hasInitialized) {
@@ -537,18 +634,14 @@ onMounted(async () => {
     }
     // 先隐藏所有，确保非活跃 WebView 不会覆盖页面
     forEachWebviewRef((wv) => wv.hide())
-    const wvRef = getActiveWebviewRef()
-    if (wvRef) {
-      wvRef.create().then(() => wvRef.show())
-    }
+    activateCurrentWebview()
   })
   uni.$on('discoverPageVisibilityChange', (visible: boolean) => {
     if (visible) {
       if (isQuotesParentTabActive.value) {
         // 先隐藏所有，确保非活跃 WebView 不会覆盖页面
         forEachWebviewRef((wv) => wv.hide())
-        const wvRef = getActiveWebviewRef()
-        if (wvRef) wvRef.create().then(() => wvRef.show())
+        activateCurrentWebview()
       }
       return
     }
@@ -560,11 +653,7 @@ onMounted(async () => {
   if (tabType.value === 'liberty' || tabType.value === 'portfolio') {
     await updateWebHeight(tabType.value as WebviewTabType)
   }
-  const wvRef = getActiveWebviewRef()
-  if (wvRef) {
-    await wvRef.create()
-    wvRef.show()
-  }
+  await activateCurrentWebview()
 })
 
 // 组件卸载时移除事件监听
@@ -586,10 +675,7 @@ onShow(() => {
   }
   // 先隐藏所有，确保非活跃 WebView 不会覆盖页面
   forEachWebviewRef((wv) => wv.hide())
-  const wvRef = getActiveWebviewRef()
-  if (wvRef) {
-    wvRef.create().then(() => wvRef.show())
-  }
+  activateCurrentWebview()
 })
 </script>
 

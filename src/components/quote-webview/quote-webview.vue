@@ -26,7 +26,8 @@
 
       <!-- #ifdef H5 -->
       <iframe
-        v-if="active && shouldRender && !hasError"
+        v-if="shouldRender && !hasError"
+        v-show="active"
         :src="url"
         class="quote-iframe"
         @load="handleLoaded"
@@ -72,7 +73,8 @@ const emit = defineEmits<{
 const instance = getCurrentInstance()
 const webviewInstance = ref<any>(null)
 const hasError = ref(false)
-const shouldRender = ref(true)
+// 首次由父组件显式 create；创建后切换 active 仅隐藏，保留页面缓存。
+const shouldRender = ref(false)
 let isUnmounted = false
 let _lastPosition = { top: 0, left: 0 }
 
