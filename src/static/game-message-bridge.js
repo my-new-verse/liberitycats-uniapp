@@ -4,9 +4,24 @@
 
   const COMPLETED_TITLE = '__LIBERTYCATS_GAME_LOAD_COMPLETED__'
   const FAILED_TITLE = '__LIBERTYCATS_GAME_LOAD_FAILED__'
+  const CLOSE_TITLE = '__LIBERTYCATS_CLOSE_GAME__'
 
   function notifyApp(type) {
-    document.title = (type === 'GameLoadFailed' ? FAILED_TITLE : COMPLETED_TITLE) + Date.now()
+    const titlePrefix =
+      type === 'GameLoadFailed'
+        ? FAILED_TITLE
+        : type === 'CloseGame'
+          ? CLOSE_TITLE
+          : COMPLETED_TITLE
+    document.title = titlePrefix + Date.now()
+
+    try {
+      if (window.uni && typeof window.uni.postMessage === 'function') {
+        window.uni.postMessage({ data: { type: type } })
+      }
+    } catch (error) {
+      console.warn('[GameBridge] uni.postMessage 发送失败:', error)
+    }
   }
 
   function handleMessage(rawMessage) {
@@ -14,7 +29,9 @@
       const message = typeof rawMessage === 'string' ? JSON.parse(rawMessage) : rawMessage
       if (
         message &&
-        (message.type === 'GameLoadCompleted' || message.type === 'GameLoadFailed')
+        (message.type === 'GameLoadCompleted' ||
+          message.type === 'GameLoadFailed' ||
+          message.type === 'CloseGame')
       ) {
         notifyApp(message.type)
       }
@@ -65,5 +82,18 @@
     wrapped.__libertyCatsWrapped = true
     window._NotifyGameLoadFailedToApp = wrapped
     clearInterval(failedWrapTimer)
+  }, 10)
+
+  const closeWrapTimer = setInterval(function () {
+    const original = window._NotifyCloseGameToApp
+    if (typeof original !== 'function' || original.__libertyCatsWrapped) return
+
+    const wrapped = function () {
+      notifyApp('CloseGame')
+      return original.apply(this, arguments)
+    }
+    wrapped.__libertyCatsWrapped = true
+    window._NotifyCloseGameToApp = wrapped
+    clearInterval(closeWrapTimer)
   }, 10)
 })()

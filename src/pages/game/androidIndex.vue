@@ -95,6 +95,72 @@ let nativeWebviewId = ''
 let closingPage = false
 let gestureStartX = 0
 let gestureStartY = 0
+let plusMessageRegistered = false
+
+type GameMessageType = 'GameLoadCompleted' | 'GameLoadFailed' | 'CloseGame'
+
+const findGameMessage = (payload: any): GameMessageType | undefined => {
+  const queue = [payload]
+  const visited = new Set<any>()
+  while (queue.length) {
+    const value = queue.shift()
+    if (value == null || visited.has(value)) continue
+    if (typeof value === 'object') visited.add(value)
+    if (typeof value === 'string') {
+      try {
+        queue.push(JSON.parse(value))
+      } catch {}
+      continue
+    }
+    if (Array.isArray(value)) {
+      queue.push(...value)
+      continue
+    }
+    if (typeof value !== 'object') continue
+    if (
+      value.type === 'GameLoadCompleted' ||
+      value.type === 'GameLoadFailed' ||
+      value.type === 'CloseGame'
+    ) {
+      return value.type
+    }
+    queue.push(value.data, value.detail, value.args, value.arg)
+  }
+}
+
+const handleGameMessage = (type?: GameMessageType) => {
+  if (!type || closingPage) return
+  console.log('[GameIndex] 收到游戏消息:', type)
+  if (type === 'GameLoadCompleted') {
+    showEnteringGame.value = false
+    gameResourceLoadState.value = 'ready'
+  } else if (type === 'GameLoadFailed') {
+    handleError({ type })
+  } else if (type === 'CloseGame') {
+    closeGamePage()
+  }
+}
+
+const handlePlusMessage = (event: any) => {
+  console.log('handlePlusMessage', findGameMessage(event))
+  const originId = event?.originId
+  if (
+    originId &&
+    nativeWebviewId &&
+    originId !== nativeWebviewId &&
+    originId !== nativeWebview?.__uuid__
+  )
+    return
+  handleGameMessage(findGameMessage(event))
+}
+
+const handleTitleUpdate = (event: { title?: string }) => {
+  const title = event?.title || nativeWebview?.getTitle?.() || ''
+  if (title.startsWith('__LIBERTYCATS_GAME_LOAD_COMPLETED__'))
+    handleGameMessage('GameLoadCompleted')
+  else if (title.startsWith('__LIBERTYCATS_GAME_LOAD_FAILED__')) handleGameMessage('GameLoadFailed')
+  else if (title.startsWith('__LIBERTYCATS_CLOSE_GAME__')) handleGameMessage('CloseGame')
+}
 
 /** 获取当前页面 WebView */
 const getCurrentPageWebview = () => {
@@ -206,10 +272,17 @@ async function createNativeWebview(url: string) {
   nativeWebview.addEventListener?.('touchstart', handleTouchStart)
   nativeWebview.addEventListener?.('touchend', handleTouchEnd)
   nativeWebview.addEventListener?.('close', handleNativeWebviewClose)
+  nativeWebview.addEventListener?.('titleUpdate', handleTitleUpdate)
+
+  if (!plusMessageRegistered) {
+    plus.globalEvent.addEventListener('plusMessage', handlePlusMessage)
+    plusMessageRegistered = true
+  }
 
   // 在 loadURL 前注入资源拦截规则（先验证文件存在）
   currentWebview.append(nativeWebview)
   await applyResourceOverride(nativeWebview)
+  nativeWebview.setJsFile?.('_www/static/game-message-bridge.js')
   console.log('[GameIndex] 已注入资源拦截，开始加载 URL:', url)
 
   // 拦截规则注入后再加载 URL
@@ -219,6 +292,10 @@ async function createNativeWebview(url: string) {
 
 /** 销毁原生 WebView */
 function destroyNativeWebview() {
+  // if (plusMessageRegistered) {
+  //   plus.globalEvent.removeEventListener('plusMessage', handlePlusMessage)
+  //   plusMessageRegistered = false
+  // }
   if (!nativeWebview) return
   nativeWebview.onerror = null
   nativeWebview.onloaded = null
@@ -229,6 +306,7 @@ function destroyNativeWebview() {
   nativeWebview.removeEventListener?.('touchstart', handleTouchStart)
   nativeWebview.removeEventListener?.('touchend', handleTouchEnd)
   nativeWebview.removeEventListener?.('close', handleNativeWebviewClose)
+  // nativeWebview.removeEventListener?.('titleUpdate', handleTitleUpdate)
   try {
     nativeWebview.close?.('none')
   } catch (_) {}
