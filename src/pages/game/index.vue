@@ -52,15 +52,16 @@
 </template>
 
 <script setup>
-import { nextTick, onMounted, ref } from 'vue'
+import { nextTick, ref } from 'vue'
 import { onLoad, onReady, onUnload } from '@dcloudio/uni-app'
 
 const gameUrl = ref('')
 const debugInfo = ref('')
 let nativeGameWebview = null
-const plusMessageRegistered = false
-const bridgeReloaded = false
-const closingGame = false
+let plusMessageRegistered = false
+const bridgeInjected = false
+let closingGame = false
+const bindTimer = null
 
 const findGameMessage = (payload) => {
   const queue = [payload]
@@ -89,7 +90,6 @@ const findGameMessage = (payload) => {
     }
     queue.push(value.data, value.detail, value.args, value.arg)
   }
-  return false
 }
 
 const destroyNativeGameWebview = () => {

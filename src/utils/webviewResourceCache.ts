@@ -22,9 +22,15 @@ import { getGameParamsApi } from '@/service/api/game'
 import { useResourceCacheStore } from '@/store/resourceCache'
 declare const plus: any
 
-/** iOS 首次 WebView 预加载完成标记（持久化，App 重启后仍有效）。 */
-// v2 只在收到 GameLoadCompleted 后写入，避免沿用旧版“创建即完成”的错误标记。
-const IOS_GAME_PRELOAD_COMPLETED_KEY = 'ios_game_webview_preload_completed_v2'
+/** iOS 预加载完成时的游戏版本，旧版布尔标记不再复用。 */
+const IOS_GAME_PRELOAD_COMPLETED_KEY = 'ios_game_webview_preload_completed_version_v3'
+const LEGACY_IOS_GAME_PRELOAD_COMPLETED_KEY = 'ios_game_webview_preload_completed_v2'
+
+const getCompletedIosGameVersion = () => {
+  const version = uni.getStorageSync(IOS_GAME_PRELOAD_COMPLETED_KEY)
+  console.log('getCompletedIosGameVersion', version)
+  return typeof version === 'string' ? version : ''
+}
 
 /** 下载进度文案，供 UI 层展示，如 ['wasm: 45%', 'data: 12%'] */
 export const downloadProgressLines = ref<string[]>([])
@@ -34,19 +40,26 @@ export const gameResourceLoadState = ref<'idle' | 'loading' | 'ready'>('idle')
 
 /** iOS 游戏 WebView 预加载状态，由游戏的完成或失败消息更新。 */
 export const iosGameResourceLoadState = ref<'idle' | 'loading' | 'ready' | 'failed'>(
-  uni.getStorageSync(IOS_GAME_PRELOAD_COMPLETED_KEY) === true ? 'ready' : 'idle',
+  getCompletedIosGameVersion() ? 'ready' : 'idle',
 )
 
-export const hasCompletedIosGamePreload = () =>
-  uni.getStorageSync(IOS_GAME_PRELOAD_COMPLETED_KEY) === true
+export const hasCompletedIosGamePreload = (gameVersion?: string) => {
+  console.log('hasCompletedIosGamePreload', gameVersion)
+  const completedVersion = getCompletedIosGameVersion()
+  return gameVersion ? completedVersion === gameVersion : !!completedVersion
+}
 
-export const markIosGamePreloadCompleted = () => {
-  uni.setStorageSync(IOS_GAME_PRELOAD_COMPLETED_KEY, true)
+export const markIosGamePreloadCompleted = (gameVersion: string) => {
+  console.log('markIosGamePreloadCompleted', gameVersion)
+  if (!gameVersion) return
+  uni.setStorageSync(IOS_GAME_PRELOAD_COMPLETED_KEY, gameVersion)
+  uni.removeStorageSync(LEGACY_IOS_GAME_PRELOAD_COMPLETED_KEY)
   iosGameResourceLoadState.value = 'ready'
 }
 
 export const clearIosGamePreloadCompleted = () => {
   uni.removeStorageSync(IOS_GAME_PRELOAD_COMPLETED_KEY)
+  uni.removeStorageSync(LEGACY_IOS_GAME_PRELOAD_COMPLETED_KEY)
 }
 
 // ======================== 类型 ========================

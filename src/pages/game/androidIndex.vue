@@ -46,7 +46,7 @@
     <!-- 游戏 WebView 加载完成前的居中提示 -->
     <view v-if="showEnteringGame && !resourceDownloading" class="entering-game">
       <view class="entering-game-content">
-        <text>{{ t('game.entering') }}</text>
+        <!-- <text>{{ t('game.entering') }}</text> -->
       </view>
     </view>
 
