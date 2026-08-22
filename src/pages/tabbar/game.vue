@@ -272,6 +272,10 @@ const handleGameClick = async (gameType: IosGameType) => {
           currentDownloadRequired = true
           showResourceDialog.value = true
         },
+        onGameParamsError: (message) => {
+          showResourceDialog.value = false
+          toast.show(message || t('game.toast.game_not_open'))
+        },
       })
       if (!downloadRequired) {
         await openGameUrl(gameType, currentPlatform)
@@ -291,6 +295,12 @@ const handleGameClick = async (gameType: IosGameType) => {
   let enteringLoadingVisible = false
   try {
     if (currentPlatform === 'ios') {
+      const res = await getGameParamsApi(gameType)
+      if (res.code !== 1) {
+        showResourceDialog.value = false
+        toast.show(res.msg || t('game.toast.game_not_open'))
+        return
+      }
       await preloadIosGameWebView(gameType)
       if (iosGameResourceLoadState.value !== 'ready') {
         showResourceDialog.value = true
@@ -328,6 +338,10 @@ const openGameUrl = async (gameType: IosGameType, platform: string, manageLoadin
     //   }
 
     const res = await getGameParamsApi(gameType)
+    if (res.code !== 1) {
+      toast.show(res.msg || t('game.toast.game_not_open'))
+      return
+    }
     const token = res.data.tempToken || ''
     console.log('token', token)
     if (!token) {

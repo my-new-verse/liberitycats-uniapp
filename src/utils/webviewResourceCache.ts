@@ -1267,7 +1267,10 @@ export async function downloadGameResources(
  */
 export async function ensureGameResourcesReady(
   gameType: string,
-  options: { onDownloadRequired?: () => void } = {},
+  options: {
+    onDownloadRequired?: () => void
+    onGameParamsError?: (message?: string) => void
+  } = {},
 ): Promise<void> {
   console.log(`[WebViewCache] ensureGameResourcesReady: ${gameType}`)
   // 仅 Android 平台需要预下载+重定向，iOS 直接跳过
@@ -1276,6 +1279,7 @@ export async function ensureGameResourcesReady(
   // 1. 调用接口获取最新参数
   const res = await getGameParamsApi(gameType)
   if (res.code !== 1 || !res.data) {
+    options.onGameParamsError?.(res.msg)
     throw new Error(`获取游戏参数失败: ${gameType}`)
   }
 
