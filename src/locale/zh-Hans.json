@@ -201,7 +201,8 @@
   "pledge.detail.redeem.popup.title": "确认退出积分活动？",
   "pledge.ranking.page_title": "排行榜",
   "pledge.ranking.ranking": "名次",
-  "pledge.ranking.except_point": "预期收益",
+  "pledge.ranking.except_point": "总积分",
+  "pledge.ranking.revenue_help": "已提取积分 + 活动中积分",
   "pledge.detail.pledge.success": "成功参与积分活动",
 
   "goods.search.page_title": "搜索",

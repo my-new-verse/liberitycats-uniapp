@@ -198,7 +198,8 @@
   "pledge.detail.redeem.popup.title": "Confirm Exit from Points Activity?",
   "pledge.ranking.page_title": "Ranking List",
   "pledge.ranking.ranking": "Rank",
-  "pledge.ranking.except_point": "Expected Earnings",
+  "pledge.ranking.except_point": "Total Points",
+  "pledge.ranking.revenue_help": "Extracted points + Points from activities",
   "pledge.detail.pledge.success": "Successfully participated in the points activity",
 
   "goods.search.page_title": "Search",

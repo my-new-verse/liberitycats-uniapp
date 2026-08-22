@@ -17,22 +17,31 @@
       <template #default>
         <view class="rankingBox">
           <view class="rankingItem">
-            <view class="ranking">{{ t('pledge.ranking.ranking') }}</view>
-            <view class="point">{{ t('pledge.ranking.except_point') }}</view>
+            <view class="ranking" style="width: 12vw">{{ t('pledge.ranking.ranking') }}</view>
+            <view class="ranking" style="flex: 1">{{ t('setting.index.nickname') }}</view>
+            <view class="point pointHeader">
+              <wd-icon
+                name="info-circle"
+                size="22px"
+                color="#ff6b03"
+                @click.stop="revenueHelpPopupShow = true"
+              ></wd-icon>
+              <text>{{ t('pledge.ranking.except_point') }}</text>
+            </view>
           </view>
           <template v-if="rankingList && rankingList.data.length > 0">
             <view class="rankingItem" v-for="(item, index) in rankingList.data" :key="index">
               <view class="ranking">
-                <template v-if="index < 3">
+                <view v-if="index < 3" style="width: 12vw">
                   <image
                     :src="'/static/images/rank' + (index + 1) + '.png'"
                     mode="widthFix"
                     class="rankIcon"
                   />
-                </template>
-                <template v-else>
+                </view>
+                <view v-else style="width: 12vw">
                   <view class="rankIcon">{{ index + 1 }}</view>
-                </template>
+                </view>
                 <view class="memberBox">
                   <view class="memberAvatar">
                     <image
@@ -56,32 +65,46 @@
         </view>
       </template>
       <template #footer>
-        <wd-loadmore :state="state" @reload="loadMore" />
+        <wd-loadmore v-if="isLoading" state="loading" />
         <wd-backtop :scrollTop="scrollTop"></wd-backtop>
       </template>
     </custom-nav>
+
+    <root-portal>
+      <wd-popup v-model="revenueHelpPopupShow" custom-class="revenueHelpPopup" :z-index="10001">
+        <view class="revenueHelpContent">
+          <view class="revenueHelpClose" @click="revenueHelpPopupShow = false">
+            <wd-icon name="close" size="18px" color="#8c7b70" />
+          </view>
+          <view class="revenueHelpTitle">{{ t('pledge.ranking.except_point') }}</view>
+
+          <view class="revenueHelpDescription">
+            {{ t('pledge.ranking.revenue_help') }}
+          </view>
+          <view class="revenueHelpButton" @click="revenueHelpPopupShow = false">
+            {{ t('common.btn.got_it') }}
+          </view>
+        </view>
+      </wd-popup>
+    </root-portal>
   </view>
 </template>
 
 <script lang="ts" setup>
-import i18n, { t } from '@/locale/index'
-import { getPledgeRankingApi, getPledgeRankingListResponse } from '@/service/api/pledge'
+import { t } from '@/locale/index'
+import { getPledgeRankingApi } from '@/service/api/pledge'
+import type { getPledgeRankingListResponse } from '@/service/api/pledge'
 import { formatNickname, formatNumber, getImageUrl } from '@/utils'
-import { useToast } from 'wot-design-uni'
 
 import CustomNav from '@/components/CustomNav/CustomNav.vue'
-import { LoadMoreState } from 'wot-design-uni/components/wd-loadmore/types'
-
-// 语言
-const locale = uni.getLocale()
-const toast = useToast()
 
 // 滚动到顶部
 const scrollTop = ref<number>(0)
+const revenueHelpPopupShow = ref(false)
 onPageScroll((e) => {
   scrollTop.value = e.scrollTop
 })
-const state = ref<LoadMoreState>('loading')
+const isLoading = ref(false)
 onLoad((options) => {
   loadMore()
 })
@@ -99,16 +122,18 @@ onReachBottom(() => {
 })
 
 const loadMore = () => {
-  state.value = 'loading'
-  getPledgeRankingApi(rankingList.value?.current_page + 1).then((res) => {
-    if (!res.data) return
-    rankingList.value.data = rankingList.value.data.concat(res.data.data)
-    rankingList.value.current_page = res.data.current_page
-    rankingList.value.last_page = res.data.last_page
-    if (rankingList.value?.current_page === rankingList.value?.last_page) {
-      state.value = 'finished'
-    }
-  })
+  if (isLoading.value) return
+  isLoading.value = true
+  getPledgeRankingApi(rankingList.value?.current_page + 1)
+    .then((res) => {
+      if (!res.data) return
+      rankingList.value.data = rankingList.value.data.concat(res.data.data)
+      rankingList.value.current_page = res.data.current_page
+      rankingList.value.last_page = res.data.last_page
+    })
+    .finally(() => {
+      isLoading.value = false
+    })
 }
 </script>
 
@@ -176,9 +201,96 @@ const loadMore = () => {
       line-height: 40rpx;
       color: #261000;
     }
+
+    .pointHeader {
+      display: flex;
+      align-items: center;
+      gap: 8rpx;
+    }
   }
   .rankingItem:last-child {
     margin-bottom: 0;
   }
+}
+
+:deep(.revenueHelpPopup) {
+  width: 590rpx;
+  max-width: calc(100vw - 80rpx);
+  overflow: visible;
+  background-color: #fff;
+  border-radius: 40rpx;
+  box-shadow: 0 24rpx 80rpx rgba(70, 34, 8, 0.2);
+}
+
+.revenueHelpContent {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 52rpx 40rpx 40rpx;
+  text-align: center;
+}
+
+.revenueHelpClose {
+  position: absolute;
+  top: 20rpx;
+  right: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56rpx;
+  height: 56rpx;
+  background: #f7f3f0;
+  border-radius: 50%;
+}
+
+.revenueHelpIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 104rpx;
+  height: 104rpx;
+  margin-bottom: 24rpx;
+  background: linear-gradient(145deg, #fff4ec 0%, #ffe2cc 100%);
+  border: 2rpx solid rgba(255, 107, 3, 0.12);
+  border-radius: 50%;
+}
+
+.revenueHelpTitle {
+  margin-bottom: 20rpx;
+  font-size: 36rpx;
+  font-weight: 600;
+  line-height: 50rpx;
+  color: #261000;
+}
+
+.revenueHelpDescription {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 28rpx 32rpx;
+  margin-bottom: 36rpx;
+  font-size: 28rpx;
+  line-height: 44rpx;
+  color: #6f5c50;
+  text-align: left;
+  background: #fff8f3;
+  border: 2rpx solid #ffe6d4;
+  border-radius: 24rpx;
+  display: flex;
+  justify-content: center;
+}
+
+.revenueHelpButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 88rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #ff842e 0%, #ff6b03 100%);
+  border-radius: 44rpx;
+  box-shadow: 0 12rpx 28rpx rgba(255, 107, 3, 0.24);
 }
 </style>
