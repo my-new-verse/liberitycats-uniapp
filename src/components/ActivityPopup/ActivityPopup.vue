@@ -521,7 +521,7 @@ defineExpose({ show })
   border: 2rpx solid rgba(255, 255, 255, 0.28);
   border-radius: 999rpx;
   backdrop-filter: blur(12rpx);
-  width: 60%;
+  width: 65%;
 }
 
 .activity-popup__no-remind::after {
