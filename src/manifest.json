@@ -2,8 +2,8 @@
   "name": "Liberty Cats",
   "appid": "H5EFA0416",
   "description": "",
-  "versionName": "1.0.197",
-  "versionCode": "10197",
+  "versionName": "1.0.301",
+  "versionCode": "10301",
   "transformPx": false,
   "app-plus": {
     "usingComponents": true,
