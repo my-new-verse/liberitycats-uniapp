@@ -2320,12 +2320,10 @@ const getMessageMenuOptions = (msg: ChatMessage): MessageMenuItem[] => {
   const menuOptions: MessageMenuItem[] = []
   const isSelf = msg.is_self === 1
 
-  if (!isSelf) {
-    menuOptions.push({
-      content: t('common.reply'),
-      action: 'reply',
-    })
-  }
+  menuOptions.push({
+    content: t('common.reply'),
+    action: 'reply',
+  })
 
   // 只有 text 类型消息才能复制
   if (msg.message_type === 'text') {
