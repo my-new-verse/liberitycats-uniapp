@@ -102,8 +102,8 @@ const loadMore = () => {
   width: calc(100% - 80rpx);
   padding: 40rpx;
   margin-bottom: 32rpx;
-  color: #261000;
-  background-color: #ffffff;
+  color: var(--text-primary);
+  background-color: var(--bg-card);
   border-radius: 48rpx;
   .logItem {
     display: flex;
@@ -144,7 +144,7 @@ const loadMore = () => {
   }
 
   .logValue2 {
-    color: #333;
+    color: var(--actions-text);
   }
 }
 </style>

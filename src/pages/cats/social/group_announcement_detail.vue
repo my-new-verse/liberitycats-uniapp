@@ -220,9 +220,16 @@ const handleActionSelect = async ({ item }: any) => {
 </script>
 
 <style lang="scss" scoped>
+:deep(.cnt) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
+:deep(.fbg) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
 .page {
   min-height: 100vh;
-  background: #fff;
+  background: var(--bg-card);
 }
 
 .nav {
@@ -231,8 +238,8 @@ const handleActionSelect = async ({ item }: any) => {
   left: 0;
   right: 0;
   z-index: 20;
-  background: #fff;
-  border-bottom: 1rpx solid rgba(0, 0, 0, 0.04);
+  background: var(--bg-card);
+  border-bottom: 1rpx solid var(--wot-upload-evoke-bg);
 }
 
 .nav-inner {
@@ -296,7 +303,7 @@ const handleActionSelect = async ({ item }: any) => {
 .title {
   display: block;
   margin-top: 16rpx;
-  color: #121212;
+  color: var(--group-announcement-detail-color);
   font-size: 30rpx;
   font-weight: 800;
   line-height: 1.38;
@@ -313,7 +320,7 @@ const handleActionSelect = async ({ item }: any) => {
 .body {
   display: block;
   margin-top: 34rpx;
-  color: #333;
+  color: var(--actions-text);
   font-size: 28rpx;
   line-height: 1.8;
   white-space: pre-line;
@@ -324,7 +331,7 @@ const handleActionSelect = async ({ item }: any) => {
   height: 360rpx;
   margin-top: 28rpx;
   border-radius: 22rpx;
-  background: #eee;
+  background: var(--userFilterHeader-border-color);
 }
 
 .info-card {
@@ -336,7 +343,7 @@ const handleActionSelect = async ({ item }: any) => {
   display: flex;
   align-items: center;
   padding: 12rpx 0;
-  color: #2b2b2b;
+  color: var(--group-announcement-detail-info-row-color);
   font-size: 26rpx;
   line-height: 1.45;
 }

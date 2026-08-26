@@ -713,7 +713,7 @@ onUnmounted(() => {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #fff;
+    color: var(--bg-card);
     font-size: 28rpx;
     border-radius: 0 34rpx 34rpx 0;
     &.delete {
@@ -877,7 +877,7 @@ onUnmounted(() => {
 .tab-text {
   font-size: 24rpx;
   font-weight: 500;
-  color: #333;
+  color: var(--actions-text);
   transition: color 0.3s ease;
   // font-family: Alibaba PuHuiTi2;
   font-family: 'Alimama FangYuanTi VF' !important;

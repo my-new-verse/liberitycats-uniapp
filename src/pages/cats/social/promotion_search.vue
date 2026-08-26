@@ -1084,7 +1084,7 @@ const updateBanAction = (isBanned: boolean) => {
     reportActionIndex.unban = -1
   }
   if (isBanned) {
-    actions.push({ name: t('report.admin.unban_post.action'), type: 'unban', color: '#333' })
+    actions.push({ name: t('report.admin.unban_post.action'), type: 'unban' })
     reportActionIndex.unban = actions.length - 1
   } else {
     actions.push({ name: t('report.admin.ban_post.action'), type: 'ban', color: '#FF3B30' })
@@ -1188,18 +1188,17 @@ const reportPost = async (post: any) => {
   const actions: any[] = []
 
   if (isFollowing) {
-    actions.push({ name: t('social.index.user.unfollow'), type: 'follow', color: '#333' })
+    actions.push({ name: t('social.index.user.unfollow'), type: 'follow' })
     reportActionIndex.follow = actions.length - 1
     actions.push({
       name: isSpecial ? t('social.index.user.special.cancel') : t('social.index.user.special.set'),
       type: 'special',
-      color: '#333',
     })
     reportActionIndex.special = actions.length - 1
   } else {
     actions.push({ name: t('social.index.user.follow'), type: 'follow', color: '#ff6b03' })
     reportActionIndex.follow = actions.length - 1
-    actions.push({ name: t('social.index.user.special.set'), type: 'special', color: '#333' })
+    actions.push({ name: t('social.index.user.special.set'), type: 'special' })
     reportActionIndex.special = actions.length - 1
   }
   actions.push({ name: '', type: 'divider', disabled: true })
@@ -1488,20 +1487,20 @@ onUnmounted(() => {
       width: calc(100% - 44rpx - 16rpx);
       height: 56rpx;
       padding: 6rpx;
-      background-color: #ffffff;
+      background-color: var(--bg-card);
       border-radius: 34rpx;
     }
 
     .searchDivider {
       width: 1rpx;
       height: 28rpx;
-      background: rgba(0, 0, 0, 0.12);
+      background: var(--black-12);
     }
 
     .searchBtn {
       font-size: 28rpx;
       font-weight: 500;
-      color: #999;
+      color: var(--text-secondary);
       white-space: nowrap;
       padding: 0 16rpx;
     }
@@ -1629,8 +1628,8 @@ onUnmounted(() => {
           right: 0;
           width: 32rpx;
           height: 32rpx;
-          background-color: rgba(0, 0, 0, 0.7);
-          color: #fff;
+          background-color: var(--black-70);
+          color: var(--bg-card);
           border-radius: 50%;
           display: flex;
           align-items: center;
@@ -1657,7 +1656,7 @@ onUnmounted(() => {
 
       .userName {
         font-size: 24rpx;
-        color: #666;
+        color: var(--wot-message-box-content-color);
         width: 100%;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -1709,9 +1708,9 @@ onUnmounted(() => {
       flex: 1;
       padding: 16rpx 0;
       font-size: 28rpx;
-      color: #333;
+      color: var(--actions-text);
       text-align: center;
-      background: #f5f5f5;
+      background: var(--wot-action-sheet-active-color);
       border-radius: 12rpx;
 
       &.active {
@@ -1724,12 +1723,12 @@ onUnmounted(() => {
   .customTimeSection {
     margin-top: 32rpx;
     padding-top: 24rpx;
-    border-top: 2rpx solid #f0f0f0;
+    border-top: 2rpx solid var(--divider-color);
 
     .sectionTitle {
       font-size: 30rpx;
       font-weight: 500;
-      color: #333333;
+      color: var(--actions-text);
       margin-bottom: 16rpx;
     }
 
@@ -1741,13 +1740,13 @@ onUnmounted(() => {
 
       .timeRowLabel {
         font-size: 28rpx;
-        color: #333;
+        color: var(--actions-text);
       }
     }
 
     .timeDivider {
       height: 1rpx;
-      background: #f0f0f0;
+      background: var(--divider-color);
     }
   }
 
@@ -1770,12 +1769,12 @@ onUnmounted(() => {
   .recentMembers {
     margin-bottom: 24rpx;
     padding-bottom: 24rpx;
-    border-bottom: 2rpx solid #f0f0f0;
+    border-bottom: 2rpx solid var(--divider-color);
 
     .recentTitle {
       font-size: 28rpx;
       font-weight: 500;
-      color: #666;
+      color: var(--wot-message-box-content-color);
       margin-bottom: 20rpx;
     }
 
@@ -1789,7 +1788,7 @@ onUnmounted(() => {
         align-items: center;
         gap: 16rpx;
         padding: 16rpx;
-        background: #f7f7f7;
+        background: var(--recentMemberItem-bg-color);
         border-radius: 12rpx;
         transition: all 0.2s ease;
 
@@ -1835,7 +1834,7 @@ onUnmounted(() => {
           .recentName {
             font-size: 28rpx;
             font-weight: 500;
-            color: #333;
+            color: var(--actions-text);
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -1843,7 +1842,7 @@ onUnmounted(() => {
 
           .recentId {
             font-size: 24rpx;
-            color: #999;
+            color: var(--text-secondary);
           }
         }
 
@@ -1868,7 +1867,7 @@ onUnmounted(() => {
       align-items: center;
       gap: 16rpx;
       padding: 20rpx 0;
-      border-bottom: 1rpx solid #f0f0f0;
+      border-bottom: 1rpx solid var(--divider-color);
 
       .memberAvatarWrap {
         position: relative;
@@ -1901,12 +1900,12 @@ onUnmounted(() => {
         flex: 1;
         .memberName {
           font-size: 28rpx;
-          color: #333;
+          color: var(--actions-text);
           margin-right: 12rpx;
         }
         .memberId {
           font-size: 24rpx;
-          color: #999;
+          color: var(--text-secondary);
           margin-top: 4rpx;
         }
       }
@@ -1925,16 +1924,16 @@ onUnmounted(() => {
 
           &.follow {
             background: var(--liberty-cats-primary-color);
-            color: #fff;
+            color: var(--bg-card);
             border: 1rpx solid var(--liberty-cats-primary-color);
           }
           &.followed {
-            background: #fff;
-            color: #999;
+            background: var(--bg-card);
+            color: var(--text-secondary);
             border: 1rpx solid #d9d9d9;
           }
           &.mutual {
-            background: #fff;
+            background: var(--bg-card);
             color: var(--liberty-cats-primary-color);
             border: 1rpx solid var(--liberty-cats-primary-color);
           }
@@ -1953,12 +1952,12 @@ onUnmounted(() => {
   .emptyHint {
     padding: 48rpx 0;
     font-size: 28rpx;
-    color: #999;
+    color: var(--text-secondary);
     text-align: center;
     &.noResult {
       font-size: 26rpx;
       font-weight: 500;
-      color: #666;
+      color: var(--wot-message-box-content-color);
     }
   }
 
@@ -1969,8 +1968,8 @@ onUnmounted(() => {
     margin-top: 24rpx;
 
     :deep(.cancelBtn) {
-      background: #f5f5f5 !important;
-      color: #333 !important;
+      background: var(--wot-action-sheet-active-color) !important;
+      color: var(--actions-text) !important;
       border: none !important;
     }
   }
@@ -1981,12 +1980,12 @@ onUnmounted(() => {
     align-items: center;
     padding: 24rpx 0;
     font-size: 28rpx;
-    color: #333;
-    border-bottom: 1rpx solid #f0f0f0;
+    color: var(--actions-text);
+    border-bottom: 1rpx solid var(--divider-color);
 
     .tagCount {
       font-size: 24rpx;
-      color: #999;
+      color: var(--text-secondary);
     }
   }
 }
@@ -2006,15 +2005,15 @@ onUnmounted(() => {
   border-radius: 22rpx;
   border: 1rpx solid transparent;
   background-color: #ff6b03;
-  color: #fff;
+  color: var(--bg-card);
   font-size: 22rpx;
   line-height: 1;
   white-space: nowrap;
   flex-shrink: 0;
   box-sizing: border-box;
   &.followed {
-    background-color: #ffffff;
-    color: #999;
+    background-color: var(--bg-card);
+    color: var(--text-secondary);
     border-color: #ddd;
   }
   &.special {
@@ -2065,7 +2064,7 @@ onUnmounted(() => {
   min-height: 2rpx !important;
   margin: 16rpx 0;
   padding: 0 !important;
-  background: #f0f0f0;
+  background: var(--divider-color);
   pointer-events: none;
   border: none !important;
   overflow: hidden;
@@ -2079,12 +2078,12 @@ onUnmounted(() => {
   padding: 16rpx 0;
   .banLabel {
     font-size: 28rpx;
-    color: #333;
+    color: var(--actions-text);
     margin-bottom: 24rpx;
   }
   .banDaysTitle {
     font-size: 26rpx;
-    color: #666;
+    color: var(--wot-message-box-content-color);
     margin-bottom: 12rpx;
   }
   .banDaysRow {
@@ -2096,11 +2095,11 @@ onUnmounted(() => {
       padding: 16rpx 0;
       text-align: center;
       font-size: 28rpx;
-      color: #333;
-      background: #f5f5f5;
+      color: var(--actions-text);
+      background: var(--wot-action-sheet-active-color);
       border-radius: 12rpx;
       &.active {
-        color: #fff;
+        color: var(--bg-card);
         background: #ff6b03;
       }
     }
@@ -2137,7 +2136,7 @@ onUnmounted(() => {
       line-height: 1.4;
     }
     .tag1 {
-      color: #fff;
+      color: var(--bg-card);
       background: var(--wot-color-primary);
     }
     .tag2 {
@@ -2151,10 +2150,10 @@ onUnmounted(() => {
   }
   .title {
     flex: 1;
-    color: #1d1d1f !important;
+    color: var(--text-color) !important;
   }
   .content {
-    color: #666666 !important;
+    color: var(--wot-message-box-content-color) !important;
   }
 }
 
@@ -2182,18 +2181,18 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 24rpx 32rpx;
-  border-bottom: 1rpx solid #eee;
+  border-bottom: 1rpx solid var(--userFilterHeader-border-color);
 }
 .userFilterTitle {
   font-size: 32rpx;
   font-weight: 600;
-  color: #333;
+  color: var(--actions-text);
 }
 .userFilterClose {
   padding: 8rpx 16rpx;
 }
 .closeIcon {
   font-size: 32rpx;
-  color: #999;
+  color: var(--text-secondary);
 }
 </style>

@@ -395,8 +395,8 @@ export default defineComponent({
     justify-content: space-between;
     height: 44px;
     padding: 0 16px;
-    color: #fff;
-    background-color: rgba(0, 0, 0, 0.7);
+    color: var(--bg-card);
+    background-color: var(--black-70);
   }
 
   &__close {

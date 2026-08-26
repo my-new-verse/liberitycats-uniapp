@@ -329,7 +329,7 @@ onReachBottom(() => {
 @import '/src/style/base';
 
 :deep(.fixedBar) {
-  background-color: #f7f6f4;
+  background-color: var(--bg-primary);
 }
 
 :deep(.zh-Hans, .zh-Hant) {
@@ -341,7 +341,7 @@ onReachBottom(() => {
 .page3 {
   position: relative;
   min-height: 100vh;
-  background-color: #f7f6f4;
+  background-color: var(--bg-primary);
 }
 
 .content {
@@ -356,7 +356,7 @@ onReachBottom(() => {
     top: var(--safe-top-rpx);
     left: 0;
     z-index: 96;
-    background-color: #f7f6f4;
+    background-color: var(--bg-primary);
   }
 }
 
@@ -383,7 +383,7 @@ onReachBottom(() => {
     font-size: 36rpx;
     font-weight: 400;
     line-height: 42rpx;
-    color: #261000;
+    color: var(--text-primary);
     &.is-active {
       .wd-tabs__nav-item-text {
         font-size: 36rpx;
@@ -412,7 +412,7 @@ onReachBottom(() => {
   /* 溢出隐藏，禁止内部滚动 */
   overflow: hidden;
   /* 保留你原来的背景色，删除 min-height: 100vh（和 fixed 冲突） */
-  background-color: #f7f6f4;
+  background-color: var(--bg-primary);
   /* 层级拉满，防止被其他元素覆盖 */
   z-index: 999;
   height: 100vh;

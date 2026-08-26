@@ -183,6 +183,14 @@ onUnmounted(() => {
 <style lang="scss" scoped>
 @import '/src/style/base';
 
+:deep(.cnt) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
+:deep(.fbg) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
 .page {
   background-color: var(--liberty-cats-page-background-color);
   .cnt {
@@ -231,14 +239,14 @@ onUnmounted(() => {
       font-size: 24rpx;
       font-weight: 400;
       line-height: 28 rpx;
-      color: rgba(38, 16, 0, 0.6);
+      color: var(--goodsAttr-color);
     }
 
     .value {
       font-size: 24rpx;
       font-weight: 400;
       line-height: 28rpx;
-      color: #261000;
+      color: var(--text-primary);
     }
   }
 

@@ -361,7 +361,7 @@ const toInFocusDetail = (item: any) => {
   position: relative;
   width: 100%;
   // min-height: 400rpx;
-  background-color: #f3f3f4;
+  background-color: var(--fixedCommentBox-color);
   border-radius: 12rpx;
   overflow: hidden;
 }
@@ -369,7 +369,7 @@ const toInFocusDetail = (item: any) => {
 .imgItemWrap {
   width: 100%;
   min-height: 180rpx;
-  background-color: #f3f3f4;
+  background-color: var(--fixedCommentBox-color);
   border-radius: 12rpx;
   overflow: hidden;
 }
@@ -387,7 +387,7 @@ const toInFocusDetail = (item: any) => {
 
   .translateLabel {
     font-size: 24rpx;
-    color: #536471;
+    color: var(--translateLabel-color);
   }
 
   .translateToggle {
@@ -399,7 +399,7 @@ const toInFocusDetail = (item: any) => {
 
 .articleCard {
   margin-top: 16rpx;
-  border: 1rpx solid #e8e8e8;
+  border: 1rpx solid var(--isSupporter-border-color);
   border-radius: 16rpx;
   overflow: hidden;
   background-color: #fafafa;
@@ -415,7 +415,7 @@ const toInFocusDetail = (item: any) => {
     .articleTitle {
       font-size: 28rpx;
       font-weight: 700;
-      color: #261000;
+      color: var(--text-primary);
       line-height: 40rpx;
     }
 
@@ -423,7 +423,7 @@ const toInFocusDetail = (item: any) => {
       margin-top: 8rpx;
       font-size: 24rpx;
       font-weight: 400;
-      color: #666666;
+      color: var(--wot-message-box-content-color);
       line-height: 36rpx;
       display: -webkit-box;
       -webkit-box-orient: vertical;

@@ -1450,7 +1450,7 @@ onUnmounted(() => {
 
   .emptyText {
     font-size: 28rpx;
-    color: #999;
+    color: var(--text-secondary);
   }
 }
 
@@ -1598,7 +1598,7 @@ onUnmounted(() => {
 .tab-text {
   font-size: 24rpx;
   font-weight: 500;
-  color: #333;
+  color: var(--actions-text);
   transition: color 0.3s ease;
   // font-family: Alibaba PuHuiTi2;
   font-family: 'Alimama FangYuanTi VF' !important;
@@ -1657,7 +1657,7 @@ onUnmounted(() => {
     font-style: normal;
     font-weight: 500;
     line-height: 48rpx;
-    color: #261000;
+    color: var(--text-primary);
   }
 }
 
@@ -1672,7 +1672,7 @@ onUnmounted(() => {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #fff;
+    color: var(--bg-card);
     font-size: 28rpx;
     border-radius: 0 34rpx 34rpx 0;
     &.delete {
@@ -1692,14 +1692,14 @@ onUnmounted(() => {
   padding: 16rpx 24rpx;
   font-size: 24rpx;
   font-weight: 600;
-  color: #999;
+  color: var(--text-secondary);
 }
 
 /* 日期分组标题文本 */
 .time-header-date-text {
   font-size: 24rpx;
   font-weight: 600;
-  color: #999;
+  color: var(--text-secondary);
 }
 
 .time-header-empty {
@@ -1754,7 +1754,7 @@ onUnmounted(() => {
   border-radius: 50%;
   background-size: cover;
   background-position: center;
-  background-color: #f5f5f5;
+  background-color: var(--wot-action-sheet-active-color);
 }
 .community-unread-dot {
   position: absolute;
@@ -1764,7 +1764,7 @@ onUnmounted(() => {
   height: 20rpx;
   background: var(--liberty-cats-primary-color);
   border-radius: 50%;
-  border: 2rpx solid #fff;
+  border: 2rpx solid var(--bg-card);
 
   &.hide {
     display: none;
@@ -1811,11 +1811,11 @@ onUnmounted(() => {
   font-size: 26rpx;
   // font-weight: 600;
   // color: #333;
-  color: #000;
+  color: var(--text-black);
 }
 .community-time {
   font-size: 22rpx;
-  color: #999;
+  color: var(--text-secondary);
   flex-shrink: 0;
 }
 .community-subtext {
@@ -1824,7 +1824,7 @@ onUnmounted(() => {
   overflow: hidden;
 }
 .community-preview-text {
-  color: #666;
+  color: var(--wot-message-box-content-color);
   display: flex;
   // align-items: center;
   flex-wrap: wrap;
@@ -1851,13 +1851,13 @@ onUnmounted(() => {
     -webkit-line-clamp: 2; /* 最多展示两行，超出部分省略号 */
   }
   .action {
-    color: #999 !important;
+    color: var(--text-secondary) !important;
     font-size: 24rpx !important;
   }
 
   .interactionTargetSummary,
   .commentContent {
-    color: #000;
+    color: var(--text-black);
     font-size: 26rpx;
   }
 }
@@ -1873,14 +1873,14 @@ onUnmounted(() => {
 
   // 未关注：主色背景，白色文字
   &.follow {
-    color: #fff;
+    color: var(--bg-card);
     background-color: #ff6b03;
   }
 
   // 已关注/特别关注/互相关注：浅灰背景，深色文字
   &.followed {
-    color: #666;
-    background-color: #f5f5f5;
+    color: var(--wot-message-box-content-color);
+    background-color: var(--wot-action-sheet-active-color);
   }
 }
 
@@ -1892,7 +1892,7 @@ onUnmounted(() => {
   margin-left: 8rpx;
   border-radius: 12rpx;
   overflow: hidden;
-  background-color: #f5f5f5;
+  background-color: var(--wot-action-sheet-active-color);
 }
 .thumbnail-placeholder {
   width: 100%;
@@ -1918,11 +1918,11 @@ onUnmounted(() => {
   height: calc(100% - 16rpx);
   box-sizing: border-box;
   padding: 8rpx;
-  background-color: #fbf7f3;
+  background-color: var(--thumbnail-text-bg-color);
 
   .thumbnail-text-inner {
     font-size: 22rpx;
-    color: #666;
+    color: var(--wot-message-box-content-color);
     line-height: 1.5;
     text-align: center;
     overflow: hidden;

@@ -1,0 +1,236 @@
+// 扩展 Plus 对象类型，避免 TS 报错（仅 App 平台存在）
+declare const plus: any
+
+const lightVars: Record<string, string> = {
+  '--bg-primary': '#f7f6f4',
+  '--bg-card': '#ffffff',
+  '--text-primary': '#261000',
+  '--text-secondary': '#999999',
+  '--border-light': '#f0f0f0',
+  '--black-30': 'rgba(0, 0, 0, 0.3)',
+  '--actions-text': '#333',
+  '--text-black': '#000000',
+  '--avatar-color': '#fafafa',
+  '--fixedCommentBox-color': '#f3f3f4',
+  '--commentTextArea-color': 'rgba(38, 16, 0, 0.3)',
+  '--divider-color': '#f0f0f0',
+  '--wot-divider': '#ddd',
+  '--translateLabel-color': '#536471',
+  '--wot-message-box-content-color': '#666666',
+  '--wot-button-info-bg-color': '#f0f0f0',
+  '--wot-color-black': '#000000',
+  '--wot-action-sheet-active-color': '#f5f5f5',
+  '--border-color': '#f2f2f2',
+  '--radio-border-color': '#ccc',
+  '--wot-textarea-color': '#262626',
+  '--notice-box-color': '#fff9e6',
+  '--wot-textarea-count-current-color': '#262626',
+  '--wot-textarea-count-color': '#bfbfbf',
+  '--wot-loadmore-color': 'rgba(0, 0, 0, 0.45)',
+  '--wot-steps-line-color': 'rgba(0, 0, 0, 0.15)',
+  '--black-40': 'rgba(0, 0, 0, 0.4)',
+  '--wot-message-box-title-color': 'rgba(0, 0, 0, 0.85)',
+  '--wot-input-bg': '#fff',
+  '--wot-input-placeholder-color': '#bfbfbf',
+  '--wot-input-color': '#262626',
+  '--wot-input-not-empty-border-color': '#262626',
+  '--black-12': 'rgba(0, 0, 0, 0.12)',
+  '--userFilterHeader-border-color': '#eee',
+  '--wot-color-white': '#ffffff',
+  '--wot-action-sheet-color': 'rgba(0, 0, 0, 0.85)',
+  '--wot-cell-value-color': 'rgba(0, 0, 0, 0.85)',
+  '--wot-calendar-panel-title-color': 'rgba(0, 0, 0, 0.85)',
+  '--wot-calendar-week-color': 'rgba(0, 0, 0, 0.85)',
+  '--wot-calendar-day-color': 'rgba(0, 0, 0, 0.85)',
+  '--wot-tabs-nav-color': 'rgba(0, 0, 0, 0.85)',
+  '--wot-calendar-disabled-color': 'rgba(0, 0, 0, 0.25)',
+  '--black-70': 'rgba(0, 0, 0, 0.7)',
+  '--recentMemberItem-bg-color': '#f7f7f7',
+  '--wot-search-input-bg': '#f5f5f5',
+  '--thumbnail-text-bg-color': '#fbf7f3',
+  '--goodsAttr-color': 'rgba(38, 16, 0, 0.6)',
+  '--isSupporter-border-color': '#e8e8e8',
+  '--discountRight-color': '#e5e5e5',
+  '--shippingDivider-bg-color': '#e9e9e9',
+  '--wot-input-number-disabled-color': 'rgba(0, 0, 0, 0.25)',
+  '--wot-input-number-icon-color': 'rgba(0, 0, 0, 0.65)',
+  '--wot-input-number-color': '#262626',
+  '--black-90': 'rgba(0, 0, 0, 0.9)',
+  '--black-60': 'rgba(0, 0, 0, 0.6)',
+  '--item-border-color': 'rgba(38, 16, 0, 0.1)',
+  '--chat-user-name-color': '#888888',
+  '--chat-text-container-bg-color': '#f1f1f1',
+  '--black-03': 'rgba(0, 0, 0, 0.03)',
+  '--publish-border-color': '#ededed',
+  '--wot-upload-evoke-bg': 'rgba(0, 0, 0, 0.04)',
+  '--text-color': '#1d1d1f',
+  '--wot-input-count-current-color': '#262626',
+  '--wot-input-count-color': '#bfbfbf',
+  '--wot-table-bg': 'ffffff',
+  '--wot-table-color': 'rgba(0, 0, 0, 0.9)',
+  '--wot-search-placeholder-color': '#bfbfbf',
+  '--wot-search-input-color': '#262626',
+  '--wot-search-cancel-color': 'rgba(0, 0, 0, 0.65)',
+  '--chat-text-color': '#1a1a1a',
+  '--announcement-title-color': '#181818',
+  '--group-announcement-detail-color': '#121212',
+  '--group-announcement-detail-info-row-color': '#2b2b2b',
+  '--pointBox-bg-color': '#f9f9f9',
+  '--login-head-bg':
+    'linear-gradient(360deg, #ffffff 0%, rgba(255, 255, 255, 0) 100%), linear-gradient(90deg, #fefcf5 0%, #fcfdd4 25%, #ffe8d7 71%)',
+  '--appUpdate-version-color': 'rgba(255, 255, 255, 0.92)',
+  '--appUpdate-version-bg': 'rgba(255, 255, 255, 0.2)',
+  '--appUpdate-version-border-color': 'rgba(255, 255, 255, 0.15)',
+  '--appUpdate-version-shadow': '0 1px 4px rgba(0, 0, 0, 0.06)',
+  '--wot-number-keyboard-background': '#f2f3f5',
+  '--wot-number-keyboard-key-active-color': '#ebedf0',
+  '--wot-password-input-text-color': '#323233',
+  '--nftValuation-bg-color': '#fff8f0',
+}
+
+const darkVars: Record<string, string> = {
+  '--bg-primary': '#1a1a1a',
+  '--bg-card': '#2d2d2d',
+  '--text-primary': '#e0e0e0',
+  '--text-secondary': '#888888',
+  '--border-light': '#3a3a3a',
+  '--black-30': 'rgba(255, 255, 255, 0.3)',
+  '--actions-text': '#e0e0e0',
+  '--text-black': '#ffffff',
+  '--avatar-color': '#262626',
+  '--fixedCommentBox-color': '#1e1e1e',
+  '--commentTextArea-color': 'rgba(226, 226, 226, 0.65)',
+  '--divider-color': '#4e4e4e',
+  '--wot-divider': '#595959',
+  '--translateLabel-color': '#b5c4d0',
+  '--wot-message-box-content-color': '#b6b6b6',
+  '--wot-button-info-bg-color': '#3a3a3a',
+  '--wot-color-black': '#ffffff',
+  '--wot-action-sheet-active-color': '#1a1a1a',
+  '--border-color': '#464646',
+  '--radio-border-color': '#606060',
+  '--wot-textarea-color': '#b8b8b8',
+  '--notice-box-color': '#393424',
+  '--wot-textarea-count-current-color': '#b8b8b8',
+  '--wot-textarea-count-color': '#606060',
+  '--wot-loadmore-color': '#e0e0e0',
+  '--wot-steps-line-color': 'rgba(225, 225, 225, 0.15)',
+  '--black-40': 'rgba(255, 255, 255, 0.4)',
+  '--wot-message-box-title-color': 'rgba(225, 225, 225, 0.85)',
+  '--wot-input-bg': '#2d2d2d',
+  '--wot-input-placeholder-color': '#606060',
+  '--wot-input-color': '#b8b8b8',
+  '--wot-input-not-empty-border-color': '#b8b8b8',
+  '--black-12': 'rgba(225, 225, 225, 0.12)',
+  '--userFilterHeader-border-color': '#4d4d4d',
+  '--wot-color-white': '#2d2d2d',
+  '--wot-action-sheet-color': 'rgba(225, 225, 225, 0.85)',
+  '--wot-cell-value-color': 'rgba(225, 225, 225, 0.85)',
+  '--wot-calendar-panel-title-color': 'rgba(225, 225, 225, 0.85)',
+  '--wot-calendar-week-color': 'rgba(225, 225, 225, 0.85)',
+  '--wot-calendar-day-color': 'rgba(225, 225, 225, 0.85)',
+  '--wot-tabs-nav-color': 'rgba(225, 225, 225, 0.85)',
+  '--wot-calendar-disabled-color': 'rgba(225, 225, 225, 0.25)',
+  '--black-70': 'rgba(255, 255, 255, 0.7)',
+  '--recentMemberItem-bg-color': '#1a1a1a',
+  '--wot-search-input-bg': '#1a1a1a',
+  '--thumbnail-text-bg-color': '#292827',
+  '--goodsAttr-color': 'rgba(226, 226, 226, 0.65)',
+  '--isSupporter-border-color': '#555353',
+  '--discountRight-color': '#6a6a6a',
+  '--shippingDivider-bg-color': '#595959',
+  '--wot-input-number-disabled-color': 'rgba(225, 225, 225, 0.25)',
+  '--wot-input-number-icon-color': 'rgba(225, 225, 225, 0.65)',
+  '--wot-input-number-color': '#b8b8b8',
+  '--black-90': 'rgba(255, 255, 255, 0.9)',
+  '--black-60': 'rgba(255, 255, 255, 0.6)',
+  '--item-border-color': 'rgba(206, 206, 206, 0.1)',
+  '--chat-user-name-color': '#999999',
+  '--chat-text-container-bg-color': '#1a1a1a',
+  '--black-03': 'rgba(225, 225, 225, 0.03)',
+  '--publish-border-color': '#404040',
+  '--wot-upload-evoke-bg': 'rgba(225, 225, 225, 0.04)',
+  '--text-color': '#d1d1d3',
+  '--wot-input-count-current-color': '#b8b8b8',
+  '--wot-input-count-color': '#606060',
+  '--wot-table-bg': '#2d2d2d',
+  '--wot-table-color': 'rgba(225, 225, 225, 0.9)',
+  '--wot-search-placeholder-color': '#606060',
+  '--wot-search-input-color': '#b8b8b8',
+  '--wot-search-cancel-color': 'rgba(225, 225, 225, 0.65)',
+  '--chat-text-color': '#d2d2d2',
+  '--announcement-title-color': '#f3f3f3',
+  '--group-announcement-detail-color': '#d6d6d6',
+  '--group-announcement-detail-info-row-color': '#d7d7d7',
+  '--pointBox-bg-color': '#1a1a1a',
+  '--login-head-bg': '#2d2d2d',
+  '--appUpdate-version-color': 'rgba(0, 0, 0, 0.92)',
+  '--appUpdate-version-bg': 'rgba(0, 0, 0, 0.2)',
+  '--appUpdate-version-border-color': 'rgba(0, 0, 0, 0.15)',
+  '--appUpdate-version-shadow': '0 1px 4px rgba(255, 255, 255, 0.06)',
+  '--wot-number-keyboard-background': '#0d0c0a',
+  '--wot-number-keyboard-key-active-color': '#14120f',
+  '--wot-password-input-text-color': '#e0e0e0',
+  '--nftValuation-bg-color': '#292827',
+}
+
+export function applyTheme(mode: 'light' | 'dark') {
+  const vars = mode === 'dark' ? darkVars : lightVars
+  const root = document.documentElement
+  Object.entries(vars).forEach(([key, value]) => {
+    root.style.setProperty(key, value)
+  })
+}
+
+export type ThemeMode = 'light' | 'dark' | 'system'
+
+/** 读取存储的主题档位，无值/非法值默认 'system'（跟随系统） */
+export function getStoredTheme(): ThemeMode {
+  const saved = uni.getStorageSync('app_theme')
+  if (saved === 'light' || saved === 'dark' || saved === 'system') return saved
+  return 'system'
+}
+
+/** 获取系统当前的深色模式状态，拿不到时按浅色处理 */
+export function getSystemTheme(): 'light' | 'dark' {
+  // #ifdef H5
+  if (typeof window !== 'undefined' && window.matchMedia) {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  }
+  // #endif
+  // #ifdef APP-PLUS
+  const theme = (uni.getSystemInfoSync() as any).theme
+  if (theme === 'dark' || theme === 'light') return theme
+  const uiStyle = plus?.navigator?.getUIStyle?.()
+  if (uiStyle === 'dark' || uiStyle === 'light') return uiStyle
+  // #endif
+  return 'light'
+}
+
+/** 把三档模式解析成实际主题：system 档跟随系统当前状态 */
+export function resolveTheme(mode: ThemeMode): 'light' | 'dark' {
+  return mode === 'system' ? getSystemTheme() : mode
+}
+
+/** 监听系统深浅色变化，仅当用户选择"跟随系统"时自动应用 */
+export function watchSystemTheme() {
+  // #ifdef H5
+  const mql = window.matchMedia('(prefers-color-scheme: dark)')
+  mql.addEventListener('change', () => {
+    if (getStoredTheme() === 'system') {
+      applyTheme(mql.matches ? 'dark' : 'light')
+    }
+  })
+  // #endif
+  // #ifdef APP-PLUS
+  uni.onThemeChange((res) => {
+    if (getStoredTheme() === 'system') {
+      applyTheme(res.theme === 'dark' ? 'dark' : 'light')
+    }
+  })
+  // #endif
+}
+
+export function initTheme() {
+  applyTheme(resolveTheme(getStoredTheme()))
+}

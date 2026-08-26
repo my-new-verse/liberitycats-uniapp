@@ -935,7 +935,7 @@ watch(
 }
 
 .mp-atom-close {
-  color: #999;
+  color: var(--text-secondary);
   font-size: 28rpx;
   line-height: 1;
   padding: 0 4rpx;
@@ -952,7 +952,7 @@ watch(
 }
 
 .mp-atom--image {
-  color: #999;
+  color: var(--text-secondary);
   font-style: italic;
 }
 </style>

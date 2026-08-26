@@ -267,12 +267,12 @@ onUnload(() => {
 .page {
   .cnt {
     position: relative;
-    background-color: #f7f6f4;
+    background-color: var(--bg-primary);
   }
   .pbl,
   .pbr {
     .fbg {
-      background-color: #f7f6f4;
+      background-color: var(--bg-primary);
     }
   }
 }
@@ -284,7 +284,7 @@ onUnload(() => {
   bottom: 0;
   left: 0;
   z-index: 999;
-  background-color: #fff;
+  background-color: var(--bg-card);
 }
 
 .loading-overlay {
@@ -297,6 +297,6 @@ onUnload(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #fff;
+  background-color: var(--bg-card);
 }
 </style>

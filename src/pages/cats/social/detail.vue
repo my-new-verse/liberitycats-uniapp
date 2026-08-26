@@ -595,15 +595,14 @@ const reportPost = (post: any) => {
 
   // 关注相关操作
   if (isFollowing) {
-    actions.push({ name: t('social.index.user.unfollow'), type: 'follow', color: '#333' })
+    actions.push({ name: t('social.index.user.unfollow'), type: 'follow' })
     actions.push({
       name: isSpecial ? t('social.index.user.special.cancel') : t('social.index.user.special.set'),
       type: 'specialFollow',
-      color: '#333',
     })
   } else {
     actions.push({ name: t('social.index.user.follow'), type: 'follow', color: '#ff6b03' })
-    actions.push({ name: t('social.index.user.special.set'), type: 'specialFollow', color: '#333' })
+    actions.push({ name: t('social.index.user.special.set'), type: 'specialFollow' })
   }
 
   actions.push({ name: '', type: 'divider', disabled: true })
@@ -1830,17 +1829,27 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
 <style lang="scss" scoped>
 @import '/src/style/base';
 @import '/src/style/social';
+.emptyTxt {
+  color: var(--text-black);
+}
 :deep(.reportSheet) {
   font-family:
     Alimama FangYuanTi VF,
     sans-serif;
+
+  background-color: var(--bg-card);
+
+  .wd-action-sheet__action {
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+  }
 
   .wd-action-sheet__action--disabled {
     height: 2rpx !important;
     min-height: 2rpx !important;
     margin: 16rpx 0;
     padding: 0 !important;
-    background: #f0f0f0;
+    background: var(--divider-color);
     pointer-events: none;
     border: none !important;
     overflow: hidden;
@@ -1868,6 +1877,9 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   user-select: text;
 }
 
+:deep(.cnt2) {
+  background-color: var(--bg-primary) !important;
+}
 .page {
   padding-bottom: 120rpx;
   .cnt {
@@ -1923,7 +1935,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
 
   .pubCommentBox {
     .commentTextAreaBox {
-      background-color: #f3f3f4 !important;
+      background-color: var(--fixedCommentBox-color) !important;
       border-radius: 32rpx;
 
       .emojiBox2 {
@@ -1960,12 +1972,12 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
     min-height: 108rpx;
     padding: 24rpx !important;
     padding-bottom: 0 !important;
-    background-color: #f3f3f4 !important;
+    background-color: var(--fixedCommentBox-color) !important;
     border-radius: 32rpx;
   }
   .commentHidden {
     width: 100%;
-    background-color: #fff;
+    background-color: var(--bg-card);
   }
 
   // 表情包 start
@@ -1974,7 +1986,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
     height: 600rpx;
     padding-top: 24rpx;
     margin-top: 24rpx;
-    border-top: 1rpx solid #f3f3f4;
+    border-top: 1rpx solid var(--fixedCommentBox-color);
 
     .category {
       display: flex;
@@ -1996,7 +2008,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
         }
       }
       .categoryItem.active {
-        background: #f3f3f4;
+        background: var(--fixedCommentBox-color);
         border-radius: 84rpx;
       }
     }
@@ -2050,8 +2062,8 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   height: calc(120rpx - 48rpx);
   padding: 24rpx;
   padding-bottom: env(safe-area-inset-bottom);
-  background-color: #ffffff;
-  border-top: 1rpx solid #f3f3f4;
+  background-color: var(--bg-card);
+  border-top: 1rpx solid var(--fixedCommentBox-color);
   .commentTextArea {
     width: calc(100% - 48rpx);
     height: calc(100% - 36rpx);
@@ -2059,8 +2071,8 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
     font-size: 28rpx;
     font-weight: 400;
     line-height: 36rpx;
-    color: rgba(38, 16, 0, 0.3);
-    background: #f3f3f4;
+    color: var(--commentTextArea-color);
+    background: var(--fixedCommentBox-color);
     border-radius: 64rpx;
   }
 }
@@ -2074,14 +2086,14 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
 .socialBox {
   padding: 40rpx;
   padding-bottom: 20rpx;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
 }
 .commentBox {
   flex: 1;
   padding: 40rpx;
   margin-top: 32rpx;
   overflow-y: auto;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
   .commentFilterBox {
     display: flex;
     align-items: center;
@@ -2090,7 +2102,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
       font-size: 28rpx;
       font-weight: 600;
       line-height: 44rpx;
-      color: #261000;
+      color: var(--text-primary);
     }
     .opBox {
       display: flex;
@@ -2098,6 +2110,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
       justify-content: end;
       .opBtn {
         margin-left: 16rpx;
+        color: var(--text-primary);
       }
       .opBtn.active {
         color: #ff6b03;
@@ -2119,8 +2132,8 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
         width: 64rpx;
         height: 64rpx;
         overflow: hidden;
-        background-color: #fafafa;
-        border: 2rpx solid #f3f3f4;
+        background-color: var(--avatar-color);
+        border: 2rpx solid var(--fixedCommentBox-color);
         border-radius: 50%;
       }
       .levelIcon {
@@ -2145,14 +2158,14 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
         font-size: 24rpx;
         font-weight: 400;
         line-height: 36rpx;
-        color: #999999;
+        color: var(--text-secondary);
         // margin-bottom: 6rpx;
       }
       .commentCnt {
         font-size: 28rpx;
         font-weight: 400;
         line-height: 40rpx;
-        color: #261000;
+        color: var(--text-primary);
         word-break: break-all;
       }
       .commentMedia {
@@ -2177,7 +2190,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
           font-size: 24rpx;
           font-weight: 400;
           line-height: 36rpx;
-          color: #999999;
+          color: var(--text-secondary);
         }
 
         .rightBox {
@@ -2214,7 +2227,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
               margin-left: 4rpx;
               font-size: 24rpx;
               font-weight: 400;
-              color: #999999;
+              color: var(--text-secondary);
             }
           }
 
@@ -2235,7 +2248,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
     }
   }
   .highlight {
-    background-color: #f0f0f0 !important; // 加!important确保覆盖原有样式
+    background-color: var(--border-light) !important; // 加!important确保覆盖原有样式
     transition: background-color 0.3s ease;
   }
 }
@@ -2249,13 +2262,13 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   align-items: center;
   gap: 8rpx;
   font-size: 24rpx;
-  color: #999;
+  color: var(--text-secondary);
   .arrow {
     width: 0;
     height: 0;
     border-left: 6rpx solid transparent;
     border-right: 6rpx solid transparent;
-    border-top: 6rpx solid #999;
+    border-top: 6rpx solid var(--text-secondary);
     transition: transform 0.2s;
     &.up {
       transform: rotate(180deg);
@@ -2292,7 +2305,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   width: 36rpx;
   height: 36rpx;
   border-radius: 50%;
-  background: #f5f5f5;
+  background: var(--wot-action-sheet-active-color);
 }
 .replyAvatarWrap {
   position: relative;
@@ -2319,7 +2332,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
 }
 
 .share-container {
-  background-color: #fff;
+  background-color: var(--bg-card);
   padding: 40rpx 0 60rpx;
   position: relative;
 
@@ -2342,7 +2355,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
     font-size: 28rpx;
     font-weight: 600;
     line-height: 44rpx;
-    color: #261000;
+    color: var(--text-primary);
     font-family:
       Alimama FangYuanTi VF,
       sans-serif;
@@ -2368,7 +2381,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
 
       .share-text {
         font-size: 24rpx;
-        color: #666;
+        color: var(--wot-message-box-content-color);
         font-family:
           Alimama FangYuanTi VF,
           sans-serif;
@@ -2420,13 +2433,13 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   box-sizing: border-box;
   border: 1rpx solid transparent;
   background-color: #ff6b03;
-  color: #fff;
+  color: var(--bg-card);
   position: absolute;
   right: 48rpx;
   top: 0;
   &.followed {
-    background-color: #ffffff;
-    color: #999;
+    background-color: var(--bg-card);
+    color: var(--text-secondary);
     border-color: #ddd;
   }
 }

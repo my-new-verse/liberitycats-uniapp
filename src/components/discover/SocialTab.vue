@@ -218,6 +218,8 @@ const message = useMessage('wd-message-box-slot')
 const toast = useToast()
 const messageBan = useMessage('wd-message-box-ban')
 
+const getTextPrimaryColor = () => (uni.getStorageSync('app_theme') === 'dark' ? '#e0e0e0' : '#333')
+
 const props = defineProps<{
   state: string
   cntPaddingTop: number
@@ -868,7 +870,7 @@ const updateBanAction = (isBanned: boolean) => {
   // 重新计算分割线之后的索引
   // 追加到末尾
   if (isBanned) {
-    actions.push({ name: t('report.admin.unban_post.action'), type: 'unban', color: '#333' })
+    actions.push({ name: t('report.admin.unban_post.action'), type: 'unban' })
     reportActionIndex.unban = actions.length - 1
   } else {
     actions.push({ name: t('report.admin.ban_post.action'), type: 'ban', color: '#FF3B30' })
@@ -937,12 +939,11 @@ const reportPost = async (post: getCommunityPostListApiResponse['data'][number])
 
   // 关注相关操作
   if (isFollowing) {
-    actions.push({ name: t('social.index.user.unfollow'), type: 'follow', color: '#333' })
+    actions.push({ name: t('social.index.user.unfollow'), type: 'follow' })
     reportActionIndex.follow = actions.length - 1
     actions.push({
       name: isSpecial ? t('social.index.user.special.cancel') : t('social.index.user.special.set'),
       type: 'special',
-      color: '#333',
     })
     reportActionIndex.special = actions.length - 1
   } else {
@@ -951,7 +952,6 @@ const reportPost = async (post: getCommunityPostListApiResponse['data'][number])
     actions.push({
       name: t('social.index.user.special.set'),
       type: 'special',
-      color: '#333',
     })
     reportActionIndex.special = actions.length - 1
   }
@@ -1165,13 +1165,19 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
 @import '/src/style/social';
 :deep(.reportSheet) {
   margin-bottom: calc(env(safe-area-inset-bottom) + 120rpx) !important;
+  background-color: var(--bg-card);
+
+  .wd-action-sheet__action {
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+  }
 
   .wd-action-sheet__action--disabled {
     height: 2rpx !important;
     min-height: 2rpx !important;
     margin: 16rpx 0;
     padding: 0 !important;
-    background: #f0f0f0;
+    background: var(--divider-color);
     pointer-events: none;
     border: none !important;
     overflow: hidden;
@@ -1198,7 +1204,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   border-radius: 22rpx;
   border: 1rpx solid transparent;
   background-color: #ff6b03;
-  color: #fff;
+  color: var(--bg-card);
   font-size: 22rpx;
   line-height: 42rpx;
   white-space: nowrap;
@@ -1208,8 +1214,8 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   right: 48rpx;
   top: 0;
   &.followed {
-    background-color: #ffffff;
-    color: #999;
+    background-color: var(--bg-card);
+    color: var(--text-secondary);
     border-color: #ddd;
   }
   &.special {
@@ -1229,7 +1235,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   right: 32rpx;
   width: auto !important;
   z-index: 10;
-  background-color: var(--liberty-cats-page-background-color);
+  background-color: var(--bg-primary);
   align-items: flex-end !important;
   padding-bottom: 12rpx;
 }
@@ -1246,7 +1252,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   height: 32rpx;
   padding: 0 8rpx;
   border-radius: 999rpx;
-  color: #fff;
+  color: var(--bg-card);
   font-size: 20rpx;
   line-height: 32rpx;
   text-align: center;
@@ -1264,12 +1270,12 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   padding: 16rpx 0;
   .banLabel {
     font-size: 28rpx;
-    color: #333;
+    color: var(--actions-text);
     margin-bottom: 24rpx;
   }
   .banDaysTitle {
     font-size: 26rpx;
-    color: #666;
+    color: var(--wot-message-box-content-color);
     margin-bottom: 12rpx;
   }
   .banDaysRow {
@@ -1281,11 +1287,11 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
       padding: 16rpx 0;
       text-align: center;
       font-size: 28rpx;
-      color: #333;
-      background: #f5f5f5;
+      color: var(--actions-text);
+      background: var(--wot-action-sheet-active-color);
       border-radius: 12rpx;
       &.active {
-        color: #fff;
+        color: var(--bg-card);
         background: #ff6b03;
       }
     }
@@ -1295,7 +1301,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
 :deep(.wd-sticky__container) {
   width: 100vw;
   z-index: 999;
-  background-color: #fff;
+  background-color: var(--bg-card);
 }
 .zanWrapper {
   width: 85rpx !important;

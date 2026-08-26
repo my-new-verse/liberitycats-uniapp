@@ -86,11 +86,11 @@ watch(
   align-items: center;
   justify-content: center;
   height: 100vh;
-  background-color: #fff;
+  background-color: var(--bg-card);
 }
 
 .loading-text {
   font-size: 16px;
-  color: #666;
+  color: var(--wot-message-box-content-color);
 }
 </style>

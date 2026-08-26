@@ -254,6 +254,10 @@ const handleCloseCommentPopup = () => {
   }
 }
 
+:deep(.cnt2) {
+  background: var(--bg-primary) !important;
+}
+
 :deep(.commentPopup) {
   padding: 32rpx;
   padding-bottom: 32rpx !important;
@@ -277,7 +281,7 @@ const handleCloseCommentPopup = () => {
 
   .pubCommentBox {
     .commentTextAreaBox {
-      background-color: #f3f3f4 !important;
+      background-color: var(--fixedCommentBox-color) !important;
       border-radius: 32rpx;
     }
   }
@@ -286,12 +290,12 @@ const handleCloseCommentPopup = () => {
     min-height: 160rpx;
     padding: 24rpx !important;
     padding-bottom: 0 !important;
-    background-color: #f3f3f4 !important;
+    background-color: var(--fixedCommentBox-color) !important;
     border-radius: 32rpx;
   }
   .commentHidden {
     width: 100%;
-    background-color: #fff;
+    background-color: var(--bg-card);
   }
 }
 .page {
@@ -306,14 +310,14 @@ const handleCloseCommentPopup = () => {
 }
 
 .section {
-  background: #fff;
+  background: var(--bg-card);
   border-radius: 24rpx;
   padding: 0 24rpx;
   margin-bottom: 40rpx;
 }
 
 .section-text {
-  background: #fff;
+  background: var(--bg-card);
   border-radius: 24rpx;
   padding: 24rpx;
   margin-bottom: 24rpx;
@@ -323,7 +327,7 @@ const handleCloseCommentPopup = () => {
   display: flex;
   align-items: flex-start;
   gap: 16rpx;
-  background-color: #fff9e6;
+  background-color: var(--notice-box-color);
   padding: 24rpx;
   border-radius: 24rpx;
   margin-top: 40rpx;
@@ -341,7 +345,7 @@ const handleCloseCommentPopup = () => {
   flex: 1;
   font-size: 28rpx;
   line-height: 1.5;
-  color: #333;
+  color: var(--actions-text);
 }
 
 .section-title {
@@ -357,7 +361,7 @@ const handleCloseCommentPopup = () => {
   align-items: center;
   justify-content: space-between;
   padding: 28rpx 0;
-  border-bottom: 1rpx solid #f2f2f2;
+  border-bottom: 1rpx solid var(--border-color);
 
   &:last-child {
     border-bottom: none;
@@ -366,14 +370,14 @@ const handleCloseCommentPopup = () => {
 
 .reason-left {
   font-size: 28rpx;
-  color: #333;
+  color: var(--actions-text);
 }
 
 .radio {
   width: 36rpx;
   height: 36rpx;
   border-radius: 50%;
-  border: 2rpx solid #ccc;
+  border: 2rpx solid var(--radio-border-color);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -390,7 +394,7 @@ const handleCloseCommentPopup = () => {
   min-height: 160rpx !important;
   padding: 24rpx !important;
   padding-bottom: 0 !important;
-  background-color: #fff !important;
+  background-color: var(--bg-card) !important;
   border-radius: 24rpx;
 }
 
@@ -406,7 +410,7 @@ const handleCloseCommentPopup = () => {
   margin-top: 12rpx;
   text-align: right;
   font-size: 24rpx;
-  color: #999;
+  color: var(--text-secondary);
 }
 .fixedCommentBox {
   position: fixed;
@@ -418,8 +422,8 @@ const handleCloseCommentPopup = () => {
   height: calc(120rpx - 48rpx);
   padding: 24rpx;
   padding-bottom: max(env(safe-area-inset-bottom), 20rpx);
-  background-color: #ffffff;
-  border-top: 1rpx solid #f3f3f4;
+  background-color: var(--bg-card);
+  border-top: 1rpx solid var(--fixedCommentBox-color);
   .commentTextArea {
     width: calc(100% - 48rpx);
     height: calc(100% - 36rpx);
@@ -427,14 +431,14 @@ const handleCloseCommentPopup = () => {
     font-size: 28rpx;
     line-height: 36rpx;
     font-weight: 600;
-    color: #999;
-    background: #f3f3f4;
+    color: var(--text-secondary);
+    background: var(--fixedCommentBox-color);
     border-radius: 64rpx;
     display: flex;
     justify-content: center;
     align-items: center;
     &.active {
-      color: #ffffff;
+      color: var(--bg-card);
       background-color: #ff6b03;
     }
   }
@@ -446,7 +450,7 @@ const handleCloseCommentPopup = () => {
 .fake-textarea {
   position: relative;
   min-height: 200rpx;
-  background-color: #fff;
+  background-color: var(--bg-card);
   border-radius: 24rpx;
   padding: 24rpx;
   box-sizing: border-box;
@@ -454,13 +458,13 @@ const handleCloseCommentPopup = () => {
 }
 .textarea-content {
   font-size: 28rpx;
-  color: #333;
+  color: var(--actions-text);
   line-height: 1.5;
   word-break: break-all;
 }
 .textarea-placeholder {
   font-size: 28rpx;
-  color: #bfbfbf;
+  color: var(--wot-textarea-count-color);
   line-height: 1.5;
   word-break: break-all;
 }
@@ -469,6 +473,6 @@ const handleCloseCommentPopup = () => {
   right: 24rpx;
   bottom: 16rpx;
   font-size: 24rpx;
-  color: #999;
+  color: var(--text-secondary);
 }
 </style>

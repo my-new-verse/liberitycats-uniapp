@@ -167,7 +167,7 @@ const save = () => {
     font-size: 32rpx;
     font-style: normal;
     font-weight: 600;
-    color: #ffffff;
+    color: var(--bg-card);
     text-align: center;
     background: #ff6b03;
   }

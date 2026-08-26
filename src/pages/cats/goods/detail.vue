@@ -595,12 +595,13 @@ const addCart = () => {
 @import '/src/style/base';
 
 .goodsDetail {
-  background: #eee;
+  min-height: 100vh;
+  background: var(--userFilterHeader-border-color);
   :deep(.wd-swiper-nav--bottom) {
     //bottom: 106rpx;
   }
   :deep(.wd-swiper-nav__item--dots-bar) {
-    background-color: #ccc;
+    background-color: var(--radio-border-color);
   }
   :deep(.wd-swiper-nav__item--dots-bar.is-active) {
     background-color: var(--liberty-cats-primary-color);
@@ -633,18 +634,18 @@ const addCart = () => {
 
 .goodsImg {
   height: 750rpx;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
 }
 
 .info {
   padding: 32rpx 40rpx;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
   .title {
     font-size: 40rpx;
     font-style: normal;
     font-weight: 400;
     line-height: 47rpx;
-    color: #261000;
+    color: var(--text-primary);
   }
   .priceBox {
     display: flex;
@@ -679,7 +680,7 @@ const addCart = () => {
       align-items: center;
       padding: 20rpx 24rpx;
       //   background: #fafafa;
-      border: 2rpx solid #e8e8e8;
+      border: 2rpx solid var(--isSupporter-border-color);
       border-radius: 16rpx;
       .discountLeft {
         display: flex;
@@ -717,7 +718,7 @@ const addCart = () => {
             font-size: 24rpx;
             font-weight: 500;
             line-height: 1;
-            color: #999;
+            color: var(--text-secondary);
             text-decoration: line-through;
             white-space: nowrap;
           }
@@ -734,7 +735,7 @@ const addCart = () => {
         }
       }
       .discountRight {
-        border-left: 2rpx solid #e5e5e5;
+        border-left: 2rpx solid var(--discountRight-color);
         flex: 1;
         min-width: 0;
         padding-left: 20rpx;
@@ -769,7 +770,7 @@ const addCart = () => {
           font-size: 24rpx;
           font-weight: 500;
           line-height: 1.2;
-          color: #999;
+          color: var(--text-secondary);
           font-family:
             Alimama FangYuanTi VF,
             sans-serif;
@@ -785,12 +786,12 @@ const addCart = () => {
 .attrBox {
   padding: 40rpx;
   margin-top: 20rpx;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
   .shippingBox {
     padding: 24rpx 0;
     margin-bottom: 30rpx;
-    background: #ffffff;
-    border: 2rpx solid #e8e8e8;
+    background: var(--bg-card);
+    border: 2rpx solid var(--isSupporter-border-color);
     border-radius: 16rpx;
   }
   .shippingTime,
@@ -801,12 +802,12 @@ const addCart = () => {
   }
   .shippingDivider {
     height: 1rpx;
-    background: #e9e9e9;
+    background: var(--shippingDivider-bg-color);
     margin: 24rpx 0;
   }
   .shippingTime {
     font-size: 26rpx;
-    color: #261000;
+    color: var(--text-primary);
     display: flex;
     align-items: center;
     gap: 16rpx;
@@ -814,7 +815,7 @@ const addCart = () => {
   .spotDelivery {
     margin-top: 12rpx;
     font-size: 26rpx;
-    color: #261000;
+    color: var(--text-primary);
     display: flex;
     align-items: center;
     gap: 16rpx;
@@ -842,7 +843,7 @@ const addCart = () => {
       .saleInfoSub {
         margin-top: 8rpx;
         font-size: 22rpx;
-        color: #999;
+        color: var(--text-secondary);
       }
     }
   }
@@ -865,7 +866,7 @@ const addCart = () => {
       font-style: normal;
       font-weight: 400;
       line-height: 33rpx;
-      color: #261000;
+      color: var(--text-primary);
     }
     .attrValueBox {
       .attrValue {
@@ -878,14 +879,14 @@ const addCart = () => {
 
         font-weight: 400;
         line-height: 33rpx;
-        color: #261000;
+        color: var(--text-primary);
 
-        border: 2rpx solid #e8e8e8;
+        border: 2rpx solid var(--isSupporter-border-color);
         border-radius: 32rpx;
       }
 
       .attrValue.active {
-        color: #ffffff;
+        color: var(--bg-card);
         background: #ff6b03;
         border: 2rpx solid #ff6b03;
       }
@@ -897,7 +898,7 @@ const addCart = () => {
   .purchaseLimitTip {
     margin-top: 10rpx;
     font-size: 24rpx;
-    color: #999;
+    color: var(--text-secondary);
     text-align: right;
   }
   .quantityBox {
@@ -905,12 +906,13 @@ const addCart = () => {
     align-items: center;
     justify-content: space-between;
     padding-top: 48rpx;
-    border-top: 1rpx solid #e9e9e9;
+    border-top: 1rpx solid var(--shippingDivider-bg-color);
     .quantityTitle {
+      color: var(--text-black);
       .levelLimitTip {
         margin-top: 8rpx;
         font-size: 22rpx;
-        color: #999;
+        color: var(--text-secondary);
       }
     }
   }
@@ -920,7 +922,8 @@ const addCart = () => {
   padding: 20rpx;
   padding-bottom: 200rpx;
   margin-top: 20rpx;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
+  color: var(--text-black);
 }
 
 .buyBarBox {
@@ -935,7 +938,7 @@ const addCart = () => {
   height: 120rpx;
   padding: 0 32rpx;
   padding-bottom: env(safe-area-inset-bottom);
-  background-color: #ffffff;
+  background-color: var(--bg-card);
   .opBox {
     display: flex;
     align-items: center;
@@ -973,7 +976,7 @@ const addCart = () => {
       font-weight: 600;
       line-height: 48rpx;
       color: #ff6b03;
-      background: #ffffff;
+      background: var(--bg-card);
       border: 2rpx solid #ff6b03;
     }
 
@@ -986,7 +989,7 @@ const addCart = () => {
     }
 
     .buyBtn.active {
-      color: #ffffff;
+      color: var(--bg-card);
       background: #ff6b03;
     }
 
@@ -1000,7 +1003,7 @@ const addCart = () => {
       height: auto;
       min-height: 84rpx;
       padding: 16rpx 0;
-      color: #ffffff;
+      color: var(--bg-card);
       background: #ff6b03;
       border-radius: 44rpx;
       border: none;
@@ -1023,8 +1026,8 @@ const addCart = () => {
     }
     .buyBtn.soldBtn {
       width: 500rpx;
-      color: #ffffff;
-      background: #999;
+      color: var(--bg-card);
+      background: var(--text-secondary);
       border: none;
       border-radius: 44rpx;
     }

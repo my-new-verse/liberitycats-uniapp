@@ -10,7 +10,7 @@
 
   <template v-if="tabType === -1">
     <view class="" :style="{ paddingTop: cntPaddingTop + 36 + 20 + 'rpx' }">
-      <view style="padding: 32rpx; background-color: #ffffff; border-radius: 32rpx">
+      <view style="padding: 32rpx; background-color: var(--bg-card); border-radius: 32rpx">
         <template v-if="newsList.data.length > 0">
           <wd-steps :active="2" vertical dot class="kxBox">
             <template v-for="(item, index) in newsList.data" :key="index">
@@ -266,6 +266,8 @@ const changeTab = async (type: NewsTabType) => {
 
 <style lang="scss" scoped>
 @import '/src/style/base';
+:deep(.page-container) {
+}
 
 :deep(.kxBox) {
   .coverBox {
@@ -282,10 +284,10 @@ const changeTab = async (type: NewsTabType) => {
       font-family: Alibaba PuHuiTi2 !important;
     }
     .wd-step__description {
-      color: #333;
+      color: var(--text-primary);
     }
     .wd-step__title {
-      color: var(--wot-steps-description-color, rgba(0, 0, 0, 0.45));
+      color: var(--text-secondary);
     }
   }
 }
@@ -315,15 +317,15 @@ const changeTab = async (type: NewsTabType) => {
   justify-content: center;
   height: 64rpx;
   margin-bottom: 20rpx;
-  color: #999;
+  color: var(--text-secondary);
   background-color: #efefef;
 }
 // news start
 .newsItem {
   display: flex;
   align-items: center;
-  color: #999;
-  background-color: #fff;
+  color: var(--text-secondary);
+  background-color: var(--bg-card);
   .imgBox {
     width: 218rpx;
     height: 144rpx;
@@ -345,7 +347,7 @@ const changeTab = async (type: NewsTabType) => {
       font-size: 32rpx;
       font-weight: 400;
       line-height: 40rpx;
-      color: #261000;
+      color: var(--text-primary);
       text-overflow: ellipsis;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
@@ -355,7 +357,7 @@ const changeTab = async (type: NewsTabType) => {
       font-size: 24rpx;
       font-weight: 400;
       line-height: 28rpx;
-      color: rgba(0, 0, 0, 0.3);
+      color: var(--black-30);
     }
   }
 }
@@ -370,7 +372,7 @@ const changeTab = async (type: NewsTabType) => {
     font-size: 28rpx;
     font-weight: 400;
     line-height: 33rpx;
-    color: #999999;
+    color: var(--text-secondary);
   }
 
   .opItem.active {
@@ -379,7 +381,7 @@ const changeTab = async (type: NewsTabType) => {
   }
 }
 ::v-deep .wd-step.is-wait .wd-step__description {
-  color: var(--wot-steps-description-color, rgba(0, 0, 0, 0.45));
+  color: var(--text-secondary, var(--wot-steps-description-color, rgba(0, 0, 0, 0.45)));
 }
 ::v-deep .wd-step.is-process .wd-step__title,
 ::v-deep .wd-step.is-finished .wd-step__title {
@@ -390,7 +392,7 @@ const changeTab = async (type: NewsTabType) => {
   width: 100vw;
   z-index: 10;
   align-items: flex-end !important;
-  background-color: var(--liberty-cats-page-background-color);
+  background-color: var(--bg-primary);
   padding-bottom: 12rpx;
 }
 // news end

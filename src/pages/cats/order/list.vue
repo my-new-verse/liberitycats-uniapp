@@ -375,7 +375,7 @@ const handleFilter = () => {
         width: calc(100% - 48rpx - 16rpx - 12rpx);
         height: 56rpx;
         padding: 6rpx;
-        background-color: #ffffff;
+        background-color: var(--bg-card);
         border-radius: 34rpx;
 
         .searchBtn {
@@ -489,7 +489,7 @@ const handleFilter = () => {
       justify-content: flex-start;
       width: 100%;
       margin-left: auto;
-      color: #261000;
+      color: var(--text-primary);
 
       .label {
         font-size: 28rpx;
@@ -507,7 +507,7 @@ const handleFilter = () => {
       .priceUnit {
         font-size: 20rpx;
         font-weight: 400;
-        color: #261000;
+        color: var(--text-primary);
       }
     }
 
@@ -547,6 +547,7 @@ const handleFilter = () => {
       font-size: 32rpx;
       font-weight: 600;
       margin: auto;
+      color: var(--text-black);
     }
   }
 
@@ -576,7 +577,7 @@ const handleFilter = () => {
       font-style: normal;
       font-weight: 500;
       line-height: 38rpx;
-      color: #261000;
+      color: var(--text-primary);
       margin-bottom: 20rpx;
       display: block;
     }
@@ -599,7 +600,7 @@ const handleFilter = () => {
       font-size: 32rpx;
       font-style: normal;
       font-weight: 600;
-      color: #ffffff;
+      color: var(--bg-card);
       text-align: center;
       background: #ff6b03;
     }

@@ -236,11 +236,21 @@ const loginWithApple = () => {
 <style lang="scss" scoped>
 @import '/src/style/base';
 
+:deep(.cnt) {
+  background-color: var(--bg-card) !important;
+}
+
+:deep(.wd-icon) {
+  color: var(--text-black);
+}
+
+:deep(.wd-input__clear) {
+  background-color: none;
+}
+
 .headBg {
   height: 142rpx;
-  background:
-    linear-gradient(360deg, #ffffff 0%, rgba(255, 255, 255, 0) 100%),
-    linear-gradient(90deg, #fefcf5 0%, #fcfdd4 25%, #ffe8d7 71%);
+  background: var(--login-head-bg);
 }
 
 .nav {
@@ -255,6 +265,7 @@ const loginWithApple = () => {
 
 .cnt {
   padding: 64rpx;
+  height: 100vh;
   //margin-top: 54rpx;
   //background: green;
   .title {
@@ -263,7 +274,7 @@ const loginWithApple = () => {
     font-style: normal;
     font-weight: 600;
     line-height: 56rpx;
-    color: #261000;
+    color: var(--text-primary);
   }
   .inputBox {
     display: flex;
@@ -272,7 +283,7 @@ const loginWithApple = () => {
     height: 72rpx;
     padding: 8rpx 24rpx;
     margin: 64rpx 0;
-    background: #f7f6f4;
+    background: var(--bg-primary);
     border-radius: 16rpx;
     .emailInput {
       width: 100%;
@@ -316,7 +327,7 @@ const loginWithApple = () => {
       font-size: 32rpx;
       font-style: normal;
       font-weight: 600;
-      color: #ffffff;
+      color: var(--bg-card);
       text-align: center;
       background: #ff6b03;
     }

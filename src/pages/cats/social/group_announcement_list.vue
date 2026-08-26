@@ -189,6 +189,14 @@ onUnmounted(() => {
 <style lang="scss" scoped>
 @import '/src/style/base';
 
+:deep(.cnt) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
+:deep(.fbg) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
 .list-wrap {
   padding: 0;
 }
@@ -239,7 +247,7 @@ onUnmounted(() => {
   font-size: 30rpx;
   font-weight: 700;
   line-height: 1.4;
-  color: #181818;
+  color: var(--announcement-title-color);
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
@@ -251,7 +259,7 @@ onUnmounted(() => {
   margin-top: 16rpx;
   font-size: 24rpx;
   line-height: 1.2;
-  color: #999;
+  color: var(--text-secondary);
 }
 
 .announcement-cover {
@@ -259,6 +267,6 @@ onUnmounted(() => {
   width: 132rpx;
   height: 132rpx;
   border-radius: 16rpx;
-  background: #eee;
+  background: var(--userFilterHeader-border-color);
 }
 </style>

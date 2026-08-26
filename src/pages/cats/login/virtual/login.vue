@@ -182,7 +182,7 @@ const agreementsMap = ref<QuoteKeyAgreementList>()
     font-style: normal;
     font-weight: 600;
     line-height: 56rpx;
-    color: #261000;
+    color: var(--text-primary);
   }
   .subTitle {
     display: flex;
@@ -217,7 +217,7 @@ const agreementsMap = ref<QuoteKeyAgreementList>()
     height: 72rpx;
     padding: 8rpx 24rpx;
     margin: 64rpx 0;
-    background: #f7f6f4;
+    background: var(--bg-primary);
     border-radius: 16rpx;
     .emailInput {
       width: 100%;
@@ -261,7 +261,7 @@ const agreementsMap = ref<QuoteKeyAgreementList>()
       font-size: 32rpx;
       font-style: normal;
       font-weight: 600;
-      color: #ffffff;
+      color: var(--bg-card);
       text-align: center;
       background: #ff6b03;
     }

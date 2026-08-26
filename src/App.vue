@@ -14,6 +14,7 @@ import { buildGameUrlWithAudioSetting } from '@/utils/gameUrl'
 import { useGameWebViewStore } from '@/store/gameWebview'
 import { usePopupStore } from '@/store/popup'
 import { preloadIosGameWebView } from '@/utils/iosGameWebviewPreload'
+import { initTheme, watchSystemTheme } from '@/utils/theme'
 import {
   downloadGameResources,
   resumeBackgroundDownloadIfNeeded,
@@ -52,6 +53,9 @@ onLaunch(() => {
 
   // 冷启动时重置活动弹窗会话；切换页面和 App 前后台切换不会重置。
   popupStore.resetStartupSession()
+  // 夜间模式初始化（light/dark/system 三档，system 跟随系统）
+  initTheme()
+  watchSystemTheme()
 
   const systemInfo = uni.getSystemInfoSync()
   const platform = systemInfo.platform?.toLowerCase() || systemInfo.osName?.toLowerCase()

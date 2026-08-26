@@ -144,11 +144,11 @@ const addFavorite = (item: GoodFavoriteList) => {
 @import '/src/style/base';
 @import '/src/style/goods';
 .page {
-  background-color: #fff;
+  background-color: var(--bg-card);
   .pbl,
   .pbr {
     .fbg {
-      background-color: #fff;
+      background-color: var(--bg-card);
     }
   }
 }

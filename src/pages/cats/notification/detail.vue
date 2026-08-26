@@ -61,17 +61,14 @@ onLoad((options) => {
 <style lang="scss" scoped>
 @import '/src/style/base';
 
-.page {
+:deep(.page) {
   .cnt {
     min-height: 100vh;
-    background-color: #fff;
+    background-color: var(--bg-card) !important;
   }
-  .pbl,
-  .pbr {
-    .fbg {
-      background-color: #fff;
-    }
-  }
+}
+:deep(.fbg) {
+  background-color: var(--bg-card) !important;
 }
 
 .title {
@@ -79,7 +76,7 @@ onLoad((options) => {
   font-style: normal;
   font-weight: 500;
   line-height: 56rpx;
-  color: #261000;
+  color: var(--text-primary);
 }
 
 .infoBox {
@@ -91,7 +88,7 @@ onLoad((options) => {
   font-style: normal;
   font-weight: 40 0;
   line-height: 28rpx;
-  color: rgba(38, 16, 0, 0.3);
+  color: var(--commentTextArea-color);
 
   .dot {
     margin: 0 16rpx;
@@ -113,6 +110,6 @@ onLoad((options) => {
   font-style: normal;
   font-weight: 400;
   line-height: 48rpx;
-  color: #261000;
+  color: var(--text-primary);
 }
 </style>

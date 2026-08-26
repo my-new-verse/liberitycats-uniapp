@@ -10,7 +10,7 @@
       font-size: 28rpx;
       font-weight: 400;
       line-height: 33rpx;
-      color: #999999;
+      color: var(--text-secondary);
     }
 
     .opItem.active {
@@ -34,7 +34,7 @@
     justify-content: center;
     width: 80rpx;
     height: 80rpx;
-    background-color: #fff;
+    background-color: var(--bg-card);
     border-radius: 50%;
     box-shadow: 0 6rpx 28rpx 4rpx rgba(0, 0, 0, 0.1);
     .msgDot {
@@ -48,7 +48,7 @@
       padding: 4rpx 10rpx;
       font-size: 14rpx;
       font-style: normal;
-      color: #ffffff;
+      color: var(--bg-card);
       background-color: #ff6b03;
       border-radius: 12rpx;
       transform: translate(30%, -30%);
@@ -79,7 +79,7 @@
     justify-content: center;
     width: 80rpx;
     height: 80rpx;
-    background-color: #fff;
+    background-color: var(--bg-card);
     border-radius: 50%;
     box-shadow: 0 6rpx 28rpx 4rpx rgba(0, 0, 0, 0.1);
     .pubImg {
@@ -133,8 +133,8 @@
           width: 100%;
           height: 100%;
           overflow: hidden;
-          background-color: #fafafa;
-          border: 2rpx solid #fafafa;
+          background-color: var(--avatar-color);
+          border: 2rpx solid var(--avatar-color);
           border-radius: 50%;
         }
         .levelIcon {
@@ -155,7 +155,7 @@
         font-size: 28rpx;
         font-weight: 500;
         line-height: 44rpx;
-        color: #261000;
+        color: var(--text-primary);
       }
       .tag {
         padding: 6rpx 12rpx;
@@ -186,7 +186,7 @@
         font-size: 28rpx;
         font-weight: 400;
         line-height: 36rpx;
-        color: #261000;
+        color: var(--text-primary);
         // 自动换行
         word-break: break-all;
         white-space: pre-line;
@@ -246,7 +246,7 @@
         margin-top: 20rpx;
         font-size: 24rpx;
         font-weight: 400;
-        color: #999999;
+        color: var(--text-secondary);
       }
     }
 
@@ -288,7 +288,7 @@
         font-size: 24rpx;
         font-weight: 400;
         line-height: 40rpx;
-        color: #999999;
+        color: var(--text-secondary);
       }
     }
   }
@@ -299,7 +299,7 @@
   font-size: 20rpx;
   font-weight: 400;
   line-height: 28rpx;
-  color: #999;
+  color: var(--text-secondary);
   background-color: #fff7e5;
   border-radius: 8rpx;
 }
@@ -349,7 +349,7 @@
       line-height: 1.4;
     }
     .tag1 {
-      color: #fff;
+      color: var(--bg-card);
       background: var(--wot-color-primary);
     }
     .tag2 {
@@ -363,12 +363,12 @@
   }
   .title {
     flex: 1;
-    color: #261000 !important;
+    color: var(--text-primary) !important;
     font-size: 32rpx !important;
     font-weight: 600 !important;
   }
   .content {
-    color: #666666 !important;
+    color: var(--text-secondary) !important;
   }
 }
 .adTagsRow {

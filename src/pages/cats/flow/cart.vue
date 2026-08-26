@@ -301,6 +301,14 @@ onUnmounted(() => {
 @import '/src/style/base';
 //
 
+:deep(.cnt) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
+:deep(.fbg) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
 .page {
   background-color: var(--liberty-cats-page-background-color);
   .cnt {
@@ -319,7 +327,7 @@ onUnmounted(() => {
     font-style: normal;
     font-weight: 500;
     line-height: 33rpx;
-    color: #261000;
+    color: var(--text-primary);
     background: #efefef;
   }
 }
@@ -356,14 +364,14 @@ onUnmounted(() => {
         font-style: normal;
         font-weight: 500;
         line-height: 33rpx;
-        color: #261000;
+        color: var(--text-primary);
       }
       .goodsAttrBox {
         font-size: 28rpx;
         font-style: normal;
         font-weight: 400;
         line-height: 33rpx;
-        color: rgba(38, 16, 0, 0.6);
+        color: var(--goodsAttr-color);
         .goodsAttr {
           margin-bottom: 16rpx;
         }

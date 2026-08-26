@@ -257,6 +257,19 @@ const submitOrder = async () => {
 
 <style lang="scss" scoped>
 @import '/src/style/base';
+
+:deep(.cnt) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
+:deep(.fbg) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
+.inputBox {
+  color: var(--text-black);
+}
+
 .addTxt {
   font-size: 32rpx;
   font-style: normal;
@@ -282,7 +295,7 @@ const submitOrder = async () => {
         font-style: normal;
         font-weight: 600;
         line-height: 52rpx;
-        color: #261000;
+        color: var(--text-primary);
       }
       .phone {
         margin: 0 24rpx;
@@ -290,7 +303,7 @@ const submitOrder = async () => {
         font-style: normal;
         font-weight: 400;
         line-height: 48rpx;
-        color: #261000;
+        color: var(--text-primary);
       }
       .default {
         padding: 0 8rpx;
@@ -298,7 +311,7 @@ const submitOrder = async () => {
         font-style: normal;
         font-weight: 400;
         line-height: 40rpx;
-        color: #ffffff;
+        color: var(--bg-card);
         text-align: left;
         background: #ff6b03;
         border: 2rpx solid #ff6b03;

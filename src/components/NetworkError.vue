@@ -51,8 +51,8 @@ const handleRefresh = () => {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background-color: #fff;
-  color: #333;
+  background-color: var(--bg-card);
+  color: var(--actions-text);
   overflow: hidden;
 
   .content {
@@ -82,7 +82,7 @@ const handleRefresh = () => {
 
     .title {
       font-size: 36rpx;
-      color: #333;
+      color: var(--actions-text);
       margin-bottom: 12px;
       font-weight: 500;
       font-family: Alibaba PuHuiTi2;
@@ -90,7 +90,7 @@ const handleRefresh = () => {
 
     .desc {
       font-size: 28rpx;
-      color: #999;
+      color: var(--text-secondary);
       margin-bottom: 40px;
       font-family: Alibaba PuHuiTi2;
     }
@@ -100,7 +100,7 @@ const handleRefresh = () => {
       height: 45px;
       line-height: 45px;
       background-color: #ff6b03;
-      color: #fff;
+      color: var(--bg-card);
       border: none;
       border-radius: 8px;
       font-size: 28rpx;

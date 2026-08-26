@@ -962,21 +962,21 @@ onLoad(() => {
 
   .reply-bar-label {
     font-size: 24rpx;
-    color: #999;
+    color: var(--text-secondary);
     flex-shrink: 0;
     margin-right: 8rpx;
   }
 
   .reply-bar-name {
     font-size: 24rpx;
-    color: #333;
+    color: var(--actions-text);
     font-weight: 500;
     flex-shrink: 0;
   }
 
   .reply-bar-text {
     font-size: 24rpx;
-    color: #666;
+    color: var(--wot-message-box-content-color);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1005,8 +1005,8 @@ onLoad(() => {
   height: calc(120rpx - 48rpx);
   padding: 24rpx;
   padding-bottom: calc(env(safe-area-inset-bottom) + 24rpx);
-  background-color: #ffffff;
-  border-top: 1rpx solid #f3f3f4;
+  background-color: var(--bg-card);
+  border-top: 1rpx solid var(--fixedCommentBox-color);
 
   // ✅ 上传图标按钮样式
   .upload-icon-btn {
@@ -1034,7 +1034,7 @@ onLoad(() => {
     font-weight: 400;
     line-height: 36rpx;
     color: rgba(38, 16, 0, 0.3);
-    background: #f3f3f4;
+    background: var(--fixedCommentBox-color);
     border-radius: 64rpx;
 
     &.is-muted {

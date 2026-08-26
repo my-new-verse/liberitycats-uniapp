@@ -91,12 +91,12 @@ onLoad((options) => {
 .page {
   .cnt {
     min-height: 100vh;
-    background-color: #fff;
+    background-color: var(--bg-card);
   }
   .pbl,
   .pbr {
     .fbg {
-      background-color: #fff;
+      background-color: var(--bg-card);
     }
   }
 }
@@ -106,7 +106,7 @@ onLoad((options) => {
   font-style: normal;
   font-weight: 500;
   line-height: 56rpx;
-  color: #261000;
+  color: var(--text-primary);
 }
 
 .infoBox {
@@ -142,6 +142,6 @@ onLoad((options) => {
   margin: 20rpx 0;
   font-size: 32rpx;
   line-height: 1.6;
-  color: #261000;
+  color: var(--text-primary);
 }
 </style>

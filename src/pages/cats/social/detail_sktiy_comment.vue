@@ -865,7 +865,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
 
   .pubCommentBox {
     .commentTextAreaBox {
-      background-color: #f3f3f4 !important;
+      background-color: var(--fixedCommentBox-color) !important;
       border-radius: 32rpx;
 
       .emojiBox2 {
@@ -902,12 +902,12 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
     min-height: 108rpx;
     padding: 24rpx !important;
     padding-bottom: 0 !important;
-    background-color: #f3f3f4 !important;
+    background-color: var(--fixedCommentBox-color) !important;
     border-radius: 32rpx;
   }
   .commentHidden {
     width: 100%;
-    background-color: #fff;
+    background-color: var(--bg-card);
   }
 
   // 表情包 start
@@ -916,7 +916,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
     height: 600rpx;
     padding-top: 24rpx;
     margin-top: 24rpx;
-    border-top: 1rpx solid #f3f3f4;
+    border-top: 1rpx solid var(--fixedCommentBox-color);
 
     .category {
       display: flex;
@@ -938,7 +938,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
         }
       }
       .categoryItem.active {
-        background: #f3f3f4;
+        background: var(--fixedCommentBox-color);
         border-radius: 84rpx;
       }
     }
@@ -992,8 +992,8 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   height: calc(120rpx - 48rpx);
   padding: 24rpx;
   padding-bottom: env(safe-area-inset-bottom);
-  background-color: #ffffff;
-  border-top: 1rpx solid #f3f3f4;
+  background-color: var(--bg-card);
+  border-top: 1rpx solid var(--fixedCommentBox-color);
   .commentTextArea {
     width: calc(100% - 48rpx);
     height: calc(100% - 36rpx);
@@ -1002,7 +1002,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
     font-weight: 400;
     line-height: 36rpx;
     color: rgba(38, 16, 0, 0.3);
-    background: #f3f3f4;
+    background: var(--fixedCommentBox-color);
     border-radius: 64rpx;
   }
 }
@@ -1010,20 +1010,20 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
 .socialBox {
   padding: 40rpx;
   padding-bottom: 20rpx;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
 }
 .commentBox {
   padding: 40rpx;
   padding-bottom: 160rpx;
   margin-top: 16rpx;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
   .commentFilterBox {
-    background-color: #fff;
+    background-color: var(--bg-card);
     .opTitle {
       font-size: 28rpx;
       font-weight: 600;
       line-height: 44rpx;
-      color: #261000;
+      color: var(--text-primary);
     }
     .opBox {
       display: flex;
@@ -1053,7 +1053,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
         height: 64rpx;
         overflow: hidden;
         background-color: #fafafa;
-        border: 2rpx solid #f3f3f4;
+        border: 2rpx solid var(--fixedCommentBox-color);
         border-radius: 50%;
       }
       .levelIcon {
@@ -1084,7 +1084,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
         font-size: 28rpx;
         font-weight: 400;
         line-height: 40rpx;
-        color: #261000;
+        color: var(--text-primary);
         word-break: break-all;
       }
       .commentMedia {
@@ -1178,7 +1178,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   padding: 40rpx;
   padding-bottom: 160rpx;
   margin-top: 16rpx;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
 
   .fixedCommentClose {
     position: relative;
@@ -1207,7 +1207,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
     height: 70vh;
     padding-top: 0;
     overflow-y: auto;
-    background: #fff;
+    background: var(--bg-card);
     border-radius: 24rpx 24rpx 0 0;
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease;
@@ -1229,13 +1229,13 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
       width: 100%;
       padding: 20rpx 0;
       margin-bottom: 20rpx;
-      background: #fff;
+      background: var(--bg-card);
 
       .opTitle {
         font-size: 28rpx;
         font-weight: 600;
         line-height: 44rpx;
-        color: #261000;
+        color: var(--text-primary);
       }
 
       .opBox {
@@ -1246,12 +1246,12 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
           padding: 8rpx 16rpx;
           margin-left: 16rpx;
           font-size: 24rpx;
-          color: #999;
-          background: #f5f5f5;
+          color: var(--text-secondary);
+          background: var(--wot-action-sheet-active-color);
           border-radius: 30rpx;
 
           &.active {
-            color: #fff;
+            color: var(--bg-card);
             background: #ff6b03;
           }
         }

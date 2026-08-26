@@ -114,13 +114,13 @@ const handleItemClick = () => {
 .msg-card {
   display: flex;
   align-items: flex-start;
-  background: #fff;
+  background: var(--bg-card);
   position: relative;
   padding: 32rpx 24rpx;
   border-radius: 32rpx;
 
   &:active {
-    background: #f5f5f5;
+    background: var(--wot-action-sheet-active-color);
   }
 }
 
@@ -157,7 +157,7 @@ const handleItemClick = () => {
   }
 
   .check-mark {
-    color: #fff;
+    color: var(--bg-card);
     font-size: 12px;
   }
 }
@@ -192,7 +192,7 @@ const handleItemClick = () => {
   font-size: 28rpx;
   font-weight: 500;
   line-height: 33rpx;
-  color: #261000;
+  color: var(--text-primary);
 }
 
 /* 第二行：内容 */
@@ -200,7 +200,7 @@ const handleItemClick = () => {
   font-size: 28rpx;
   font-weight: 400;
   line-height: 33rpx;
-  color: rgba(38, 16, 0, 0.6);
+  color: var(--goodsAttr-color);
   font-family: Alibaba PuHuiTi2;
 }
 

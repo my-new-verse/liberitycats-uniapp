@@ -948,32 +948,32 @@ const handleAvatarClick = (memberId: number | undefined) => {
 }
 .chat-user-name {
   @include chat-font;
-  color: #888888;
+  color: var(--chat-user-name-color);
 }
 .chat-text-container {
   text-align: left;
-  background-color: #f1f1f1;
+  background-color: var(--chat-text-container-bg-color);
   border-radius: 8rpx;
   padding: 10rpx 15rpx;
   margin-top: 10rpx;
   /* #ifndef APP-NVUE */
   max-width: 500rpx;
   /* #endif */
-  background-color: #ffffff;
+  background-color: var(--bg-card);
   padding: 20rpx 28rpx;
   /* 他人消息气泡圆角：左上角为小圆角，其余大圆角 */
   border-radius: 8rpx 30rpx 30rpx 30rpx;
   // font-size: 26rpx;
   @include chat-font;
   line-height: 1.5;
-  color: #1a1a1a;
-  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.03);
+  color: var(--chat-text-color);
+  box-shadow: 0 2rpx 10rpx var(--black-03);
   word-break: break-all;
   display: inline-block;
   max-width: 90%;
 }
 .rich-item {
-  background-color: #f1f1f1;
+  background-color: var(--chat-text-container-bg-color);
   border-radius: 8rpx;
   padding: 10rpx 15rpx;
   flex-direction: column;
@@ -1006,7 +1006,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
 }
 .reply-ref-name {
   font-size: 22rpx;
-  color: #999;
+  color: var(--text-secondary);
   flex-shrink: 0;
 }
 .chat-text-container-me .reply-ref-name {
@@ -1014,7 +1014,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
 }
 .reply-ref-content {
   font-size: 22rpx;
-  color: #666;
+  color: var(--wot-message-box-content-color);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1071,7 +1071,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
 
       .system-text {
         @include chat-font;
-        color: #999;
+        color: var(--text-secondary);
         text-align: center;
         line-height: 1.5;
         word-break: break-all;
@@ -1109,7 +1109,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
       height: 88rpx;
       overflow: hidden;
       border-radius: 50%; // 圆形头像
-      background-color: #eee;
+      background-color: var(--userFilterHeader-border-color);
       background-position: center;
       background-repeat: no-repeat;
       background-size: cover;
@@ -1147,7 +1147,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
 
     .u-name {
       @include chat-font;
-      color: #888;
+      color: var(--chat-user-name-color);
       margin-bottom: 8rpx;
       margin-left: 8rpx;
     }
@@ -1157,13 +1157,13 @@ const handleAvatarClick = (memberId: number | undefined) => {
       max-width: 100%;
 
       .text-bubble {
-        background-color: #ffffff;
+        background-color: var(--bg-card);
         padding: 20rpx 28rpx;
         /* 他人消息气泡圆角：左上角为小圆角，其余大圆角 */
         border-radius: 8rpx 30rpx 30rpx 30rpx;
         @include chat-font;
         line-height: 1.5;
-        color: #1a1a1a;
+        color: var(--chat-text-color);
         box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.03);
         word-break: break-all;
         display: inline-block;
@@ -1176,8 +1176,8 @@ const handleAvatarClick = (memberId: number | undefined) => {
       }
 
       .text-bubble.is-recalled {
-        color: #999;
-        background-color: #f5f5f5;
+        color: var(--text-secondary);
+        background-color: var(--wot-action-sheet-active-color);
         box-shadow: none;
       }
 
@@ -1278,7 +1278,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
       padding: 0 16rpx;
       border-radius: 999rpx;
       background: rgba(0, 0, 0, 0.06);
-      color: #666;
+      color: var(--wot-message-box-content-color);
 
       &.active {
         background: rgba(255, 107, 3, 0.14);
@@ -1305,7 +1305,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
       margin-top: 10rpx;
       // font-size: 22rpx;
       @include chat-font;
-      color: #999;
+      color: var(--text-secondary);
 
       &.failed {
         color: #e25b5b;
@@ -1345,7 +1345,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
       .bubble-wrap {
         .text-bubble {
           background-color: #ff6b03; // 使用您的主题橙色
-          color: #ffffff;
+          color: var(--bg-card);
           /* 自己消息气泡圆角：右上角为小圆角，其余大圆角 */
           border-radius: 30rpx 8rpx 30rpx 30rpx;
           display: inline-block;
@@ -1406,14 +1406,14 @@ const handleAvatarClick = (memberId: number | undefined) => {
 
   .news-card-header-text {
     font-size: 22rpx;
-    color: #fff;
+    color: var(--bg-card);
     font-weight: 500;
   }
 }
 
 .news-card {
   // width: 520rpx;
-  background-color: #fff;
+  background-color: var(--bg-card);
   border-radius: 24rpx;
   overflow: hidden;
   box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
@@ -1427,7 +1427,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
 .news-digest-item {
   padding-bottom: 24rpx;
   margin-bottom: 24rpx;
-  border-bottom: 1rpx solid #f0f0f0;
+  border-bottom: 1rpx solid var(--divider-color);
 
   &:last-child {
     padding-bottom: 0;
@@ -1448,7 +1448,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
 .hot-news-empty-title,
 .quick-news-empty-title {
   font-size: 28rpx;
-  color: #999;
+  color: var(--text-secondary);
 }
 
 .news-digest-cover {
@@ -1474,7 +1474,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
   display: inline-flex;
   align-self: flex-start;
   background-color: var(--liberty-cats-primary-color, #ff6b03);
-  color: #fff;
+  color: var(--bg-card);
   font-size: 20rpx;
   padding: 4rpx 12rpx;
   border-radius: 8rpx;
@@ -1485,13 +1485,13 @@ const handleAvatarClick = (memberId: number | undefined) => {
 .news-digest-title {
   font-size: 28rpx;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--chat-text-color);
   line-height: 1.4;
 }
 
 .news-digest-summary {
   font-size: 24rpx;
-  color: #666;
+  color: var(--wot-message-box-content-color);
   line-height: 1.5;
 }
 
@@ -1501,12 +1501,12 @@ const handleAvatarClick = (memberId: number | undefined) => {
   align-items: center;
   margin-top: 16rpx;
   padding-top: 16rpx;
-  border-top: 1rpx solid #f0f0f0;
+  border-top: 1rpx solid var(--divider-color);
 }
 
 .news-digest-source {
   font-size: 22rpx;
-  color: #999;
+  color: var(--text-secondary);
 }
 
 .news-digest-read-more {
@@ -1528,7 +1528,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
   height: 188rpx;
   border-radius: 12rpx;
   overflow: hidden;
-  background-color: #f5f5f5;
+  background-color: var(--wot-action-sheet-active-color);
 
   .news-card-thumb-img {
     width: 100%;
@@ -1569,7 +1569,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
 .news-card-title {
   font-size: 28rpx;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--chat-text-color);
   line-height: 1.4;
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -1579,7 +1579,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
 
 .news-card-source {
   font-size: 22rpx;
-  color: #999;
+  color: var(--text-secondary);
 }
 
 .news-card-arrow {
@@ -1614,7 +1614,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
 
 .news-card-summary {
   font-size: 24rpx;
-  color: #666;
+  color: var(--wot-message-box-content-color);
   line-height: 1.5;
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -1625,7 +1625,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
 .news-card-footer {
   padding-top: 16rpx;
   margin-top: 16rpx;
-  border-top: 1rpx solid #f0f0f0;
+  border-top: 1rpx solid var(--divider-color);
 
   .news-card-read-more {
     font-size: 24rpx;
@@ -1638,7 +1638,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
 .hot-news-item {
   padding-bottom: 24rpx;
   margin-bottom: 24rpx;
-  border-bottom: 1rpx solid #f0f0f0;
+  border-bottom: 1rpx solid var(--divider-color);
 
   &:last-child {
     padding-bottom: 0;
@@ -1671,7 +1671,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
     .hot-news-cover-label {
       font-size: 36rpx;
       font-weight: 800;
-      color: #fff;
+      color: var(--bg-card);
       letter-spacing: 4rpx;
     }
   }
@@ -1689,12 +1689,12 @@ const handleAvatarClick = (memberId: number | undefined) => {
   align-items: center;
   margin-top: 16rpx;
   padding-top: 16rpx;
-  border-top: 1rpx solid #f0f0f0;
+  border-top: 1rpx solid var(--divider-color);
 }
 
 .hot-news-source {
   font-size: 22rpx;
-  color: #999;
+  color: var(--text-secondary);
 }
 
 .hot-news-read-more {
@@ -1705,12 +1705,12 @@ const handleAvatarClick = (memberId: number | undefined) => {
 
 .quick-news-body {
   text-align: left;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
   padding: 20rpx 28rpx;
   border-radius: 8rpx 30rpx 30rpx 30rpx;
   @include chat-font;
   line-height: 1.5;
-  color: #1a1a1a;
+  color: var(--chat-text-color);
   box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.03);
   word-break: break-all;
   max-width: 90%;
@@ -1727,7 +1727,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
 .quick-news-header {
   margin-bottom: 16rpx;
   padding-bottom: 16rpx;
-  border-bottom: 1rpx solid #f0f0f0;
+  border-bottom: 1rpx solid var(--divider-color);
 }
 
 .quick-news-title-row {
@@ -1740,7 +1740,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
 .quick-news-category-badge {
   display: inline-flex;
   background-color: var(--liberty-cats-primary-color, #ff6b03);
-  color: #fff;
+  color: var(--bg-card);
   font-size: 20rpx;
   padding: 4rpx 12rpx;
   border-radius: 8rpx;
@@ -1750,17 +1750,17 @@ const handleAvatarClick = (memberId: number | undefined) => {
 .quick-news-title {
   font-size: 32rpx;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--chat-text-color);
 }
 
 .quick-news-update-time {
   font-size: 22rpx;
-  color: #999;
+  color: var(--text-secondary);
 }
 
 .quick-news-summary {
   font-size: 22rpx;
-  color: #999;
+  color: var(--text-secondary);
   margin-bottom: 16rpx;
 }
 
@@ -1775,7 +1775,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
 
 .quick-news-info {
   font-size: 22rpx;
-  color: #999;
+  color: var(--text-secondary);
   margin: 16rpx 0;
 }
 
@@ -1801,7 +1801,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
     .wd-cell__title {
       font-size: 28rpx !important;
       font-weight: 400 !important;
-      color: #1a1a1a !important;
+      color: var(--chat-text-color) !important;
       line-height: 1.5;
     }
 
@@ -1869,7 +1869,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
 .quick-news-timeline-title {
   font-size: 28rpx;
   font-weight: 400;
-  color: #1a1a1a;
+  color: var(--chat-text-color);
   line-height: 1.5;
 }
 

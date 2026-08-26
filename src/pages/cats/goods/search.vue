@@ -229,7 +229,7 @@ const recommendSearch = (keyword: string) => {
 @import '/src/style/goods';
 
 .page {
-  background-color: #ffffff;
+  background-color: var(--bg-card);
 }
 
 .customNav {
@@ -273,7 +273,7 @@ const recommendSearch = (keyword: string) => {
         width: calc(100% - 48rpx - 16rpx - 12rpx);
         height: 56rpx;
         padding: 6rpx;
-        background-color: #ffffff;
+        background-color: var(--bg-card);
         border-radius: 34rpx;
 
         .searchBtn {
@@ -314,7 +314,7 @@ const recommendSearch = (keyword: string) => {
       .fbg {
         width: 100%;
         height: 100%;
-        background-color: #fff;
+        background-color: var(--bg-card);
       }
     }
 
@@ -340,7 +340,7 @@ const recommendSearch = (keyword: string) => {
     font-style: normal;
     font-weight: 400;
     line-height: 33rpx;
-    color: #000000;
+    color: var(--text-black);
   }
   .list {
     margin-top: 48rpx;
@@ -354,8 +354,8 @@ const recommendSearch = (keyword: string) => {
 
       font-weight: 400;
       line-height: 33rpx;
-      color: #999999;
-      border: 1rpx solid rgba(38, 16, 0, 0.1);
+      color: var(--text-secondary);
+      border: 1rpx solid var(--item-border-color);
       border-radius: 34rpx;
     }
   }

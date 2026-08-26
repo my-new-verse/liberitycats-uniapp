@@ -215,7 +215,7 @@
     </wd-popup>
     <wd-action-sheet
       custom-class="messageActionSheet"
-      custom-style="margin: 0 10px calc(var(--window-bottom) + 10px) 10px; border-radius: 16px; background: #fff;"
+      custom-style="margin: 0 10px calc(var(--window-bottom) + 10px) 10px; border-radius: 16px; background: var(--bg-card);"
       v-model="memberActionSheetVisible"
       :title="t('group.chat.member.actionSheetTitle')"
     >
@@ -893,6 +893,10 @@ const confirmMute = async () => {
 <style lang="scss" scoped>
 @import '/src/style/base';
 
+:deep(.wd-search) {
+  background-color: var(--bg-card);
+}
+
 .page {
   background-color: var(--liberty-cats-page-background-color);
   display: flex;
@@ -964,7 +968,7 @@ const confirmMute = async () => {
             .main-title {
               font-size: 30rpx;
               font-weight: bold;
-              color: #fff;
+              color: var(--bg-card);
               max-width: 240rpx;
               overflow: hidden;
               text-overflow: ellipsis;
@@ -1019,11 +1023,11 @@ const confirmMute = async () => {
 .group-title {
   padding: 24rpx;
   font-size: 24rpx;
-  color: #666;
+  color: var(--wot-message-box-content-color);
 }
 
 .member-group {
-  background: #fff;
+  background: var(--bg-card);
   border-radius: 12rpx;
   margin-bottom: 20rpx;
   overflow: hidden;
@@ -1033,7 +1037,7 @@ const confirmMute = async () => {
   display: flex;
   align-items: center;
   padding: 24rpx 32rpx;
-  border-bottom: 1rpx solid #f0f0f0;
+  border-bottom: 1rpx solid var(--divider-color);
 
   &:last-child {
     border-bottom: none;
@@ -1080,7 +1084,7 @@ const confirmMute = async () => {
   width: 96rpx;
   height: 96rpx;
   border-radius: 50%;
-  background-color: #eee;
+  background-color: var(--userFilterHeader-border-color);
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
@@ -1097,7 +1101,7 @@ const confirmMute = async () => {
 .member-name {
   font-size: 28rpx;
   // font-weight: 500;
-  color: #333;
+  color: var(--actions-text);
   margin-bottom: 8rpx;
   display: flex;
   align-items: center;
@@ -1126,7 +1130,7 @@ const confirmMute = async () => {
 
 .action-text {
   font-size: 24rpx;
-  color: #666;
+  color: var(--wot-message-box-content-color);
   line-height: 1.2;
 }
 
@@ -1139,7 +1143,7 @@ const confirmMute = async () => {
 
   text {
     font-size: 28rpx;
-    color: #999;
+    color: var(--text-secondary);
   }
 }
 
@@ -1147,12 +1151,12 @@ const confirmMute = async () => {
   padding: 24rpx 0 32rpx;
   text-align: center;
   font-size: 24rpx;
-  color: #999;
+  color: var(--text-secondary);
 }
 
 // 禁言弹窗样式
 .mute-popup {
-  background: #fff;
+  background: var(--bg-card);
   border-radius: 24rpx 24rpx 0 0;
   padding: 32rpx;
   max-height: 80vh;
@@ -1167,7 +1171,7 @@ const confirmMute = async () => {
     .popup-title {
       font-size: 32rpx;
       font-weight: 600;
-      color: #333;
+      color: var(--actions-text);
     }
 
     .close-btn {
@@ -1183,7 +1187,7 @@ const confirmMute = async () => {
       .label {
         display: block;
         font-size: 28rpx;
-        color: #666;
+        color: var(--wot-message-box-content-color);
         margin-bottom: 16rpx;
       }
     }
@@ -1246,7 +1250,7 @@ const confirmMute = async () => {
 .action-sheet-item-icon {
   width: 38rpx;
   text-align: center;
-  color: #333;
+  color: var(--actions-text);
   flex-shrink: 0;
 }
 
@@ -1265,6 +1269,6 @@ const confirmMute = async () => {
 .action-sheet-item-text {
   font-size: 30rpx;
   line-height: 1.4;
-  color: #333;
+  color: var(--actions-text);
 }
 </style>

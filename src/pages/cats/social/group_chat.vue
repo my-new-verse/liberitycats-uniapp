@@ -4700,7 +4700,7 @@ const EmotionTool = (() => {
             width: 56rpx; // 头像尺寸
             height: 56rpx;
             border-radius: 50%; // 剪裁成圆形
-            background-color: #eee;
+            background-color: var(--userFilterHeader-border-color);
             background-position: center;
             background-repeat: no-repeat;
             background-size: cover;
@@ -4716,19 +4716,19 @@ const EmotionTool = (() => {
             .main-title {
               font-size: 30rpx;
               font-weight: bold;
-              color: #1a1a1a;
+              color: var(--chat-text-color);
               /* 防止标题过长 */
               max-width: 240rpx;
               overflow: hidden;
               text-overflow: ellipsis;
               white-space: nowrap;
-              color: #fff;
+              color: var(--bg-card);
             }
 
             .sub-title {
               font-size: 22rpx;
-              color: #1a1a1a;
-              color: #fff;
+              color: var(--chat-text-color);
+              color: var(--bg-card);
             }
           }
         }
@@ -4768,7 +4768,7 @@ const EmotionTool = (() => {
   .history-tip-text {
     font-size: 22rpx;
     line-height: 1.4;
-    color: #999;
+    color: var(--text-secondary);
   }
 
   .virtual-spacer {
@@ -4785,7 +4785,7 @@ const EmotionTool = (() => {
 
     .divider-time {
       font-size: 24rpx;
-      color: #999;
+      color: var(--text-secondary);
       padding: 8rpx 24rpx;
       background-color: rgba(0, 0, 0, 0.05);
       border-radius: 16rpx;
@@ -4815,7 +4815,7 @@ const EmotionTool = (() => {
 
         .system-text {
           font-size: 24rpx;
-          color: #999;
+          color: var(--text-secondary);
           text-align: center;
           line-height: 1.5;
           word-break: break-all;
@@ -4848,7 +4848,7 @@ const EmotionTool = (() => {
         height: 88rpx;
         overflow: hidden;
         border-radius: 50%; // 圆形头像
-        background-color: #eee;
+        background-color: var(--userFilterHeader-border-color);
         background-position: center;
         background-repeat: no-repeat;
         background-size: cover;
@@ -4886,7 +4886,7 @@ const EmotionTool = (() => {
 
       .u-name {
         font-size: 24rpx;
-        color: #888;
+        color: var(--chat-user-name-color);
         margin-bottom: 8rpx;
         margin-left: 8rpx;
       }
@@ -4896,13 +4896,13 @@ const EmotionTool = (() => {
         max-width: 100%;
 
         .text-bubble {
-          background-color: #ffffff;
+          background-color: var(--bg-card);
           padding: 20rpx 28rpx;
           /* 他人消息气泡圆角：左上角为小圆角，其余大圆角 */
           border-radius: 8rpx 30rpx 30rpx 30rpx;
           font-size: 28rpx;
           line-height: 1.5;
-          color: #1a1a1a;
+          color: var(--chat-text-color);
           box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.03);
           word-break: break-all;
           display: inline-block;
@@ -4915,8 +4915,8 @@ const EmotionTool = (() => {
         }
 
         .text-bubble.is-recalled {
-          color: #999;
-          background-color: #f5f5f5;
+          color: var(--text-secondary);
+          background-color: var(--wot-action-sheet-active-color);
           box-shadow: none;
         }
 
@@ -5017,7 +5017,7 @@ const EmotionTool = (() => {
         padding: 0 16rpx;
         border-radius: 999rpx;
         background: rgba(0, 0, 0, 0.06);
-        color: #666;
+        color: var(--wot-message-box-content-color);
 
         &.active {
           background: rgba(255, 107, 3, 0.14);
@@ -5042,7 +5042,7 @@ const EmotionTool = (() => {
       .message-status {
         margin-top: 10rpx;
         font-size: 22rpx;
-        color: #999;
+        color: var(--text-secondary);
 
         &.failed {
           color: #e25b5b;
@@ -5082,7 +5082,7 @@ const EmotionTool = (() => {
         .bubble-wrap {
           .text-bubble {
             background-color: #ff6b03; // 使用您的主题橙色
-            color: #ffffff;
+            color: var(--bg-card);
             /* 自己消息气泡圆角：右上角为小圆角，其余大圆角 */
             border-radius: 30rpx 8rpx 30rpx 30rpx;
             display: inline-block;
@@ -5128,7 +5128,7 @@ const EmotionTool = (() => {
   gap: 10rpx;
   min-height: 72rpx;
   padding: 0 28rpx;
-  background: #ffffff;
+  background: var(--bg-card);
   border-radius: 999rpx;
   box-shadow: 0 12rpx 32rpx rgba(0, 0, 0, 0.12);
   transform: translateX(-50%);
@@ -5164,8 +5164,8 @@ const EmotionTool = (() => {
   height: calc(120rpx - 48rpx);
   padding: 24rpx;
   padding-bottom: calc(env(safe-area-inset-bottom) + 24rpx);
-  background-color: #ffffff;
-  border-top: 1rpx solid #f3f3f4;
+  background-color: var(--bg-card);
+  border-top: 1rpx solid var(--fixedCommentBox-color);
 
   // ✅ 上传图标按钮样式
   .upload-icon-btn {
@@ -5193,7 +5193,7 @@ const EmotionTool = (() => {
     font-weight: 400;
     line-height: 36rpx;
     color: rgba(38, 16, 0, 0.3);
-    background: #f3f3f4;
+    background: var(--fixedCommentBox-color);
     border-radius: 64rpx;
 
     &.is-muted {
@@ -5330,7 +5330,7 @@ const EmotionTool = (() => {
 
   .pubCommentBox {
     .commentTextAreaBox {
-      background-color: #f3f3f4 !important;
+      background-color: var(--fixedCommentBox-color) !important;
       border-radius: 32rpx;
 
       .emojiBox2 {
@@ -5369,13 +5369,13 @@ const EmotionTool = (() => {
     min-height: 108rpx;
     padding: 24rpx !important;
     padding-bottom: 0 !important;
-    background-color: #f3f3f4 !important;
+    background-color: var(--fixedCommentBox-color) !important;
     border-radius: 32rpx;
   }
 
   .commentHidden {
     width: 100%;
-    background-color: #fff;
+    background-color: var(--bg-card);
   }
 
   // 表情包 start
@@ -5384,7 +5384,7 @@ const EmotionTool = (() => {
     height: 600rpx;
     padding-top: 24rpx;
     margin-top: 24rpx;
-    border-top: 1rpx solid #f3f3f4;
+    border-top: 1rpx solid var(--fixedCommentBox-color);
 
     .category {
       display: flex;
@@ -5409,7 +5409,7 @@ const EmotionTool = (() => {
       }
 
       .categoryItem.active {
-        background: #f3f3f4;
+        background: var(--fixedCommentBox-color);
         border-radius: 84rpx;
       }
     }
@@ -5462,7 +5462,7 @@ const EmotionTool = (() => {
   display: flex;
   flex-direction: column;
   height: 100%; // 必须撑满
-  background-color: #fff;
+  background-color: var(--bg-card);
 
   .member-scroll {
     flex: 1; // 占据剩余高度
@@ -5471,10 +5471,10 @@ const EmotionTool = (() => {
   }
 
   .section-label {
-    background-color: #f7f6f4;
+    background-color: var(--bg-primary);
     padding: 16rpx 30rpx;
     font-size: 24rpx;
-    color: #999;
+    color: var(--text-secondary);
   }
 
   .member-item {
@@ -5483,7 +5483,7 @@ const EmotionTool = (() => {
     align-items: center;
     padding: 24rpx 30rpx;
     border-bottom: 1rpx solid #f2f2f2;
-    background: #fff;
+    background: var(--bg-card);
 
     &:active {
       background: #f9f9f9;
@@ -5509,7 +5509,7 @@ const EmotionTool = (() => {
           width: 18rpx;
           height: 18rpx;
           border-radius: 50%;
-          border: 4rpx solid #fff;
+          border: 4rpx solid var(--bg-card);
           background: #ccc;
 
           &.online {
@@ -5527,7 +5527,7 @@ const EmotionTool = (() => {
 
           .m-name {
             font-size: 28rpx;
-            color: #333;
+            color: var(--actions-text);
             font-weight: 500;
           }
 
@@ -5538,7 +5538,7 @@ const EmotionTool = (() => {
 
         .m-status {
           font-size: 22rpx;
-          color: #999;
+          color: var(--text-secondary);
           margin-top: 4rpx;
         }
       }
@@ -5569,7 +5569,7 @@ const EmotionTool = (() => {
 }
 
 .mute-popup {
-  background: #fff;
+  background: var(--bg-card);
   border-radius: 24rpx 24rpx 0 0;
   padding: 32rpx;
   max-height: 80vh;
@@ -5584,7 +5584,7 @@ const EmotionTool = (() => {
     .popup-title {
       font-size: 32rpx;
       font-weight: 600;
-      color: #333;
+      color: var(--actions-text);
     }
 
     .close-btn {
@@ -5600,7 +5600,7 @@ const EmotionTool = (() => {
       .label {
         display: block;
         font-size: 28rpx;
-        color: #666;
+        color: var(--wot-message-box-content-color);
         margin-bottom: 16rpx;
       }
     }
@@ -5629,7 +5629,7 @@ const EmotionTool = (() => {
 
   .divider-time {
     font-size: 24rpx;
-    color: #999;
+    color: var(--text-secondary);
     background-color: rgba(0, 0, 0, 0.05);
     padding: 8rpx 20rpx;
     border-radius: 8rpx;
@@ -5692,7 +5692,7 @@ const EmotionTool = (() => {
 .action-sheet-item-icon {
   width: 36rpx;
   text-align: center;
-  color: #333;
+  color: var(--actions-text);
   flex-shrink: 0;
 }
 
@@ -5711,7 +5711,7 @@ const EmotionTool = (() => {
 .action-sheet-item-text {
   font-size: 30rpx;
   line-height: 1.4;
-  color: #333;
+  color: var(--actions-text);
 }
 .action-sheet-item-content {
   text-align: baseline;

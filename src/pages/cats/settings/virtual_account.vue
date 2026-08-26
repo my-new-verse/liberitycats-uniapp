@@ -185,7 +185,7 @@ const switchAccount = (item) => {
   width: 100%;
   margin: 96rpx auto;
   font-size: 48rpx;
-  color: #261000;
+  color: var(--text-primary);
   text-align: center;
 }
 
@@ -194,7 +194,7 @@ const switchAccount = (item) => {
   height: 112rpx;
   margin-right: 16rpx;
   overflow: hidden;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 50%;
   image {
@@ -218,7 +218,7 @@ const switchAccount = (item) => {
   align-items: center;
   .title {
     font-size: 32rpx;
-    color: #261000;
+    color: var(--text-primary);
   }
 
   .tag {

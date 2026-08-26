@@ -143,7 +143,7 @@ const navigateBack = () => {
         font-size: 34rpx;
         font-weight: 500;
         line-height: 44rpx;
-        color: #ffffff;
+        color: var(--bg-card);
         text-align: center;
         pointer-events: none;
 
@@ -169,7 +169,7 @@ const navigateBack = () => {
         justify-content: center;
         min-width: 60rpx;
         height: 60rpx;
-        color: #fff;
+        color: var(--bg-card);
         font-size: 28rpx;
         font-family: Alibaba PuHuiTi2;
         pointer-events: auto;
@@ -196,7 +196,7 @@ const navigateBack = () => {
       .fbg {
         width: 100%;
         height: 100%;
-        background-color: #fff;
+        background-color: var(--bg-card);
       }
     }
 

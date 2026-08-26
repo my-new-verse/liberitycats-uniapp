@@ -36,7 +36,7 @@ import SafeArea from '@/components/SafeArea.vue'
 
 .navbar {
   height: 88rpx;
-  background-color: #fff;
+  background-color: var(--bg-card);
 }
 
 .main-content {
@@ -46,6 +46,6 @@ import SafeArea from '@/components/SafeArea.vue'
 
 .bottom-bar {
   height: 100rpx;
-  background-color: #f5f5f5;
+  background-color: var(--wot-action-sheet-active-color);
 }
 </style>

@@ -301,7 +301,7 @@ const openXApp = () => {
 
 .articleCard {
   margin-top: 16rpx;
-  border: 1rpx solid #e8e8e8;
+  border: 1rpx solid var(--isSupporter-border-color);
   border-radius: 16rpx;
   overflow: hidden;
   background-color: #fafafa;
@@ -317,7 +317,7 @@ const openXApp = () => {
     .articleTitle {
       font-size: 28rpx;
       font-weight: 700;
-      color: #261000;
+      color: var(--text-primary);
       line-height: 40rpx;
     }
 
@@ -325,7 +325,7 @@ const openXApp = () => {
       margin-top: 8rpx;
       font-size: 24rpx;
       font-weight: 400;
-      color: #666666;
+      color: var(--wot-message-box-content-color);
       line-height: 36rpx;
     }
   }
@@ -346,7 +346,7 @@ const openXApp = () => {
 .socialBox {
   padding: 40rpx;
   padding-bottom: 20rpx;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
 }
 
 .translateBar {
@@ -357,7 +357,7 @@ const openXApp = () => {
 
   .translateLabel {
     font-size: 24rpx;
-    color: #536471;
+    color: var(--translateLabel-color);
   }
 
   .translateToggle {
@@ -387,7 +387,7 @@ const openXApp = () => {
   z-index: 9;
   padding: 24rpx 40rpx;
   padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
-  border-top: 1rpx solid #f3f3f4;
+  border-top: 1rpx solid var(--fixedCommentBox-color);
 
   .twitterBtn {
     display: flex;
@@ -407,7 +407,7 @@ const openXApp = () => {
     .twitterText {
       font-size: 30rpx;
       font-weight: 600;
-      color: #ffffff;
+      color: var(--bg-card);
       line-height: 1;
     }
   }
@@ -416,14 +416,14 @@ const openXApp = () => {
 .installPopup {
   width: 560rpx;
   padding: 48rpx 40rpx 32rpx;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
   border-radius: 24rpx;
   text-align: center;
 
   .installPopupTitle {
     font-size: 32rpx;
     font-weight: 600;
-    color: #261000;
+    color: var(--text-primary);
   }
 
   .installPopupContent {
@@ -431,7 +431,7 @@ const openXApp = () => {
     font-size: 28rpx;
     font-weight: 400;
     line-height: 44rpx;
-    color: #666666;
+    color: var(--wot-message-box-content-color);
   }
 
   .installPopupBtns {
@@ -448,7 +448,7 @@ const openXApp = () => {
     font-weight: 500;
     color: #999999;
     text-align: center;
-    background-color: #f3f3f4;
+    background-color: var(--fixedCommentBox-color);
     border-radius: 40rpx;
   }
 
@@ -458,7 +458,7 @@ const openXApp = () => {
     line-height: 80rpx;
     font-size: 28rpx;
     font-weight: 500;
-    color: #ffffff;
+    color: var(--bg-card);
     text-align: center;
     background-color: #ff6b03;
     border-radius: 40rpx;

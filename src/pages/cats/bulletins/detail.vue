@@ -81,6 +81,15 @@ onLoad((options) => {
 
 <style lang="scss" scoped>
 @import '/src/style/base';
+
+:deep(.cnt) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
+:deep(.fbg) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
 :deep(.zh-Hans, .zh-Hant) {
   .content {
     * {
@@ -94,12 +103,12 @@ onLoad((options) => {
 .page {
   .cnt {
     min-height: 100vh;
-    background-color: #fff;
+    background-color: var(--bg-card);
   }
   .pbl,
   .pbr {
     .fbg {
-      background-color: #fff;
+      background-color: var(--bg-card);
     }
   }
 }
@@ -109,7 +118,7 @@ onLoad((options) => {
   font-style: normal;
   font-weight: 500;
   line-height: 56rpx;
-  color: #261000;
+  color: var(--text-primary);
 }
 
 .infoBox {
@@ -121,7 +130,7 @@ onLoad((options) => {
   font-style: normal;
   font-weight: 40 0;
   line-height: 28rpx;
-  color: rgba(38, 16, 0, 0.3);
+  color: var(--commentTextArea-color);
 
   .dot {
     margin: 0 16rpx;
@@ -145,6 +154,6 @@ onLoad((options) => {
   margin: 20rpx 0;
   font-size: 32rpx;
   line-height: 1.6;
-  color: #261000;
+  color: var(--text-primary);
 }
 </style>

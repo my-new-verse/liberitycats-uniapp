@@ -71,6 +71,14 @@ onLoad((options) => {
 <style lang="scss" scoped>
 @import '/src/style/base';
 
+:deep(.cnt) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
+:deep(.fbg) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
 :deep(.zh-Hans, .zh-Hant) {
   * {
     font-family: Alibaba PuHuiTi2 !important;
@@ -85,7 +93,7 @@ onLoad((options) => {
   font-style: normal;
   font-weight: 500;
   line-height: 56rpx;
-  color: #261000;
+  color: var(--text-primary);
 }
 
 .infoBox {
@@ -97,7 +105,7 @@ onLoad((options) => {
   font-style: normal;
   font-weight: 40 0;
   line-height: 28rpx;
-  color: rgba(38, 16, 0, 0.3);
+  color: var(--commentTextArea-color);
 
   .dot {
     margin: 0 16rpx;
@@ -119,7 +127,7 @@ onLoad((options) => {
   font-style: normal;
   font-weight: 400;
   line-height: 48rpx;
-  color: #261000;
+  color: var(--text-primary);
 
   img,
   image {

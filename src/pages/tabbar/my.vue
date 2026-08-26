@@ -1078,7 +1078,7 @@ const bindArGame = () => {
       width: 176rpx;
       height: 176rpx;
       overflow: hidden;
-      background-color: #ffffff;
+      background-color: var(--bg-card);
       border-radius: 50%;
       image {
         width: 100%;
@@ -1094,7 +1094,7 @@ const bindArGame = () => {
         font-style: normal;
         font-weight: 600;
         line-height: 56rpx;
-        color: #ffffff;
+        color: var(--bg-card);
       }
       .asset-resps {
         display: flex !important;
@@ -1107,7 +1107,7 @@ const bindArGame = () => {
         font-size: 24rpx;
         font-style: normal;
         line-height: 56rpx;
-        color: #ffffff;
+        color: var(--bg-card);
         display: flex;
         align-items: center;
         .amount {
@@ -1163,7 +1163,7 @@ const bindArGame = () => {
         font-style: normal;
         font-weight: 400;
         line-height: 28rpx;
-        color: #ffffff;
+        color: var(--bg-card);
         text {
           font-weight: 600;
         }
@@ -1211,7 +1211,7 @@ const bindArGame = () => {
     .NftBox {
       padding: 28rpx 32rpx;
       margin-bottom: 24rpx;
-      background-color: #ffffff;
+      background-color: var(--bg-card);
       border-radius: 40rpx;
 
       .titleBox {
@@ -1225,7 +1225,7 @@ const bindArGame = () => {
           font-size: 28rpx;
           font-style: normal;
           font-weight: 600;
-          color: #ffffff;
+          color: var(--bg-card);
           background: #ff6b03;
           border-radius: 8rpx 10rpx 8rpx 8rpx;
         }
@@ -1257,7 +1257,7 @@ const bindArGame = () => {
           font-size: 32rpx;
           font-style: normal;
           font-weight: 500;
-          color: #261000;
+          color: var(--text-primary);
         }
 
         .title {
@@ -1265,7 +1265,7 @@ const bindArGame = () => {
           font-style: normal;
           font-weight: 500;
           line-height: 42rpx;
-          color: #261000;
+          color: var(--text-primary);
         }
       }
       .emptyTextRow {
@@ -1325,7 +1325,7 @@ const bindArGame = () => {
             font-style: normal;
             font-weight: 400;
             line-height: 28rpx;
-            color: #000000;
+            color: var(--text-black);
             text-align: center;
           }
         }
@@ -1358,7 +1358,7 @@ const bindArGame = () => {
       .nftValuation {
         margin-top: 24rpx;
         overflow: hidden;
-        background: #fff8f0;
+        background: var(--nftValuation-bg-color);
         border: 2rpx solid #ff6b03;
         border-radius: 24rpx;
 
@@ -1420,18 +1420,19 @@ const bindArGame = () => {
             .statValue {
               display: flex;
               align-items: baseline;
+              color: var(--text-black);
 
               .currency {
                 font-size: 22rpx;
                 font-weight: 600;
-                color: #261000;
+                color: var(--text-primary);
                 margin-right: 2rpx;
               }
 
               .amount {
                 font-size: 32rpx;
                 font-weight: 700;
-                color: #261000;
+                color: var(--text-primary);
               }
             }
           }
@@ -1445,7 +1446,7 @@ const bindArGame = () => {
     .checkinBox {
       padding: 28rpx 0;
       margin-bottom: 24rpx;
-      background-color: #ffffff;
+      background-color: var(--bg-card);
       border-radius: 40rpx;
 
       .titleBox {
@@ -1466,18 +1467,19 @@ const bindArGame = () => {
           font-style: normal;
           font-weight: 600;
           line-height: 28rpx;
-          color: #999;
+          color: var(--text-secondary);
           text-align: center;
-          background: #f3f3f4;
+          background: var(--fixedCommentBox-color);
           border-radius: 24rpx;
         }
 
         .titleRight.active {
-          color: #ffffff;
+          color: var(--bg-card);
           background: #ff6b03;
         }
 
         .titleLeft {
+          color: var(--text-black);
           .checkinDays {
             font-size: 28rpx;
             font-weight: 600;
@@ -1490,7 +1492,7 @@ const bindArGame = () => {
           font-style: normal;
           font-weight: 500;
           line-height: 33rpx;
-          color: #261000;
+          color: var(--text-primary);
         }
       }
 
@@ -1541,7 +1543,7 @@ const bindArGame = () => {
               width: 40rpx;
               height: 74rpx;
               padding: 16rpx;
-              background: #f9f9f9;
+              background: var(--pointBox-bg-color);
               border-radius: 16rpx;
 
               .point {
@@ -1550,7 +1552,7 @@ const bindArGame = () => {
                 font-style: normal;
                 font-weight: 50 0;
                 line-height: 23rpx;
-                color: rgba(38, 16, 0, 0.2);
+                color: var(--commentTextArea-color);
                 text-align: center;
               }
 
@@ -1572,7 +1574,7 @@ const bindArGame = () => {
               font-style: normal;
               font-weight: 500;
               line-height: 28rpx;
-              color: rgba(38, 16, 0, 0.3);
+              color: var(--commentTextArea-color);
               text-align: center;
             }
           }
@@ -1638,7 +1640,7 @@ const bindArGame = () => {
     flex-direction: column;
     width: calc(50% - 42rpx);
     padding: 16rpx;
-    background-color: #f9f9f9;
+    background-color: var(--pointBox-bg-color);
     border-radius: 16rpx;
 
     .amountBox {
@@ -1649,7 +1651,7 @@ const bindArGame = () => {
         font-size: 28rpx;
         font-style: normal;
         font-weight: 600;
-        color: #261000;
+        color: var(--text-primary);
         text-align: left;
       }
       .unit {
@@ -1704,7 +1706,7 @@ const bindArGame = () => {
         font-size: 24rpx;
         font-style: normal;
         font-weight: 500;
-        color: rgba(38, 16, 0, 0.6);
+        color: var(--goodsAttr-color);
         text-align: left;
       }
 

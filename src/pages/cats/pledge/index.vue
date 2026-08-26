@@ -221,12 +221,20 @@ const loadPledgeAsset = () => {
 <style lang="scss" scoped>
 @import '/src/style/base';
 
+:deep(.cnt) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
+:deep(.fbg) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
 .pointLabel {
   margin-bottom: 16rpx;
   font-size: 28rpx;
   font-weight: normal;
   line-height: 33rpx;
-  color: #261000;
+  color: var(--text-primary);
   text-align: center;
 }
 
@@ -235,7 +243,7 @@ const loadPledgeAsset = () => {
   font-style: normal;
   font-weight: normal;
   line-height: 56rpx;
-  color: #261000;
+  color: var(--text-primary);
   text-align: center;
   &.active {
     color: #ff6b03;
@@ -246,7 +254,7 @@ const loadPledgeAsset = () => {
 .NftBox {
   padding: 28rpx 32rpx;
   margin-bottom: 24rpx;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
   border-radius: 40rpx;
 
   .titleBox {
@@ -275,13 +283,14 @@ const loadPledgeAsset = () => {
       .txt {
         font-size: 24rpx;
         line-height: 28rpx;
-        color: #261000;
+        color: var(--text-primary);
       }
     }
 
     .titleLeft {
       display: flex;
       align-items: center;
+      color: var(--text-black);
       .refresh {
         width: 36rpx;
         height: 36rpx;
@@ -295,7 +304,7 @@ const loadPledgeAsset = () => {
       font-style: normal;
       font-weight: 500;
       line-height: 42rpx;
-      color: #261000;
+      color: var(--text-primary);
     }
   }
   .nftConnect {
@@ -340,7 +349,7 @@ const loadPledgeAsset = () => {
         font-style: normal;
         font-weight: 400;
         line-height: 28rpx;
-        color: #000000;
+        color: var(--text-black);
         text-align: center;
       }
     }

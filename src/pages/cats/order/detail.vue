@@ -140,7 +140,12 @@ const copyLogisticNo = () => {
 
 <style lang="scss" scoped>
 @import '/src/style/base';
-
+:deep(.cnt) {
+  background-color: var(--bg-primary) !important;
+}
+:deep(.fbg) {
+  background-color: var(--bg-primary) !important;
+}
 .orderList {
   .item {
     display: flex;
@@ -152,14 +157,14 @@ const copyLogisticNo = () => {
       font-size: 24rpx;
       font-weight: 400;
       line-height: 28 rpx;
-      color: rgba(38, 16, 0, 0.6);
+      color: var(--goodsAttr-color);
     }
 
     .value {
       font-size: 24rpx;
       font-weight: 400;
       line-height: 28rpx;
-      color: #261000;
+      color: var(--text-primary);
 
       &.copyable {
         color: #ff6b03;

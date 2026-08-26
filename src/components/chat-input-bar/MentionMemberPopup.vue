@@ -474,7 +474,7 @@ const handleConfirm = () => {
   &__title {
     font-size: 30rpx;
     font-weight: 500;
-    color: #333;
+    color: var(--actions-text);
   }
 
   &__action {
@@ -496,13 +496,13 @@ const handleConfirm = () => {
 .section-title {
   padding: 24rpx 24rpx 12rpx;
   font-size: 26rpx;
-  color: #999;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
 .selected-bar {
   white-space: nowrap;
-  border-bottom: 1rpx solid #f0f0f0;
+  border-bottom: 1rpx solid var(--divider-color);
 
   &__inner {
     display: inline-flex;
@@ -538,7 +538,7 @@ const handleConfirm = () => {
 
   &__name {
     font-size: 20rpx;
-    color: #666;
+    color: var(--wot-message-box-content-color);
     max-width: 96rpx;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -554,7 +554,7 @@ const handleConfirm = () => {
   gap: 16rpx;
 
   &:active {
-    background: #f5f5f5;
+    background: var(--wot-action-sheet-active-color);
   }
 }
 
@@ -598,7 +598,7 @@ const handleConfirm = () => {
 
 .mention-nickname {
   font-size: 28rpx;
-  color: #333;
+  color: var(--actions-text);
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -608,7 +608,7 @@ const handleConfirm = () => {
 .mention-loading {
   padding: 32rpx;
   text-align: center;
-  color: #999;
+  color: var(--text-secondary);
   font-size: 26rpx;
 }
 
@@ -627,7 +627,7 @@ const handleConfirm = () => {
   // justify-content: center;
   min-height: 50vh;
   padding: 120rpx 32rpx;
-  color: #999;
+  color: var(--text-secondary);
   font-size: 28rpx;
 }
 </style>

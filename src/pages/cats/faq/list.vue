@@ -153,7 +153,7 @@ const onSearch = () => {
 @import '/src/style/base';
 
 .page {
-  background-color: #ffffff;
+  background-color: var(--bg-card);
 }
 
 .customNav {
@@ -197,7 +197,7 @@ const onSearch = () => {
         width: calc(100% - 44rpx - 16rpx - 12rpx);
         height: 56rpx;
         padding: 6rpx;
-        background-color: #ffffff;
+        background-color: var(--bg-card);
         border-radius: 34rpx;
 
         .searchBtn {
@@ -238,7 +238,7 @@ const onSearch = () => {
       .fbg {
         width: 100%;
         height: 100%;
-        background-color: #f7f6f4;
+        background-color: var(--bg-primary);
       }
     }
 
@@ -260,14 +260,14 @@ const onSearch = () => {
 .cnt {
   min-height: 100vh;
   padding: 24rpx;
-  background-color: #f7f6f4;
+  background-color: var(--bg-primary);
 }
 
 .faq-empty {
   padding: 80rpx 0;
   text-align: center;
   font-size: 26rpx;
-  color: #999;
+  color: var(--text-secondary);
 }
 
 .faq-footer {

@@ -219,7 +219,7 @@ const handleFiatBlur = (selectItem: any, e: any) => {
   justify-content: center;
   height: 64rpx;
   margin-bottom: 20rpx;
-  color: #999;
+  color: var(--text-secondary);
   background-color: #efefef;
 }
 // fiat start
@@ -229,7 +229,7 @@ const handleFiatBlur = (selectItem: any, e: any) => {
   justify-content: space-between;
   height: 64rpx;
   margin-bottom: 30rpx;
-  color: #999;
+  color: var(--text-secondary);
   background-color: #efefef;
 }
 .fiatItem {
@@ -258,7 +258,7 @@ const handleFiatBlur = (selectItem: any, e: any) => {
         font-size: 32rpx;
         font-weight: 600;
         line-height: 38rpx;
-        color: #261000;
+        color: var(--text-primary);
       }
       .fiatSubName {
         font-size: 24rpx;
@@ -282,7 +282,7 @@ const handleFiatBlur = (selectItem: any, e: any) => {
     border-radius: 24rpx;
 
     &.active {
-      color: #ffffff;
+      color: var(--bg-card);
       background: #ff6b03;
     }
   }
@@ -304,11 +304,11 @@ const handleFiatBlur = (selectItem: any, e: any) => {
 .active {
   :deep(.fiatPriceInput) {
     .wd-input__inner {
-      color: #fff;
+      color: var(--bg-card);
     }
   }
 }
 :deep(.wd-input__placeholder) {
-  color: #999;
+  color: var(--text-secondary);
 }
 </style>

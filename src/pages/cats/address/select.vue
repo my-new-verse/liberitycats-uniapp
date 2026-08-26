@@ -243,7 +243,7 @@ const selectAddressSubmit = () => {
         font-size: 32rpx;
         font-weight: 600;
         line-height: 48rpx;
-        color: #ffffff;
+        color: var(--bg-card);
         text-align: center;
       }
 
@@ -314,7 +314,7 @@ const selectAddressSubmit = () => {
         font-style: normal;
         font-weight: 600;
         line-height: 52rpx;
-        color: #261000;
+        color: var(--text-primary);
       }
       .phone {
         margin: 0 24rpx;
@@ -322,7 +322,7 @@ const selectAddressSubmit = () => {
         font-style: normal;
         font-weight: 400;
         line-height: 48rpx;
-        color: #261000;
+        color: var(--text-primary);
       }
       .default {
         width: fit-content;
@@ -331,7 +331,7 @@ const selectAddressSubmit = () => {
         font-style: normal;
         font-weight: 400;
         line-height: 40rpx;
-        color: #ffffff;
+        color: var(--bg-card);
         text-align: left;
         background: #ff6b03;
         border: 2rpx solid #ff6b03;

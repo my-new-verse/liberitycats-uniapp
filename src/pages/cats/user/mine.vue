@@ -752,18 +752,16 @@ const openMoreActions = () => {
   const actions: any[] = []
 
   if (isFollowing) {
-    actions.push({ name: t('social.index.user.unfollow'), type: 'follow', color: '#333' })
+    actions.push({ name: t('social.index.user.unfollow'), type: 'follow' })
     actions.push({
       name: isSpecial ? t('social.index.user.special.cancel') : t('social.index.user.special.set'),
       type: 'specialFollow',
-      color: '#333',
     })
   } else {
     actions.push({ name: t('social.index.user.follow'), type: 'follow', color: '#ff6b03' })
     actions.push({
       name: t('social.index.user.special.set'),
       type: 'specialFollow',
-      color: '#333',
     })
   }
 
@@ -809,7 +807,7 @@ const updateBanAction = (isBanned: boolean) => {
     }
   }
   if (isBanned) {
-    actions.push({ name: t('report.admin.unban_post.action'), type: 'unban', color: '#333' })
+    actions.push({ name: t('report.admin.unban_post.action'), type: 'unban' })
   } else {
     actions.push({ name: t('report.admin.ban_post.action'), type: 'ban', color: '#FF3B30' })
   }
@@ -1224,7 +1222,7 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
         width: 176rpx;
         height: 176rpx;
         overflow: hidden;
-        background-color: #ffffff;
+        background-color: var(--bg-card);
         border-radius: 50%;
         image {
           width: 100%;
@@ -1240,13 +1238,13 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
           font-style: normal;
           font-weight: 600;
           line-height: 56rpx;
-          color: #ffffff;
+          color: var(--bg-card);
         }
         .pointsRow {
           font-size: 24rpx;
           font-style: normal;
           line-height: 40rpx;
-          color: #ffffff;
+          color: var(--bg-card);
           display: flex;
           align-items: center;
           width: 100%;
@@ -1294,7 +1292,7 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
         .statCount {
           font-size: 44rpx;
           font-weight: 600;
-          color: #ffffff;
+          color: var(--bg-card);
           margin-right: 8rpx;
         }
         .statLabel {
@@ -1336,7 +1334,7 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
       .moreActionsBtn {
         width: 64rpx;
         height: 64rpx;
-        background-color: #fff;
+        background-color: var(--bg-card);
         background-color: #fef2e7;
         border-radius: 50%;
         background-image: url('@/static/images/more_1.png');
@@ -1371,7 +1369,7 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
 .postFilterBar {
   position: relative;
   display: flex;
-  background: #fff;
+  background: var(--bg-card);
   border-radius: 32rpx;
   padding: 6rpx;
   margin-bottom: 20rpx;
@@ -1387,13 +1385,13 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
 
     .postFilterTabText {
       font-size: 28rpx;
-      color: #333;
+      color: var(--actions-text);
       position: relative;
       z-index: 2;
     }
 
     &.active .postFilterTabText {
-      color: #fff;
+      color: var(--bg-card);
       font-weight: 500;
     }
   }
@@ -1472,10 +1470,10 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
 
   &.followed {
     :deep(.follow-btn) {
-      background: #ffffff !important;
+      background: var(--bg-card) !important;
       background-color: #fef2e7 !important;
 
-      color: #999 !important;
+      color: var(--text-secondary) !important;
       color: var(--wot-button-primary-bg-color) !important;
       // border-color: #ddd !important;
     }
@@ -1485,8 +1483,8 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
   .follow-btn {
     background: var(--wot-button-primary-bg-color) !important;
     background: #fef2e7 !important;
-    border-color: #fff !important;
-    color: #fff !important;
+    border-color: var(--bg-card) !important;
+    color: var(--bg-card) !important;
     color: var(--wot-button-primary-bg-color) !important;
     // background-image: linear-gradient(90deg, rgba(232, 82, 18, 1) 0.00%, rgba(245, 148, 0, 1) 100.00%) !important;
     // width: 140rpx;
@@ -1499,7 +1497,7 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
 .moreActionsBtn {
   width: 40rpx;
   height: 40rpx;
-  background-color: #fff;
+  background-color: var(--bg-card);
   border-radius: 50%;
   background-image: url('@/static/images/more_1.png');
   background-repeat: no-repeat;
@@ -1527,7 +1525,7 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
   min-height: 2rpx !important;
   margin: 16rpx 0;
   padding: 0 !important;
-  background: #f0f0f0;
+  background: var(--divider-color);
   pointer-events: none;
   border: none !important;
   overflow: hidden;
@@ -1553,7 +1551,7 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
       line-height: 1.4;
     }
     .tag1 {
-      color: #fff;
+      color: var(--bg-card);
       background: var(--wot-color-primary);
     }
     .tag2 {
@@ -1567,10 +1565,10 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
   }
   .title {
     flex: 1;
-    color: #1d1d1f !important;
+    color: var(--text-color) !important;
   }
   .content {
-    color: #666666 !important;
+    color: var(--wot-message-box-content-color) !important;
   }
 }
 
@@ -1616,12 +1614,12 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
   padding: 16rpx 0;
   .banLabel {
     font-size: 28rpx;
-    color: #333;
+    color: var(--actions-text);
     margin-bottom: 24rpx;
   }
   .banDaysTitle {
     font-size: 26rpx;
-    color: #666;
+    color: var(--wot-message-box-content-color);
     margin-bottom: 12rpx;
   }
   .banDaysRow {
@@ -1633,11 +1631,11 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
       padding: 16rpx 0;
       text-align: center;
       font-size: 28rpx;
-      color: #333;
-      background: #f5f5f5;
+      color: var(--actions-text);
+      background: var(--wot-action-sheet-active-color);
       border-radius: 12rpx;
       &.active {
-        color: #fff;
+        color: var(--bg-card);
         background: #ff6b03;
       }
     }

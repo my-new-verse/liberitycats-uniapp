@@ -396,7 +396,7 @@ onNavigationBarButtonTap(() => {
   .loading-title {
     font-size: 32rpx;
     font-weight: 600;
-    color: #fff;
+    color: var(--bg-card);
   }
 
   .loading-progress {
@@ -432,7 +432,7 @@ onNavigationBarButtonTap(() => {
   .entering-game-content {
     font-size: 32rpx;
     font-weight: 600;
-    color: #fff;
+    color: var(--bg-card);
   }
 }
 

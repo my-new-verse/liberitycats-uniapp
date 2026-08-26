@@ -699,7 +699,7 @@ export default {
   display: inline-block;
   width: 40rpx;
   height: 40rpx;
-  background: #fff;
+  background: var(--bg-card);
 
   image,
   img {

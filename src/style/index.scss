@@ -1,6 +1,7 @@
 // @import './iconfont.css';
 
 @import './font';
+@import './theme';
 
 .test {
   // 可以通过 @apply 多个样式封装整体样式
@@ -14,7 +15,7 @@
 page {
   // 修改按主题色
   --wot-color-theme: #ff6b03;
-  --wot-divider-color: #ddd;
+  --wot-divider-color: var(--wot-divider);
 
   // 修改按钮背景色
   --wot-button-primary-bg-color: #ff6b03;
@@ -22,7 +23,7 @@ page {
   --liberty-cats-primary-color: #ff6b03; // 主题色
   --liberty-cats-navigation-bar-background-color: #ff6b03; // 导航栏颜色
   --liberty-cats-navigation-bar-font-color: #ffffff; // 导航栏字体颜色
-  --liberty-cats-page-background-color: #f7f6f4; // 页面背景主色
+  --liberty-cats-page-background-color: var(--bg-primary); // 页面背景主色
   --liberty-cats-page-border-radius: 64rpx;
   --liberty-cats-page-common-border-radius: 40rpx;
   --wot-color-primary: #ff6b03;
@@ -120,7 +121,7 @@ table {
   width: calc(100% - 10rpx); // 宽度自适应
   //overflow: hidden;
   border-collapse: collapse; // 合并边框，防止双线
-  background: #fff;
+  background: var(--bg-card);
   border: 2rpx solid #ddd;
   border-radius: 8rpx;
 }
@@ -130,11 +131,11 @@ table td {
   padding: 12rpx 16rpx; // 内边距
   text-align: left; // 左对齐
   word-break: break-all; // 内容自动换行
-  background: #fff;
+  background: var(--bg-card);
   border: 1px solid #ddd;
 }
 
 table th {
   font-weight: bold;
-  background: #f7f6f4; // 表头背景色
+  background: var(--bg-primary); // 表头背景色
 }

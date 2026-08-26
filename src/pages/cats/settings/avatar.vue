@@ -164,7 +164,7 @@ const buildFormData = ({ file, formData, resolve }) => {
   align-items: center;
   justify-content: center;
   height: 482rpx;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
   border-radius: 40rpx;
   .avatar {
     display: flex;
@@ -193,14 +193,14 @@ const buildFormData = ({ file, formData, resolve }) => {
 .selectBox {
   padding: 32rpx;
   margin-top: 24rpx;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
   border-radius: 40rpx;
   .titleBox {
     font-size: 28rpx;
     font-style: normal;
     font-weight: 500;
     line-height: 33rpx;
-    color: #261000;
+    color: var(--text-primary);
   }
   .selectList {
     margin-top: 24rpx;
@@ -236,7 +236,7 @@ const buildFormData = ({ file, formData, resolve }) => {
       font-size: 32rpx;
       font-style: normal;
       font-weight: 600;
-      color: #ffffff;
+      color: var(--bg-card);
       text-align: center;
       background: #ff6b03;
     }

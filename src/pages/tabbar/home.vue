@@ -105,7 +105,7 @@
           <!-- 群聊start -->
           <view class="commonTitleBox">
             <view class="title navTitle">
-              <image src="/static/images/circus.svg" class="tb" alt="" />
+              <view class="tb tb-circus"></view>
               {{ t('home.title.groupChat') }}
             </view>
           </view>
@@ -389,7 +389,7 @@ const toChatGroup = () => {
     }
 
     .homeSwiper {
-      background-color: #f7f6f4;
+      background-color: var(--bg-primary);
     }
 
     .userInfoBox {
@@ -409,7 +409,7 @@ const toChatGroup = () => {
         font-style: normal;
         font-weight: 500;
         line-height: 42rpx;
-        color: #ffffff;
+        color: var(--bg-card);
         text-align: left;
         text-shadow: 0px 2px 0px rgba(0, 0, 0, 0.15);
       }
@@ -420,7 +420,7 @@ const toChatGroup = () => {
         height: 48rpx;
         padding: 16rpx;
         cursor: pointer;
-        background-color: #ffffff;
+        background-color: var(--bg-card);
         border-radius: 76rpx;
         .msgDot {
           position: absolute;
@@ -433,7 +433,7 @@ const toChatGroup = () => {
           padding: 4rpx 10rpx;
           font-size: 14rpx;
           font-style: normal;
-          color: #ffffff;
+          color: var(--bg-card);
           background-color: #ff6b03;
           border-radius: 12rpx;
         }
@@ -445,7 +445,7 @@ const toChatGroup = () => {
     position: relative; /* 修改为 relative */
     width: 100%;
     margin-top: -64rpx; /* 保持重叠效果 */
-    background: #fff;
+    background: var(--bg-card);
     border-radius: var(--liberty-cats-page-border-radius) var(--liberty-cats-page-border-radius) 0 0;
 
     .cnt1 {
@@ -455,7 +455,7 @@ const toChatGroup = () => {
       width: 100%;
       height: fit-content;
       padding-bottom: 96rpx;
-      background: #ffffff;
+      background: var(--bg-card);
       border-radius: var(--liberty-cats-page-border-radius) var(--liberty-cats-page-border-radius) 0
         0;
 
@@ -489,7 +489,7 @@ const toChatGroup = () => {
       justify-content: start;
       width: 100%;
       margin-top: -64rpx;
-      background-color: #f7f6f4;
+      background-color: var(--bg-primary);
       border-radius: var(--liberty-cats-page-border-radius) var(--liberty-cats-page-border-radius) 0
         0;
 
@@ -525,7 +525,7 @@ const toChatGroup = () => {
   padding: 10rpx;
   margin-right: 32rpx;
   margin-bottom: 40rpx;
-  background-color: #f7f6f4;
+  background-color: var(--bg-primary);
   border-radius: 48rpx;
 
   .goodsImg {
@@ -533,7 +533,7 @@ const toChatGroup = () => {
     width: 390rpx;
     height: 388rpx;
     overflow: hidden;
-    background-color: #ffffff;
+    background-color: var(--bg-card);
     border-radius: 48rpx;
     image {
       width: 100%;
@@ -553,7 +553,7 @@ const toChatGroup = () => {
       font-family: Montserrat;
       font-size: 24rpx;
       font-weight: 500;
-      color: #ffffff;
+      color: var(--bg-card);
       text-transform: uppercase;
       white-space: nowrap;
       background: #ff6b03;
@@ -603,7 +603,7 @@ const toChatGroup = () => {
       font-style: normal;
       font-weight: normal;
       line-height: 38rpx;
-      color: #261000;
+      color: var(--text-primary);
       text-align: center;
       text-overflow: ellipsis; //溢出用省略号显示
       text-transform: none;
@@ -631,7 +631,7 @@ const toChatGroup = () => {
         font-size: 28rpx;
       }
       .unit {
-        //color: #261000;
+        //color: var(--text-primary);
         font-size: 20rpx;
       }
     }
@@ -650,11 +650,16 @@ const toChatGroup = () => {
     align-items: center;
     font-size: 40rpx;
     font-weight: 600;
-    color: #261000;
+    color: var(--text-primary);
     .tb {
       width: 64rpx;
       height: 64rpx;
       margin-right: 12rpx;
+    }
+    .tb-circus {
+      background-color: var(--text-primary);
+      -webkit-mask: url('@/static/images/circus.svg') no-repeat center / 100% 100%;
+      mask: url('@/static/images/circus.svg') no-repeat center / 100% 100%;
     }
   }
   .more {

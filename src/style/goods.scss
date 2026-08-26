@@ -6,7 +6,7 @@
     padding: 8rpx;
     margin-right: 30rpx;
     margin-bottom: 30rpx;
-    background-color: #f7f6f4;
+    background-color: var(--bg-primary);
     border-radius: 32rpx;
 
     .goodsImg {
@@ -14,7 +14,7 @@
       width: 304rpx;
       height: 304rpx;
       overflow: hidden;
-      background-color: #fff;
+      background-color: var(--bg-card);
       border-radius: 32rpx;
       .cover {
         width: 100%;
@@ -37,7 +37,7 @@
         font-style: normal;
         font-weight: 500;
         line-height: 40rpx;
-        color: #ffffff;
+        color: var(--bg-card);
         text-transform: uppercase;
         /* 可选：消除字体渲染差异 */
         vertical-align: middle;
@@ -84,7 +84,7 @@
         font-size: 28rpx;
         font-style: normal;
         font-weight: normal;
-        color: #261000;
+        color: var(--text-primary);
         text-align: center;
         text-overflow: ellipsis;
         white-space: nowrap;

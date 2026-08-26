@@ -211,7 +211,7 @@ onUnmounted(() => {
 .group-container {
   height: 100%;
   max-height: calc(100vh - var(--tabs-height, 88rpx));
-  background: #f7f4ee;
+  background: var(--bg-primary);
   overflow: hidden;
 }
 
@@ -300,7 +300,7 @@ onUnmounted(() => {
   font-size: 28rpx;
   line-height: 1.2;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--bg-card);
   text-shadow: 0 4rpx 12rpx rgba(72, 35, 0, 0.28);
 }
 
@@ -329,13 +329,13 @@ onUnmounted(() => {
   background-color: #ff4d4f; /* 醒目红色 */
   // background-color: #d4380d; /* 深橘红色 */
   background-color: var(--wot-button-primary-bg-color);
-  color: #ffffff;
+  color: var(--bg-card);
   font-size: 20rpx;
   line-height: 32rpx;
   text-align: center;
   box-sizing: border-box;
   pointer-events: none;
-  border: 1px solid #ffffff;
+  border: 1px solid var(--bg-card);
   z-index: 10;
 }
 
@@ -344,7 +344,7 @@ onUnmounted(() => {
   border-radius: 999rpx;
   font-size: 28rpx;
   background: var(--wot-button-primary-bg-color) !important;
-  color: #fff !important;
+  color: var(--bg-card) !important;
   border-color: rgba(255, 208, 86, 1) !important;
   height: var(--wot-button-medium-height, 18px);
   padding: var(--wot-button-medium-padding, 0 12px) !important;

@@ -281,6 +281,14 @@ const pay = async () => {
 <style lang="scss" scoped>
 @import '/src/style/base';
 
+:deep(.cnt) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
+:deep(.fbg) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
 .page {
   background-color: var(--liberty-cats-page-background-color);
   .cnt {
@@ -354,7 +362,7 @@ const pay = async () => {
 .wrapper {
   padding: 24rpx;
   padding-top: 64rpx;
-  background-color: #fff;
+  background-color: var(--bg-card);
   .block {
     display: flex;
     flex-direction: column;

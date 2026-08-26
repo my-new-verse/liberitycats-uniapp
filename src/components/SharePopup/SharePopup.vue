@@ -278,7 +278,7 @@ defineExpose({ openSharePopup })
   font-size: 28rpx;
   font-weight: 500;
   line-height: 44rpx;
-  color: #261000;
+  color: var(--text-primary);
   font-family:
     Alimama FangYuanTi VF,
     sans-serif;
@@ -319,7 +319,7 @@ defineExpose({ openSharePopup })
   font-size: 28rpx;
   font-weight: 500;
   line-height: 44rpx;
-  color: #999;
+  color: var(--text-secondary);
   margin-bottom: 20rpx;
   font-family:
     Alimama FangYuanTi VF,
@@ -410,6 +410,6 @@ defineExpose({ openSharePopup })
 }
 .poster-action-text {
   font-size: 24rpx;
-  color: #261000;
+  color: var(--text-primary);
 }
 </style>

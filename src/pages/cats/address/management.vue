@@ -191,7 +191,7 @@ const setDefaultAddress = (id: number) => {
         font-style: normal;
         font-weight: 600;
         line-height: 52rpx;
-        color: #261000;
+        color: var(--text-primary);
       }
       .phone {
         margin: 0 24rpx;
@@ -199,7 +199,7 @@ const setDefaultAddress = (id: number) => {
         font-style: normal;
         font-weight: 400;
         line-height: 48rpx;
-        color: #261000;
+        color: var(--text-primary);
       }
     }
     .address {
@@ -243,7 +243,7 @@ const setDefaultAddress = (id: number) => {
       font-size: 28rpx;
       font-style: normal;
       font-weight: 400;
-      color: #261000;
+      color: var(--text-primary);
     }
   }
 }

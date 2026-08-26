@@ -152,7 +152,7 @@ $tabbar-active-color: #ff6b03;
   height: $tabbar-height;
   padding-bottom: constant(safe-area-inset-bottom);
   padding-bottom: env(safe-area-inset-bottom);
-  background-color: #ffffff;
+  background-color: var(--bg-card);
   box-shadow: 0 -1px 0 0 rgba(0, 0, 0, 0.05);
 }
 
@@ -181,7 +181,7 @@ $tabbar-active-color: #ff6b03;
   &__text {
     font-size: $tabbar-text-size;
     line-height: 1.2;
-    color: #999;
+    color: var(--text-secondary);
     // transition: color 0.2s;
   }
 

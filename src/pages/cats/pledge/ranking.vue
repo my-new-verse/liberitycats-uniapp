@@ -144,8 +144,8 @@ const loadMore = () => {
   padding: 40rpx;
   font-size: 28rpx;
   line-height: 33rpx;
-  color: #261000;
-  background-color: #fff;
+  color: var(--text-primary);
+  background-color: var(--bg-card);
   border-radius: 40rpx;
 
   .rankingItem {
@@ -166,7 +166,7 @@ const loadMore = () => {
         margin-right: 16rpx;
         font-size: 24rpx;
         line-height: 32rpx;
-        color: #261000;
+        color: var(--text-primary);
         text-align: center;
       }
       .memberBox {
@@ -191,7 +191,7 @@ const loadMore = () => {
         .nickname {
           font-size: 28rpx;
           line-height: 40rpx;
-          color: #261000;
+          color: var(--text-primary);
         }
       }
     }
@@ -199,7 +199,7 @@ const loadMore = () => {
     .point {
       font-size: 28rpx;
       line-height: 40rpx;
-      color: #261000;
+      color: var(--text-primary);
     }
 
     .pointHeader {

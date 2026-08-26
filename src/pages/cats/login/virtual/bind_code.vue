@@ -235,7 +235,7 @@ const doLogin = async () => {
     font-style: normal;
     font-weight: 600;
     line-height: 56rpx;
-    color: #261000;
+    color: var(--text-primary);
   }
   .subTitle {
     display: flex;
@@ -271,7 +271,7 @@ const doLogin = async () => {
       font-size: 32rpx;
       font-style: normal;
       font-weight: 600;
-      color: #ffffff;
+      color: var(--bg-card);
       text-align: center;
       background: #ff6b03;
     }
@@ -283,7 +283,7 @@ const doLogin = async () => {
 ::v-deep .wd-password-input__item {
   width: 80rpx;
   height: 80rpx;
-  background-color: #f7f6f4;
+  background-color: var(--bg-primary);
   border-radius: 16rpx;
 }
 </style>

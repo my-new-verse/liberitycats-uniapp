@@ -77,12 +77,12 @@ onLoad(() => {
 .page {
   .cnt {
     min-height: 100vh;
-    background-color: #fff;
+    background-color: var(--bg-card);
   }
   .pbl,
   .pbr {
     .fbg {
-      background-color: #fff;
+      background-color: var(--bg-card);
     }
   }
 }
@@ -92,7 +92,7 @@ onLoad(() => {
   font-style: normal;
   font-weight: 500;
   line-height: 56rpx;
-  color: #261000;
+  color: var(--text-primary);
 }
 
 .guideImgBox {

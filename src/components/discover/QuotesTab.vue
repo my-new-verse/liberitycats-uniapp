@@ -707,7 +707,7 @@ onShow(() => {
   justify-content: center;
   height: 64rpx;
   margin-bottom: 20rpx;
-  color: #999;
+  color: var(--text-secondary);
   background-color: #efefef;
 }
 // quotes start
@@ -716,7 +716,7 @@ onShow(() => {
   align-items: center;
   justify-content: space-between;
   height: 48rpx;
-  color: #999;
+  color: var(--text-secondary);
   //background-color: #efefef;
 }
 .quoteItem {
@@ -744,13 +744,13 @@ onShow(() => {
         font-size: 32rpx;
         font-weight: 500;
         line-height: 38rpx;
-        color: #261000;
+        color: var(--text-primary);
       }
       .chain {
         font-size: 24rpx;
         font-weight: 500;
         line-height: 28rpx;
-        color: rgba(0, 0, 0, 0.4);
+        color: var(--black-40);
       }
     }
   }
@@ -763,7 +763,7 @@ onShow(() => {
     font-size: 32rpx;
     font-weight: 500;
     line-height: 38rpx;
-    color: #261000;
+    color: var(--text-primary);
   }
   .upDown {
     display: flex;
@@ -774,7 +774,7 @@ onShow(() => {
     font-size: 28rpx;
     font-weight: 500;
     line-height: 33rpx;
-    color: #ffffff;
+    color: var(--bg-card);
     background-color: #1ec880;
     border-radius: 24rpx;
   }
@@ -803,7 +803,7 @@ onShow(() => {
         font-size: 32rpx;
         font-style: normal;
         font-weight: 600;
-        color: #261000;
+        color: var(--text-primary);
         text-align: left;
       }
     }

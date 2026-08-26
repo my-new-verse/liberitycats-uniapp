@@ -440,7 +440,7 @@ defineExpose({ show })
   font-size: 40rpx;
   font-weight: 800;
   line-height: 1.25;
-  color: #261000;
+  color: var(--text-primary);
 }
 
 .activity-popup__rich-content {
@@ -487,7 +487,7 @@ defineExpose({ show })
   font-size: 30rpx;
   font-weight: 850;
   line-height: 96rpx;
-  color: #fff;
+  color: var(--bg-card);
   background: #ff6b03;
   border: 0;
   border-radius: 999rpx;

@@ -138,7 +138,7 @@ onLoad(() => {
     height: 240rpx;
     margin-bottom: 60rpx;
     overflow: hidden;
-    background-color: #ffffff;
+    background-color: var(--bg-card);
     border: 2rpx solid #ffef6c;
     border-radius: 50%;
     image {
@@ -150,14 +150,14 @@ onLoad(() => {
 .partnerBox {
   padding: 40rpx;
   margin: 40rpx auto;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
   border-radius: 40rpx;
 
   .partnerTitle {
     margin-bottom: 30rpx;
     font-size: 32rpx;
     font-weight: normal;
-    color: #261000;
+    color: var(--text-primary);
   }
 
   .partnerItemBox {
@@ -179,7 +179,7 @@ onLoad(() => {
       font-style: normal;
       font-weight: normal;
       line-height: 33rpx;
-      color: #261000;
+      color: var(--text-primary);
       text-align: center;
       text-transform: none;
     }
