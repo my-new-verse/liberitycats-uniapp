@@ -129,7 +129,7 @@
 import { ref, computed } from 'vue'
 import i18n, { t } from '@/locale/index'
 import { useUserStore } from '@/store/user'
-import { applyTheme, resolveTheme, getStoredTheme, type ThemeMode } from '@/utils/theme'
+import { applyTheme, getStoredTheme, type ThemeMode } from '@/utils/theme'
 
 import CustomNav from '@/components/CustomNav/CustomNav.vue'
 
@@ -159,7 +159,7 @@ const onThemeSelect = ({ item }: any) => {
   const mode = item.value as ThemeMode
   themeMode.value = mode
   uni.setStorageSync('app_theme', mode)
-  applyTheme(resolveTheme(mode))
+  applyTheme(mode)
 }
 
 const logout = () => {

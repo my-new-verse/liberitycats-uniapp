@@ -51,6 +51,13 @@ watch(
 onLaunch(() => {
   console.log('App Launch', uni.getSystemInfoSync())
 
+  // #ifdef APP-PLUS
+  // 尽早注册关闭启动页，避免后续初始化逻辑异常导致卡在启动页
+  setTimeout(() => {
+    plus.navigator.closeSplashscreen()
+  }, 1000)
+  // #endif
+
   // 冷启动时重置活动弹窗会话；切换页面和 App 前后台切换不会重置。
   popupStore.resetStartupSession()
   // 夜间模式初始化（light/dark/system 三档，system 跟随系统）
@@ -143,15 +150,6 @@ onLaunch(() => {
   })
 
   // 请求并缓存广告
-
-  // #ifdef APP-PLUS
-  setTimeout(() => {
-    plus.navigator.closeSplashscreen()
-  }, 1000) // 5秒后关闭启动页
-  // #endif
-
-  // App启动时初始化WebView预加载（无token版本）
-  // initializeGameWebviewPreload()
 
   // #ifdef APP-PLUS
   // 监听新的深链请求（App已在运行时，用户从浏览器再次点击链接）

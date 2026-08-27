@@ -1094,7 +1094,8 @@ const bindArGame = () => {
         font-style: normal;
         font-weight: 600;
         line-height: 56rpx;
-        color: var(--bg-card);
+        // color: var(--bg-card);
+        color: #ffffff;
       }
       .asset-resps {
         display: flex !important;
@@ -1474,7 +1475,8 @@ const bindArGame = () => {
         }
 
         .titleRight.active {
-          color: var(--bg-card);
+          //   color: var(--bg-card);
+          color: #ffffff;
           background: #ff6b03;
         }
 

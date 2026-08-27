@@ -22,6 +22,10 @@
       @btn-click="appBtnClick"
       :main-btn-text="t('common.btn.update_btn_txt')"
     />
+    <!-- 临时：夜间模式测试开关 -->
+    <view class="darkModeTestSwitch" @click="toggleDarkModeTest">
+      {{ isDarkTest ? '☀' : '☾' }}
+    </view>
   </wd-config-provider>
 </template>
 
@@ -137,13 +141,44 @@ const appBtnClick = (isOpenUrl: boolean) => {
 const closeAppUpdatePopup = () => {
   dismissUpdate()
 }
+
+// 临时：夜间模式测试开关
+const isDarkTest = ref(
+  typeof document !== 'undefined' && document.documentElement
+    ? document.documentElement.style.getPropertyValue('--bg-primary').trim() === '#1a1a1a'
+    : false,
+)
+async function toggleDarkModeTest() {
+  const mode = isDarkTest.value ? 'light' : 'dark'
+  isDarkTest.value = !isDarkTest.value
+  const { applyTheme } = await import('@/utils/theme')
+  applyTheme(mode)
+  uni.setStorageSync('app_theme', mode)
+}
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+.darkModeTestSwitch {
+  position: fixed;
+  bottom: 200rpx;
+  right: 20rpx;
+  width: 72rpx;
+  height: 72rpx;
+  background: rgba(0, 0, 0, 0.5);
+  color: var(--bg-card);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36rpx;
+  z-index: 99999;
+}
+
 /* 添加过渡效果 */
 .page-container {
   box-sizing: border-box;
   min-height: 100vh;
   transition: padding-bottom 0.3s ease;
+  background-color: var(--bg-primary);
 }
 </style>

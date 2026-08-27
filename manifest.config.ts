@@ -45,6 +45,8 @@ export default defineManifestConfig({
     usingComponents: true,
     nvueStyleCompiler: 'uni-app',
     compilerVersion: 3,
+    // 开启深色模式支持：prefers-color-scheme 跟随 UI 风格（plus.navigator.setUIStyle 切换）
+    darkmode: true,
     compatible: {
       ignoreVersion: true,
     },

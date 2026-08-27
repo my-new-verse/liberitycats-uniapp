@@ -105,7 +105,8 @@
           <!-- 群聊start -->
           <view class="commonTitleBox">
             <view class="title navTitle">
-              <view class="tb tb-circus"></view>
+              <image src="/static/images/circus.svg" class="tb" alt="" />
+              111
               {{ t('home.title.groupChat') }}
             </view>
           </view>
@@ -656,11 +657,11 @@ const toChatGroup = () => {
       height: 64rpx;
       margin-right: 12rpx;
     }
-    .tb-circus {
-      background-color: var(--text-primary);
-      -webkit-mask: url('@/static/images/circus.svg') no-repeat center / 100% 100%;
-      mask: url('@/static/images/circus.svg') no-repeat center / 100% 100%;
-    }
+    // .tb-circus {
+    //   background-color: var(--text-primary);
+    //   -webkit-mask: url('@/static/images/circus.svg') no-repeat center / 100% 100%;
+    //   mask: url('@/static/images/circus.svg') no-repeat center / 100% 100%;
+    // }
   }
   .more {
     display: flex;

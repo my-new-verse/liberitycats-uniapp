@@ -66,7 +66,7 @@ const lightVars: Record<string, string> = {
   '--text-color': '#1d1d1f',
   '--wot-input-count-current-color': '#262626',
   '--wot-input-count-color': '#bfbfbf',
-  '--wot-table-bg': 'ffffff',
+  '--wot-table-bg': '#ffffff',
   '--wot-table-color': 'rgba(0, 0, 0, 0.9)',
   '--wot-search-placeholder-color': '#bfbfbf',
   '--wot-search-input-color': '#262626',
@@ -174,12 +174,28 @@ const darkVars: Record<string, string> = {
   '--nftValuation-bg-color': '#292827',
 }
 
-export function applyTheme(mode: 'light' | 'dark') {
-  const vars = mode === 'dark' ? darkVars : lightVars
+export function applyTheme(mode: ThemeMode) {
+  // #ifdef APP-PLUS
+  // App 端走官方 DarkMode 适配（manifest darkmode:true，需云端打包生效）：
+  // setUIStyle 改变 prefers-color-scheme，theme.scss 里的夜间变量组随之生效；
+  // 'system' 档传 'auto' 由原生层跟随系统切换
+  try {
+    plus?.nativeUI?.setUIStyle?.(mode === 'system' ? 'auto' : mode)
+  } catch (e) {
+    console.warn('setUIStyle 调用失败', e)
+  }
+  // #endif
+  // #ifndef APP-PLUS
+  // App 运行时 App.vue 的 onLaunch 阶段可能拿不到 documentElement（如 HBuilderX 5.x 调试基座），
+  // 此时跳过，由页面侧（layout setup）在真实 WebView 环境中重试
+  const resolved: 'light' | 'dark' = mode === 'system' ? getSystemTheme() : mode
+  const vars = resolved === 'dark' ? darkVars : lightVars
+  if (typeof document === 'undefined' || !document.documentElement) return
   const root = document.documentElement
   Object.entries(vars).forEach(([key, value]) => {
     root.style.setProperty(key, value)
   })
+  // #endif
 }
 
 export type ThemeMode = 'light' | 'dark' | 'system'
@@ -201,18 +217,14 @@ export function getSystemTheme(): 'light' | 'dark' {
   // #ifdef APP-PLUS
   const theme = (uni.getSystemInfoSync() as any).theme
   if (theme === 'dark' || theme === 'light') return theme
-  const uiStyle = plus?.navigator?.getUIStyle?.()
+  // 读取外观：官方 release notes 记载读取 API 在 plus.navigator 上，nativeUI 兜底
+  const uiStyle = plus?.navigator?.getUIStyle?.() || plus?.nativeUI?.getUIStyle?.()
   if (uiStyle === 'dark' || uiStyle === 'light') return uiStyle
   // #endif
   return 'light'
 }
 
-/** 把三档模式解析成实际主题：system 档跟随系统当前状态 */
-export function resolveTheme(mode: ThemeMode): 'light' | 'dark' {
-  return mode === 'system' ? getSystemTheme() : mode
-}
-
-/** 监听系统深浅色变化，仅当用户选择"跟随系统"时自动应用 */
+/** 监听系统深浅色变化，仅当用户选择"跟随系统"时自动应用（App 端由原生 'auto' 模式处理，无需监听） */
 export function watchSystemTheme() {
   // #ifdef H5
   const mql = window.matchMedia('(prefers-color-scheme: dark)')
@@ -222,15 +234,8 @@ export function watchSystemTheme() {
     }
   })
   // #endif
-  // #ifdef APP-PLUS
-  uni.onThemeChange((res) => {
-    if (getStoredTheme() === 'system') {
-      applyTheme(res.theme === 'dark' ? 'dark' : 'light')
-    }
-  })
-  // #endif
 }
 
 export function initTheme() {
-  applyTheme(resolveTheme(getStoredTheme()))
+  applyTheme(getStoredTheme())
 }
