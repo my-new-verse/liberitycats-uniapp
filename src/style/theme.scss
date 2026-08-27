@@ -5,6 +5,8 @@
 // 2. H5 端：JS 注入的内联样式优先级高于本样式表，夜间切换不受影响；
 //    JS 执行前也有日间默认值兜底，避免首屏闪透明
 :root {
+  // 声明页面自行处理深色模式，禁用 WebView/浏览器的自动反色
+  color-scheme: light dark;
   --bg-primary: #f7f6f4;
   --bg-card: #ffffff;
   --text-primary: #261000;
@@ -89,12 +91,30 @@
   --wot-number-keyboard-key-active-color: #ebedf0;
   --wot-password-input-text-color: #323233;
   --nftValuation-bg-color: #fff8f0;
+  --activity-popup-no-remind-color: rgba(255, 255, 255, 0.88);
+  --revenueHelpClose-bg-color: #f7f3f0;
+  --revenueHelpDescription-color: #6f5c50;
+  --revenueHelpDescription-bg-color: #fff8f3;
+  --revenueHelpDescription-border-color: #ffe6d4;
+  --pointBox-active-bg-color: #fffaf8;
+  --share-container-bg: linear-gradient(to top right, #ffffff 0%, #ffffff 60%, #ffecd8 100%);
+  --poster-divider-color: #ffecd8;
+  --wot-button-info-plain-normal-color: rgba(0, 0, 0, 0.85);
+  --wot-picker-toolbar-title-color: rgba(0, 0, 0, 0.85);
+  --wot-picker-column-color: rgba(0, 0, 0, 0.85);
+  --wot-button-info-plain-border-color: rgba(0, 0, 0, 0.45);
+  --opBox-border-color: #e7e7e7;
+  --wot-picker-toolbar-cancel-color: #666666;
+  --reply-ref-bg-color: rgba(0, 0, 0, 0.06);
+  --promotionCard-bg-color: #fff2eb;
+  --promotionCard-border-color: #f8efe6;
 }
 
 // 夜间变量组（与 src/utils/theme.ts 的 darkVars 保持同步）
 // App 端通过 plus.navigator.setUIStyle 切换 UI 风格 → prefers-color-scheme 变化 → 本组生效
 @media (prefers-color-scheme: dark) {
   :root {
+    color-scheme: dark;
     --bg-primary: #1a1a1a;
     --bg-card: #2d2d2d;
     --text-primary: #e0e0e0;
@@ -178,5 +198,22 @@
     --wot-number-keyboard-key-active-color: #14120f;
     --wot-password-input-text-color: #e0e0e0;
     --nftValuation-bg-color: #292827;
+    --activity-popup-no-remind-color: rgba(0, 0, 0, 0.88);
+    --revenueHelpClose-bg-color: #1c1a18;
+    --revenueHelpDescription-color: #b49c8c;
+    --revenueHelpDescription-bg-color: #2a2522;
+    --revenueHelpDescription-border-color: #7a5e4b;
+    --pointBox-active-bg-color: #24211f;
+    --share-container-bg: #2d2d2d;
+    --poster-divider-color: #4e4e4e;
+    --wot-button-info-plain-normal-color: rgba(255, 255, 255, 0.85);
+    --wot-picker-toolbar-title-color: rgba(255, 255, 255, 0.85);
+    --wot-picker-column-color: rgba(255, 255, 255, 0.85);
+    --wot-button-info-plain-border-color: rgba(255, 255, 255, 0.45);
+    --opBox-border-color: #44403d;
+    --wot-picker-toolbar-cancel-color: #b6b6b6;
+    --reply-ref-bg-color: rgba(255, 255, 255, 0.06);
+    --promotionCard-bg-color: #6d5444;
+    --promotionCard-border-color: #684f43;
   }
 }

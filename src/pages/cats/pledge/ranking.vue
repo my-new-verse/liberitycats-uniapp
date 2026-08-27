@@ -140,6 +140,14 @@ const loadMore = () => {
 <style lang="scss" scoped>
 @import '/src/style/base';
 
+:deep(.cnt) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
+:deep(.fbg) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
 .rankingBox {
   padding: 40rpx;
   font-size: 28rpx;
@@ -217,7 +225,7 @@ const loadMore = () => {
   width: 590rpx;
   max-width: calc(100vw - 80rpx);
   overflow: visible;
-  background-color: #fff;
+  background-color: var(--bg-card);
   border-radius: 40rpx;
   box-shadow: 0 24rpx 80rpx rgba(70, 34, 8, 0.2);
 }
@@ -240,7 +248,7 @@ const loadMore = () => {
   justify-content: center;
   width: 56rpx;
   height: 56rpx;
-  background: #f7f3f0;
+  background: var(--revenueHelpClose-bg-color);
   border-radius: 50%;
 }
 
@@ -261,7 +269,7 @@ const loadMore = () => {
   font-size: 36rpx;
   font-weight: 600;
   line-height: 50rpx;
-  color: #261000;
+  color: var(--text-primary);
 }
 
 .revenueHelpDescription {
@@ -271,10 +279,10 @@ const loadMore = () => {
   margin-bottom: 36rpx;
   font-size: 28rpx;
   line-height: 44rpx;
-  color: #6f5c50;
+  color: var(--revenueHelpDescription-color);
   text-align: left;
-  background: #fff8f3;
-  border: 2rpx solid #ffe6d4;
+  background: var(--revenueHelpDescription-bg-color);
+  border: 2rpx solid var(--revenueHelpDescription-border-color);
   border-radius: 24rpx;
   display: flex;
   justify-content: center;
@@ -288,7 +296,7 @@ const loadMore = () => {
   height: 88rpx;
   font-size: 30rpx;
   font-weight: 600;
-  color: #fff;
+  color: var(--bg-card);
   background: linear-gradient(135deg, #ff842e 0%, #ff6b03 100%);
   border-radius: 44rpx;
   box-shadow: 0 12rpx 28rpx rgba(255, 107, 3, 0.24);

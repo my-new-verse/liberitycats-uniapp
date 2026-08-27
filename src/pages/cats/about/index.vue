@@ -21,7 +21,7 @@
               @click="toAdUrl('https://www.libertycatsnfts.com')"
               v-if="getServerOnOff('about_exchange_link')"
             >
-              <view style="color: #000 !important">https://libertycatsnfts.com</view>
+              <view style="color: var(--text-black) !important">https://libertycatsnfts.com</view>
               <view class="dot"></view>
             </view>
           </view>
@@ -117,6 +117,15 @@ onLoad(() => {
 
 <style lang="scss" scoped>
 @import '/src/style/base';
+
+:deep(.cnt) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
+:deep(.fbg) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
 .webBox {
   display: flex;
   flex-direction: column;
@@ -124,7 +133,7 @@ onLoad(() => {
   justify-content: center;
   width: 100%;
   padding-top: 60rpx;
-  background-color: #f7f7f7;
+  background-color: var(--recentMemberItem-bg-color);
 
   .cell {
     width: calc(100% - 80rpx);
@@ -221,7 +230,7 @@ onLoad(() => {
   justify-content: center; // 居中
   margin-top: 40rpx;
   font-size: 24rpx;
-  color: rgba(38, 16, 0, 0.3);
+  color: var(--commentTextArea-color);
   text-align: center; // 内容居中
 }
 .xyBox > view {

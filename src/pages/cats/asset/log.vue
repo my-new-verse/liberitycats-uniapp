@@ -95,6 +95,15 @@ const loadMore = () => {
 
 <style lang="scss" scoped>
 @import '/src/style/base';
+
+:deep(.cnt) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
+:deep(.fbg) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
 .logBox {
   position: relative;
   display: flex;
@@ -113,7 +122,7 @@ const loadMore = () => {
       font-size: 24rpx;
       font-weight: 400;
       line-height: 28rpx;
-      color: rgba(0, 0, 0, 0.3);
+      color: var(--black-30);
       text-align: left;
       text-transform: none;
     }
@@ -131,7 +140,7 @@ const loadMore = () => {
       font-style: normal;
       font-weight: normal;
       line-height: 28rpx;
-      color: rgba(0, 0, 0, 0.3);
+      color: var(--black-30);
       text-align: left;
       text-transform: none;
     }

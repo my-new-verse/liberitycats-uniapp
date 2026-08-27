@@ -493,6 +493,14 @@ const handleConfirm = () => {
   max-height: 60vh;
 }
 
+:deep(.wd-search) {
+  background-color: var(--bg-card);
+}
+
+:deep(.popup-head__close) {
+  color: var(--text-black);
+}
+
 .section-title {
   padding: 24rpx 24rpx 12rpx;
   font-size: 26rpx;

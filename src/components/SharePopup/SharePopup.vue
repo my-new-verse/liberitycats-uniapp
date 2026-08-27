@@ -263,7 +263,7 @@ defineExpose({ openSharePopup })
 <style scoped>
 .share-container {
   padding: 30rpx;
-  background: linear-gradient(to top right, #ffffff 0%, #ffffff 60%, #ffecd8 100%);
+  background: var(--share-container-bg);
   border-radius: 24rpx 24rpx 0 0;
   position: relative;
 }
@@ -311,7 +311,7 @@ defineExpose({ openSharePopup })
 
 .poster-divider {
   height: 1rpx;
-  background-color: #ffecd8;
+  background-color: var(--poster-divider-color);
   margin: 12rpx 0 32rpx 0;
 }
 .poster-title {
@@ -395,7 +395,7 @@ defineExpose({ openSharePopup })
   justify-content: space-around;
   padding: 30rpx 40rpx;
   padding-bottom: calc(30rpx + env(safe-area-inset-bottom));
-  background: linear-gradient(to top right, #ffffff 0%, #ffffff 60%, #ffecd8 100%);
+  background: var(--share-container-bg);
   border-radius: 24rpx 24rpx 0 0;
 }
 .poster-action-item {

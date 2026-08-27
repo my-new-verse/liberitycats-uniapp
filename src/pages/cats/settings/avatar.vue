@@ -158,6 +158,15 @@ const buildFormData = ({ file, formData, resolve }) => {
 
 <style lang="scss" scoped>
 @import '/src/style/base';
+
+:deep(.cnt) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
+:deep(.fbg) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
 .avatarBox {
   display: flex;
   flex-direction: column;
@@ -173,7 +182,7 @@ const buildFormData = ({ file, formData, resolve }) => {
     width: 320rpx;
     height: 320rpx;
     overflow: hidden;
-    background-color: #f7f7f7;
+    background-color: var(--recentMemberItem-bg-color);
     border-radius: 50%;
     image {
       width: 100%;

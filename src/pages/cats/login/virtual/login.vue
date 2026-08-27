@@ -155,11 +155,13 @@ const agreementsMap = ref<QuoteKeyAgreementList>()
 <style lang="scss" scoped>
 @import '/src/style/base';
 
+:deep(.cnt) {
+  background-color: var(--bg-card) !important;
+}
+
 .headBg {
   height: 142rpx;
-  background:
-    linear-gradient(360deg, #ffffff 0%, rgba(255, 255, 255, 0) 100%),
-    linear-gradient(90deg, #fefcf5 0%, #fcfdd4 25%, #ffe8d7 71%);
+  background: var(--login-head-bg);
 }
 
 .nav {
@@ -174,6 +176,7 @@ const agreementsMap = ref<QuoteKeyAgreementList>()
 
 .cnt {
   padding: 64rpx;
+  height: 100vh;
   //margin-top: 54rpx;
   //background: green;
   .title {

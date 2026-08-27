@@ -989,7 +989,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
   align-items: center;
   padding: 8rpx 16rpx;
   margin-bottom: 12rpx;
-  background-color: rgba(0, 0, 0, 0.06);
+  background-color: var(--reply-ref-bg-color);
   border-radius: 8rpx;
   border-left: 4rpx solid #ccc;
   overflow: hidden;

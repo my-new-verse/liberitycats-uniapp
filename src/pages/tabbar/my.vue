@@ -1094,8 +1094,7 @@ const bindArGame = () => {
         font-style: normal;
         font-weight: 600;
         line-height: 56rpx;
-        // color: var(--bg-card);
-        color: #ffffff;
+        color: var(--bg-card);
       }
       .asset-resps {
         display: flex !important;
@@ -1475,8 +1474,7 @@ const bindArGame = () => {
         }
 
         .titleRight.active {
-          //   color: var(--bg-card);
-          color: #ffffff;
+          color: var(--bg-card);
           background: #ff6b03;
         }
 
@@ -1585,7 +1583,7 @@ const bindArGame = () => {
           .pointBox {
             width: 36rpx;
             height: 70rpx;
-            background: #fffaf8;
+            background: var(--pointBox-active-bg-color);
             border: 2rpx solid #ff6b03;
             .gift {
               background-image: url('~@/static/images/checkin2.png');
@@ -1611,7 +1609,7 @@ const bindArGame = () => {
 .version-number {
   margin-top: 32rpx;
   font-size: 28rpx;
-  color: #ddd;
+  color: var(--wot-divider);
   text-align: center;
 }
 

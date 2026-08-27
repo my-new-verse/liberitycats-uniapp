@@ -129,6 +129,14 @@ const save = () => {
 <style lang="scss" scoped>
 @import '/src/style/base';
 
+:deep(.cnt) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
+:deep(.fbg) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
 .menuItem {
   flex-direction: column;
   .menuItemRight {
@@ -145,7 +153,7 @@ const save = () => {
     font-size: 24rpx;
     font-style: normal;
     font-weight: 400;
-    color: #999999;
+    color: var(--text-secondary);
     text-align: right;
   }
 }
@@ -155,7 +163,7 @@ const save = () => {
   font-size: 24rpx;
   font-style: normal;
   font-weight: 400;
-  color: #999999;
+  color: var(--text-secondary);
 }
 
 .btnBox {

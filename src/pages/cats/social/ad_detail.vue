@@ -2581,10 +2581,10 @@ const handleEditPost = () => {
   margin-top: 24rpx;
   padding: 24rpx;
   padding-bottom: 0;
-  background: #fff2eb;
+  background: var(--promotionCard-bg-color);
   border-radius: 16rpx;
   font-family: Alibaba PuHuiTi2 !important;
-  border: 1px solid #f8efe6;
+  border: 1px solid var(--promotionCard-border-color);
   .promotionCardTitle {
     font-size: 28rpx;
     font-weight: 600;
@@ -2595,7 +2595,7 @@ const handleEditPost = () => {
     display: flex;
     align-items: center;
     padding: 24rpx 0;
-    border-bottom: 1px solid #f8efe6;
+    border-bottom: 1px solid var(--promotionCard-border-color);
     // padding-bottom: 18rpx;
     .promotionIcon {
       margin-right: 18rpx;

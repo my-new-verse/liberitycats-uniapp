@@ -1,5 +1,8 @@
 <template>
-  <view style="padding: 32rpx; background-color: #ffffff; border-radius: 32rpx" v-show="active">
+  <view
+    style="padding: 32rpx; background-color: var(--bg-card); border-radius: 32rpx"
+    v-show="active"
+  >
     <view
       :class="['web', 'web-' + type]"
       :style="{ height: heightPx ? heightPx + 'px' : undefined }"
@@ -15,7 +18,7 @@
           right: 0;
           bottom: 0;
           border-radius: 32rpx;
-          background-color: #ffffff;
+          background-color: var(--bg-card);
           z-index: 1;
         "
       >
@@ -42,7 +45,7 @@
           right: 0;
           bottom: 0;
           border-radius: 32rpx;
-          background-color: #ffffff;
+          background-color: var(--bg-card);
           z-index: 1;
         "
       >

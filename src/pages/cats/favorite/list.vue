@@ -143,6 +143,14 @@ const addFavorite = (item: GoodFavoriteList) => {
 <style lang="scss" scoped>
 @import '/src/style/base';
 @import '/src/style/goods';
+:deep(.cnt) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
+:deep(.fbg) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
 .page {
   background-color: var(--bg-card);
   .pbl,

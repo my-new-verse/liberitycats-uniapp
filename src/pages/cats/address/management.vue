@@ -171,7 +171,13 @@ const setDefaultAddress = (id: number) => {
 
 <style lang="scss" scoped>
 @import '/src/style/base';
-//
+:deep(.cnt) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
+:deep(.fbg) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
 .page {
   background-color: var(--liberty-cats-page-background-color);
   .cnt {
@@ -217,7 +223,7 @@ const setDefaultAddress = (id: number) => {
     justify-content: space-between;
     padding-top: 24rpx;
     margin-top: 24rpx;
-    border-top: 1rpx solid #e7e7e7;
+    border-top: 1rpx solid var(--opBox-border-color);
     .icon {
       width: 32rpx;
       height: 32rpx;
@@ -232,6 +238,7 @@ const setDefaultAddress = (id: number) => {
       display: flex;
       align-items: center;
       justify-content: center;
+      color: var(--text-black);
       .radioBox {
         margin-right: 12rpx;
       }

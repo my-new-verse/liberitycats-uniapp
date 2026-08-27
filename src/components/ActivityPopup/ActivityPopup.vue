@@ -514,7 +514,7 @@ defineExpose({ show })
   font-size: 24rpx;
   font-weight: 650;
   line-height: 68rpx;
-  color: rgba(255, 255, 255, 0.88);
+  color: var(--activity-popup-no-remind-color);
   text-decoration: underline;
   text-underline-offset: 6rpx;
   background: rgba(255, 255, 255, 0.1);

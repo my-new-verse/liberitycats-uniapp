@@ -74,6 +74,15 @@ onLoad((options: any) => {
 
 <style lang="scss" scoped>
 @import '/src/style/base';
+
+:deep(.cnt) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
+:deep(.fbg) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
 .page {
   .cnt {
     min-height: 100vh;
