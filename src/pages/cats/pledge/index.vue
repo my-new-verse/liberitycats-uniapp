@@ -53,7 +53,7 @@
                     width: 80%;
                     height: 200rpx;
                     margin: 40rpx auto 0 auto;
-                    font-size: 24rpx;
+                    font-size: calc(24rpx * var(--font-scale));
                     color: #999;
                     text-align: center;
                   "
@@ -84,7 +84,7 @@
                       width: 80%;
                       height: 200rpx;
                       margin: 40rpx auto 0 auto;
-                      font-size: 24rpx;
+                      font-size: calc(24rpx * var(--font-scale));
                       color: #999;
                       text-align: center;
                     "
@@ -101,7 +101,7 @@
                   width: 80%;
                   height: 200rpx;
                   margin: 40rpx auto 0 auto;
-                  font-size: 24rpx;
+                  font-size: calc(24rpx * var(--font-scale));
                   color: #999;
                   text-align: center;
                 "
@@ -231,18 +231,18 @@ const loadPledgeAsset = () => {
 
 .pointLabel {
   margin-bottom: 16rpx;
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   font-weight: normal;
-  line-height: 33rpx;
+  line-height: calc(33rpx * var(--font-scale));
   color: var(--text-primary);
   text-align: center;
 }
 
 .pointValue {
-  font-size: 48rpx;
+  font-size: calc(48rpx * var(--font-scale));
   font-style: normal;
   font-weight: normal;
-  line-height: 56rpx;
+  line-height: calc(56rpx * var(--font-scale));
   color: var(--text-primary);
   text-align: center;
   &.active {
@@ -281,8 +281,8 @@ const loadPledgeAsset = () => {
       }
 
       .txt {
-        font-size: 24rpx;
-        line-height: 28rpx;
+        font-size: calc(24rpx * var(--font-scale));
+        line-height: calc(28rpx * var(--font-scale));
         color: var(--text-primary);
       }
     }
@@ -300,10 +300,10 @@ const loadPledgeAsset = () => {
     }
 
     .title {
-      font-size: 36rpx;
+      font-size: calc(36rpx * var(--font-scale));
       font-style: normal;
       font-weight: 500;
-      line-height: 42rpx;
+      line-height: calc(42rpx * var(--font-scale));
       color: var(--text-primary);
     }
   }
@@ -315,10 +315,10 @@ const loadPledgeAsset = () => {
     height: 88rpx;
     margin: 42rpx auto;
 
-    font-size: 32rpx;
+    font-size: calc(32rpx * var(--font-scale));
     font-style: normal;
     font-weight: 500;
-    line-height: 38rpx;
+    line-height: calc(38rpx * var(--font-scale));
     color: #ff6b03;
     border: 2rpx solid #ff6b03;
     border-radius: 44rpx;
@@ -345,10 +345,10 @@ const loadPledgeAsset = () => {
       .nftTitle {
         height: 30rpx;
         margin-top: 16rpx;
-        font-size: 24rpx;
+        font-size: calc(24rpx * var(--font-scale));
         font-style: normal;
         font-weight: 400;
-        line-height: 28rpx;
+        line-height: calc(28rpx * var(--font-scale));
         color: var(--text-black);
         text-align: center;
       }
@@ -380,10 +380,10 @@ const loadPledgeAsset = () => {
 .fixedBtnBox {
   .txt2 {
     margin: 16rpx 0;
-    font-size: 20rpx;
+    font-size: calc(20rpx * var(--font-scale));
     font-style: normal;
     font-weight: normal;
-    line-height: 23rpx;
+    line-height: calc(23rpx * var(--font-scale));
     color: #999999;
     text-align: center;
   }

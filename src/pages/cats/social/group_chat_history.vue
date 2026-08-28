@@ -967,7 +967,7 @@ const getImageMessageBoxSize = (msg: any) => {
     }
 
     .searchBtn {
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       font-weight: 500;
       color: var(--text-secondary);
       white-space: nowrap;
@@ -1006,7 +1006,7 @@ const getImageMessageBoxSize = (msg: any) => {
     }
 
     .wd-tabs__nav-item {
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       color: var(--text-secondary);
 
       &.is-active .wd-tabs__nav-item-text {
@@ -1087,7 +1087,7 @@ const getImageMessageBoxSize = (msg: any) => {
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 22rpx;
+          font-size: calc(22rpx * var(--font-scale));
           font-weight: bold;
           line-height: 1;
           z-index: 2;
@@ -1108,7 +1108,7 @@ const getImageMessageBoxSize = (msg: any) => {
       }
 
       .userName {
-        font-size: 24rpx;
+        font-size: calc(24rpx * var(--font-scale));
         color: var(--wot-message-box-content-color);
         width: 100%;
         overflow: hidden;
@@ -1131,7 +1131,7 @@ const getImageMessageBoxSize = (msg: any) => {
     align-items: center;
     gap: 8rpx;
     padding: 12rpx 24rpx;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     color: var(--liberty-cats-primary-color);
     border: 1rpx solid var(--liberty-cats-primary-color);
     border-radius: 34rpx;
@@ -1144,7 +1144,7 @@ const getImageMessageBoxSize = (msg: any) => {
     }
 
     .filterArrow {
-      font-size: 20rpx;
+      font-size: calc(20rpx * var(--font-scale));
     }
   }
 }
@@ -1160,7 +1160,7 @@ const getImageMessageBoxSize = (msg: any) => {
     .timePresetItem {
       flex: 1;
       padding: 16rpx 0;
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       color: var(--actions-text);
       text-align: center;
       background: var(--wot-action-sheet-active-color);
@@ -1179,7 +1179,7 @@ const getImageMessageBoxSize = (msg: any) => {
     border-top: 2rpx solid var(--divider-color);
 
     .sectionTitle {
-      font-size: 30rpx;
+      font-size: calc(30rpx * var(--font-scale));
       font-weight: 500;
       color: var(--actions-text);
       margin-bottom: 16rpx;
@@ -1192,7 +1192,7 @@ const getImageMessageBoxSize = (msg: any) => {
       padding: 18rpx 0;
 
       .timeRowLabel {
-        font-size: 28rpx;
+        font-size: calc(28rpx * var(--font-scale));
         color: var(--actions-text);
       }
     }
@@ -1281,7 +1281,7 @@ const getImageMessageBoxSize = (msg: any) => {
         margin-bottom: 18rpx;
 
         .msgNickname {
-          font-size: 28rpx;
+          font-size: calc(28rpx * var(--font-scale));
           font-weight: 600;
           color: var(--actions-text);
           overflow: hidden;
@@ -1291,7 +1291,7 @@ const getImageMessageBoxSize = (msg: any) => {
         }
 
         .msgTime {
-          font-size: 28rpx;
+          font-size: calc(28rpx * var(--font-scale));
           color: var(--text-secondary);
           flex-shrink: 0;
           margin-left: 16rpx;
@@ -1299,7 +1299,7 @@ const getImageMessageBoxSize = (msg: any) => {
       }
 
       .msgText {
-        font-size: 28rpx;
+        font-size: calc(28rpx * var(--font-scale));
         color: var(--wot-message-box-content-color);
         line-height: 1.5;
         word-break: break-all;
@@ -1328,7 +1328,7 @@ const getImageMessageBoxSize = (msg: any) => {
   padding-bottom: 200rpx;
 
   .emptyText {
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     color: #999999;
   }
 }

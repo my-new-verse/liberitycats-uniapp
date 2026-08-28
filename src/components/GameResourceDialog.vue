@@ -146,7 +146,7 @@ const close = () => emit('update:modelValue', false)
 
 .resource-dialog-title {
   margin-top: 30rpx;
-  font-size: 38rpx;
+  font-size: calc(38rpx * var(--font-scale));
   font-weight: 700;
   line-height: 1.4;
   color: #333333;
@@ -154,7 +154,7 @@ const close = () => emit('update:modelValue', false)
 
 .resource-dialog-description {
   margin-top: 22rpx;
-  font-size: 27rpx;
+  font-size: calc(27rpx * var(--font-scale));
   line-height: 1.65;
   color: #888888;
 }
@@ -172,7 +172,7 @@ const close = () => emit('update:modelValue', false)
 .resource-dialog-network {
   margin-top: 20rpx;
   padding: 0 30rpx;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   line-height: 1.6;
   color: #999999;
 }
@@ -188,7 +188,7 @@ const close = () => emit('update:modelValue', false)
 }
 
 .resource-dialog-notice-text {
-  font-size: 23rpx;
+  font-size: calc(23rpx * var(--font-scale));
   line-height: 1.55;
   color: #888888;
   text-align: left;
@@ -196,14 +196,14 @@ const close = () => emit('update:modelValue', false)
 
 .resource-dialog-result {
   padding: 22rpx 20rpx 36rpx;
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   line-height: 1.6;
   color: #888888;
 }
 
 .resource-dialog-action {
   padding: 22rpx 20rpx 0;
-  font-size: 30rpx;
+  font-size: calc(30rpx * var(--font-scale));
   font-weight: 600;
   color: #ff6b03;
   border-top: 1rpx solid #eeeeee;

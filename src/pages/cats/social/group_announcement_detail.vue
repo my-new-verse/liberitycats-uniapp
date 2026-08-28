@@ -258,17 +258,17 @@ const handleActionSelect = async ({ item }: any) => {
   align-items: center;
   justify-content: center;
   color: #111;
-  font-size: 42rpx;
+  font-size: calc(42rpx * var(--font-scale));
   font-weight: 300;
 }
 
 .nav-more {
-  font-size: 34rpx;
+  font-size: calc(34rpx * var(--font-scale));
   letter-spacing: -4rpx;
 }
 
 .nav-title {
-  font-size: 32rpx;
+  font-size: calc(32rpx * var(--font-scale));
   font-weight: 700;
   color: #111;
 }
@@ -292,7 +292,7 @@ const handleActionSelect = async ({ item }: any) => {
   border-radius: 8rpx;
   color: #de8b2f;
   background: #fff3df;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   margin-right: 12rpx;
 }
 .pin-tag {
@@ -304,7 +304,7 @@ const handleActionSelect = async ({ item }: any) => {
   display: block;
   margin-top: 16rpx;
   color: var(--group-announcement-detail-color);
-  font-size: 30rpx;
+  font-size: calc(30rpx * var(--font-scale));
   font-weight: 800;
   line-height: 1.38;
 }
@@ -314,14 +314,14 @@ const handleActionSelect = async ({ item }: any) => {
   gap: 18rpx;
   margin-top: 18rpx;
   color: #8f8f8f;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
 }
 
 .body {
   display: block;
   margin-top: 34rpx;
   color: var(--actions-text);
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   line-height: 1.8;
   white-space: pre-line;
 }
@@ -344,7 +344,7 @@ const handleActionSelect = async ({ item }: any) => {
   align-items: center;
   padding: 12rpx 0;
   color: var(--group-announcement-detail-info-row-color);
-  font-size: 26rpx;
+  font-size: calc(26rpx * var(--font-scale));
   line-height: 1.45;
 }
 
@@ -360,7 +360,7 @@ const handleActionSelect = async ({ item }: any) => {
   display: block;
   margin-top: 18rpx;
   color: #c2a37b;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
 }
 ::v-deep .annount-action-sheet {
   display: flex;

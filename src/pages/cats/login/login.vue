@@ -270,10 +270,10 @@ const loginWithApple = () => {
   //background: green;
   .title {
     height: 56rpx;
-    font-size: 48rpx;
+    font-size: calc(48rpx * var(--font-scale));
     font-style: normal;
     font-weight: 600;
-    line-height: 56rpx;
+    line-height: calc(56rpx * var(--font-scale));
     color: var(--text-primary);
   }
   .inputBox {
@@ -294,10 +294,10 @@ const loginWithApple = () => {
     display: flex;
     align-items: center;
     .txt {
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       font-style: normal;
       font-weight: 400;
-      line-height: 32rpx;
+      line-height: calc(32rpx * var(--font-scale));
       color: #999999;
 
       text {
@@ -324,7 +324,7 @@ const loginWithApple = () => {
       width: 100%;
       height: 88rpx;
 
-      font-size: 32rpx;
+      font-size: calc(32rpx * var(--font-scale));
       font-style: normal;
       font-weight: 600;
       color: var(--bg-card);

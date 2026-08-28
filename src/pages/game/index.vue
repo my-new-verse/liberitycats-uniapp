@@ -274,7 +274,7 @@ onMounted(() => {
   right: 12px;
   bottom: 12px;
   left: 12px;
-  font-size: 12px;
+  font-size: calc(12px * var(--font-scale));
   line-height: 1.4;
   color: #0f0;
   white-space: pre-wrap;

@@ -81,7 +81,7 @@ const handleRefresh = () => {
     }
 
     .title {
-      font-size: 36rpx;
+      font-size: calc(36rpx * var(--font-scale));
       color: var(--actions-text);
       margin-bottom: 12px;
       font-weight: 500;
@@ -89,7 +89,7 @@ const handleRefresh = () => {
     }
 
     .desc {
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       color: var(--text-secondary);
       margin-bottom: 40px;
       font-family: Alibaba PuHuiTi2;
@@ -98,12 +98,12 @@ const handleRefresh = () => {
     .refresh-btn {
       width: 180px;
       height: 45px;
-      line-height: 45px;
+      line-height: calc(45px * var(--font-scale));
       background-color: #ff6b03;
       color: var(--bg-card);
       border: none;
       border-radius: 8px;
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       text-align: center;
       cursor: pointer;
       margin-bottom: 20px;

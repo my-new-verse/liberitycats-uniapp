@@ -150,7 +150,7 @@ const save = () => {
   .nicknameWordLimit {
     width: 100%;
     margin-top: 30rpx;
-    font-size: 24rpx;
+    font-size: calc(24rpx * var(--font-scale));
     font-style: normal;
     font-weight: 400;
     color: var(--text-secondary);
@@ -160,7 +160,7 @@ const save = () => {
 
 .nicknameDesc {
   margin-left: 24rpx;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   font-style: normal;
   font-weight: 400;
   color: var(--text-secondary);
@@ -172,7 +172,7 @@ const save = () => {
     width: 100%;
     height: 88rpx;
 
-    font-size: 32rpx;
+    font-size: calc(32rpx * var(--font-scale));
     font-style: normal;
     font-weight: 600;
     color: var(--bg-card);

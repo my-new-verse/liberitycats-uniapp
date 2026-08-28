@@ -1498,7 +1498,7 @@ onUnmounted(() => {
     }
 
     .searchBtn {
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       font-weight: 500;
       color: var(--text-secondary);
       white-space: nowrap;
@@ -1634,7 +1634,7 @@ onUnmounted(() => {
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 22rpx;
+          font-size: calc(22rpx * var(--font-scale));
           font-weight: bold;
           line-height: 1;
           z-index: 2;
@@ -1655,7 +1655,7 @@ onUnmounted(() => {
       }
 
       .userName {
-        font-size: 24rpx;
+        font-size: calc(24rpx * var(--font-scale));
         color: var(--wot-message-box-content-color);
         width: 100%;
         overflow: hidden;
@@ -1678,7 +1678,7 @@ onUnmounted(() => {
     align-items: center;
     gap: 8rpx;
     padding: 12rpx 24rpx;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     color: var(--liberty-cats-primary-color);
     border: 1rpx solid var(--liberty-cats-primary-color);
     border-radius: 34rpx;
@@ -1691,7 +1691,7 @@ onUnmounted(() => {
     }
 
     .filterArrow {
-      font-size: 20rpx;
+      font-size: calc(20rpx * var(--font-scale));
     }
   }
 }
@@ -1707,7 +1707,7 @@ onUnmounted(() => {
     .timePresetItem {
       flex: 1;
       padding: 16rpx 0;
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       color: var(--actions-text);
       text-align: center;
       background: var(--wot-action-sheet-active-color);
@@ -1726,7 +1726,7 @@ onUnmounted(() => {
     border-top: 2rpx solid var(--divider-color);
 
     .sectionTitle {
-      font-size: 30rpx;
+      font-size: calc(30rpx * var(--font-scale));
       font-weight: 500;
       color: var(--actions-text);
       margin-bottom: 16rpx;
@@ -1739,7 +1739,7 @@ onUnmounted(() => {
       padding: 18rpx 0;
 
       .timeRowLabel {
-        font-size: 28rpx;
+        font-size: calc(28rpx * var(--font-scale));
         color: var(--actions-text);
       }
     }
@@ -1772,7 +1772,7 @@ onUnmounted(() => {
     border-bottom: 2rpx solid var(--divider-color);
 
     .recentTitle {
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       font-weight: 500;
       color: var(--wot-message-box-content-color);
       margin-bottom: 20rpx;
@@ -1832,7 +1832,7 @@ onUnmounted(() => {
           min-width: 0;
 
           .recentName {
-            font-size: 28rpx;
+            font-size: calc(28rpx * var(--font-scale));
             font-weight: 500;
             color: var(--actions-text);
             overflow: hidden;
@@ -1841,13 +1841,13 @@ onUnmounted(() => {
           }
 
           .recentId {
-            font-size: 24rpx;
+            font-size: calc(24rpx * var(--font-scale));
             color: var(--text-secondary);
           }
         }
 
         .recentCheck {
-          font-size: 32rpx;
+          font-size: calc(32rpx * var(--font-scale));
           color: var(--liberty-cats-primary-color);
           font-weight: bold;
           width: 48rpx;
@@ -1899,12 +1899,12 @@ onUnmounted(() => {
       .memberInfo {
         flex: 1;
         .memberName {
-          font-size: 28rpx;
+          font-size: calc(28rpx * var(--font-scale));
           color: var(--actions-text);
           margin-right: 12rpx;
         }
         .memberId {
-          font-size: 24rpx;
+          font-size: calc(24rpx * var(--font-scale));
           color: var(--text-secondary);
           margin-top: 4rpx;
         }
@@ -1919,7 +1919,7 @@ onUnmounted(() => {
         .followBtn {
           padding: 8rpx 24rpx;
           border-radius: 34rpx;
-          font-size: 24rpx;
+          font-size: calc(24rpx * var(--font-scale));
           white-space: nowrap;
 
           &.follow {
@@ -1940,7 +1940,7 @@ onUnmounted(() => {
         }
 
         .memberCheck {
-          font-size: 32rpx;
+          font-size: calc(32rpx * var(--font-scale));
           color: var(--liberty-cats-primary-color);
           width: 48rpx;
           text-align: center;
@@ -1951,11 +1951,11 @@ onUnmounted(() => {
 
   .emptyHint {
     padding: 48rpx 0;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     color: var(--text-secondary);
     text-align: center;
     &.noResult {
-      font-size: 26rpx;
+      font-size: calc(26rpx * var(--font-scale));
       font-weight: 500;
       color: var(--wot-message-box-content-color);
     }
@@ -1979,12 +1979,12 @@ onUnmounted(() => {
     justify-content: space-between;
     align-items: center;
     padding: 24rpx 0;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     color: var(--actions-text);
     border-bottom: 1rpx solid var(--divider-color);
 
     .tagCount {
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       color: var(--text-secondary);
     }
   }
@@ -2006,7 +2006,7 @@ onUnmounted(() => {
   border: 1rpx solid transparent;
   background-color: #ff6b03;
   color: var(--bg-card);
-  font-size: 22rpx;
+  font-size: calc(22rpx * var(--font-scale));
   line-height: 1;
   white-space: nowrap;
   flex-shrink: 0;
@@ -2032,7 +2032,7 @@ onUnmounted(() => {
     right: 48rpx;
     top: 0;
     align-items: self-start;
-    line-height: 42rpx;
+    line-height: calc(42rpx * var(--font-scale));
   }
 }
 
@@ -2077,12 +2077,12 @@ onUnmounted(() => {
 .banDialog {
   padding: 16rpx 0;
   .banLabel {
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     color: var(--actions-text);
     margin-bottom: 24rpx;
   }
   .banDaysTitle {
-    font-size: 26rpx;
+    font-size: calc(26rpx * var(--font-scale));
     color: var(--wot-message-box-content-color);
     margin-bottom: 12rpx;
   }
@@ -2094,7 +2094,7 @@ onUnmounted(() => {
       flex: 1;
       padding: 16rpx 0;
       text-align: center;
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       color: var(--actions-text);
       background: var(--wot-action-sheet-active-color);
       border-radius: 12rpx;
@@ -2115,7 +2115,7 @@ onUnmounted(() => {
 }
 
 .adTagChip {
-  font-size: 22rpx;
+  font-size: calc(22rpx * var(--font-scale));
   color: var(--liberty-cats-primary-color);
   padding: 4rpx 0;
   border-radius: 8rpx;
@@ -2130,7 +2130,7 @@ onUnmounted(() => {
     margin-bottom: 8rpx;
     .tag {
       padding: 4rpx 16rpx;
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       text-transform: uppercase;
       border-radius: 8rpx;
       line-height: 1.4;
@@ -2167,7 +2167,7 @@ onUnmounted(() => {
   padding-bottom: 200rpx;
 
   .emptyText {
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     color: #999999;
   }
 }
@@ -2184,7 +2184,7 @@ onUnmounted(() => {
   border-bottom: 1rpx solid var(--userFilterHeader-border-color);
 }
 .userFilterTitle {
-  font-size: 32rpx;
+  font-size: calc(32rpx * var(--font-scale));
   font-weight: 600;
   color: var(--actions-text);
 }
@@ -2192,7 +2192,7 @@ onUnmounted(() => {
   padding: 8rpx 16rpx;
 }
 .closeIcon {
-  font-size: 32rpx;
+  font-size: calc(32rpx * var(--font-scale));
   color: var(--text-secondary);
 }
 </style>

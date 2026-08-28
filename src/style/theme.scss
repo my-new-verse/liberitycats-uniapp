@@ -7,6 +7,8 @@
 :root {
   // 声明页面自行处理深色模式，禁用 WebView/浏览器的自动反色
   color-scheme: light dark;
+  // 字号缩放系数（标准 1 / 大 1.15 / 特大 1.3），由 renderjs（App）或 JS（H5）运行时注入覆盖
+  --font-scale: 1;
   --bg-primary: #f7f6f4;
   --bg-card: #ffffff;
   --text-primary: #261000;

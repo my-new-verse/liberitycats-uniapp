@@ -266,7 +266,7 @@ const onSearch = () => {
 .faq-empty {
   padding: 80rpx 0;
   text-align: center;
-  font-size: 26rpx;
+  font-size: calc(26rpx * var(--font-scale));
   color: var(--text-secondary);
 }
 

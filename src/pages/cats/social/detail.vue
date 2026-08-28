@@ -2041,7 +2041,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
         margin-right: 38rpx;
         margin-bottom: 12rpx;
         .emoji {
-          font-size: 48rpx;
+          font-size: calc(48rpx * var(--font-scale));
         }
       }
       .emojiItem:nth-child(7n) {
@@ -2068,9 +2068,9 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
     width: calc(100% - 48rpx);
     height: calc(100% - 36rpx);
     padding: 18rpx 24rpx;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-weight: 400;
-    line-height: 36rpx;
+    line-height: calc(36rpx * var(--font-scale));
     color: var(--commentTextArea-color);
     background: var(--fixedCommentBox-color);
     border-radius: 64rpx;
@@ -2099,9 +2099,9 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
     align-items: center;
     justify-content: space-between;
     .opTitle {
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       font-weight: 600;
-      line-height: 44rpx;
+      line-height: calc(44rpx * var(--font-scale));
       color: var(--text-primary);
     }
     .opBox {
@@ -2155,16 +2155,16 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
       justify-content: center;
       width: calc(100% - 64rpx - 16rpx);
       .nickname {
-        font-size: 24rpx;
+        font-size: calc(24rpx * var(--font-scale));
         font-weight: 400;
-        line-height: 36rpx;
+        line-height: calc(36rpx * var(--font-scale));
         color: var(--text-secondary);
         // margin-bottom: 6rpx;
       }
       .commentCnt {
-        font-size: 28rpx;
+        font-size: calc(28rpx * var(--font-scale));
         font-weight: 400;
-        line-height: 40rpx;
+        line-height: calc(40rpx * var(--font-scale));
         color: var(--text-primary);
         word-break: break-all;
       }
@@ -2187,9 +2187,9 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
         justify-content: space-between;
         margin-top: 12rpx;
         .time {
-          font-size: 24rpx;
+          font-size: calc(24rpx * var(--font-scale));
           font-weight: 400;
-          line-height: 36rpx;
+          line-height: calc(36rpx * var(--font-scale));
           color: var(--text-secondary);
         }
 
@@ -2225,7 +2225,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
             }
             .likeTxt {
               margin-left: 4rpx;
-              font-size: 24rpx;
+              font-size: calc(24rpx * var(--font-scale));
               font-weight: 400;
               color: var(--text-secondary);
             }
@@ -2261,7 +2261,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   display: flex;
   align-items: center;
   gap: 8rpx;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   color: var(--text-secondary);
   .arrow {
     width: 0;
@@ -2280,7 +2280,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
 }
 .authorTag {
   padding: 0 18rpx;
-  font-size: 22rpx;
+  font-size: calc(22rpx * var(--font-scale));
   margin-left: 8rpx;
   font-weight: 400;
   line-height: 1;
@@ -2352,9 +2352,9 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
     text-align: center;
     margin-bottom: 50rpx;
 
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-weight: 600;
-    line-height: 44rpx;
+    line-height: calc(44rpx * var(--font-scale));
     color: var(--text-primary);
     font-family:
       Alimama FangYuanTi VF,
@@ -2380,7 +2380,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
       }
 
       .share-text {
-        font-size: 24rpx;
+        font-size: calc(24rpx * var(--font-scale));
         color: var(--wot-message-box-content-color);
         font-family:
           Alimama FangYuanTi VF,
@@ -2426,7 +2426,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   height: 40rpx;
   padding: 0 20rpx;
   border-radius: 22rpx;
-  font-size: 22rpx;
+  font-size: calc(22rpx * var(--font-scale));
   line-height: 1;
   white-space: nowrap;
   flex-shrink: 0;

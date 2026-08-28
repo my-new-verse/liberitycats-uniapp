@@ -89,10 +89,10 @@ onLoad((options) => {
 }
 
 .title {
-  font-size: 48rpx;
+  font-size: calc(48rpx * var(--font-scale));
   font-style: normal;
   font-weight: 500;
-  line-height: 56rpx;
+  line-height: calc(56rpx * var(--font-scale));
   color: var(--text-primary);
 }
 
@@ -101,10 +101,10 @@ onLoad((options) => {
   align-items: center;
   justify-content: start;
   margin: 30rpx 0;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   font-style: normal;
   font-weight: 40 0;
-  line-height: 28rpx;
+  line-height: calc(28rpx * var(--font-scale));
   color: var(--commentTextArea-color);
 
   .dot {
@@ -123,10 +123,10 @@ onLoad((options) => {
 }
 
 .newContent {
-  font-size: 32rpx;
+  font-size: calc(32rpx * var(--font-scale));
   font-style: normal;
   font-weight: 400;
-  line-height: 48rpx;
+  line-height: calc(48rpx * var(--font-scale));
   color: var(--text-primary);
 
   img,

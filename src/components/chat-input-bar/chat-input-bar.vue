@@ -961,21 +961,21 @@ onLoad(() => {
   }
 
   .reply-bar-label {
-    font-size: 24rpx;
+    font-size: calc(24rpx * var(--font-scale));
     color: var(--text-secondary);
     flex-shrink: 0;
     margin-right: 8rpx;
   }
 
   .reply-bar-name {
-    font-size: 24rpx;
+    font-size: calc(24rpx * var(--font-scale));
     color: var(--actions-text);
     font-weight: 500;
     flex-shrink: 0;
   }
 
   .reply-bar-text {
-    font-size: 24rpx;
+    font-size: calc(24rpx * var(--font-scale));
     color: var(--wot-message-box-content-color);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1030,9 +1030,9 @@ onLoad(() => {
     flex: 1;
     height: calc(100% - 36rpx);
     padding: 18rpx 24rpx;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-weight: 400;
-    line-height: 36rpx;
+    line-height: calc(36rpx * var(--font-scale));
     color: rgba(38, 16, 0, 0.3);
     background: var(--fixedCommentBox-color);
     border-radius: 64rpx;

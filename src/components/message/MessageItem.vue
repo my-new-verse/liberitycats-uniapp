@@ -158,7 +158,7 @@ const handleItemClick = () => {
 
   .check-mark {
     color: var(--bg-card);
-    font-size: 12px;
+    font-size: calc(12px * var(--font-scale));
   }
 }
 
@@ -189,26 +189,26 @@ const handleItemClick = () => {
 .msg-title {
   flex: 1;
   line-height: 1.4;
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   font-weight: 500;
-  line-height: 33rpx;
+  line-height: calc(33rpx * var(--font-scale));
   color: var(--text-primary);
 }
 
 /* 第二行：内容 */
 .msg-content {
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   font-weight: 400;
-  line-height: 33rpx;
+  line-height: calc(33rpx * var(--font-scale));
   color: var(--goodsAttr-color);
   font-family: Alibaba PuHuiTi2;
 }
 
 /* 第三行：时间 */
 .msg-time {
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   font-weight: 400;
-  line-height: 33rpx;
+  line-height: calc(33rpx * var(--font-scale));
   color: rgba(38, 16, 0, 0.4);
   font-family: Alibaba PuHuiTi2;
   align-self: flex-end;

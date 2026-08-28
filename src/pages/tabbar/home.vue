@@ -406,10 +406,10 @@ const toChatGroup = () => {
       padding: 10rpx 48rpx;
 
       .username {
-        font-size: 36rpx;
+        font-size: calc(36rpx * var(--font-scale));
         font-style: normal;
         font-weight: 500;
-        line-height: 42rpx;
+        line-height: calc(42rpx * var(--font-scale));
         color: var(--bg-card);
         text-align: left;
         text-shadow: 0px 2px 0px rgba(0, 0, 0, 0.15);
@@ -432,7 +432,7 @@ const toChatGroup = () => {
           align-items: center;
           justify-content: center;
           padding: 4rpx 10rpx;
-          font-size: 14rpx;
+          font-size: calc(14rpx * var(--font-scale));
           font-style: normal;
           color: var(--bg-card);
           background-color: #ff6b03;
@@ -552,7 +552,7 @@ const toChatGroup = () => {
       padding: 5rpx 10rpx;
 
       font-family: Montserrat;
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       font-weight: 500;
       color: var(--bg-card);
       text-transform: uppercase;
@@ -600,10 +600,10 @@ const toChatGroup = () => {
     .name {
       min-height: 48rpx;
       overflow: hidden; //超出的文本隐藏
-      font-size: 32rpx;
+      font-size: calc(32rpx * var(--font-scale));
       font-style: normal;
       font-weight: normal;
-      line-height: 38rpx;
+      line-height: calc(38rpx * var(--font-scale));
       color: var(--text-primary);
       text-align: center;
       text-overflow: ellipsis; //溢出用省略号显示
@@ -629,11 +629,11 @@ const toChatGroup = () => {
       }
       .price {
         margin-right: 6rpx;
-        font-size: 28rpx;
+        font-size: calc(28rpx * var(--font-scale));
       }
       .unit {
         //color: var(--text-primary);
-        font-size: 20rpx;
+        font-size: calc(20rpx * var(--font-scale));
       }
     }
   }
@@ -649,7 +649,7 @@ const toChatGroup = () => {
   .title {
     display: flex;
     align-items: center;
-    font-size: 40rpx;
+    font-size: calc(40rpx * var(--font-scale));
     font-weight: 600;
     color: var(--text-primary);
     .tb {
@@ -667,7 +667,7 @@ const toChatGroup = () => {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 24rpx;
+    font-size: calc(24rpx * var(--font-scale));
     font-weight: 500;
     color: #ff6b03;
     .moreIcon {

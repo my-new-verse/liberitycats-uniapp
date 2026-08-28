@@ -2001,7 +2001,7 @@ const handleEditPost = () => {
   margin-top: 16rpx;
 
   .adTagChip {
-    font-size: 24rpx;
+    font-size: calc(24rpx * var(--font-scale));
     color: #ff6b03;
     // background: rgba(255, 107, 3, 0.08);
     border-radius: 8rpx;
@@ -2171,7 +2171,7 @@ const handleEditPost = () => {
         margin-right: 38rpx;
         margin-bottom: 12rpx;
         .emoji {
-          font-size: 48rpx;
+          font-size: calc(48rpx * var(--font-scale));
         }
       }
       .emojiItem:nth-child(7n) {
@@ -2198,9 +2198,9 @@ const handleEditPost = () => {
     width: calc(100% - 48rpx);
     height: calc(100% - 36rpx);
     padding: 18rpx 24rpx;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-weight: 400;
-    line-height: 36rpx;
+    line-height: calc(36rpx * var(--font-scale));
     color: var(--commentTextArea-color);
     background: var(--fixedCommentBox-color);
     border-radius: 64rpx;
@@ -2229,9 +2229,9 @@ const handleEditPost = () => {
     align-items: center;
     justify-content: space-between;
     .opTitle {
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       font-weight: 600;
-      line-height: 44rpx;
+      line-height: calc(44rpx * var(--font-scale));
       color: var(--text-primary);
     }
     .opBox {
@@ -2285,16 +2285,16 @@ const handleEditPost = () => {
       justify-content: center;
       width: calc(100% - 64rpx - 16rpx);
       .nickname {
-        font-size: 24rpx;
+        font-size: calc(24rpx * var(--font-scale));
         font-weight: 400;
-        line-height: 36rpx;
+        line-height: calc(36rpx * var(--font-scale));
         color: var(--text-secondary);
         // margin-bottom: 6rpx;
       }
       .commentCnt {
-        font-size: 28rpx;
+        font-size: calc(28rpx * var(--font-scale));
         font-weight: 400;
-        line-height: 40rpx;
+        line-height: calc(40rpx * var(--font-scale));
         color: var(--text-primary);
         word-break: break-all;
       }
@@ -2317,9 +2317,9 @@ const handleEditPost = () => {
         justify-content: space-between;
         margin-top: 12rpx;
         .time {
-          font-size: 24rpx;
+          font-size: calc(24rpx * var(--font-scale));
           font-weight: 400;
-          line-height: 36rpx;
+          line-height: calc(36rpx * var(--font-scale));
           color: var(--text-secondary);
         }
 
@@ -2355,7 +2355,7 @@ const handleEditPost = () => {
             }
             .likeTxt {
               margin-left: 4rpx;
-              font-size: 24rpx;
+              font-size: calc(24rpx * var(--font-scale));
               font-weight: 400;
               color: var(--text-secondary);
             }
@@ -2391,7 +2391,7 @@ const handleEditPost = () => {
   display: flex;
   align-items: center;
   gap: 8rpx;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   color: var(--text-secondary);
   .arrow {
     width: 0;
@@ -2410,7 +2410,7 @@ const handleEditPost = () => {
 }
 .authorTag {
   padding: 0 18rpx;
-  font-size: 22rpx;
+  font-size: calc(22rpx * var(--font-scale));
   margin-left: 8rpx;
   font-weight: 400;
   line-height: 1;
@@ -2482,9 +2482,9 @@ const handleEditPost = () => {
     text-align: center;
     margin-bottom: 50rpx;
 
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-weight: 600;
-    line-height: 44rpx;
+    line-height: calc(44rpx * var(--font-scale));
     color: var(--text-primary);
     font-family:
       Alimama FangYuanTi VF,
@@ -2510,7 +2510,7 @@ const handleEditPost = () => {
       }
 
       .share-text {
-        font-size: 24rpx;
+        font-size: calc(24rpx * var(--font-scale));
         color: var(--wot-message-box-content-color);
         font-family:
           Alimama FangYuanTi VF,
@@ -2556,7 +2556,7 @@ const handleEditPost = () => {
   .adTypeTag {
     flex-shrink: 0;
     padding: 4rpx 16rpx;
-    font-size: 24rpx;
+    font-size: calc(24rpx * var(--font-scale));
     color: var(--bg-card);
     background: var(--wot-color-primary);
     border-radius: 8rpx;
@@ -2564,7 +2564,7 @@ const handleEditPost = () => {
     font-family: Alibaba PuHuiTi2 !important;
   }
   .adTitle {
-    font-size: 32rpx;
+    font-size: calc(32rpx * var(--font-scale));
     font-weight: 600;
     color: var(--text-primary);
     line-height: 1.4;
@@ -2586,7 +2586,7 @@ const handleEditPost = () => {
   font-family: Alibaba PuHuiTi2 !important;
   border: 1px solid var(--promotionCard-border-color);
   .promotionCardTitle {
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-weight: 600;
     color: var(--text-primary);
     margin-bottom: 16rpx;
@@ -2605,18 +2605,18 @@ const handleEditPost = () => {
     }
     .promotionLabel {
       width: 140rpx;
-      font-size: 26rpx;
+      font-size: calc(26rpx * var(--font-scale));
       color: var(--wot-message-box-content-color);
       flex-shrink: 0;
     }
     .promotionValue {
       flex: 1;
-      font-size: 26rpx;
+      font-size: calc(26rpx * var(--font-scale));
       color: var(--actions-text);
     }
     .copyBtn {
       flex-shrink: 0;
-      font-size: 26rpx;
+      font-size: calc(26rpx * var(--font-scale));
       color: var(--wot-message-box-content-color);
       margin-left: 16rpx;
     }
@@ -2633,7 +2633,7 @@ const handleEditPost = () => {
     flex-shrink: 0;
   }
   .reportTipText {
-    font-size: 24rpx;
+    font-size: calc(24rpx * var(--font-scale));
     color: var(--text-secondary);
   }
 }
@@ -2650,20 +2650,20 @@ const handleEditPost = () => {
     font-family: Alibaba PuHuiTi2 !important;
     margin-left: 16rpx;
     .metaTime {
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       color: var(--text-secondary);
     }
     .metaSeparator {
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       color: var(--text-secondary);
       margin: 0 4rpx;
     }
     .metaPublished {
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       color: var(--text-secondary);
     }
     .metaZone {
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       color: #ff6b03;
       margin-left: 4rpx;
     }
@@ -2676,7 +2676,7 @@ const handleEditPost = () => {
   height: 40rpx;
   padding: 0 20rpx;
   border-radius: 22rpx;
-  font-size: 22rpx;
+  font-size: calc(22rpx * var(--font-scale));
   line-height: 1;
   white-space: nowrap;
   flex-shrink: 0;

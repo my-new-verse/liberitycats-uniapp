@@ -192,7 +192,7 @@ const buildFormData = ({ file, formData, resolve }) => {
   }
   .title {
     margin-top: 32rpx;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-style: normal;
     font-weight: 500;
     color: #ff6b03;
@@ -205,10 +205,10 @@ const buildFormData = ({ file, formData, resolve }) => {
   background-color: var(--bg-card);
   border-radius: 40rpx;
   .titleBox {
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-style: normal;
     font-weight: 500;
-    line-height: 33rpx;
+    line-height: calc(33rpx * var(--font-scale));
     color: var(--text-primary);
   }
   .selectList {
@@ -242,7 +242,7 @@ const buildFormData = ({ file, formData, resolve }) => {
       width: 100%;
       height: 88rpx;
 
-      font-size: 32rpx;
+      font-size: calc(32rpx * var(--font-scale));
       font-style: normal;
       font-weight: 600;
       color: var(--bg-card);

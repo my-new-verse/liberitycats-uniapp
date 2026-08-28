@@ -374,22 +374,22 @@ onReachBottom(() => {
       padding: 20rpx 32rpx;
     }
     .wd-tab__title {
-      font-size: 32rpx;
-      line-height: 44rpx;
+      font-size: calc(32rpx * var(--font-scale));
+      line-height: calc(44rpx * var(--font-scale));
     }
   }
 
   .wd-tabs__nav-item {
-    font-size: 36rpx;
+    font-size: calc(36rpx * var(--font-scale));
     font-weight: 400;
-    line-height: 42rpx;
+    line-height: calc(42rpx * var(--font-scale));
     color: var(--text-primary);
     &.is-active {
       .wd-tabs__nav-item-text {
-        font-size: 36rpx;
+        font-size: calc(36rpx * var(--font-scale));
         font-style: normal;
         font-weight: 600;
-        line-height: 42rpx;
+        line-height: calc(42rpx * var(--font-scale));
         color: var(--liberty-cats-primary-color);
       }
     }

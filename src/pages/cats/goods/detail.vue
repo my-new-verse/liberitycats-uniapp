@@ -641,10 +641,10 @@ const addCart = () => {
   padding: 32rpx 40rpx;
   background-color: var(--bg-card);
   .title {
-    font-size: 40rpx;
+    font-size: calc(40rpx * var(--font-scale));
     font-style: normal;
     font-weight: 400;
-    line-height: 47rpx;
+    line-height: calc(47rpx * var(--font-scale));
     color: var(--text-primary);
   }
   .priceBox {
@@ -663,16 +663,16 @@ const addCart = () => {
     .price {
       margin-right: 12rpx;
       margin-left: 12rpx;
-      font-size: 36rpx;
+      font-size: calc(36rpx * var(--font-scale));
       font-style: normal;
       font-weight: 400;
-      line-height: 37rpx;
+      line-height: calc(37rpx * var(--font-scale));
     }
     .unit {
-      font-size: 32rpx;
+      font-size: calc(32rpx * var(--font-scale));
       font-style: normal;
       font-weight: 400;
-      line-height: 33rpx;
+      line-height: calc(33rpx * var(--font-scale));
     }
 
     &.isSupporter {
@@ -696,16 +696,16 @@ const addCart = () => {
           align-items: baseline;
           line-height: 1;
           .symbol {
-            font-size: 45rpx;
+            font-size: calc(45rpx * var(--font-scale));
             font-weight: 800;
           }
           .num {
-            font-size: 70rpx;
+            font-size: calc(70rpx * var(--font-scale));
             font-weight: 800;
             margin-left: 5rpx;
           }
           .unit {
-            font-size: 28rpx;
+            font-size: calc(28rpx * var(--font-scale));
             font-weight: 600;
             margin-left: 8rpx;
           }
@@ -715,7 +715,7 @@ const addCart = () => {
           align-items: center;
           gap: 8rpx;
           .originalPrice {
-            font-size: 24rpx;
+            font-size: calc(24rpx * var(--font-scale));
             font-weight: 500;
             line-height: 1;
             color: var(--text-secondary);
@@ -724,7 +724,7 @@ const addCart = () => {
           }
           .saveTag {
             padding: 4rpx 8rpx;
-            font-size: 24rpx;
+            font-size: calc(24rpx * var(--font-scale));
             font-weight: 600;
             line-height: 1;
             color: #ff6b03;
@@ -767,7 +767,7 @@ const addCart = () => {
         }
         .supporterTag {
           padding: 8rpx 16rpx;
-          font-size: 24rpx;
+          font-size: calc(24rpx * var(--font-scale));
           font-weight: 500;
           line-height: 1.2;
           color: var(--text-secondary);
@@ -806,7 +806,7 @@ const addCart = () => {
     margin: 24rpx 0;
   }
   .shippingTime {
-    font-size: 26rpx;
+    font-size: calc(26rpx * var(--font-scale));
     color: var(--text-primary);
     display: flex;
     align-items: center;
@@ -814,7 +814,7 @@ const addCart = () => {
   }
   .spotDelivery {
     margin-top: 12rpx;
-    font-size: 26rpx;
+    font-size: calc(26rpx * var(--font-scale));
     color: var(--text-primary);
     display: flex;
     align-items: center;
@@ -836,13 +836,13 @@ const addCart = () => {
     .saleInfoText {
       flex: 1;
       .saleInfoReason {
-        font-size: 26rpx;
+        font-size: calc(26rpx * var(--font-scale));
         color: #ff6b03;
         line-height: 1.4;
       }
       .saleInfoSub {
         margin-top: 8rpx;
-        font-size: 22rpx;
+        font-size: calc(22rpx * var(--font-scale));
         color: var(--text-secondary);
       }
     }
@@ -851,7 +851,7 @@ const addCart = () => {
     display: flex;
     align-items: center;
     gap: 16rpx;
-    font-size: 26rpx;
+    font-size: calc(26rpx * var(--font-scale));
     // color: #999;
   }
   .soldOutIcon {
@@ -862,10 +862,10 @@ const addCart = () => {
   .attrItem {
     margin-bottom: 48rpx;
     .attrTitle {
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       font-style: normal;
       font-weight: 400;
-      line-height: 33rpx;
+      line-height: calc(33rpx * var(--font-scale));
       color: var(--text-primary);
     }
     .attrValueBox {
@@ -874,11 +874,11 @@ const addCart = () => {
         padding: 16rpx 48rpx;
         margin-top: 32rpx;
         margin-right: 32rpx;
-        font-size: 28rpx;
+        font-size: calc(28rpx * var(--font-scale));
         font-style: normal;
 
         font-weight: 400;
-        line-height: 33rpx;
+        line-height: calc(33rpx * var(--font-scale));
         color: var(--text-primary);
 
         border: 2rpx solid var(--isSupporter-border-color);
@@ -897,7 +897,7 @@ const addCart = () => {
   }
   .purchaseLimitTip {
     margin-top: 10rpx;
-    font-size: 24rpx;
+    font-size: calc(24rpx * var(--font-scale));
     color: var(--text-secondary);
     text-align: right;
   }
@@ -911,7 +911,7 @@ const addCart = () => {
       color: var(--text-black);
       .levelLimitTip {
         margin-top: 8rpx;
-        font-size: 22rpx;
+        font-size: calc(22rpx * var(--font-scale));
         color: var(--text-secondary);
       }
     }
@@ -971,10 +971,10 @@ const addCart = () => {
     .buyBtn {
       width: 250rpx;
       height: 84rpx;
-      font-size: 32rpx;
+      font-size: calc(32rpx * var(--font-scale));
       font-style: normal;
       font-weight: 600;
-      line-height: 48rpx;
+      line-height: calc(48rpx * var(--font-scale));
       color: #ff6b03;
       background: var(--bg-card);
       border: 2rpx solid #ff6b03;
@@ -1014,12 +1014,12 @@ const addCart = () => {
       align-items: center;
     }
     .presaleBtnTitle {
-      font-size: 32rpx;
+      font-size: calc(32rpx * var(--font-scale));
       font-weight: 600;
       line-height: 1.2;
     }
     .presaleBtnCountdown {
-      font-size: 18rpx;
+      font-size: calc(18rpx * var(--font-scale));
       font-weight: 400;
       line-height: 1.2;
       opacity: 0.8;

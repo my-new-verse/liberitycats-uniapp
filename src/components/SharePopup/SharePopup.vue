@@ -275,9 +275,9 @@ defineExpose({ openSharePopup })
 .share-title {
   text-align: center;
   margin-bottom: 30rpx;
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   font-weight: 500;
-  line-height: 44rpx;
+  line-height: calc(44rpx * var(--font-scale));
   color: var(--text-primary);
   font-family:
     Alimama FangYuanTi VF,
@@ -300,9 +300,9 @@ defineExpose({ openSharePopup })
   height: 60rpx;
 }
 .share-text {
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   font-weight: 400;
-  line-height: 36rpx;
+  line-height: calc(36rpx * var(--font-scale));
   color: #999999;
   font-family:
     Alimama FangYuanTi VF,
@@ -316,9 +316,9 @@ defineExpose({ openSharePopup })
 }
 .poster-title {
   text-align: left;
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   font-weight: 500;
-  line-height: 44rpx;
+  line-height: calc(44rpx * var(--font-scale));
   color: var(--text-secondary);
   margin-bottom: 20rpx;
   font-family:
@@ -409,7 +409,7 @@ defineExpose({ openSharePopup })
   height: 60rpx;
 }
 .poster-action-text {
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   color: var(--text-primary);
 }
 </style>

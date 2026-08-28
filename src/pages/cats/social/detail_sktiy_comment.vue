@@ -971,7 +971,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
         margin-right: 38rpx;
         margin-bottom: 12rpx;
         .emoji {
-          font-size: 48rpx;
+          font-size: calc(48rpx * var(--font-scale));
         }
       }
       .emojiItem:nth-child(7n) {
@@ -998,9 +998,9 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
     width: calc(100% - 48rpx);
     height: calc(100% - 36rpx);
     padding: 18rpx 24rpx;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-weight: 400;
-    line-height: 36rpx;
+    line-height: calc(36rpx * var(--font-scale));
     color: rgba(38, 16, 0, 0.3);
     background: var(--fixedCommentBox-color);
     border-radius: 64rpx;
@@ -1020,9 +1020,9 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   .commentFilterBox {
     background-color: var(--bg-card);
     .opTitle {
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       font-weight: 600;
-      line-height: 44rpx;
+      line-height: calc(44rpx * var(--font-scale));
       color: var(--text-primary);
     }
     .opBox {
@@ -1075,15 +1075,15 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
       justify-content: center;
       width: calc(100% - 64rpx - 16rpx);
       .nickname {
-        font-size: 24rpx;
+        font-size: calc(24rpx * var(--font-scale));
         font-weight: 400;
-        line-height: 36rpx;
+        line-height: calc(36rpx * var(--font-scale));
         color: #999999;
       }
       .commentCnt {
-        font-size: 28rpx;
+        font-size: calc(28rpx * var(--font-scale));
         font-weight: 400;
-        line-height: 40rpx;
+        line-height: calc(40rpx * var(--font-scale));
         color: var(--text-primary);
         word-break: break-all;
       }
@@ -1106,9 +1106,9 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
         justify-content: space-between;
         margin-top: 12rpx;
         .time {
-          font-size: 24rpx;
+          font-size: calc(24rpx * var(--font-scale));
           font-weight: 400;
-          line-height: 36rpx;
+          line-height: calc(36rpx * var(--font-scale));
           color: #999999;
         }
 
@@ -1135,7 +1135,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
             }
             .likeTxt {
               margin-left: 4rpx;
-              font-size: 24rpx;
+              font-size: calc(24rpx * var(--font-scale));
               font-weight: 400;
               color: #999999;
             }
@@ -1232,9 +1232,9 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
       background: var(--bg-card);
 
       .opTitle {
-        font-size: 28rpx;
+        font-size: calc(28rpx * var(--font-scale));
         font-weight: 600;
-        line-height: 44rpx;
+        line-height: calc(44rpx * var(--font-scale));
         color: var(--text-primary);
       }
 
@@ -1245,7 +1245,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
         .opBtn {
           padding: 8rpx 16rpx;
           margin-left: 16rpx;
-          font-size: 24rpx;
+          font-size: calc(24rpx * var(--font-scale));
           color: var(--text-secondary);
           background: var(--wot-action-sheet-active-color);
           border-radius: 30rpx;

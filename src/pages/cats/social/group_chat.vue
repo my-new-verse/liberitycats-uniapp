@@ -4714,7 +4714,7 @@ const EmotionTool = (() => {
             gap: 8rpx;
 
             .main-title {
-              font-size: 30rpx;
+              font-size: calc(30rpx * var(--font-scale));
               font-weight: bold;
               color: var(--chat-text-color);
               /* 防止标题过长 */
@@ -4726,7 +4726,7 @@ const EmotionTool = (() => {
             }
 
             .sub-title {
-              font-size: 22rpx;
+              font-size: calc(22rpx * var(--font-scale));
               color: var(--chat-text-color);
               color: var(--bg-card);
             }
@@ -4766,7 +4766,7 @@ const EmotionTool = (() => {
   }
 
   .history-tip-text {
-    font-size: 22rpx;
+    font-size: calc(22rpx * var(--font-scale));
     line-height: 1.4;
     color: var(--text-secondary);
   }
@@ -4784,7 +4784,7 @@ const EmotionTool = (() => {
     margin: 32rpx 0;
 
     .divider-time {
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       color: var(--text-secondary);
       padding: 8rpx 24rpx;
       background-color: rgba(0, 0, 0, 0.05);
@@ -4814,7 +4814,7 @@ const EmotionTool = (() => {
         }
 
         .system-text {
-          font-size: 24rpx;
+          font-size: calc(24rpx * var(--font-scale));
           color: var(--text-secondary);
           text-align: center;
           line-height: 1.5;
@@ -4831,7 +4831,7 @@ const EmotionTool = (() => {
         }
 
         .msg-time {
-          font-size: 20rpx;
+          font-size: calc(20rpx * var(--font-scale));
           color: #bbb;
         }
       }
@@ -4885,7 +4885,7 @@ const EmotionTool = (() => {
       }
 
       .u-name {
-        font-size: 24rpx;
+        font-size: calc(24rpx * var(--font-scale));
         color: var(--chat-user-name-color);
         margin-bottom: 8rpx;
         margin-left: 8rpx;
@@ -4900,7 +4900,7 @@ const EmotionTool = (() => {
           padding: 20rpx 28rpx;
           /* 他人消息气泡圆角：左上角为小圆角，其余大圆角 */
           border-radius: 8rpx 30rpx 30rpx 30rpx;
-          font-size: 28rpx;
+          font-size: calc(28rpx * var(--font-scale));
           line-height: 1.5;
           color: var(--chat-text-color);
           box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.03);
@@ -4993,7 +4993,7 @@ const EmotionTool = (() => {
         }
 
         .msg-time {
-          font-size: 24rpx;
+          font-size: calc(24rpx * var(--font-scale));
           color: #bbb;
           margin-top: 12rpx;
           display: block;
@@ -5030,18 +5030,18 @@ const EmotionTool = (() => {
       }
 
       .reaction-emoji {
-        font-size: 24rpx;
+        font-size: calc(24rpx * var(--font-scale));
         line-height: 1;
       }
 
       .reaction-count {
-        font-size: 22rpx;
+        font-size: calc(22rpx * var(--font-scale));
         line-height: 1;
       }
 
       .message-status {
         margin-top: 10rpx;
-        font-size: 22rpx;
+        font-size: calc(22rpx * var(--font-scale));
         color: var(--text-secondary);
 
         &.failed {
@@ -5064,7 +5064,7 @@ const EmotionTool = (() => {
       }
 
       .message-resend-icon {
-        font-size: 24rpx;
+        font-size: calc(24rpx * var(--font-scale));
         line-height: 1;
         font-weight: 600;
       }
@@ -5135,7 +5135,7 @@ const EmotionTool = (() => {
 }
 
 .new-message-indicator-text {
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   line-height: 1;
   color: #1f1f1f;
   white-space: nowrap;
@@ -5189,9 +5189,9 @@ const EmotionTool = (() => {
     flex: 1;
     height: calc(100% - 36rpx);
     padding: 18rpx 24rpx;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-weight: 400;
-    line-height: 36rpx;
+    line-height: calc(36rpx * var(--font-scale));
     color: rgba(38, 16, 0, 0.3);
     background: var(--fixedCommentBox-color);
     border-radius: 64rpx;
@@ -5239,7 +5239,7 @@ const EmotionTool = (() => {
 }
 
 .perf-panel-title {
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   font-weight: 600;
   color: #8a4c19;
 }
@@ -5273,12 +5273,12 @@ const EmotionTool = (() => {
 }
 
 .perf-label {
-  font-size: 20rpx;
+  font-size: calc(20rpx * var(--font-scale));
   color: rgba(88, 51, 20, 0.66);
 }
 
 .perf-value {
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   line-height: 1.35;
   color: #3d2209;
   word-break: break-all;
@@ -5445,7 +5445,7 @@ const EmotionTool = (() => {
         margin-bottom: 12rpx;
 
         .emoji {
-          font-size: 48rpx;
+          font-size: calc(48rpx * var(--font-scale));
         }
       }
 
@@ -5473,7 +5473,7 @@ const EmotionTool = (() => {
   .section-label {
     background-color: var(--bg-primary);
     padding: 16rpx 30rpx;
-    font-size: 24rpx;
+    font-size: calc(24rpx * var(--font-scale));
     color: var(--text-secondary);
   }
 
@@ -5526,18 +5526,18 @@ const EmotionTool = (() => {
           gap: 8rpx;
 
           .m-name {
-            font-size: 28rpx;
+            font-size: calc(28rpx * var(--font-scale));
             color: var(--actions-text);
             font-weight: 500;
           }
 
           .owner-icon {
-            font-size: 24rpx;
+            font-size: calc(24rpx * var(--font-scale));
           }
         }
 
         .m-status {
-          font-size: 22rpx;
+          font-size: calc(22rpx * var(--font-scale));
           color: var(--text-secondary);
           margin-top: 4rpx;
         }
@@ -5582,7 +5582,7 @@ const EmotionTool = (() => {
     margin-bottom: 32rpx;
 
     .popup-title {
-      font-size: 32rpx;
+      font-size: calc(32rpx * var(--font-scale));
       font-weight: 600;
       color: var(--actions-text);
     }
@@ -5599,7 +5599,7 @@ const EmotionTool = (() => {
 
       .label {
         display: block;
-        font-size: 28rpx;
+        font-size: calc(28rpx * var(--font-scale));
         color: var(--wot-message-box-content-color);
         margin-bottom: 16rpx;
       }
@@ -5628,7 +5628,7 @@ const EmotionTool = (() => {
   margin: 20rpx 0;
 
   .divider-time {
-    font-size: 24rpx;
+    font-size: calc(24rpx * var(--font-scale));
     color: var(--text-secondary);
     background-color: rgba(0, 0, 0, 0.05);
     padding: 8rpx 20rpx;
@@ -5709,7 +5709,7 @@ const EmotionTool = (() => {
 }
 
 .action-sheet-item-text {
-  font-size: 30rpx;
+  font-size: calc(30rpx * var(--font-scale));
   line-height: 1.4;
   color: var(--actions-text);
 }

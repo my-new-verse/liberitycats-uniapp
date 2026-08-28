@@ -1234,16 +1234,16 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
         flex: 1;
         margin-left: 32rpx;
         .name {
-          font-size: 48rpx;
+          font-size: calc(48rpx * var(--font-scale));
           font-style: normal;
           font-weight: 600;
-          line-height: 56rpx;
+          line-height: calc(56rpx * var(--font-scale));
           color: var(--bg-card);
         }
         .pointsRow {
-          font-size: 24rpx;
+          font-size: calc(24rpx * var(--font-scale));
           font-style: normal;
-          line-height: 40rpx;
+          line-height: calc(40rpx * var(--font-scale));
           color: var(--bg-card);
           display: flex;
           align-items: center;
@@ -1290,18 +1290,18 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
         align-items: baseline;
         padding: 0 24rpx;
         .statCount {
-          font-size: 44rpx;
+          font-size: calc(44rpx * var(--font-scale));
           font-weight: 600;
           color: var(--bg-card);
           margin-right: 8rpx;
         }
         .statLabel {
-          font-size: 24rpx;
+          font-size: calc(24rpx * var(--font-scale));
           color: rgba(255, 255, 255, 0.9);
         }
       }
       .statDivider {
-        font-size: 24rpx;
+        font-size: calc(24rpx * var(--font-scale));
         color: rgba(255, 255, 255, 0.5);
       }
     }
@@ -1323,7 +1323,7 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
         :deep(.follow-btn) {
           width: 100%;
           height: 64rpx !important;
-          font-size: 30rpx;
+          font-size: calc(30rpx * var(--font-scale));
           font-family: 'Alibaba PuHuiTi2', 'PingFang SC', sans-serif;
           border-radius: 40rpx;
           color: #ff6b03;
@@ -1384,7 +1384,7 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
     z-index: 1;
 
     .postFilterTabText {
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       color: var(--actions-text);
       position: relative;
       z-index: 2;
@@ -1545,7 +1545,7 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
     align-items: flex-start;
     .tag {
       padding: 4rpx 16rpx;
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       // text-transform: uppercase;
       border-radius: 8rpx;
       line-height: 1.4;
@@ -1580,7 +1580,7 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
 }
 
 .adTagChip {
-  font-size: 22rpx;
+  font-size: calc(22rpx * var(--font-scale));
   color: var(--liberty-cats-primary-color);
   padding: 4rpx 0;
   border-radius: 8rpx;
@@ -1613,12 +1613,12 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
 .banDialog {
   padding: 16rpx 0;
   .banLabel {
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     color: var(--actions-text);
     margin-bottom: 24rpx;
   }
   .banDaysTitle {
-    font-size: 26rpx;
+    font-size: calc(26rpx * var(--font-scale));
     color: var(--wot-message-box-content-color);
     margin-bottom: 12rpx;
   }
@@ -1630,7 +1630,7 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
       flex: 1;
       padding: 16rpx 0;
       text-align: center;
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       color: var(--actions-text);
       background: var(--wot-action-sheet-active-color);
       border-radius: 12rpx;

@@ -64,17 +64,17 @@
   border-radius: 48rpx;
 
   .messageTitle {
-    font-size: 36rpx;
+    font-size: calc(36rpx * var(--font-scale));
     font-weight: 600;
-    line-height: 50rpx;
+    line-height: calc(50rpx * var(--font-scale));
   }
 
   .messageTime {
     margin-top: 16rpx;
-    font-size: 24rpx;
+    font-size: calc(24rpx * var(--font-scale));
     font-style: normal;
     font-weight: normal;
-    line-height: 28rpx;
+    line-height: calc(28rpx * var(--font-scale));
     color: var(--black-30);
     text-align: left;
     text-transform: none;
@@ -129,10 +129,10 @@
       }
     }
     .title {
-      font-size: 32rpx;
+      font-size: calc(32rpx * var(--font-scale));
       font-style: normal;
       font-weight: 500;
-      line-height: 38rpx;
+      line-height: calc(38rpx * var(--font-scale));
       color: var(--text-primary);
     }
   }
@@ -143,11 +143,11 @@
     color: var(--text-primary);
     .rightTitle {
       margin-right: 16rpx;
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       font-style: normal;
       font-weight: 500;
-      line-height: 33rpx;
-      color: #999999;
+      line-height: calc(33rpx * var(--font-scale));
+      color: var(--text-secondary);
     }
     .arrow {
       width: 56rpx;
@@ -164,7 +164,7 @@
   width: 100%;
   height: 88rpx !important;
 
-  font-size: 32rpx;
+  font-size: calc(32rpx * var(--font-scale));
   font-style: normal;
   font-weight: 600;
   color: var(--bg-card);
@@ -180,10 +180,10 @@
   border-radius: 32rpx;
 
   .label {
-    font-size: 32rpx;
+    font-size: calc(32rpx * var(--font-scale));
     font-style: normal;
     font-weight: 500;
-    line-height: 48rpx;
+    line-height: calc(48rpx * var(--font-scale));
     color: var(--text-primary);
   }
 }
@@ -276,12 +276,12 @@
       margin: 0 24rpx;
       color: var(--text-primary);
       .goodsName {
-        font-size: 28rpx;
+        font-size: calc(28rpx * var(--font-scale));
         font-weight: 500;
-        line-height: 33rpx;
+        line-height: calc(33rpx * var(--font-scale));
       }
       .goodsAttr {
-        font-size: 28rpx;
+        font-size: calc(28rpx * var(--font-scale));
         font-weight: 400;
         line-height: 33 rpx;
         color: var(--goodsAttr-color);
@@ -301,21 +301,21 @@
       .goodsPriceTxt {
         display: flex;
         align-items: baseline;
-        font-size: 28rpx;
-        line-height: 33rpx;
+        font-size: calc(28rpx * var(--font-scale));
+        line-height: calc(33rpx * var(--font-scale));
         text-align: right;
         .goodsPriceUnit {
           margin-left: 8rpx;
-          font-size: 20rpx;
-          line-height: 28rpx;
+          font-size: calc(20rpx * var(--font-scale));
+          line-height: calc(28rpx * var(--font-scale));
           text-align: right;
         }
       }
 
       .goodsPriceNum {
         width: 100%;
-        font-size: 24rpx;
-        line-height: 28rpx;
+        font-size: calc(24rpx * var(--font-scale));
+        line-height: calc(28rpx * var(--font-scale));
         text-align: right;
       }
     }
@@ -342,10 +342,10 @@
     background-size: 100% 100%;
   }
   .emptyText {
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-style: normal;
     font-weight: 400;
-    line-height: 48rpx;
+    line-height: calc(48rpx * var(--font-scale));
     color: #999999;
     text-align: center;
   }
@@ -369,13 +369,13 @@
   }
   .price {
     margin: 0 8rpx;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-style: normal;
     font-weight: 500;
     color: #ff6b03;
   }
   .unit {
-    font-size: 24rpx;
+    font-size: calc(24rpx * var(--font-scale));
     font-style: normal;
     font-weight: 400;
     color: #ff6b03;

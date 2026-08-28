@@ -297,7 +297,7 @@ onUnmounted(() => {
 }
 
 .g-name {
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   line-height: 1.2;
   font-weight: 600;
   color: var(--bg-card);
@@ -306,7 +306,7 @@ onUnmounted(() => {
 
 .g-sub-title {
   margin-top: 10rpx;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   line-height: 1.4;
   color: rgba(255, 255, 255, 0.92);
   text-shadow: 0 4rpx 12rpx rgba(72, 35, 0, 0.22);
@@ -330,8 +330,8 @@ onUnmounted(() => {
   // background-color: #d4380d; /* 深橘红色 */
   background-color: var(--wot-button-primary-bg-color);
   color: var(--bg-card);
-  font-size: 20rpx;
-  line-height: 32rpx;
+  font-size: calc(20rpx * var(--font-scale));
+  line-height: calc(32rpx * var(--font-scale));
   text-align: center;
   box-sizing: border-box;
   pointer-events: none;
@@ -342,7 +342,7 @@ onUnmounted(() => {
 .join-button {
   // min-width: 180rpx;
   border-radius: 999rpx;
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   background: var(--wot-button-primary-bg-color) !important;
   color: var(--bg-card) !important;
   border-color: rgba(255, 208, 86, 1) !important;

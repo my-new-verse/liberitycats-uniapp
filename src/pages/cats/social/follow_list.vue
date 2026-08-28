@@ -512,7 +512,7 @@ onLoad((options: any) => {
     .center {
       flex: 1;
       text-align: center;
-      font-size: 36rpx;
+      font-size: calc(36rpx * var(--font-scale));
       font-weight: 600;
       color: var(--bg-card);
     }
@@ -590,7 +590,7 @@ onLoad((options: any) => {
     justify-content: center;
     gap: 4rpx;
     padding: 20rpx 0;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     color: var(--wot-message-box-content-color);
     position: relative;
 
@@ -614,7 +614,7 @@ onLoad((options: any) => {
 }
 
 .tabCount {
-  font-size: 26rpx;
+  font-size: calc(26rpx * var(--font-scale));
 }
 
 /* ========== 搜索框 ========== */
@@ -667,7 +667,7 @@ onLoad((options: any) => {
       sans-serif;
 
     .memberName {
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       color: var(--actions-text);
       font-weight: 500;
       overflow: hidden;
@@ -679,7 +679,7 @@ onLoad((options: any) => {
       display: flex;
       align-items: center;
       gap: 16rpx;
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       color: var(--text-secondary);
     }
   }
@@ -693,7 +693,7 @@ onLoad((options: any) => {
   width: 160rpx;
   height: 56rpx;
   border-radius: 28rpx;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   line-height: 1;
   white-space: nowrap;
   flex-shrink: 0;
@@ -721,7 +721,7 @@ onLoad((options: any) => {
   justify-content: center;
   padding-top: 200rpx;
   .emptyText {
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     color: var(--text-secondary);
   }
 }

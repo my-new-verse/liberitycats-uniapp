@@ -148,9 +148,9 @@ const navigateBack = () => {
         align-items: center;
         justify-content: center;
         overflow: hidden;
-        font-size: 34rpx;
+        font-size: calc(34rpx * var(--font-scale));
         font-weight: 500;
-        line-height: 44rpx;
+        line-height: calc(44rpx * var(--font-scale));
         color: var(--bg-card);
         text-align: center;
         pointer-events: none;
@@ -178,7 +178,7 @@ const navigateBack = () => {
         min-width: 60rpx;
         height: 60rpx;
         color: var(--bg-card);
-        font-size: 28rpx;
+        font-size: calc(28rpx * var(--font-scale));
         font-family: Alibaba PuHuiTi2;
         pointer-events: auto;
       }

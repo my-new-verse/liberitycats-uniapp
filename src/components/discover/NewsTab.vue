@@ -280,7 +280,7 @@ const changeTab = async (type: NewsTabType) => {
   .kx-step {
     .wd-step__title,
     .wd-step__description {
-      font-size: 28rpx !important;
+      font-size: calc(28rpx * var(--font-scale)) !important;
       font-family: Alibaba PuHuiTi2 !important;
     }
     .wd-step__description {
@@ -344,9 +344,9 @@ const changeTab = async (type: NewsTabType) => {
       display: -webkit-box;
       max-height: 80rpx;
       overflow: hidden;
-      font-size: 32rpx;
+      font-size: calc(32rpx * var(--font-scale));
       font-weight: 400;
-      line-height: 40rpx;
+      line-height: calc(40rpx * var(--font-scale));
       color: var(--text-primary);
       text-overflow: ellipsis;
       -webkit-line-clamp: 2;
@@ -354,9 +354,9 @@ const changeTab = async (type: NewsTabType) => {
     }
     .time {
       margin-top: 20rpx;
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       font-weight: 400;
-      line-height: 28rpx;
+      line-height: calc(28rpx * var(--font-scale));
       color: var(--black-30);
     }
   }
@@ -369,9 +369,9 @@ const changeTab = async (type: NewsTabType) => {
   margin-bottom: 36rpx;
   .opItem {
     margin-right: 16rpx;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-weight: 400;
-    line-height: 33rpx;
+    line-height: calc(33rpx * var(--font-scale));
     color: var(--text-secondary);
   }
 

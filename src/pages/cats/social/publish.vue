@@ -1149,14 +1149,14 @@ $minor-color: var(--wot-message-box-content-color);
 }
 
 .draftBtnNav {
-  font-size: 26rpx;
+  font-size: calc(26rpx * var(--font-scale));
   color: var(--text-secondary);
 }
 
 .kf {
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   font-weight: 500;
-  line-height: 32rpx;
+  line-height: calc(32rpx * var(--font-scale));
   color: var(--bg-card);
 }
 
@@ -1176,7 +1176,7 @@ $minor-color: var(--wot-message-box-content-color);
 
 .cardTitle {
   margin-bottom: 24rpx;
-  font-size: 30rpx;
+  font-size: calc(30rpx * var(--font-scale));
   font-weight: 700;
   color: $main-color;
   font-family: 'Alibaba PuHuiTi2' !important;
@@ -1190,7 +1190,7 @@ $minor-color: var(--wot-message-box-content-color);
 .title-card {
   .tip {
     font-family: 'Alibaba PuHuiTi2' !important;
-    font-size: 26rpx;
+    font-size: calc(26rpx * var(--font-scale));
     color: $tipColor;
     margin-top: 18rpx;
   }
@@ -1201,7 +1201,7 @@ $minor-color: var(--wot-message-box-content-color);
   border: 1px solid $border-color;
 
   .wd-input__inner {
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-weight: 500;
     //padding: 20rpx 0;
     font-family: 'Alibaba PuHuiTi2' !important;
@@ -1248,7 +1248,7 @@ $minor-color: var(--wot-message-box-content-color);
   :deep(.editable) {
     font-family: 'Alibaba PuHuiTi2' !important;
     min-height: 300rpx;
-    font-size: 26rpx;
+    font-size: calc(26rpx * var(--font-scale));
     padding-left: 24rpx;
 
     &:empty::before {
@@ -1311,7 +1311,7 @@ $minor-color: var(--wot-message-box-content-color);
 
 .formLabel {
   margin-bottom: 12rpx;
-  font-size: 26rpx;
+  font-size: calc(26rpx * var(--font-scale));
   font-weight: 500;
   color: $minor-color;
   width: 18%;
@@ -1337,7 +1337,7 @@ $minor-color: var(--wot-message-box-content-color);
 .typeChip {
   padding: 14rpx 36rpx;
   border-radius: $border-radius;
-  font-size: 26rpx;
+  font-size: calc(26rpx * var(--font-scale));
   color: $minor-color;
   transition: all 0.2s ease;
   border: 1px solid $border-color;
@@ -1360,7 +1360,7 @@ $minor-color: var(--wot-message-box-content-color);
   text-align: center;
   padding: 20rpx 0;
   border-radius: $border-radius;
-  font-size: 26rpx;
+  font-size: calc(26rpx * var(--font-scale));
   color: var(--wot-message-box-content-color);
   transition: all 0.2s ease;
   border: 1px solid $border-color;
@@ -1379,7 +1379,7 @@ $minor-color: var(--wot-message-box-content-color);
   justify-content: center;
   height: 88rpx;
   border-radius: $btn-border-raduis;
-  font-size: 32rpx;
+  font-size: calc(32rpx * var(--font-scale));
   // font-weight: 600;
   margin-top: 24rpx;
   transition: opacity 0.2s ease;
@@ -1458,7 +1458,7 @@ $minor-color: var(--wot-message-box-content-color);
 }
 
 .visibilityText {
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   font-weight: 500;
   color: var(--actions-text);
 }
@@ -1466,7 +1466,7 @@ $minor-color: var(--wot-message-box-content-color);
 /* 注释文案 */
 .footerNote {
   margin-top: 16rpx;
-  font-size: 26rpx;
+  font-size: calc(26rpx * var(--font-scale));
   color: $tipColor;
   line-height: 1.5;
   text-align: center;
@@ -1503,7 +1503,7 @@ $minor-color: var(--wot-message-box-content-color);
 }
 
 .agreementText {
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   color: var(--wot-message-box-content-color);
 }
 
@@ -1521,7 +1521,7 @@ $minor-color: var(--wot-message-box-content-color);
 }
 
 .tagPopupTitle {
-  font-size: 32rpx;
+  font-size: calc(32rpx * var(--font-scale));
   font-weight: 600;
   color: var(--actions-text);
 }
@@ -1532,7 +1532,7 @@ $minor-color: var(--wot-message-box-content-color);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32rpx;
+  font-size: calc(32rpx * var(--font-scale));
   color: var(--text-secondary);
 }
 
@@ -1546,7 +1546,7 @@ $minor-color: var(--wot-message-box-content-color);
     background-color: var(--wot-action-sheet-active-color);
     border-radius: 36rpx;
     padding-left: 28rpx;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
   }
 }
 
@@ -1573,14 +1573,14 @@ $minor-color: var(--wot-message-box-content-color);
 }
 
 .tagItemText {
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   color: var(--actions-text);
 }
 
 .tagEmpty {
   text-align: center;
   padding: 80rpx 0;
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   color: var(--text-secondary);
 }
 
@@ -1646,7 +1646,7 @@ $minor-color: var(--wot-message-box-content-color);
   float: right;
   background: none;
   border: none;
-  font-size: 28px;
+  font-size: calc(28px * var(--font-scale));
   color: var(--text-secondary);
   cursor: pointer;
   line-height: 1;
@@ -1659,13 +1659,13 @@ $minor-color: var(--wot-message-box-content-color);
 }
 
 .popup h2 {
-  font-size: 22px;
+  font-size: calc(22px * var(--font-scale));
   margin-bottom: 12px;
   color: #1a1a2e;
 }
 
 .popup p {
-  font-size: 16px;
+  font-size: calc(16px * var(--font-scale));
   line-height: 1.7;
   color: #555;
   margin-bottom: 20px;
@@ -1679,7 +1679,7 @@ $minor-color: var(--wot-message-box-content-color);
   color: var(--bg-card);
   border: none;
   border-radius: 16px;
-  font-size: 17px;
+  font-size: calc(17px * var(--font-scale));
   font-weight: 600;
   cursor: pointer;
 }
@@ -1694,7 +1694,7 @@ $minor-color: var(--wot-message-box-content-color);
   border-radius: 12px;
   padding: 16px;
   margin: 16px 0;
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
   color: var(--wot-message-box-content-color);
 }
 </style>
@@ -1745,14 +1745,14 @@ $minor-color: var(--wot-message-box-content-color);
 }
 
 .popup-title {
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   font-weight: 600;
   color: var(--actions-text);
   font-family: 'Alibaba PuHuiTi2' !important;
 }
 
 .popup-close {
-  font-size: 36rpx;
+  font-size: calc(36rpx * var(--font-scale));
   color: var(--text-secondary);
   padding: 10rpx;
   font-family: 'Alibaba PuHuiTi2' !important;
@@ -1769,7 +1769,7 @@ $minor-color: var(--wot-message-box-content-color);
 }
 
 .popup-tag-name {
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   color: var(--actions-text);
   font-family: 'Alibaba PuHuiTi2' !important;
 }
@@ -1833,11 +1833,11 @@ $minor-color: var(--wot-message-box-content-color);
 }
 .tag-popup-confirm-btn {
   height: 80rpx;
-  line-height: 80rpx;
+  line-height: calc(80rpx * var(--font-scale));
   text-align: center;
   background: var(--wot-color-theme);
   color: var(--bg-card);
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   border-radius: 40rpx;
   font-family: 'Alibaba PuHuiTi2' !important;
 }
@@ -1864,25 +1864,25 @@ $minor-color: var(--wot-message-box-content-color);
   background: var(--divider-color);
   border-radius: 24rpx;
   padding: 8rpx 20rpx;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   color: var(--actions-text);
   font-family: 'Alibaba PuHuiTi2' !important;
 }
 
 .tagChipText {
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
 }
 
 .tagChipClose {
   margin-left: 8rpx;
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   color: var(--text-secondary);
 }
 
 :deep(.editable) {
   font-family: 'Alibaba PuHuiTi2' !important;
   min-height: 300rpx;
-  font-size: 26rpx;
+  font-size: calc(26rpx * var(--font-scale));
   padding-left: 24rpx;
 
   /* &:empty::before {

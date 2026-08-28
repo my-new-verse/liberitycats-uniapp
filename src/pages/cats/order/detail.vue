@@ -154,16 +154,16 @@ const copyLogisticNo = () => {
     margin-bottom: 24rpx;
 
     .label {
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       font-weight: 400;
       line-height: 28 rpx;
       color: var(--goodsAttr-color);
     }
 
     .value {
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       font-weight: 400;
-      line-height: 28rpx;
+      line-height: calc(28rpx * var(--font-scale));
       color: var(--text-primary);
 
       &.copyable {

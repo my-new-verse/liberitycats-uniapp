@@ -90,7 +90,7 @@ watch(
 }
 
 .loading-text {
-  font-size: 16px;
+  font-size: calc(16px * var(--font-scale));
   color: var(--wot-message-box-content-color);
 }
 </style>

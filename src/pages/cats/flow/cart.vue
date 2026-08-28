@@ -323,10 +323,10 @@ onUnmounted(() => {
     justify-content: center;
     height: 100%;
     padding: 0 16rpx;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-style: normal;
     font-weight: 500;
-    line-height: 33rpx;
+    line-height: calc(33rpx * var(--font-scale));
     color: var(--text-primary);
     background: #efefef;
   }
@@ -360,17 +360,17 @@ onUnmounted(() => {
       margin-left: 16rpx;
       .goodsName {
         margin-bottom: 16rpx;
-        font-size: 28rpx;
+        font-size: calc(28rpx * var(--font-scale));
         font-style: normal;
         font-weight: 500;
-        line-height: 33rpx;
+        line-height: calc(33rpx * var(--font-scale));
         color: var(--text-primary);
       }
       .goodsAttrBox {
-        font-size: 28rpx;
+        font-size: calc(28rpx * var(--font-scale));
         font-style: normal;
         font-weight: 400;
-        line-height: 33rpx;
+        line-height: calc(33rpx * var(--font-scale));
         color: var(--goodsAttr-color);
         .goodsAttr {
           margin-bottom: 16rpx;

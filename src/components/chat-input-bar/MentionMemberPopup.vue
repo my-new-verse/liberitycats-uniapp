@@ -472,13 +472,13 @@ const handleConfirm = () => {
   }
 
   &__title {
-    font-size: 30rpx;
+    font-size: calc(30rpx * var(--font-scale));
     font-weight: 500;
     color: var(--actions-text);
   }
 
   &__action {
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     color: #ff6b03;
     flex-shrink: 0;
     padding: 8rpx;
@@ -503,7 +503,7 @@ const handleConfirm = () => {
 
 .section-title {
   padding: 24rpx 24rpx 12rpx;
-  font-size: 26rpx;
+  font-size: calc(26rpx * var(--font-scale));
   color: var(--text-secondary);
   font-weight: 500;
 }
@@ -545,7 +545,7 @@ const handleConfirm = () => {
   }
 
   &__name {
-    font-size: 20rpx;
+    font-size: calc(20rpx * var(--font-scale));
     color: var(--wot-message-box-content-color);
     max-width: 96rpx;
     overflow: hidden;
@@ -571,7 +571,7 @@ const handleConfirm = () => {
 }
 
 :deep(.wd-checkbox__icon) {
-  font-size: 36rpx;
+  font-size: calc(36rpx * var(--font-scale));
 }
 
 .mention-avatar-wrap {
@@ -605,7 +605,7 @@ const handleConfirm = () => {
 }
 
 .mention-nickname {
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   color: var(--actions-text);
   flex: 1;
   overflow: hidden;
@@ -617,14 +617,14 @@ const handleConfirm = () => {
   padding: 32rpx;
   text-align: center;
   color: var(--text-secondary);
-  font-size: 26rpx;
+  font-size: calc(26rpx * var(--font-scale));
 }
 
 .mention-no-more {
   padding: 24rpx 32rpx;
   text-align: center;
   color: #ccc;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   height: 40vh;
 }
 
@@ -636,6 +636,6 @@ const handleConfirm = () => {
   min-height: 50vh;
   padding: 120rpx 32rpx;
   color: var(--text-secondary);
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
 }
 </style>

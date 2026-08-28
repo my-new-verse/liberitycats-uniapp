@@ -714,7 +714,7 @@ onUnmounted(() => {
     align-items: center;
     justify-content: center;
     color: var(--bg-card);
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     border-radius: 0 34rpx 34rpx 0;
     &.delete {
       background-color: #ff6b03;
@@ -851,7 +851,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 48rpx;
+  font-size: calc(48rpx * var(--font-scale));
 }
 
 // 三个图标对应不同背景色
@@ -875,7 +875,7 @@ onUnmounted(() => {
 
 // 文字样式
 .tab-text {
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   font-weight: 500;
   color: var(--actions-text);
   transition: color 0.3s ease;

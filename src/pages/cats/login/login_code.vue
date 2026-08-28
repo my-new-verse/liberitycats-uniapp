@@ -223,10 +223,10 @@ const doLogin = async () => {
   //background: green;
   .title {
     height: 56rpx;
-    font-size: 48rpx;
+    font-size: calc(48rpx * var(--font-scale));
     font-style: normal;
     font-weight: 600;
-    line-height: 56rpx;
+    line-height: calc(56rpx * var(--font-scale));
     color: var(--text-primary);
   }
   .subTitle {
@@ -237,10 +237,10 @@ const doLogin = async () => {
   .custom-count-down,
   .retrieve {
     margin-top: 24rpx;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-style: normal;
     font-weight: 400;
-    line-height: 36rpx;
+    line-height: calc(36rpx * var(--font-scale));
     color: #999999;
   }
   .custom-count-down {
@@ -260,7 +260,7 @@ const doLogin = async () => {
       width: 100%;
       height: 88rpx;
 
-      font-size: 32rpx;
+      font-size: calc(32rpx * var(--font-scale));
       font-style: normal;
       font-weight: 600;
       color: var(--bg-card);

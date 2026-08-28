@@ -255,15 +255,15 @@ const handleFiatBlur = (selectItem: any, e: any) => {
       margin-left: 16rpx;
       .fiatName {
         margin-bottom: 4rpx;
-        font-size: 32rpx;
+        font-size: calc(32rpx * var(--font-scale));
         font-weight: 600;
-        line-height: 38rpx;
+        line-height: calc(38rpx * var(--font-scale));
         color: var(--text-primary);
       }
       .fiatSubName {
-        font-size: 24rpx;
+        font-size: calc(24rpx * var(--font-scale));
         font-weight: 500;
-        line-height: 28rpx;
+        line-height: calc(28rpx * var(--font-scale));
         color: #999999;
       }
     }
@@ -274,9 +274,9 @@ const handleFiatBlur = (selectItem: any, e: any) => {
     justify-content: center;
     height: 64rpx;
     padding: 0 20rpx;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-weight: 600;
-    line-height: 33rpx;
+    line-height: calc(33rpx * var(--font-scale));
     color: #ff6b03;
     background: rgba(255, 107, 3, 0.1);
     border-radius: 24rpx;
@@ -296,7 +296,7 @@ const handleFiatBlur = (selectItem: any, e: any) => {
   text-align: right;
   background-color: transparent;
   .wd-input__inner {
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-weight: 600;
     color: #ff6b03;
   }

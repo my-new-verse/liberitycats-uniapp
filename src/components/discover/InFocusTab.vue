@@ -381,17 +381,17 @@ const toInFocusDetail = (item: any) => {
   margin-bottom: 12rpx;
 
   .translateIcon {
-    font-size: 24rpx;
+    font-size: calc(24rpx * var(--font-scale));
     color: #1d9bf0;
   }
 
   .translateLabel {
-    font-size: 24rpx;
+    font-size: calc(24rpx * var(--font-scale));
     color: var(--translateLabel-color);
   }
 
   .translateToggle {
-    font-size: 24rpx;
+    font-size: calc(24rpx * var(--font-scale));
     color: #1d9bf0;
     margin-left: 4rpx;
   }
@@ -413,18 +413,18 @@ const toInFocusDetail = (item: any) => {
     padding: 20rpx 24rpx;
 
     .articleTitle {
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       font-weight: 700;
       color: var(--text-primary);
-      line-height: 40rpx;
+      line-height: calc(40rpx * var(--font-scale));
     }
 
     .articlePreview {
       margin-top: 8rpx;
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       font-weight: 400;
       color: var(--wot-message-box-content-color);
-      line-height: 36rpx;
+      line-height: calc(36rpx * var(--font-scale));
       display: -webkit-box;
       -webkit-box-orient: vertical;
       -webkit-line-clamp: 3;

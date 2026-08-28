@@ -227,7 +227,7 @@ onUnmounted(() => {
   // padding: 0 10rpx;
   padding: 6rpx 12rpx;
   border-radius: 8rpx;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   line-height: 1;
 }
 
@@ -244,7 +244,7 @@ onUnmounted(() => {
 .announcement-title {
   display: -webkit-box;
   overflow: hidden;
-  font-size: 30rpx;
+  font-size: calc(30rpx * var(--font-scale));
   font-weight: 700;
   line-height: 1.4;
   color: var(--announcement-title-color);
@@ -257,7 +257,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 16rpx;
   margin-top: 16rpx;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   line-height: 1.2;
   color: var(--text-secondary);
 }

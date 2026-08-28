@@ -15,6 +15,7 @@ import { useGameWebViewStore } from '@/store/gameWebview'
 import { usePopupStore } from '@/store/popup'
 import { preloadIosGameWebView } from '@/utils/iosGameWebviewPreload'
 import { initTheme, watchSystemTheme } from '@/utils/theme'
+import { applyFontScale } from '@/utils/fontScale'
 import {
   downloadGameResources,
   resumeBackgroundDownloadIfNeeded,
@@ -63,6 +64,8 @@ onLaunch(() => {
   // 夜间模式初始化（light/dark/system 三档，system 跟随系统）
   initTheme()
   watchSystemTheme()
+  // 字号缩放初始化（H5 端注入变量；App 端由 layout renderjs 在视图层注入）
+  applyFontScale()
 
   const systemInfo = uni.getSystemInfoSync()
   const platform = systemInfo.platform?.toLowerCase() || systemInfo.osName?.toLowerCase()

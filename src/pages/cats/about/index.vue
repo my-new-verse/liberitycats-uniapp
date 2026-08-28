@@ -164,7 +164,7 @@ onLoad(() => {
 
   .partnerTitle {
     margin-bottom: 30rpx;
-    font-size: 32rpx;
+    font-size: calc(32rpx * var(--font-scale));
     font-weight: normal;
     color: var(--text-primary);
   }
@@ -184,10 +184,10 @@ onLoad(() => {
     }
     .partnerName {
       margin-top: 24rpx;
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       font-style: normal;
       font-weight: normal;
-      line-height: 33rpx;
+      line-height: calc(33rpx * var(--font-scale));
       color: var(--text-primary);
       text-align: center;
       text-transform: none;
@@ -229,7 +229,7 @@ onLoad(() => {
   align-items: center;
   justify-content: center; // 居中
   margin-top: 40rpx;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   color: var(--commentTextArea-color);
   text-align: center; // 内容居中
 }

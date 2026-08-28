@@ -1061,12 +1061,12 @@ onUnmounted(() => {
 .banDialog {
   padding: 16rpx 0;
   .banLabel {
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     color: var(--actions-text);
     margin-bottom: 24rpx;
   }
   .banDaysTitle {
-    font-size: 26rpx;
+    font-size: calc(26rpx * var(--font-scale));
     color: var(--wot-message-box-content-color);
     margin-bottom: 12rpx;
   }
@@ -1078,7 +1078,7 @@ onUnmounted(() => {
       flex: 1;
       padding: 16rpx 0;
       text-align: center;
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       color: var(--actions-text);
       background: var(--wot-action-sheet-active-color);
       border-radius: 12rpx;
@@ -1153,7 +1153,7 @@ onUnmounted(() => {
     }
 
     .cardType {
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       color: var(--actions-text);
       margin-top: 16rpx;
     }
@@ -1229,7 +1229,7 @@ onUnmounted(() => {
 }
 
 .adTagChip {
-  font-size: 22rpx;
+  font-size: calc(22rpx * var(--font-scale));
   color: var(--liberty-cats-primary-color);
   // background: rgba(255, 107, 3, 0.08);
   padding: 4rpx 0;
@@ -1254,7 +1254,7 @@ onUnmounted(() => {
     .tag {
       padding: 4rpx 16rpx;
       // margin-left: 12rpx;
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       // font-weight: 600;
       // text-transform: uppercase;
       border-radius: 8rpx;

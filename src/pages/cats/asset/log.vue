@@ -119,9 +119,9 @@ const loadMore = () => {
     flex-direction: column;
 
     .logRemark {
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       font-weight: 400;
-      line-height: 28rpx;
+      line-height: calc(28rpx * var(--font-scale));
       color: var(--black-30);
       text-align: left;
       text-transform: none;
@@ -129,26 +129,26 @@ const loadMore = () => {
 
     .logTile {
       margin-bottom: 16rpx;
-      font-size: 32rpx;
+      font-size: calc(32rpx * var(--font-scale));
       font-weight: 600;
-      line-height: 50rpx;
+      line-height: calc(50rpx * var(--font-scale));
     }
 
     .logTime {
       margin-top: 16rpx;
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       font-style: normal;
       font-weight: normal;
-      line-height: 28rpx;
+      line-height: calc(28rpx * var(--font-scale));
       color: var(--black-30);
       text-align: left;
       text-transform: none;
     }
   }
   .logValue {
-    font-size: 38rpx;
+    font-size: calc(38rpx * var(--font-scale));
     font-weight: 600;
-    line-height: 56rpx;
+    line-height: calc(56rpx * var(--font-scale));
     color: #ff6b03;
   }
 

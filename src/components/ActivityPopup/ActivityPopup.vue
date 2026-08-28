@@ -403,7 +403,7 @@ defineExpose({ show })
 
 .activity-popup__title {
   max-width: 100%;
-  font-size: 44rpx;
+  font-size: calc(44rpx * var(--font-scale));
   font-weight: 900;
   line-height: 1.12;
   color: #17120f;
@@ -413,7 +413,7 @@ defineExpose({ show })
 .activity-popup__subtitle {
   max-width: 100%;
   margin-top: 18rpx;
-  font-size: 30rpx;
+  font-size: calc(30rpx * var(--font-scale));
   font-weight: 750;
   line-height: 1.3;
   color: #e95800;
@@ -422,7 +422,7 @@ defineExpose({ show })
 
 .activity-popup__rules-link {
   margin-top: 14rpx;
-  font-size: 22rpx;
+  font-size: calc(22rpx * var(--font-scale));
   font-weight: 750;
   line-height: 1.3;
   color: #e95800;
@@ -437,7 +437,7 @@ defineExpose({ show })
 
 .activity-popup__rich-title {
   margin-bottom: 24rpx;
-  font-size: 40rpx;
+  font-size: calc(40rpx * var(--font-scale));
   font-weight: 800;
   line-height: 1.25;
   color: var(--text-primary);
@@ -446,7 +446,7 @@ defineExpose({ show })
 .activity-popup__rich-content {
   display: block;
   overflow: hidden;
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   line-height: 1.8;
   color: #725e51;
 }
@@ -484,9 +484,9 @@ defineExpose({ show })
   padding: 0;
   margin: 48rpx auto 0;
   font-family: inherit;
-  font-size: 30rpx;
+  font-size: calc(30rpx * var(--font-scale));
   font-weight: 850;
-  line-height: 96rpx;
+  line-height: calc(96rpx * var(--font-scale));
   color: var(--bg-card);
   background: #ff6b03;
   border: 0;
@@ -511,9 +511,9 @@ defineExpose({ show })
   padding: 0 32rpx;
   margin: 20rpx auto 0;
   font-family: inherit;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   font-weight: 650;
-  line-height: 68rpx;
+  line-height: calc(68rpx * var(--font-scale));
   color: var(--activity-popup-no-remind-color);
   text-decoration: underline;
   text-underline-offset: 6rpx;

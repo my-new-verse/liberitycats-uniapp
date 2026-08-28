@@ -456,7 +456,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   border-radius: 50rpx;
   background-color: #ff6b03;
   color: var(--bg-card);
-  font-size: 22rpx;
+  font-size: calc(22rpx * var(--font-scale));
   &.followed {
     background-color: var(--bg-card);
     color: var(--text-secondary);
@@ -482,7 +482,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
     z-index: 1;
 
     .postFilterTabText {
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       color: var(--actions-text);
       position: relative;
       z-index: 2;
@@ -528,7 +528,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
     margin-bottom: 8rpx;
     .tag {
       padding: 4rpx 16rpx;
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       text-transform: uppercase;
       border-radius: 8rpx;
       line-height: 1.4;
@@ -563,7 +563,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
 }
 
 .adTagChip {
-  font-size: 22rpx;
+  font-size: calc(22rpx * var(--font-scale));
   color: var(--liberty-cats-primary-color);
   padding: 4rpx 0;
   border-radius: 8rpx;

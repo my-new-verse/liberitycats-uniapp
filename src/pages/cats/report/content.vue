@@ -343,15 +343,15 @@ const handleCloseCommentPopup = () => {
 
 .notice-text {
   flex: 1;
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   line-height: 1.5;
   color: var(--actions-text);
 }
 
 .section-title {
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   font-weight: 400;
-  line-height: 33rpx;
+  line-height: calc(33rpx * var(--font-scale));
   color: #999999;
   margin-bottom: 24rpx;
 }
@@ -369,7 +369,7 @@ const handleCloseCommentPopup = () => {
 }
 
 .reason-left {
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   color: var(--actions-text);
 }
 
@@ -409,7 +409,7 @@ const handleCloseCommentPopup = () => {
 .count {
   margin-top: 12rpx;
   text-align: right;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   color: var(--text-secondary);
 }
 .fixedCommentBox {
@@ -428,8 +428,8 @@ const handleCloseCommentPopup = () => {
     width: calc(100% - 48rpx);
     height: calc(100% - 36rpx);
     padding: 18rpx 24rpx;
-    font-size: 28rpx;
-    line-height: 36rpx;
+    font-size: calc(28rpx * var(--font-scale));
+    line-height: calc(36rpx * var(--font-scale));
     font-weight: 600;
     color: var(--text-secondary);
     background: var(--fixedCommentBox-color);
@@ -457,13 +457,13 @@ const handleCloseCommentPopup = () => {
   cursor: pointer;
 }
 .textarea-content {
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   color: var(--actions-text);
   line-height: 1.5;
   word-break: break-all;
 }
 .textarea-placeholder {
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   color: var(--wot-textarea-count-color);
   line-height: 1.5;
   word-break: break-all;
@@ -472,7 +472,7 @@ const handleCloseCommentPopup = () => {
   position: absolute;
   right: 24rpx;
   bottom: 16rpx;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   color: var(--text-secondary);
 }
 </style>

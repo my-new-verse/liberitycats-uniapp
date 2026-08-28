@@ -1449,7 +1449,7 @@ onUnmounted(() => {
   padding-top: 200rpx;
 
   .emptyText {
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     color: var(--text-secondary);
   }
 }
@@ -1568,7 +1568,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 48rpx;
+  font-size: calc(48rpx * var(--font-scale));
 }
 
 // 三个图标对应不同背景色
@@ -1596,7 +1596,7 @@ onUnmounted(() => {
 
 // 文字样式
 .tab-text {
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   font-weight: 500;
   color: var(--actions-text);
   transition: color 0.3s ease;
@@ -1653,10 +1653,10 @@ onUnmounted(() => {
   align-items: center;
   padding: 16rpx;
   .label {
-    font-size: 32rpx;
+    font-size: calc(32rpx * var(--font-scale));
     font-style: normal;
     font-weight: 500;
-    line-height: 48rpx;
+    line-height: calc(48rpx * var(--font-scale));
     color: var(--text-primary);
   }
 }
@@ -1673,7 +1673,7 @@ onUnmounted(() => {
     align-items: center;
     justify-content: center;
     color: var(--bg-card);
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     border-radius: 0 34rpx 34rpx 0;
     &.delete {
       background-color: #ff6b03;
@@ -1690,14 +1690,14 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 16rpx 24rpx;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   font-weight: 600;
   color: var(--text-secondary);
 }
 
 /* 日期分组标题文本 */
 .time-header-date-text {
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   font-weight: 600;
   color: var(--text-secondary);
 }
@@ -1728,7 +1728,7 @@ onUnmounted(() => {
 
 /* 分组日期文案 */
 .time-header-date {
-  font-size: 22rpx;
+  font-size: calc(22rpx * var(--font-scale));
   font-weight: 500;
   color: #ff6b03;
 }
@@ -1808,13 +1808,13 @@ onUnmounted(() => {
   min-width: 0;
 }
 .community-name {
-  font-size: 26rpx;
+  font-size: calc(26rpx * var(--font-scale));
   // font-weight: 600;
   // color: #333;
   color: var(--text-black);
 }
 .community-time {
-  font-size: 22rpx;
+  font-size: calc(22rpx * var(--font-scale));
   color: var(--text-secondary);
   flex-shrink: 0;
 }
@@ -1852,13 +1852,13 @@ onUnmounted(() => {
   }
   .action {
     color: var(--text-secondary) !important;
-    font-size: 24rpx !important;
+    font-size: calc(24rpx * var(--font-scale)) !important;
   }
 
   .interactionTargetSummary,
   .commentContent {
     color: var(--text-black);
-    font-size: 26rpx;
+    font-size: calc(26rpx * var(--font-scale));
   }
 }
 
@@ -1866,7 +1866,7 @@ onUnmounted(() => {
 .follow-back-btn {
   flex-shrink: 0;
   padding: 8rpx 28rpx;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   font-weight: 500;
   border-radius: 32rpx;
   line-height: 1.4;
@@ -1921,7 +1921,7 @@ onUnmounted(() => {
   background-color: var(--thumbnail-text-bg-color);
 
   .thumbnail-text-inner {
-    font-size: 22rpx;
+    font-size: calc(22rpx * var(--font-scale));
     color: var(--wot-message-box-content-color);
     line-height: 1.5;
     text-align: center;

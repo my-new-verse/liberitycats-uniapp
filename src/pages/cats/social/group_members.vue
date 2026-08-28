@@ -966,7 +966,7 @@ const confirmMute = async () => {
             gap: 8rpx;
 
             .main-title {
-              font-size: 30rpx;
+              font-size: calc(30rpx * var(--font-scale));
               font-weight: bold;
               color: var(--bg-card);
               max-width: 240rpx;
@@ -1016,13 +1016,13 @@ const confirmMute = async () => {
   justify-content: center;
   min-width: 72rpx;
   height: 72rpx;
-  font-size: 44rpx;
+  font-size: calc(44rpx * var(--font-scale));
   line-height: 1;
   color: #1f1f1f;
 }
 .group-title {
   padding: 24rpx;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   color: var(--wot-message-box-content-color);
 }
 
@@ -1099,7 +1099,7 @@ const confirmMute = async () => {
 }
 
 .member-name {
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   // font-weight: 500;
   color: var(--actions-text);
   margin-bottom: 8rpx;
@@ -1108,7 +1108,7 @@ const confirmMute = async () => {
 
   .mute-badge {
     margin-left: 8rpx;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     color: #ff4d4f;
 
     .mute-badge-icon {
@@ -1129,7 +1129,7 @@ const confirmMute = async () => {
 }
 
 .action-text {
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   color: var(--wot-message-box-content-color);
   line-height: 1.2;
 }
@@ -1142,7 +1142,7 @@ const confirmMute = async () => {
   padding: 80rpx 0;
 
   text {
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     color: var(--text-secondary);
   }
 }
@@ -1150,7 +1150,7 @@ const confirmMute = async () => {
 .list-status-text {
   padding: 24rpx 0 32rpx;
   text-align: center;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   color: var(--text-secondary);
 }
 
@@ -1169,7 +1169,7 @@ const confirmMute = async () => {
     margin-bottom: 32rpx;
 
     .popup-title {
-      font-size: 32rpx;
+      font-size: calc(32rpx * var(--font-scale));
       font-weight: 600;
       color: var(--actions-text);
     }
@@ -1186,7 +1186,7 @@ const confirmMute = async () => {
 
       .label {
         display: block;
-        font-size: 28rpx;
+        font-size: calc(28rpx * var(--font-scale));
         color: var(--wot-message-box-content-color);
         margin-bottom: 16rpx;
       }
@@ -1267,7 +1267,7 @@ const confirmMute = async () => {
 }
 
 .action-sheet-item-text {
-  font-size: 30rpx;
+  font-size: calc(30rpx * var(--font-scale));
   line-height: 1.4;
   color: var(--actions-text);
 }

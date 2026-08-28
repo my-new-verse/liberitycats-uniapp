@@ -240,9 +240,9 @@ const selectAddressSubmit = () => {
         width: calc(100% - 48rpx - 16rpx - 12rpx);
         height: 56rpx;
         padding: 6rpx;
-        font-size: 32rpx;
+        font-size: calc(32rpx * var(--font-scale));
         font-weight: 600;
-        line-height: 48rpx;
+        line-height: calc(48rpx * var(--font-scale));
         color: var(--bg-card);
         text-align: center;
       }
@@ -310,27 +310,27 @@ const selectAddressSubmit = () => {
       justify-content: start;
       margin-bottom: 12rpx;
       .name {
-        font-size: 36rpx;
+        font-size: calc(36rpx * var(--font-scale));
         font-style: normal;
         font-weight: 600;
-        line-height: 52rpx;
+        line-height: calc(52rpx * var(--font-scale));
         color: var(--text-primary);
       }
       .phone {
         margin: 0 24rpx;
-        font-size: 32rpx;
+        font-size: calc(32rpx * var(--font-scale));
         font-style: normal;
         font-weight: 400;
-        line-height: 48rpx;
+        line-height: calc(48rpx * var(--font-scale));
         color: var(--text-primary);
       }
       .default {
         width: fit-content;
         padding: 0 8rpx;
-        font-size: 24rpx;
+        font-size: calc(24rpx * var(--font-scale));
         font-style: normal;
         font-weight: 400;
-        line-height: 40rpx;
+        line-height: calc(40rpx * var(--font-scale));
         color: var(--bg-card);
         text-align: left;
         background: #ff6b03;
@@ -339,10 +339,10 @@ const selectAddressSubmit = () => {
       }
     }
     .address {
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       font-style: normal;
       font-weight: 400;
-      line-height: 40rpx;
+      line-height: calc(40rpx * var(--font-scale));
       color: #999999;
     }
   }

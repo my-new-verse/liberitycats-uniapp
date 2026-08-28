@@ -7,9 +7,9 @@
     // margin-bottom: 36rpx;
     .opItem {
       margin-right: 16rpx;
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       font-weight: 400;
-      line-height: 33rpx;
+      line-height: calc(33rpx * var(--font-scale));
       color: var(--text-secondary);
     }
 
@@ -46,7 +46,7 @@
       align-items: center;
       justify-content: center;
       padding: 4rpx 10rpx;
-      font-size: 14rpx;
+      font-size: calc(14rpx * var(--font-scale));
       font-style: normal;
       color: var(--bg-card);
       background-color: #ff6b03;
@@ -152,15 +152,15 @@
       }
       .name {
         margin-left: 16rpx;
-        font-size: 28rpx;
+        font-size: calc(28rpx * var(--font-scale));
         font-weight: 500;
-        line-height: 44rpx;
+        line-height: calc(44rpx * var(--font-scale));
         color: var(--text-primary);
       }
       .tag {
         padding: 6rpx 12rpx;
         margin-left: 8rpx;
-        font-size: 20rpx;
+        font-size: calc(20rpx * var(--font-scale));
         font-weight: 600;
         // text-transform: uppercase;
         border-radius: 12rpx;
@@ -183,9 +183,9 @@
       .socialCnt {
         display: block;
         width: 100%;
-        font-size: 28rpx;
+        font-size: calc(28rpx * var(--font-scale));
         font-weight: 400;
-        line-height: 36rpx;
+        line-height: calc(36rpx * var(--font-scale));
         color: var(--text-primary);
         // 自动换行
         word-break: break-all;
@@ -244,7 +244,7 @@
       }
       .socialTime {
         margin-top: 20rpx;
-        font-size: 24rpx;
+        font-size: calc(24rpx * var(--font-scale));
         font-weight: 400;
         color: var(--text-secondary);
       }
@@ -285,9 +285,9 @@
         }
       }
       .socialBtn {
-        font-size: 24rpx;
+        font-size: calc(24rpx * var(--font-scale));
         font-weight: 400;
-        line-height: 40rpx;
+        line-height: calc(40rpx * var(--font-scale));
         color: var(--text-secondary);
       }
     }
@@ -296,9 +296,9 @@
 .socialTips {
   padding: 8rpx 12rpx;
   margin: 30rpx 0;
-  font-size: 20rpx;
+  font-size: calc(20rpx * var(--font-scale));
   font-weight: 400;
-  line-height: 28rpx;
+  line-height: calc(28rpx * var(--font-scale));
   color: var(--text-secondary);
   background-color: #fff7e5;
   border-radius: 8rpx;
@@ -343,7 +343,7 @@
     align-items: flex-start;
     .tag {
       padding: 4rpx 16rpx;
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       // text-transform: uppercase;
       border-radius: 8rpx;
       line-height: 1.4;
@@ -364,7 +364,7 @@
   .title {
     flex: 1;
     color: var(--text-primary) !important;
-    font-size: 32rpx !important;
+    font-size: calc(32rpx * var(--font-scale)) !important;
     font-weight: 600 !important;
   }
   .content {
@@ -378,7 +378,7 @@
   margin-top: 16rpx;
 }
 .adTagChip {
-  font-size: 22rpx;
+  font-size: calc(22rpx * var(--font-scale));
   color: var(--liberty-cats-primary-color);
   padding: 4rpx 0;
   border-radius: 8rpx;

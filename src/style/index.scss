@@ -84,33 +84,33 @@ page {
 }
 
 h1 {
-  font-size: 42rpx;
-  line-height: 54rpx;
+  font-size: calc(42rpx * var(--font-scale));
+  line-height: calc(54rpx * var(--font-scale));
 }
 
 h2 {
-  font-size: 38rpx;
-  line-height: 50rpx;
+  font-size: calc(38rpx * var(--font-scale));
+  line-height: calc(50rpx * var(--font-scale));
 }
 
 h3 {
-  font-size: 36rpx;
-  line-height: 46rpx;
+  font-size: calc(36rpx * var(--font-scale));
+  line-height: calc(46rpx * var(--font-scale));
 }
 
 h4 {
-  font-size: 32rpx;
-  line-height: 42rpx;
+  font-size: calc(32rpx * var(--font-scale));
+  line-height: calc(42rpx * var(--font-scale));
 }
 
 h5 {
-  font-size: 28rpx;
-  line-height: 38rpx;
+  font-size: calc(28rpx * var(--font-scale));
+  line-height: calc(38rpx * var(--font-scale));
 }
 
 h6 {
-  font-size: 24rpx;
-  line-height: 34rpx;
+  font-size: calc(24rpx * var(--font-scale));
+  line-height: calc(34rpx * var(--font-scale));
 }
 
 a {

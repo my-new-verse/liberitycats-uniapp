@@ -1205,8 +1205,8 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   border: 1rpx solid transparent;
   background-color: #ff6b03;
   color: var(--bg-card);
-  font-size: 22rpx;
-  line-height: 42rpx;
+  font-size: calc(22rpx * var(--font-scale));
+  line-height: calc(42rpx * var(--font-scale));
   white-space: nowrap;
   flex-shrink: 0;
   box-sizing: border-box;
@@ -1226,7 +1226,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   }
 
   .wd-icon-star-on {
-    line-height: 38rpx;
+    line-height: calc(38rpx * var(--font-scale));
   }
 }
 .socialOpBox {
@@ -1253,8 +1253,8 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   padding: 0 8rpx;
   border-radius: 999rpx;
   color: var(--bg-card);
-  font-size: 20rpx;
-  line-height: 32rpx;
+  font-size: calc(20rpx * var(--font-scale));
+  line-height: calc(32rpx * var(--font-scale));
   text-align: center;
   box-sizing: border-box;
   pointer-events: none;
@@ -1269,12 +1269,12 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
 .banDialog {
   padding: 16rpx 0;
   .banLabel {
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     color: var(--actions-text);
     margin-bottom: 24rpx;
   }
   .banDaysTitle {
-    font-size: 26rpx;
+    font-size: calc(26rpx * var(--font-scale));
     color: var(--wot-message-box-content-color);
     margin-bottom: 12rpx;
   }
@@ -1286,7 +1286,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
       flex: 1;
       padding: 16rpx 0;
       text-align: center;
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       color: var(--actions-text);
       background: var(--wot-action-sheet-active-color);
       border-radius: 12rpx;

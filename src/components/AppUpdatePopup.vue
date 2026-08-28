@@ -551,7 +551,7 @@ const closePopup = () => {
   .titleBox {
     height: 124rpx;
     margin-bottom: 24rpx;
-    font-size: 32rpx;
+    font-size: calc(32rpx * var(--font-scale));
     color: #fff;
     align-items: center;
     text-align: center;
@@ -603,7 +603,7 @@ const closePopup = () => {
       display: flex;
       justify-content: space-between;
       color: #6b6b80;
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       font-weight: 500;
       margin-bottom: 12rpx;
     }
@@ -615,13 +615,13 @@ const closePopup = () => {
     border: 1px solid rgba(255, 77, 54, 0.2);
     border-radius: 12rpx;
     .error-text {
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       color: #e53935;
       font-weight: 500;
       margin-bottom: 8rpx;
     }
     .error-hint {
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       color: var(--text-secondary);
       line-height: 1.5;
     }

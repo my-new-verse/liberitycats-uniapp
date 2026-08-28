@@ -33,10 +33,10 @@
         width: 80rpx;
         height: 40rpx;
         font-family: Montserrat;
-        font-size: 22rpx;
+        font-size: calc(22rpx * var(--font-scale));
         font-style: normal;
         font-weight: 500;
-        line-height: 40rpx;
+        line-height: calc(40rpx * var(--font-scale));
         color: var(--bg-card);
         text-transform: uppercase;
         /* 可选：消除字体渲染差异 */
@@ -81,7 +81,7 @@
       text-align: center;
       .name {
         overflow: hidden;
-        font-size: 28rpx;
+        font-size: calc(28rpx * var(--font-scale));
         font-style: normal;
         font-weight: normal;
         color: var(--text-primary);
@@ -108,11 +108,11 @@
         }
         .price {
           margin-right: 6rpx;
-          font-size: 24rpx;
+          font-size: calc(24rpx * var(--font-scale));
         }
         .unit {
           //color: #261000;
-          font-size: 20rpx;
+          font-size: calc(20rpx * var(--font-scale));
         }
       }
     }

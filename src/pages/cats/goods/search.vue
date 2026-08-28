@@ -336,10 +336,10 @@ const recommendSearch = (keyword: string) => {
 .hotKey {
   padding: 32rpx 0;
   .key {
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-style: normal;
     font-weight: 400;
-    line-height: 33rpx;
+    line-height: calc(33rpx * var(--font-scale));
     color: var(--text-black);
   }
   .list {
@@ -349,11 +349,11 @@ const recommendSearch = (keyword: string) => {
       padding: 16rpx 24rpx;
       margin-right: 24rpx;
       margin-bottom: 24rpx;
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       font-style: normal;
 
       font-weight: 400;
-      line-height: 33rpx;
+      line-height: calc(33rpx * var(--font-scale));
       color: var(--text-secondary);
       border: 1rpx solid var(--item-border-color);
       border-radius: 34rpx;

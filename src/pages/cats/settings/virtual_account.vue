@@ -192,7 +192,7 @@ const switchAccount = (item) => {
 .opTitle {
   width: 100%;
   margin: 96rpx auto;
-  font-size: 48rpx;
+  font-size: calc(48rpx * var(--font-scale));
   color: var(--text-primary);
   text-align: center;
 }
@@ -214,7 +214,7 @@ const switchAccount = (item) => {
 
 .subtitle {
   margin-top: 8rpx;
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   font-style: normal;
   font-weight: normal;
   color: #999999;
@@ -225,14 +225,14 @@ const switchAccount = (item) => {
   display: flex;
   align-items: center;
   .title {
-    font-size: 32rpx;
+    font-size: calc(32rpx * var(--font-scale));
     color: var(--text-primary);
   }
 
   .tag {
     padding: 6rpx 12rpx;
     margin-left: 8rpx;
-    font-size: 20rpx;
+    font-size: calc(20rpx * var(--font-scale));
     font-weight: 600;
     color: #ff6b03;
     text-transform: uppercase;

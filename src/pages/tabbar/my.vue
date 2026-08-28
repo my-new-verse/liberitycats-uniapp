@@ -165,7 +165,7 @@
           </view> -->
           <view class="checkinBox" v-if="userStore.isLogin">
             <view class="titleBox">
-              <view class="titleLeft" style="font-size: 28rpx">
+              <view class="titleLeft" style="font-size: calc(28rpx * var(--font-scale))">
                 {{ t('my.check_in_prefix') }}
                 <text class="checkinDays">{{ checkinData.continuous_days }}</text>
                 {{ t('my.check_in_suffix') }}
@@ -344,7 +344,7 @@
                       width: 80%;
                       height: 200rpx;
                       margin: 40rpx auto 0 auto;
-                      font-size: 24rpx;
+                      font-size: calc(24rpx * var(--font-scale));
                       color: #999;
                       text-align: center;
                     "
@@ -365,7 +365,7 @@
                 width: 80%;
                 height: 200rpx;
                 margin: 40rpx auto 0 auto;
-                font-size: 24rpx;
+                font-size: calc(24rpx * var(--font-scale));
                 color: #999;
                 text-align: center;
               "
@@ -1090,10 +1090,10 @@ const bindArGame = () => {
       margin-left: 32rpx;
       flex: 1;
       .name {
-        font-size: 48rpx;
+        font-size: calc(48rpx * var(--font-scale));
         font-style: normal;
         font-weight: 600;
-        line-height: 56rpx;
+        line-height: calc(56rpx * var(--font-scale));
         color: var(--bg-card);
       }
       .asset-resps {
@@ -1104,9 +1104,9 @@ const bindArGame = () => {
         width: 100%;
       }
       .points {
-        font-size: 24rpx;
+        font-size: calc(24rpx * var(--font-scale));
         font-style: normal;
-        line-height: 56rpx;
+        line-height: calc(56rpx * var(--font-scale));
         color: var(--bg-card);
         display: flex;
         align-items: center;
@@ -1128,10 +1128,10 @@ const bindArGame = () => {
         width: 220rpx;
         height: 40rpx;
         margin-top: 16rpx;
-        font-size: 24rpx;
+        font-size: calc(24rpx * var(--font-scale));
         font-style: normal;
         font-weight: 500;
-        line-height: 28rpx;
+        line-height: calc(28rpx * var(--font-scale));
         color: #ffef6c;
         border: 2rpx solid #ffef6c;
         border-radius: 20rpx;
@@ -1159,10 +1159,10 @@ const bindArGame = () => {
       }
 
       .point {
-        font-size: 24rpx;
+        font-size: calc(24rpx * var(--font-scale));
         font-style: normal;
         font-weight: 400;
-        line-height: 28rpx;
+        line-height: calc(28rpx * var(--font-scale));
         color: var(--bg-card);
         text {
           font-weight: 600;
@@ -1222,7 +1222,7 @@ const bindArGame = () => {
 
         .titleRight {
           padding: 5rpx 32rpx;
-          font-size: 28rpx;
+          font-size: calc(28rpx * var(--font-scale));
           font-style: normal;
           font-weight: 600;
           color: var(--bg-card);
@@ -1254,17 +1254,17 @@ const bindArGame = () => {
         }
 
         .nftTitle {
-          font-size: 32rpx;
+          font-size: calc(32rpx * var(--font-scale));
           font-style: normal;
           font-weight: 500;
           color: var(--text-primary);
         }
 
         .title {
-          font-size: 36rpx;
+          font-size: calc(36rpx * var(--font-scale));
           font-style: normal;
           font-weight: 500;
-          line-height: 42rpx;
+          line-height: calc(42rpx * var(--font-scale));
           color: var(--text-primary);
         }
       }
@@ -1291,10 +1291,10 @@ const bindArGame = () => {
 
         margin-top: 40rpx;
 
-        font-size: 20rpx;
+        font-size: calc(20rpx * var(--font-scale));
         font-style: normal;
         font-weight: 500;
-        line-height: 38rpx;
+        line-height: calc(38rpx * var(--font-scale));
         color: #ff6b03;
         border: 2rpx solid #ff6b03;
         border-radius: 44rpx;
@@ -1321,10 +1321,10 @@ const bindArGame = () => {
           .nftTitle {
             height: 30rpx;
             margin-top: 16rpx;
-            font-size: 24rpx;
+            font-size: calc(24rpx * var(--font-scale));
             font-style: normal;
             font-weight: 400;
-            line-height: 28rpx;
+            line-height: calc(28rpx * var(--font-scale));
             color: var(--text-black);
             text-align: center;
           }
@@ -1369,7 +1369,7 @@ const bindArGame = () => {
           padding: 28rpx 32rpx 20rpx 32rpx;
 
           .heroLabel {
-            font-size: 24rpx;
+            font-size: calc(24rpx * var(--font-scale));
             font-weight: 400;
             color: #999999;
             margin-bottom: 8rpx;
@@ -1380,14 +1380,14 @@ const bindArGame = () => {
             align-items: baseline;
 
             .currency {
-              font-size: 32rpx;
+              font-size: calc(32rpx * var(--font-scale));
               font-weight: 600;
               color: #ff6b03;
               margin-right: 4rpx;
             }
 
             .amount {
-              font-size: 50rpx;
+              font-size: calc(50rpx * var(--font-scale));
               font-weight: 700;
               color: #ff6b03;
               line-height: 1.2;
@@ -1411,7 +1411,7 @@ const bindArGame = () => {
             }
 
             .statLabel {
-              font-size: 22rpx;
+              font-size: calc(22rpx * var(--font-scale));
               font-weight: 400;
               color: #999999;
               margin-bottom: 6rpx;
@@ -1423,14 +1423,14 @@ const bindArGame = () => {
               color: var(--text-black);
 
               .currency {
-                font-size: 22rpx;
+                font-size: calc(22rpx * var(--font-scale));
                 font-weight: 600;
                 color: var(--text-primary);
                 margin-right: 2rpx;
               }
 
               .amount {
-                font-size: 32rpx;
+                font-size: calc(32rpx * var(--font-scale));
                 font-weight: 700;
                 color: var(--text-primary);
               }
@@ -1463,10 +1463,10 @@ const bindArGame = () => {
           height: 28rpx;
           padding: 10rpx 26rpx;
 
-          font-size: 24rpx;
+          font-size: calc(24rpx * var(--font-scale));
           font-style: normal;
           font-weight: 600;
-          line-height: 28rpx;
+          line-height: calc(28rpx * var(--font-scale));
           color: var(--text-secondary);
           text-align: center;
           background: var(--fixedCommentBox-color);
@@ -1481,17 +1481,17 @@ const bindArGame = () => {
         .titleLeft {
           color: var(--text-black);
           .checkinDays {
-            font-size: 28rpx;
+            font-size: calc(28rpx * var(--font-scale));
             font-weight: 600;
             color: #ff6b03;
           }
         }
 
         .title {
-          font-size: 28rpx;
+          font-size: calc(28rpx * var(--font-scale));
           font-style: normal;
           font-weight: 500;
-          line-height: 33rpx;
+          line-height: calc(33rpx * var(--font-scale));
           color: var(--text-primary);
         }
       }
@@ -1548,10 +1548,10 @@ const bindArGame = () => {
 
               .point {
                 height: 24rpx;
-                font-size: 20rpx;
+                font-size: calc(20rpx * var(--font-scale));
                 font-style: normal;
                 font-weight: 50 0;
-                line-height: 23rpx;
+                line-height: calc(23rpx * var(--font-scale));
                 color: var(--commentTextArea-color);
                 text-align: center;
               }
@@ -1570,10 +1570,10 @@ const bindArGame = () => {
               width: 72rpx;
               height: 30rpx;
               margin-top: 12rpx;
-              font-size: 24rpx;
+              font-size: calc(24rpx * var(--font-scale));
               font-style: normal;
               font-weight: 500;
-              line-height: 28rpx;
+              line-height: calc(28rpx * var(--font-scale));
               color: var(--commentTextArea-color);
               text-align: center;
             }
@@ -1608,7 +1608,7 @@ const bindArGame = () => {
 }
 .version-number {
   margin-top: 32rpx;
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   color: var(--wot-divider);
   text-align: center;
 }
@@ -1648,7 +1648,7 @@ const bindArGame = () => {
       align-items: center;
       justify-content: flex-start;
       .amount {
-        font-size: 28rpx;
+        font-size: calc(28rpx * var(--font-scale));
         font-style: normal;
         font-weight: 600;
         color: var(--text-primary);
@@ -1656,10 +1656,10 @@ const bindArGame = () => {
       }
       .unit {
         margin-left: 4rpx;
-        font-size: 20rpx;
+        font-size: calc(20rpx * var(--font-scale));
         font-style: normal;
         font-weight: 400;
-        line-height: 24rpx;
+        line-height: calc(24rpx * var(--font-scale));
         color: #999999;
       }
     }
@@ -1703,7 +1703,7 @@ const bindArGame = () => {
       }
 
       .label {
-        font-size: 24rpx;
+        font-size: calc(24rpx * var(--font-scale));
         font-style: normal;
         font-weight: 500;
         color: var(--goodsAttr-color);

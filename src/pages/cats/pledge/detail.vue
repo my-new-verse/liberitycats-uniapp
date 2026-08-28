@@ -326,7 +326,7 @@ const handleRedeemSubmit = () => {
   width: 100%;
   height: 88rpx !important;
 
-  font-size: 32rpx;
+  font-size: calc(32rpx * var(--font-scale));
   font-style: normal;
   font-weight: 600;
   color: #ff6b03 !important;
@@ -341,18 +341,18 @@ const handleRedeemSubmit = () => {
 
 .pointLabel {
   margin-top: 24rpx;
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   font-weight: normal;
-  line-height: 33rpx;
+  line-height: calc(33rpx * var(--font-scale));
   color: var(--text-primary);
   text-align: center;
 }
 
 .pointValue {
-  font-size: 48rpx;
+  font-size: calc(48rpx * var(--font-scale));
   font-style: normal;
   font-weight: normal;
-  line-height: 56rpx;
+  line-height: calc(56rpx * var(--font-scale));
   color: var(--text-primary);
   text-align: center;
   &.active {
@@ -378,17 +378,17 @@ const handleRedeemSubmit = () => {
     color: var(--text-primary);
 
     .nftId {
-      font-size: 40rpx;
+      font-size: calc(40rpx * var(--font-scale));
       font-style: normal;
       font-weight: normal;
-      line-height: 56rpx;
+      line-height: calc(56rpx * var(--font-scale));
     }
 
     .nftName {
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       font-style: normal;
       font-weight: normal;
-      line-height: 33rpx;
+      line-height: calc(33rpx * var(--font-scale));
     }
   }
 }
@@ -407,14 +407,14 @@ const handleRedeemSubmit = () => {
     margin-bottom: 16rpx;
 
     .nftAttrLabel {
-      font-size: 28rpx;
-      line-height: 33rpx;
+      font-size: calc(28rpx * var(--font-scale));
+      line-height: calc(33rpx * var(--font-scale));
       color: #999999;
     }
 
     .nftAttrValue {
-      font-size: 28rpx;
-      line-height: 33rpx;
+      font-size: calc(28rpx * var(--font-scale));
+      line-height: calc(33rpx * var(--font-scale));
       color: var(--text-primary);
     }
   }
@@ -430,8 +430,8 @@ const handleRedeemSubmit = () => {
   .titleBox {
     height: 52rpx;
     margin-bottom: 24rpx;
-    font-size: 36rpx;
-    line-height: 52rpx;
+    font-size: calc(36rpx * var(--font-scale));
+    line-height: calc(52rpx * var(--font-scale));
     color: var(--black-90);
     text-align: center;
   }
@@ -442,8 +442,8 @@ const handleRedeemSubmit = () => {
 
     .lineP {
       margin-bottom: 16rpx;
-      font-size: 28rpx;
-      line-height: 40rpx;
+      font-size: calc(28rpx * var(--font-scale));
+      line-height: calc(40rpx * var(--font-scale));
       color: var(--black-60);
       text-align: left;
     }
@@ -454,8 +454,8 @@ const handleRedeemSubmit = () => {
     align-items: center;
     justify-content: start;
     height: 80rpx;
-    font-size: 24rpx;
-    line-height: 32rpx;
+    font-size: calc(24rpx * var(--font-scale));
+    line-height: calc(32rpx * var(--font-scale));
     color: var(--text-primary);
   }
 
@@ -482,8 +482,8 @@ const handleRedeemSubmit = () => {
   }
 
   .txt {
-    font-size: 24rpx;
-    line-height: 28rpx;
+    font-size: calc(24rpx * var(--font-scale));
+    line-height: calc(28rpx * var(--font-scale));
     color: var(--text-primary);
   }
 }

@@ -69,6 +69,15 @@
               <view class="arrow"></view>
             </view>
           </view>
+          <view class="menuItem" @click="showFontSheet = true">
+            <view class="menuItemTitle">
+              <view class="title">{{ t('setting.index.font_size') }}</view>
+            </view>
+            <view class="menuItemRight">
+              <view class="rightTitle">{{ fontScaleLabel }}</view>
+              <view class="arrow"></view>
+            </view>
+          </view>
           <view class="menuItem" @click="toUrl('/pages/cats/settings/currency', true)">
             <view class="menuItemTitle">
               <view class="title">{{ t('setting.index.pricing_currency') }}</view>
@@ -122,6 +131,11 @@
       </template>
     </custom-nav>
     <wd-action-sheet v-model="showThemeSheet" :actions="themeActions" @select="onThemeSelect" />
+    <wd-action-sheet
+      v-model="showFontSheet"
+      :actions="fontScaleActions"
+      @select="onFontScaleSelect"
+    />
   </view>
 </template>
 
@@ -130,6 +144,7 @@ import { ref, computed } from 'vue'
 import i18n, { t } from '@/locale/index'
 import { useUserStore } from '@/store/user'
 import { applyTheme, getStoredTheme, type ThemeMode } from '@/utils/theme'
+import { applyFontScale, getStoredFontScale, type FontScaleMode } from '@/utils/fontScale'
 
 import CustomNav from '@/components/CustomNav/CustomNav.vue'
 
@@ -160,6 +175,29 @@ const onThemeSelect = ({ item }: any) => {
   themeMode.value = mode
   uni.setStorageSync('app_theme', mode)
   applyTheme(mode)
+}
+
+// 字体大小（标准/大/特大 三档）
+const fontScaleMode = ref<FontScaleMode>(getStoredFontScale())
+const fontScaleLabel = computed(() => {
+  if (fontScaleMode.value === 'large') return t('setting.index.font_size_large')
+  if (fontScaleMode.value === 'xlarge') return t('setting.index.font_size_xlarge')
+  return t('setting.index.font_size_standard')
+})
+const showFontSheet = ref(false)
+const fontScaleActions = computed(() => [
+  { name: t('setting.index.font_size_standard'), value: 'standard' },
+  { name: t('setting.index.font_size_large'), value: 'large' },
+  { name: t('setting.index.font_size_xlarge'), value: 'xlarge' },
+])
+const onFontScaleSelect = ({ item }: any) => {
+  const mode = item.value as FontScaleMode
+  fontScaleMode.value = mode
+  uni.setStorageSync('app_font_scale', mode)
+  // 通知 layout 的 renderjs 更新视图层变量（App 端生效入口）
+  uni.$emit('fontScaleChanged', mode)
+  // H5 端直接注入
+  applyFontScale()
 }
 
 const logout = () => {
@@ -225,7 +263,7 @@ const logoffAccount = () => {
       width: 100%;
       height: 88rpx;
 
-      font-size: 32rpx;
+      font-size: calc(32rpx * var(--font-scale));
       font-style: normal;
       font-weight: 600;
       color: var(--bg-card);
@@ -238,7 +276,7 @@ const logoffAccount = () => {
       height: 88rpx;
       margin-bottom: 20rpx;
 
-      font-size: 32rpx;
+      font-size: calc(32rpx * var(--font-scale));
       font-style: normal;
       font-weight: 600;
       color: #ff6b03;

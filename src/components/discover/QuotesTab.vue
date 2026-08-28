@@ -68,7 +68,12 @@
             </view>
             <view
               class="coinPrice"
-              style="justify-content: end; margin: 0; font-size: 36rpx; color: #ff6b03"
+              style="
+                justify-content: end;
+                margin: 0;
+                font-size: calc(36rpx * var(--font-scale));
+                color: #ff6b03;
+              "
             >
               <view class="coinPricePrefix">$</view>
               <view class="coinPriceTxt">
@@ -689,9 +694,9 @@ onShow(() => {
   padding-bottom: 12rpx;
   .opItem {
     margin-right: 16rpx;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-weight: 400;
-    line-height: 33rpx;
+    line-height: calc(33rpx * var(--font-scale));
     color: #999999;
   }
 
@@ -741,15 +746,15 @@ onShow(() => {
     .coinInfo {
       .coinName {
         margin-bottom: 4rpx;
-        font-size: 32rpx;
+        font-size: calc(32rpx * var(--font-scale));
         font-weight: 500;
-        line-height: 38rpx;
+        line-height: calc(38rpx * var(--font-scale));
         color: var(--text-primary);
       }
       .chain {
-        font-size: 24rpx;
+        font-size: calc(24rpx * var(--font-scale));
         font-weight: 500;
-        line-height: 28rpx;
+        line-height: calc(28rpx * var(--font-scale));
         color: var(--black-40);
       }
     }
@@ -760,9 +765,9 @@ onShow(() => {
     justify-content: end;
     width: calc(100% - 480rpx);
     margin: 0 40rpx;
-    font-size: 32rpx;
+    font-size: calc(32rpx * var(--font-scale));
     font-weight: 500;
-    line-height: 38rpx;
+    line-height: calc(38rpx * var(--font-scale));
     color: var(--text-primary);
   }
   .upDown {
@@ -771,9 +776,9 @@ onShow(() => {
     justify-content: center;
     width: 160rpx;
     height: 64rpx;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-weight: 500;
-    line-height: 33rpx;
+    line-height: calc(33rpx * var(--font-scale));
     color: var(--bg-card);
     background-color: #1ec880;
     border-radius: 24rpx;
@@ -800,7 +805,7 @@ onShow(() => {
       justify-content: flex-start;
       .title {
         margin-right: 10rpx;
-        font-size: 32rpx;
+        font-size: calc(32rpx * var(--font-scale));
         font-style: normal;
         font-weight: 600;
         color: var(--text-primary);
@@ -809,7 +814,7 @@ onShow(() => {
     }
     .desc {
       margin-top: 10rpx;
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       font-style: normal;
       font-weight: 400;
       color: #999999;
@@ -833,7 +838,7 @@ onShow(() => {
 }
 
 .floorPrice {
-  font-size: 16px;
+  font-size: calc(16px * var(--font-scale));
   font-style: normal;
   font-weight: 600;
   color: #ff6b03;

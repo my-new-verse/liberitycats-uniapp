@@ -582,18 +582,18 @@ const handleRefreshError = () => {
     background: var(--bg-card);
   }
   .wd-tabs__nav-item-text {
-    font-size: 36rpx;
+    font-size: calc(36rpx * var(--font-scale));
     font-style: normal;
     font-weight: 400;
-    line-height: 42rpx;
+    line-height: calc(42rpx * var(--font-scale));
     color: var(--text-primary);
   }
   .wd-tabs__nav-item.is-active {
     .wd-tabs__nav-item-text {
-      font-size: 36rpx;
+      font-size: calc(36rpx * var(--font-scale));
       font-style: normal;
       font-weight: 600;
-      line-height: 42rpx;
+      line-height: calc(42rpx * var(--font-scale));
       color: var(--liberty-cats-primary-color);
     }
   }
@@ -666,9 +666,9 @@ const handleRefreshError = () => {
     align-items: center;
     justify-content: center;
     margin-right: 24rpx;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-weight: 400;
-    line-height: 33rpx;
+    line-height: calc(33rpx * var(--font-scale));
     color: #999999;
 
     .updown {
