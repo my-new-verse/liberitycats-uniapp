@@ -67,27 +67,27 @@ import GameResourceDialog from '@/components/GameResourceDialog.vue'
 import { useUserStore } from '@/store/user'
 import { useMessage, useToast } from 'wot-design-uni'
 import { getGameParamsApi } from '@/service/api/game'
-import { buildGameUrlWithAudioSetting } from '@/utils/gameUrl'
-import { preloadIosGameWebView } from '@/utils/iosGameWebviewPreload'
-import type { IosGameType } from '@/utils/iosGameWebviewPreload'
+import type { getGameParamsApiResponse } from '@/service/api/game'
 import { bindArGameApi } from '@/service/api/user'
 import { onShow } from '@dcloudio/uni-app'
+import { preloadIosGameWebView } from '@/utils/iosGameWebviewPreload'
 import {
-  backgroundDownloadState,
   ensureGameResourcesReady,
   gameResourceLoadState,
   iosGameResourceLoadState,
-  retryFailed,
 } from '@/utils/webviewResourceCache'
-// import { updateGameConfigUrl } from '@/utils/plusGameWebViewPool'
-// import { buildGameUrlWithToken } from '@/utils/gameUrl'
 uni.hideTabBar()
 const userStore = useUserStore()
 const toast = useToast()
 const message2 = useMessage('wd-message-box-slot2')
+type GameType = 'MATCH_THREE' | 'JUMP'
+const currentPlatform = (uni.getSystemInfoSync().platform || '').toLowerCase()
 const showResourceDialog = ref(false)
+const selectedGameType = ref<GameType | ''>('')
+const selectedGameParams = ref<getGameParamsApiResponse | null>(null)
 const isCheckingGameResources = ref(false)
-const currentPlatform = uni.getSystemInfoSync().platform || ''
+/** 当前游戏已经触发过资源弹窗，关闭后允许原地再次打开 */
+const hasResourceDialogSession = ref(false)
 const activeGameResourceLoadState = computed(() =>
   currentPlatform === 'ios'
     ? iosGameResourceLoadState.value
@@ -95,23 +95,33 @@ const activeGameResourceLoadState = computed(() =>
       ? 'loading'
       : gameResourceLoadState.value,
 )
+
 watch(
   () => iosGameResourceLoadState.value,
   (state) => {
-    if (currentPlatform === 'ios' && state === 'failed') {
-      showResourceDialog.value = true
-    }
+    if (currentPlatform === 'ios' && state === 'failed') showResourceDialog.value = true
   },
 )
-const retryGameResources = () => {
+
+const retryGameResources = async () => {
   if (currentPlatform === 'ios') {
-    preloadIosGameWebView(selectedGameType.value || 'MATCH_THREE')
+    void preloadIosGameWebView(selectedGameType.value || 'MATCH_THREE')
     return
   }
-
-  retryFailed().catch((error) => {
+  if (!selectedGameType.value || isCheckingGameResources.value) return
+  isCheckingGameResources.value = true
+  try {
+    selectedGameParams.value =
+      (await ensureGameResourcesReady(selectedGameType.value, {
+        onGameParamsError: (message) => {
+          toast.show(message || t('game.toast.game_not_open'))
+        },
+      })) || null
+  } catch (error) {
     console.warn('[Game] 重新下载游戏资源失败:', error)
-  })
+  } finally {
+    isCheckingGameResources.value = false
+  }
 }
 
 // 语言
@@ -245,115 +255,118 @@ const bindArGame = () => {
 }
 
 let preparingGame = false
-let currentDownloadRequired = false
-const selectedGameType = ref<IosGameType | ''>('')
+let pendingGameType: GameType | '' = ''
 
-const handleGameClick = async (gameType: IosGameType) => {
+const handleGameClick = async (gameType: GameType) => {
   if (!userStore.isLogin) {
     toUrl('/pages/cats/login/login', true, false)
     return
   }
-  if (currentPlatform === 'android') {
-    if (preparingGame) {
-      // 纯检测阶段保持静默；已确认缺失且正在下载时，每次点击都重新展示弹窗。
-      if (currentDownloadRequired) showResourceDialog.value = true
-      return
-    }
-    selectedGameType.value = gameType
-    preparingGame = true
-    currentDownloadRequired = false
-    isCheckingGameResources.value = true
-    showResourceDialog.value = false
-    let downloadRequired = false
-    try {
-      await ensureGameResourcesReady(gameType, {
-        onDownloadRequired: () => {
-          downloadRequired = true
-          currentDownloadRequired = true
-          showResourceDialog.value = true
-        },
-        onGameParamsError: (message) => {
-          showResourceDialog.value = false
-          toast.show(message || t('game.toast.game_not_open'))
-        },
-      })
-      if (!downloadRequired) {
-        await openGameUrl(gameType, currentPlatform)
-      }
-    } catch (error) {
-      console.warn('[Game] 校验游戏资源失败:', error)
-    } finally {
-      isCheckingGameResources.value = false
-      preparingGame = false
-    }
+
+  // 下载中或下载完成后关闭了弹窗，再点同一游戏只重新展示弹窗。
+  // 不受 preparingGame 锁影响，也不重复请求 get-new-token。
+  if (selectedGameType.value === gameType && hasResourceDialogSession.value) {
+    showResourceDialog.value = true
     return
   }
 
-  if (preparingGame || openingGame) return
+  if (openingGame) return
+  if (preparingGame) {
+    // 当前游戏仍在准备时，先把另一款游戏记为最新待处理入口。
+    // 立即展示它的弹窗，但不并行创建第二批下载任务。
+    pendingGameType = gameType
+    selectedGameType.value = gameType
+    selectedGameParams.value = null
+    hasResourceDialogSession.value = true
+    isCheckingGameResources.value = true
+    showResourceDialog.value = true
+    return
+  }
   preparingGame = true
   selectedGameType.value = gameType
-  let enteringLoadingVisible = false
+  selectedGameParams.value = null
+  hasResourceDialogSession.value = true
+  showResourceDialog.value = true
   try {
-    if (currentPlatform === 'ios') {
-      const res = await getGameParamsApi(gameType)
-      if (res.code !== 1) {
-        showResourceDialog.value = false
-        toast.show(res.msg || t('game.toast.game_not_open'))
-        return
-      }
+    if (currentPlatform === 'android') {
+      isCheckingGameResources.value = true
+      let downloadRequired = false
+      const preparedParams =
+        (await ensureGameResourcesReady(gameType, {
+          onDownloadRequired: () => {
+            downloadRequired = true
+          },
+          onGameParamsError: (message) => {
+            toast.show(message || t('game.toast.game_not_open'))
+          },
+        })) || null
+      // 用户可能在等待期间已点了另一款游戏，不能把旧游戏参数写给新入口。
+      if (selectedGameType.value === gameType) selectedGameParams.value = preparedParams
+      if (downloadRequired) return
+
+      // 资源已缓存或接口没有需要下载的资源时，也统一先展示“已加载完成”弹窗。
+      hasResourceDialogSession.value = true
+      showResourceDialog.value = true
+      return
+    } else if (currentPlatform === 'ios') {
       await preloadIosGameWebView(gameType)
       if (iosGameResourceLoadState.value !== 'ready') {
-        showResourceDialog.value = true
         return
       }
-      enteringLoadingVisible = true
-      uni.showLoading({ title: t('game.entering'), mask: true })
+      // iOS 预加载就绪后也留在弹窗，由用户确认进入。
+      return
     }
 
     showResourceDialog.value = false
-    await openGameUrl(gameType, currentPlatform, !enteringLoadingVisible)
+    await openGameUrl(gameType, selectedGameParams.value)
+  } catch (error) {
+    if (currentPlatform === 'android' && selectedGameType.value === gameType) {
+      gameResourceLoadState.value = 'failed'
+      showResourceDialog.value = true
+    }
+    console.warn(`[Game] ${gameType} 游戏资源准备失败:`, error)
   } finally {
-    if (enteringLoadingVisible) uni.hideLoading()
+    isCheckingGameResources.value = false
     preparingGame = false
+    const queuedGameType = pendingGameType
+    pendingGameType = ''
+    if (queuedGameType && queuedGameType !== gameType) {
+      // 清掉仅用于即时展示的会话标记，开始执行最后一次点击的游戏准备。
+      hasResourceDialogSession.value = false
+      void handleGameClick(queuedGameType)
+    }
   }
 }
 
 let openingGame = false
 
-const openGameUrl = async (gameType: IosGameType, platform: string, manageLoading = true) => {
+const openGameUrl = async (
+  gameType: GameType,
+  preparedParams: getGameParamsApiResponse | null = null,
+) => {
   if (openingGame) return
   openingGame = true
   let navigationStarted = false
-  if (manageLoading) uni.showLoading({ title: t('game.entering'), mask: true })
+  uni.showLoading({ title: t('game.entering'), mask: true })
   try {
-    //   const gameEnableKey = 'game_' + gameType + '_enable'
-    //   const gameEnable = getServerOnOff(gameEnableKey, 'common')
-    //   const gameUrlKey = 'game_' + gameType + '_url'
-    //   const gameUrl = getServerOnOff(gameUrlKey, 'common', true)
-    //   console.log('gameEnable', gameEnable)
-    //   console.log('gameUrl', gameUrl)
-    //   if (!gameEnable || !gameUrl || gameUrl.length < 10) {
-    //     toast.show(t('game.toast.game_not_open'))
-    //     return
-    //   }
-
-    const res = await getGameParamsApi(gameType)
-    if (res.code !== 1) {
-      toast.show(res.msg || t('game.toast.game_not_open'))
-      return
+    let gameParams = preparedParams
+    if (!gameParams) {
+      const res = await getGameParamsApi(gameType)
+      console.log('res', res)
+      if (res.code !== 1) {
+        toast.show(res.msg || t('game.toast.game_not_open'))
+        return
+      }
+      gameParams = res.data
     }
-    const token = res.data.tempToken || ''
-    console.log('token', token)
-    if (!token) {
+    const gameUrl = gameParams.jumpUrl || ''
+    if (!gameUrl) {
       toast.show(t('game.toast.game_not_open'))
       return
     }
-    // 把token拼接到url上，注意url本身可能带参数
-    // const url = gameUrl + (gameUrl.includes('?') ? '&' : '?') + 'token=' + token
-    const url = buildGameUrlWithAudioSetting(res.data.jumpUrl || '', true)
-    const gamePage = platform === 'android' ? '/pages/game/androidIndex' : '/pages/game/index'
-    const targetUrl =
-      gamePage + '?url=' + encodeURIComponent(url) + '&gameType=' + gameType + '&isAudioOn=false'
+    const gamePage =
+      currentPlatform === 'android' ? '/pages/game/androidIndex' : '/pages/game/index'
+    const targetUrl = gamePage + '?url=' + encodeURIComponent(gameUrl) + '&gameType=' + gameType
     await new Promise<void>((resolve, reject) => {
       uni.navigateTo({
         url: targetUrl,
@@ -368,7 +381,7 @@ const openGameUrl = async (gameType: IosGameType, platform: string, manageLoadin
     console.warn('[Game] 获取游戏参数失败:', error)
     toast.show(t('game.toast.game_not_open'))
   } finally {
-    if (manageLoading) uni.hideLoading()
+    uni.hideLoading()
     // 跳转成功后保持锁定，等游戏页返回、当前 tab 页再次 onShow 时再解锁。
     if (!navigationStarted) openingGame = false
   }
@@ -376,13 +389,13 @@ const openGameUrl = async (gameType: IosGameType, platform: string, manageLoadin
 
 onShow(() => {
   openingGame = false
-  preparingGame = false
 })
 
 const enterSelectedGame = async () => {
   if (!selectedGameType.value || activeGameResourceLoadState.value !== 'ready') return
   showResourceDialog.value = false
-  await openGameUrl(selectedGameType.value, currentPlatform)
+  hasResourceDialogSession.value = false
+  await openGameUrl(selectedGameType.value, selectedGameParams.value)
 }
 </script>
 

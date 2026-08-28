@@ -15,9 +15,8 @@ import { useGameWebViewStore } from '@/store/gameWebview'
 import { usePopupStore } from '@/store/popup'
 import { preloadIosGameWebView } from '@/utils/iosGameWebviewPreload'
 import {
-  downloadGameResources,
-  resumeBackgroundDownloadIfNeeded,
   handleAppBackgroundDownload,
+  resumeBackgroundDownloadIfNeeded,
 } from '@/utils/webviewResourceCache'
 
 // 扩展 Plus 对象类型，避免 TS 报错
@@ -27,9 +26,7 @@ const systemStore = useSystemStore()
 const gameWebviewStore = useGameWebViewStore()
 const popupStore = usePopupStore()
 
-// 平台类型（避免多次调用 getSystemInfoSync）
-const platform = uni.getSystemInfoSync().platform || ''
-const isAndroid = platform === 'android'
+const isAndroid = (uni.getSystemInfoSync().platform || '').toLowerCase() === 'android'
 const version = `${buildInfo.version}`
 const userStore = useUserStore()
 const systemReady = ref(false)
@@ -123,16 +120,11 @@ onLaunch(() => {
       uni.setStorageSync('agreements', res.data)
       systemStore.setAgreements(res.data)
     })
-    getGameParamsApi('MATCH_THREE')
 
     // #ifdef APP-PLUS
-    // Android: 预下载游戏资源（用于 overrideResourceRequest 重定向）
-    if (isAndroid) {
-      downloadGameResources()
-    } else {
-      // iOS: 预加载游戏 WebView
+    if (!isAndroid) {
       setTimeout(() => {
-        preloadIosGameWebView()
+        void preloadIosGameWebView()
       }, 3000)
     }
     // #endif
@@ -188,22 +180,16 @@ onShow(() => {
     localStorage.setItem('timeZone', res.data.timezone || 'Asia/Shanghai') // 缓存时区设置
   })
 
-  // 从后台切回前台时，恢复可能被中断的资源下载（仅 Android）
   // #ifdef APP-PLUS
-  if (isAndroid) {
-    resumeBackgroundDownloadIfNeeded()
-  }
+  if (isAndroid) void resumeBackgroundDownloadIfNeeded()
   // #endif
 })
 
 onHide(() => {
   console.log('App Hide')
   hasEnteredBackground = true
-  // App进入后台时，重置 downloading 状态为 pending，避免状态卡住（仅 Android）
   // #ifdef APP-PLUS
-  if (isAndroid) {
-    handleAppBackgroundDownload()
-  }
+  if (isAndroid) handleAppBackgroundDownload()
   // #endif
 })
 

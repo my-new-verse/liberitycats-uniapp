@@ -370,6 +370,7 @@
   "asset.log.page_title": "Asset Log",
 
   "game.toast.game_not_open": "The game is under maintenance, please try again later",
+  "game.toast.load_failed": "Failed to load the game. Please try again.",
   "game.opening": "Opening...",
   "game.entering": "Entering game...",
   "game.extract_coin_guide.title": "LibertyCats Withdrawal Guide",

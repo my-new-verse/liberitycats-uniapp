@@ -62,7 +62,6 @@ import { ref, computed, watch, nextTick } from 'vue'
 import { onLoad, onNavigationBarButtonTap, onUnload } from '@dcloudio/uni-app'
 import {
   applyResourceOverride,
-  ensureGameResourcesReady,
   backgroundDownloadState,
   gameResourceLoadState,
 } from '@/utils/webviewResourceCache'
@@ -184,9 +183,12 @@ const handleLoaded = () => {
 /** 加载失败回调 */
 const handleError = (err?: any) => {
   console.warn('[GameIndex] webview load error', err)
-  debugInfo.value = `加载失败: ${JSON.stringify(err)}`
+  debugInfo.value = `${JSON.stringify(err)}`
   showEnteringGame.value = false
-  uni.showToast({ title: '游戏加载失败，请重试', icon: 'none' })
+  uni.showModal({
+    title: t('game.toast.load_failed'),
+    content: debugInfo.value,
+  })
 }
 
 function closeGamePage() {
@@ -322,18 +324,8 @@ onLoad(async (options: any) => {
 
   // #ifdef APP-PLUS
   if (gameUrl.value) {
-    // 1. 确保资源已准备就绪（比对 preloadResources、继续未完成的下载）
-    if (gameType) {
-      try {
-        await ensureGameResourcesReady(gameType)
-      } catch (e) {
-        console.warn('[GameIndex] 资源准备失败，阻止展示游戏 WebView', e)
-        uni.showToast({ title: '游戏资源尚未准备完成', icon: 'none' })
-        return
-      }
-    }
-
-    // 2. 资源就绪后创建 WebView
+    // 入口页已完成资源检查，这里不再重复请求 token。
+    // 资源就绪后创建 WebView。
     //    如果 applyResourceOverride 发现文件缺失会触发下载，
     //    resourceDownloading（computed）会自动响应 backgroundDownloadState.running 显示 loading
     nextTick(() => {
