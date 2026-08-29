@@ -37,6 +37,9 @@
                   </view>
                 </template>
               </template>
+              <!-- #ifdef APP-PLUS -->
+              <view class="partnerItem vconsole-trigger" @click.stop="handleVConsoleTrigger"></view>
+              <!-- #endif -->
             </view>
           </view>
 
@@ -80,6 +83,11 @@ import i18n, { t } from '@/locale/index'
 import { getAdListByKeysApi, getAdListByKeysApiResponse } from '@/service/api/ad'
 import { QuoteKeyAgreementList } from '@/service/api/agreement'
 import { getImageUrl, toAdUrl, toUrl, getServerOnOff } from '@/utils'
+import { createTapSequence } from '@/utils/svconsole-session.mjs'
+
+// #ifdef APP-PLUS
+import { enableVConsoleForSession } from '@/utils/svconsole'
+// #endif
 
 import CustomNav from '@/components/CustomNav/CustomNav.vue'
 
@@ -87,6 +95,17 @@ import CustomNav from '@/components/CustomNav/CustomNav.vue'
 const locale = uni.getLocale()
 const NftTradePartner = ref<getAdListByKeysApiResponse | null>(null)
 const CommunityList = ref<getAdListByKeysApiResponse | null>(null)
+// #ifdef APP-PLUS
+const vConsoleTapSequence = createTapSequence(7, 1500)
+
+const handleVConsoleTrigger = () => {
+  if (!vConsoleTapSequence.register(Date.now())) return
+
+  if (enableVConsoleForSession()) {
+    uni.showToast({ title: '调试已开启', icon: 'none' })
+  }
+}
+// #endif
 
 const getAdListByKeys = () => {
   getAdListByKeysApi(['app_home_nft_trade_partner', 'about_commonity_list']).then((res) => {
@@ -214,6 +233,13 @@ onLoad(() => {
     align-items: center;
     justify-content: flex-start;
     gap: 60rpx;
+  }
+
+  .vconsole-trigger {
+    width: 96rpx;
+    min-width: 96rpx;
+    height: 160rpx;
+    opacity: 0;
   }
 }
 

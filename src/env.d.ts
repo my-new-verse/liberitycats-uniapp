@@ -9,6 +9,7 @@ declare module '*.vue' {
 }
 
 interface ImportMetaEnv {
+  readonly VITE_MODE: 'development' | 'production'
   /** 网站标题，应用名称 */
   readonly VITE_APP_TITLE: string
   /** 服务端口号 */
