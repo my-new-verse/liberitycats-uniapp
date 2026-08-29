@@ -139,6 +139,7 @@ let activeDownloadKey = ''
 let downloadGeneration = 0
 let resumeAfterBackgroundFailure = false
 let ignorePause999Until = 0
+let pausedForBackground = false
 const platform = ref(uni.getSystemInfoSync().platform?.toLowerCase() || '')
 
 // 后台完成下载时暂存安装路径，等待回到前台再执行安装
@@ -392,6 +393,7 @@ function deleteApkFile(nativePath: string) {
 const onPause = () => {
   isInBackground = true
   if (downloadTask && [1, 2, 3].includes(Number(downloadTask.state))) {
+    pausedForBackground = true
     ignorePause999Until = Number.MAX_SAFE_INTEGER
     downloadTask.pause?.()
     console.log('[AppUpdate] App 切入后台，已暂停 APK 下载')
@@ -401,10 +403,25 @@ const onPause = () => {
 const onResume = () => {
   isInBackground = false
   console.log('[AppUpdate] App 回到前台')
-  if (downloadTask?.state === 5) {
+  const taskState = Number(downloadTask?.state)
+  if (
+    downloadTask &&
+    isDownloading.value &&
+    (pausedForBackground || taskState === 0 || taskState === 5)
+  ) {
+    pausedForBackground = false
     ignorePause999Until = Date.now() + 3000
-    downloadTask.resume?.()
-    console.log('[AppUpdate] 已恢复同一 APK 下载任务')
+    if (taskState === 0) {
+      downloadTask.start?.()
+      console.log('[AppUpdate] 已启动后台期间创建的 APK 下载任务')
+    } else if (taskState === 4) {
+      resumeAfterBackgroundFailure = false
+      void startDownload(true)
+      console.log('[AppUpdate] 后台暂停已终止原生任务，从持久化残片续传 APK')
+    } else {
+      downloadTask.resume?.()
+      console.log('[AppUpdate] 已恢复同一 APK 下载任务, state:', taskState)
+    }
   } else if (resumeAfterBackgroundFailure && activeDownloadKey) {
     resumeAfterBackgroundFailure = false
     ignorePause999Until = Date.now() + 3000
@@ -498,8 +515,8 @@ async function startDownload(isRetry = false) {
   }
 
   isDownloading.value = true
-  await ensureApkDir()
   const generation = ++downloadGeneration
+  await ensureApkDir()
   const targetPath = getApkLocalPath(props.version)
   const task = plus.downloader.createDownload(
     props.url,
@@ -511,10 +528,10 @@ async function startDownload(isRetry = false) {
     (completedTask: any, status: number) => {
       if (generation !== downloadGeneration) return
       const pauseRelated =
-        isInBackground || completedTask.state === 5 || Date.now() < ignorePause999Until
+        isInBackground || Number(completedTask.state) === 5 || Date.now() < ignorePause999Until
       if (status === 999 && pauseRelated) {
         console.log('[AppUpdate] 忽略后台暂停产生的 999')
-        if (completedTask.state === 4) {
+        if (Number(completedTask.state) === 4) {
           resumeAfterBackgroundFailure = true
           if (!isInBackground) {
             resumeAfterBackgroundFailure = false
@@ -533,6 +550,7 @@ async function startDownload(isRetry = false) {
         isDownloading.value = false
         downloadTask = null
         resumeAfterBackgroundFailure = false
+        pausedForBackground = false
         releaseAppUpdateDownload(activeDownloadKey)
         activeDownloadKey = ''
         if (isInBackground) pendingInstallPath = nativePath
@@ -542,6 +560,7 @@ async function startDownload(isRetry = false) {
 
       isDownloading.value = false
       downloadTask = null
+      pausedForBackground = false
       console.warn('[AppUpdate] APK 下载失败, statusCode:', status)
       uni.removeStorageSync(getApkCacheKey(props.version))
       handleDownloadFailure(status)
