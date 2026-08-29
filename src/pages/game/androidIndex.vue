@@ -66,6 +66,7 @@ import {
   gameResourceLoadState,
 } from '@/utils/webviewResourceCache'
 import { t } from '@/locale/index'
+import { closeResidualAndroidGameWebviews } from '@/utils/androidGameWebview'
 
 declare const plus: any
 
@@ -92,8 +93,6 @@ let nativeWebview: any = null
 let gameLoadStarted = false
 let nativeWebviewId = ''
 let closingPage = false
-let gestureStartX = 0
-let gestureStartY = 0
 let plusMessageRegistered = false
 
 type GameMessageType = 'GameLoadCompleted' | 'GameLoadFailed' | 'CloseGame'
@@ -153,14 +152,6 @@ const handlePlusMessage = (event: any) => {
   handleGameMessage(findGameMessage(event))
 }
 
-const handleTitleUpdate = (event: { title?: string }) => {
-  const title = event?.title || nativeWebview?.getTitle?.() || ''
-  if (title.startsWith('__LIBERTYCATS_GAME_LOAD_COMPLETED__'))
-    handleGameMessage('GameLoadCompleted')
-  else if (title.startsWith('__LIBERTYCATS_GAME_LOAD_FAILED__')) handleGameMessage('GameLoadFailed')
-  else if (title.startsWith('__LIBERTYCATS_CLOSE_GAME__')) handleGameMessage('CloseGame')
-}
-
 /** 获取当前页面 WebView */
 const getCurrentPageWebview = () => {
   const pages = getCurrentPages()
@@ -198,39 +189,12 @@ function closeGamePage() {
   uni.navigateBack({ delta: 1 })
 }
 
-const handleTouchStart = (event: any) => {
-  const touch = event?.touches?.[0]
-  gestureStartX = Number(touch?.clientX ?? touch?.screenX ?? 0)
-  gestureStartY = Number(touch?.clientY ?? touch?.screenY ?? 0)
-}
-
-const handleTouchEnd = (event: any) => {
-  const touch = event?.changedTouches?.[0]
-  const endX = Number(touch?.clientX ?? touch?.screenX ?? 0)
-  const endY = Number(touch?.clientY ?? touch?.screenY ?? 0)
-  const deltaX = endX - gestureStartX
-  const deltaY = endY - gestureStartY
-  const screenWidth = uni.getSystemInfoSync().windowWidth || 375
-  const fromLeftEdge = gestureStartX <= 32 && deltaX >= 60
-  const fromRightEdge = gestureStartX >= screenWidth - 32 && deltaX <= -60
-
-  if ((fromLeftEdge || fromRightEdge) && Math.abs(deltaX) > Math.abs(deltaY)) {
-    closeGamePage()
-  }
-}
-
-const handleNativeWebviewClose = () => {
-  nativeWebview = null
-  nativeWebviewId = ''
-  gameLoadStarted = false
-  if (!closingPage) {
-    closingPage = true
-    uni.navigateBack({ delta: 1 })
-  }
-}
 /** 创建原生 WebView，在 loadURL 前注入 overrideResourceRequest */
 async function createNativeWebview(url: string) {
   if (typeof plus === 'undefined' || closingPage) return
+
+  // 直接进入或快速重入页面时再次兜底，避免旧原生层继续截获点击。
+  closeResidualAndroidGameWebviews()
 
   const currentWebview = getCurrentPageWebview()
   if (!currentWebview) {
@@ -264,17 +228,9 @@ async function createNativeWebview(url: string) {
     visible: false,
   })
 
-  // 绑定事件
+  // 使用属性回调处理加载结果，不再为 WebView 注册 addEventListener 监听。
   nativeWebview.onerror = handleError
   nativeWebview.onloaded = handleLoaded
-  nativeWebview.addEventListener?.('loaded', handleLoaded)
-  nativeWebview.addEventListener?.('error', handleError)
-  nativeWebview.addEventListener?.('loaderror', handleError)
-  nativeWebview.addEventListener?.('receivedError', handleError)
-  nativeWebview.addEventListener?.('touchstart', handleTouchStart)
-  nativeWebview.addEventListener?.('touchend', handleTouchEnd)
-  nativeWebview.addEventListener?.('close', handleNativeWebviewClose)
-  nativeWebview.addEventListener?.('titleUpdate', handleTitleUpdate)
 
   if (!plusMessageRegistered) {
     plus.globalEvent.addEventListener('plusMessage', handlePlusMessage)
@@ -283,8 +239,14 @@ async function createNativeWebview(url: string) {
 
   // 在 loadURL 前注入资源拦截规则（先验证文件存在）
   currentWebview.append(nativeWebview)
-  await applyResourceOverride(nativeWebview)
-  nativeWebview.setJsFile?.('_www/static/game-message-bridge.js')
+  try {
+    await applyResourceOverride(nativeWebview)
+  } catch (error) {
+    console.warn('[GameIndex] 资源未就绪，禁止启动 WebView:', error)
+    destroyNativeWebview()
+    handleError(error)
+    return
+  }
   console.log('[GameIndex] 已注入资源拦截，开始加载 URL:', url)
 
   // 拦截规则注入后再加载 URL
@@ -301,14 +263,6 @@ function destroyNativeWebview() {
   if (!nativeWebview) return
   nativeWebview.onerror = null
   nativeWebview.onloaded = null
-  nativeWebview.removeEventListener?.('loaded', handleLoaded)
-  nativeWebview.removeEventListener?.('error', handleError)
-  nativeWebview.removeEventListener?.('loaderror', handleError)
-  nativeWebview.removeEventListener?.('receivedError', handleError)
-  nativeWebview.removeEventListener?.('touchstart', handleTouchStart)
-  nativeWebview.removeEventListener?.('touchend', handleTouchEnd)
-  nativeWebview.removeEventListener?.('close', handleNativeWebviewClose)
-  // nativeWebview.removeEventListener?.('titleUpdate', handleTitleUpdate)
   try {
     nativeWebview.close?.('none')
   } catch (_) {}
