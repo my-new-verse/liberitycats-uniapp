@@ -75,6 +75,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { t } from '@/locale'
 import buildInfo from '@/../build-info.json'
+import { acquireAppUpdateDownload, releaseAppUpdateDownload } from '@/utils/appUpdateDownloadLock'
 const currentVersion = `${buildInfo.version}`
 
 declare const plus: any
@@ -134,6 +135,10 @@ const canClose = computed(() => {
 
 let downloadTask: any = null
 let retryCount = 0 // 已自动重试次数，最多自动重试 1 次
+let activeDownloadKey = ''
+let downloadGeneration = 0
+let resumeAfterBackgroundFailure = false
+let ignorePause999Until = 0
 const platform = ref(uni.getSystemInfoSync().platform?.toLowerCase() || '')
 
 // 后台完成下载时暂存安装路径，等待回到前台再执行安装
@@ -284,14 +289,13 @@ function getCachedApkPath(version: string): Promise<string | null> {
         () => resolve(cached),
         () => {
           uni.removeStorageSync(key)
-          // storage 缓存失效，继续尝试从 apk_download 目录查找
-          checkApkInDir(version, resolve)
+          resolve(null)
         },
       )
       return
     }
-    // storage 无缓存，直接从 _doc/apk_download/ 目录查找
-    checkApkInDir(version, resolve)
+    // 目录中的文件可能是下载残片；只信任完成回调写入的 storage 标记。
+    resolve(null)
     // #endif
     // #ifndef APP-PLUS
     resolve(null)
@@ -387,12 +391,26 @@ function deleteApkFile(nativePath: string) {
 
 const onPause = () => {
   isInBackground = true
-  console.log('[AppUpdate] App 切入后台，下载任务继续运行')
+  if (downloadTask && [1, 2, 3].includes(Number(downloadTask.state))) {
+    ignorePause999Until = Number.MAX_SAFE_INTEGER
+    downloadTask.pause?.()
+    console.log('[AppUpdate] App 切入后台，已暂停 APK 下载')
+  }
 }
 
 const onResume = () => {
   isInBackground = false
   console.log('[AppUpdate] App 回到前台')
+  if (downloadTask?.state === 5) {
+    ignorePause999Until = Date.now() + 3000
+    downloadTask.resume?.()
+    console.log('[AppUpdate] 已恢复同一 APK 下载任务')
+  } else if (resumeAfterBackgroundFailure && activeDownloadKey) {
+    resumeAfterBackgroundFailure = false
+    ignorePause999Until = Date.now() + 3000
+    void startDownload(true)
+    console.log('[AppUpdate] 原生任务已终止，从持久化残片续传 APK')
+  }
   // 后台完成下载的安装任务，回前台后立即执行
   if (pendingInstallPath) {
     const path = pendingInstallPath
@@ -461,64 +479,102 @@ const btnClick = async (isDownload: boolean) => {
   // 手动重试时重置错误状态和自动重试计数
   downloadFailed.value = false
   retryCount = 0
-  startDownload()
+  if (typeof plus === 'undefined') {
+    emits('btnClick', true)
+    return
+  }
+  void startDownload()
 }
 
-function startDownload() {
-  isDownloading.value = true
-  downloadProgress.value = 0
-  downloadTask = uni.downloadFile({
-    url: props.url,
-    success: (res: any) => {
-      isDownloading.value = false
-      downloadProgress.value = 100
+async function startDownload(isRetry = false) {
+  if (!isRetry) {
+    const downloadKey = `${props.version || 'latest'}|${props.url}`
+    if (!acquireAppUpdateDownload(downloadKey)) {
+      console.log('[AppUpdate] 同一 APK 已有下载任务，忽略重复请求')
+      uni.showToast({ title: t('my.menu.update.popup.downloading'), icon: 'none' })
+      return
+    }
+    activeDownloadKey = downloadKey
+  }
 
-      if (res.statusCode === 200) {
-        // #ifdef APP-PLUS
-        // 将临时文件移动到 _doc/apk_download/ 持久化目录，避免被系统清理
-        ensureApkDir().then(() => {
-          moveApkToPersistent(res.tempFilePath, props.version, (nativePath) => {
-            saveApkCache(props.version, nativePath)
-            hasDownloaded.value = true
-            if (isInBackground) {
-              console.log('[AppUpdate] 后台下载完成，等待回到前台安装')
-              pendingInstallPath = nativePath
-            } else {
-              doInstall(nativePath)
-            }
-          })
-        })
-        // #endif
-      } else {
-        // 非 200 响应（如 400 URL 失效）——尝试自动重试一次
-        console.warn('[AppUpdate] 下载失败, statusCode:', res.statusCode)
-        uni.removeStorageSync(getApkCacheKey(props.version))
-        handleDownloadFailure(res.statusCode)
-      }
+  isDownloading.value = true
+  await ensureApkDir()
+  const generation = ++downloadGeneration
+  const targetPath = getApkLocalPath(props.version)
+  const task = plus.downloader.createDownload(
+    props.url,
+    {
+      filename: targetPath,
+      retry: 0,
+      timeout: 0,
     },
-    fail: (err: any) => {
+    (completedTask: any, status: number) => {
+      if (generation !== downloadGeneration) return
+      const pauseRelated =
+        isInBackground || completedTask.state === 5 || Date.now() < ignorePause999Until
+      if (status === 999 && pauseRelated) {
+        console.log('[AppUpdate] 忽略后台暂停产生的 999')
+        if (completedTask.state === 4) {
+          resumeAfterBackgroundFailure = true
+          if (!isInBackground) {
+            resumeAfterBackgroundFailure = false
+            void startDownload(true)
+          }
+        }
+        return
+      }
+
+      if (status === 200 || status === 206) {
+        const nativePath =
+          'file://' + plus.io.convertLocalFileSystemURL(completedTask.filename || targetPath)
+        downloadProgress.value = 100
+        saveApkCache(props.version, nativePath)
+        hasDownloaded.value = true
+        isDownloading.value = false
+        downloadTask = null
+        resumeAfterBackgroundFailure = false
+        releaseAppUpdateDownload(activeDownloadKey)
+        activeDownloadKey = ''
+        if (isInBackground) pendingInstallPath = nativePath
+        else doInstall(nativePath)
+        return
+      }
+
       isDownloading.value = false
       downloadTask = null
-      downloadProgress.value = 0
-      console.warn('[AppUpdate] 下载失败:', err)
-      handleDownloadFailure(null)
+      console.warn('[AppUpdate] APK 下载失败, statusCode:', status)
+      uni.removeStorageSync(getApkCacheKey(props.version))
+      handleDownloadFailure(status)
     },
-  })
+  )
 
-  downloadTask.onProgressUpdate((res) => {
-    if (res.totalBytesExpectedToWrite > 0) {
-      downloadProgress.value = res.progress
-    }
-  })
+  task.setRequestHeader?.('x-oss-range-behavior', 'standard')
+  task.addEventListener(
+    'statechanged',
+    (stateTask: any) => {
+      if (generation !== downloadGeneration || stateTask.state !== 3) return
+      const totalSize = Number(stateTask.totalSize) || 0
+      const downloadedSize = Number(stateTask.downloadedSize) || 0
+      if (totalSize > 0) {
+        downloadProgress.value = Math.min(100, Math.round((downloadedSize / totalSize) * 100))
+      }
+    },
+    false,
+  )
+  downloadTask = task
+  if (!isInBackground) task.start()
 }
 
 function handleDownloadFailure(statusCode: number | null) {
-  if (retryCount < 1) {
+  // standard Range 的 416 表示起始位置已到达/超过 EOF，原样重试只会再发相同越界请求。
+  if (statusCode !== 416 && retryCount < 1) {
     retryCount++
     console.log(`[AppUpdate] 自动重试 (${retryCount}/1)…`)
     // 延迟 1s 再重试，避免立即再请求败利服务器
-    setTimeout(() => startDownload(), 1000)
+    setTimeout(() => startDownload(true), 1000)
   } else {
+    releaseAppUpdateDownload(activeDownloadKey)
+    activeDownloadKey = ''
     // 自动重试已用尽，展示错误 UI 由用户手动重试
     downloadFailed.value = true
     if (statusCode !== null) emits('downloadError', statusCode)
