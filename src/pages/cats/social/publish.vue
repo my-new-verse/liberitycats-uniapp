@@ -1388,8 +1388,8 @@ $minor-color: var(--wot-message-box-content-color);
   border: 1px solid $border-color;
 
   &.disabled {
-    background-color: #fafafa;
-    color: #cccccc;
+    background-color: var(--avatar-color);
+    color: var(--draft-btn-disabled-color);
     border: 0;
   }
 }
@@ -1400,7 +1400,7 @@ $minor-color: var(--wot-message-box-content-color);
   color: var(--bg-card);
 
   &.disabled {
-    background-color: #ffd4b8;
+    background-color: var(--publish-btn-disabled-bg-color);
     color: var(--bg-card);
   }
 }
