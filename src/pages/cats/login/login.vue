@@ -61,18 +61,17 @@
       <view class="unionBox">
         <!-- #ifdef APP-PLUS -->
         <view v-if="isIOS" class="item" @click="loginWithApple()">
-          <image src="@/static/images/apple@2x.png" mode="widthFix" />
+          <view class="appleIcon"></view>
         </view>
         <!-- #endif -->
         <view class="item" @click="loginWithDiscord()" v-if="getServerOnOff('enable_discord')">
           <image src="@/static/images/discoard@2x.png" mode="widthFix" />
         </view>
         <view class="item" @click="toUrl('/pages/cats/login/virtual/login')">
-          <image
-            src="@/static/images/virtual-email.png"
-            mode="widthFix"
-            style="width: 54rpx; margin-left: 6rpx"
-          />
+          <view class="virtualEmailIcon">
+            <view class="virtualEmailEnvelope"></view>
+            <view class="virtualEmailBadge"></view>
+          </view>
         </view>
       </view>
     </view>
@@ -348,6 +347,37 @@ const loginWithApple = () => {
       border-radius: 50%;
       image {
         width: 48rpx;
+      }
+      .appleIcon {
+        width: 48rpx;
+        height: 46rpx;
+        background-color: var(--text-primary);
+        -webkit-mask: url('@/static/images/apple.svg') no-repeat center / 100% 100%;
+        mask: url('@/static/images/apple.svg') no-repeat center / 100% 100%;
+      }
+      .virtualEmailIcon {
+        position: relative;
+        width: 54rpx;
+        height: 51rpx;
+        margin-left: 6rpx;
+      }
+      .virtualEmailEnvelope,
+      .virtualEmailBadge {
+        position: absolute;
+        left: 0;
+        top: 0;
+        right: 0;
+        bottom: 0;
+      }
+      .virtualEmailEnvelope {
+        background-color: var(--text-primary);
+        -webkit-mask: url('@/static/images/virtual-email.svg') no-repeat center / 100% 100%;
+        mask: url('@/static/images/virtual-email.svg') no-repeat center / 100% 100%;
+      }
+      .virtualEmailBadge {
+        background-color: #ff6b03;
+        -webkit-mask: url('@/static/images/virtual-email-badge.svg') no-repeat center / 100% 100%;
+        mask: url('@/static/images/virtual-email-badge.svg') no-repeat center / 100% 100%;
       }
     }
   }

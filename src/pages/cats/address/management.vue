@@ -32,9 +32,7 @@
                   {{ t('common.set_default') }}
                 </view>
                 <view class="editBox">
-                  <view class="icon">
-                    <image src="@/static/images/edit@2x.png" mode="widthFix" />
-                  </view>
+                  <view class="icon iconEdit"></view>
                   <view
                     class="txt"
                     @click="toUrl('/pages/cats/address/add?bak=mgt&id=' + item.id, true, true)"
@@ -43,9 +41,7 @@
                   </view>
                 </view>
                 <view class="deleteBox">
-                  <view class="icon">
-                    <image src="@/static/images/delete@2x.png" mode="widthFix" />
-                  </view>
+                  <view class="icon iconDelete"></view>
                   <view class="txt" @click="deleteAddress(item.id)">{{ t('common.delete') }}</view>
                 </view>
               </view>
@@ -228,11 +224,16 @@ const setDefaultAddress = (id: number) => {
       width: 32rpx;
       height: 32rpx;
       margin-right: 12rpx;
-      image {
-        width: 100%;
-        height: 100%;
-        margin-top: -6rpx;
-      }
+    }
+    .iconEdit {
+      background-color: var(--text-primary);
+      -webkit-mask: url('@/static/images/edit.svg') no-repeat center / 100% 100%;
+      mask: url('@/static/images/edit.svg') no-repeat center / 100% 100%;
+    }
+    .iconDelete {
+      background-color: var(--text-primary);
+      -webkit-mask: url('@/static/images/delete.svg') no-repeat center / 100% 100%;
+      mask: url('@/static/images/delete.svg') no-repeat center / 100% 100%;
     }
     .defaultBox {
       display: flex;

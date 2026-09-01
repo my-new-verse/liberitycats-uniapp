@@ -234,6 +234,14 @@
               :size="item.iconSize || '38rpx'"
               class="action-sheet-item-icon"
             />
+            <view
+              v-else-if="item.key === 'setAdmin' || item.key === 'removeAdmin'"
+              class="action-sheet-item-icon action-sheet-item-icon--admin"
+            ></view>
+            <view
+              v-else-if="item.key === 'mute' || item.key === 'unmute'"
+              class="action-sheet-item-icon action-sheet-item-icon--mute"
+            ></view>
             <image
               v-else-if="item.iconSrc"
               :src="item.iconSrc"
@@ -455,8 +463,6 @@ const buildMemberActionList = (item: ApiChatMember): MemberActionItem[] => {
 
 const canUseMemberLongpress = computed(() => getRoleRank(currentUserRole.value) > 0)
 let scrollHeight = 'calc(100vh - 200rpx)' // iOS scroll-view 需要明确高度
-const MEMBER_ACTION_ADMIN_ICON = '/static/images/add_administrator.png'
-const MEMBER_ACTION_MUTE_ICON = '/static/images/mute_1.png'
 
 const memberActionSheetActions = computed<ActionSheetAction[]>(() => {
   const targetMember = selectedMemberActionTarget.value
@@ -467,12 +473,6 @@ const memberActionSheetActions = computed<ActionSheetAction[]>(() => {
     key: action.key,
     destructive: action.destructive,
     iconName: action.key === 'kick' ? 'user-clear' : undefined,
-    iconSrc:
-      action.key === 'setAdmin' || action.key === 'removeAdmin'
-        ? MEMBER_ACTION_ADMIN_ICON
-        : action.key === 'mute' || action.key === 'unmute'
-          ? MEMBER_ACTION_MUTE_ICON
-          : undefined,
   }))
 })
 
@@ -1252,6 +1252,20 @@ const confirmMute = async () => {
   text-align: center;
   color: var(--actions-text);
   flex-shrink: 0;
+}
+
+.action-sheet-item-icon--admin {
+  height: 36rpx;
+  background-color: var(--text-primary);
+  -webkit-mask: url('@/static/images/add_administrator.svg') no-repeat center / 100% 100%;
+  mask: url('@/static/images/add_administrator.svg') no-repeat center / 100% 100%;
+}
+
+.action-sheet-item-icon--mute {
+  height: 38rpx;
+  background-color: var(--text-primary);
+  -webkit-mask: url('@/static/images/mute.svg') no-repeat center / 100% 100%;
+  mask: url('@/static/images/mute.svg') no-repeat center / 100% 100%;
 }
 
 .action-sheet-item-image {

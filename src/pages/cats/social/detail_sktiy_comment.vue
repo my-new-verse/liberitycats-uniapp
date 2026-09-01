@@ -856,10 +856,14 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
       background-size: 100% 100%;
     }
     .opIcon.keyboard {
-      background-image: url('/static/images/keyboard@2x.png');
+      background-color: var(--text-primary);
+      -webkit-mask: url('@/static/images/keyboard.svg') no-repeat center / 100% 100%;
+      mask: url('@/static/images/keyboard.svg') no-repeat center / 100% 100%;
     }
     .opIcon.expression {
-      background-image: url('/static/images/expiression@2x.png');
+      background-color: var(--text-primary);
+      -webkit-mask: url('@/static/images/expiression@.svg') no-repeat center / 100% 100%;
+      mask: url('@/static/images/expiression@.svg') no-repeat center / 100% 100%;
     }
   }
 

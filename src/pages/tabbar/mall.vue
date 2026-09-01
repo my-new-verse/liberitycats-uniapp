@@ -29,7 +29,7 @@
       :style="{ top: navHeaderPaddingTop + 'rpx' }"
       @click="toUrl('/pages/cats/goods/search')"
     >
-      <image src="/static/images/search.png" mode="widthFix" />
+      <view class="searchIcon"></view>
     </view>
     <wd-tabs
       v-if="tabList.length > 0"
@@ -573,6 +573,13 @@ const handleRefreshError = () => {
     width: 48rpx;
     height: 48rpx;
     background-color: var(--bg-card);
+  }
+  .searchIcon {
+    width: 48rpx;
+    height: 48rpx;
+    background-color: var(--text-primary);
+    -webkit-mask: url('@/static/images/search.svg') no-repeat center / 100% 100%;
+    mask: url('@/static/images/search.svg') no-repeat center / 100% 100%;
   }
 }
 

@@ -134,12 +134,7 @@
                 >
                   <!-- <view class="promotionCardTitle">{{ t('adDetail.promotion_info') }}</view> -->
                   <view class="promotionRow" v-if="postDetail.contact_email">
-                    <wd-img
-                      width="36rpx"
-                      height="36rpx"
-                      :src="'/static/images/email.png'"
-                      custom-class="promotionIcon"
-                    />
+                    <view class="promotionIcon promotionEmailIcon"></view>
                     <text class="promotionLabel">{{ t('adDetail.contact_email') }}</text>
                     <text class="promotionValue">{{ postDetail.contact_email }}</text>
                     <text class="copyBtn" @click.stop="copyText(postDetail.contact_email)">
@@ -147,12 +142,7 @@
                     </text>
                   </view>
                   <view class="promotionRow" v-if="postDetail.contact_wechat">
-                    <wd-img
-                      width="36rpx"
-                      height="36rpx"
-                      :src="'/static/images/wechat.png'"
-                      custom-class="promotionIcon"
-                    />
+                    <view class="promotionIcon promotionWechatIcon"></view>
                     <text class="promotionLabel">{{ t('adDetail.contact_wechat') }}</text>
                     <text class="promotionValue">{{ postDetail.contact_wechat }}</text>
                     <text class="copyBtn" @click.stop="copyText(postDetail.contact_wechat)">
@@ -2056,10 +2046,14 @@ const handleEditPost = () => {
       background-size: 100% 100%;
     }
     .opIcon.keyboard {
-      background-image: url('/static/images/keyboard@2x.png');
+      background-color: var(--text-primary);
+      -webkit-mask: url('@/static/images/keyboard.svg') no-repeat center / 100% 100%;
+      mask: url('@/static/images/keyboard.svg') no-repeat center / 100% 100%;
     }
     .opIcon.expression {
-      background-image: url('/static/images/expiression@2x.png');
+      background-color: var(--text-primary);
+      -webkit-mask: url('@/static/images/expiression@.svg') no-repeat center / 100% 100%;
+      mask: url('@/static/images/expiression@.svg') no-repeat center / 100% 100%;
     }
   }
 
@@ -2602,6 +2596,20 @@ const handleEditPost = () => {
       flex-shrink: 0;
       display: inline-flex;
       align-items: center;
+    }
+    .promotionEmailIcon {
+      width: 36rpx;
+      height: 36rpx;
+      background-color: var(--text-primary);
+      -webkit-mask: url('@/static/images/email.svg') no-repeat center / 100% 100%;
+      mask: url('@/static/images/email.svg') no-repeat center / 100% 100%;
+    }
+    .promotionWechatIcon {
+      width: 36rpx;
+      height: 36rpx;
+      background-color: var(--text-primary);
+      -webkit-mask: url('@/static/images/wechat.svg') no-repeat center / 100% 100%;
+      mask: url('@/static/images/wechat.svg') no-repeat center / 100% 100%;
     }
     .promotionLabel {
       width: 140rpx;

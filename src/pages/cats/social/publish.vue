@@ -87,12 +87,7 @@
               />
             </view>
             <view class="tagBar">
-              <wd-img
-                src="/static/images/label.png"
-                width="68rpx"
-                mode="widthFix"
-                @click="openTagPopup"
-              ></wd-img>
+              <view class="tagBarLabel" @click="openTagPopup"></view>
               <view class="selectedTagsBox" v-if="selectedTagList.length > 0">
                 <view v-for="tag in selectedTagList" :key="tag.id" class="tagChip">
                   <text class="tagChipText"># {{ tag.value.replace(/^#/, '') }}</text>
@@ -1849,6 +1844,14 @@ $minor-color: var(--wot-message-box-content-color);
   flex-wrap: wrap;
   gap: 12rpx;
   padding: 0 0 20rpx;
+}
+
+.tagBarLabel {
+  width: 68rpx;
+  height: 64rpx;
+  background-color: var(--text-primary);
+  -webkit-mask: url('@/static/images/label.svg') no-repeat center / 100% 100%;
+  mask: url('@/static/images/label.svg') no-repeat center / 100% 100%;
 }
 
 .selectedTagsBox {

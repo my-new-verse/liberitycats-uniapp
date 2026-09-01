@@ -176,6 +176,10 @@
                     size="42rpx"
                     :color="item.destructive ? '#ff6b6b' : '#fff'"
                   />
+                  <view
+                    v-else-if="item.action === 'mute' || item.action === 'unmute'"
+                    class="msg-popover-item-icon-mute"
+                  ></view>
                   <image
                     v-else-if="item.iconSrc"
                     :src="item.iconSrc"
@@ -2415,12 +2419,8 @@ const messageActionSheetActions = computed<ActionSheetAction[]>(() => {
           return undefined
       }
     })(),
-    iconSrc:
-      item.action === 'mute' || item.action === 'unmute' ? MESSAGE_ACTION_MUTE_ICON : undefined,
   }))
 })
-// 辅助变量（用于菜单图标等）
-const MESSAGE_ACTION_MUTE_ICON = '/static/images/mute_1.png'
 // 弹窗确认函数（由长按菜单项触发）
 // 解除禁言确认
 const confirmMessageUnmute = async () => {
@@ -3486,11 +3486,15 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
     }
 
     .opIcon.keyboard {
-      background-image: url('/static/images/keyboard@2x.png');
+      background-color: var(--text-primary);
+      -webkit-mask: url('@/static/images/keyboard.svg') no-repeat center / 100% 100%;
+      mask: url('@/static/images/keyboard.svg') no-repeat center / 100% 100%;
     }
 
     .opIcon.expression {
-      background-image: url('/static/images/expiression@2x.png');
+      background-color: var(--text-primary);
+      -webkit-mask: url('@/static/images/expiression@.svg') no-repeat center / 100% 100%;
+      mask: url('@/static/images/expiression@.svg') no-repeat center / 100% 100%;
     }
   }
 
@@ -3876,6 +3880,14 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
 .msg-popover-item-image {
   width: 42rpx;
   height: 42rpx;
+}
+
+.msg-popover-item-icon-mute {
+  width: 42rpx;
+  height: 42rpx;
+  background-color: #fff;
+  -webkit-mask: url('@/static/images/mute.svg') no-repeat center / 100% 100%;
+  mask: url('@/static/images/mute.svg') no-repeat center / 100% 100%;
 }
 
 .msg-popover-icon-placeholder {

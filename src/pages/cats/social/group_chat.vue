@@ -530,6 +530,10 @@
               :size="item.iconSize || '38rpx'"
               class="action-sheet-item-icon"
             />
+            <view
+              v-else-if="item.action === 'mute' || item.action === 'unmute'"
+              class="action-sheet-item-icon action-sheet-item-icon--mute"
+            ></view>
             <image
               v-else-if="item.iconSrc"
               :src="item.iconSrc"
@@ -4055,7 +4059,6 @@ const getMessageMenuOptions = (msg: ChatMessage): MessageMenuItem[] => {
 const canShowGovernanceMessageActions = (msg: ChatMessage) => {
   return msg.is_self !== 1 && getGovernanceRoleRank(getCurrentGovernanceRole()) > 0
 }
-const MESSAGE_ACTION_MUTE_ICON = '/static/images/mute_1.png'
 
 const messageActionSheetActions = computed<ActionSheetAction[]>(() => {
   const targetMessage = selectedMessageActionTarget.value
@@ -4079,8 +4082,6 @@ const messageActionSheetActions = computed<ActionSheetAction[]>(() => {
             : item.action === 'copy'
               ? 'file-copy'
               : undefined,
-    iconSrc:
-      item.action === 'mute' || item.action === 'unmute' ? MESSAGE_ACTION_MUTE_ICON : undefined,
   }))
 })
 
@@ -5320,11 +5321,15 @@ const EmotionTool = (() => {
     }
 
     .opIcon.keyboard {
-      background-image: url('/static/images/keyboard@2x.png');
+      background-color: var(--text-primary);
+      -webkit-mask: url('@/static/images/keyboard.svg') no-repeat center / 100% 100%;
+      mask: url('@/static/images/keyboard.svg') no-repeat center / 100% 100%;
     }
 
     .opIcon.expression {
-      background-image: url('/static/images/expiression@2x.png');
+      background-color: var(--text-primary);
+      -webkit-mask: url('@/static/images/expiression@.svg') no-repeat center / 100% 100%;
+      mask: url('@/static/images/expiression@.svg') no-repeat center / 100% 100%;
     }
   }
 
@@ -5694,6 +5699,13 @@ const EmotionTool = (() => {
   text-align: center;
   color: var(--actions-text);
   flex-shrink: 0;
+}
+
+.action-sheet-item-icon--mute {
+  height: 38rpx;
+  background-color: var(--text-primary);
+  -webkit-mask: url('@/static/images/mute.svg') no-repeat center / 100% 100%;
+  mask: url('@/static/images/mute.svg') no-repeat center / 100% 100%;
 }
 
 .action-sheet-item-image {

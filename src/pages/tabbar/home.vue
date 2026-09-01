@@ -46,7 +46,7 @@
         <view class="cnt1">
           <view class="commonTitleBox">
             <view class="title navTitle">
-              <image src="/static/images/hot@2x.png" class="tb" alt="" />
+              <view class="tb tb-hot"></view>
               {{ t('home.title.newArrivals') }}
             </view>
             <view class="more" @click="toMall">
@@ -105,8 +105,8 @@
           <!-- 群聊start -->
           <view class="commonTitleBox">
             <view class="title navTitle">
-              <image src="/static/images/circus.svg" class="tb" alt="" />
-              111
+              <view class="tb tb-circus"></view>
+              <!-- <image src="/static/images/circus.svg" class="tb" alt="" /> -->
               {{ t('home.title.groupChat') }}
             </view>
           </view>
@@ -123,7 +123,7 @@
           </view>
           <view class="commonTitleBox">
             <view class="title navTitle">
-              <image src="/static/images/nft@2x.png" class="tb" alt="" />
+              <view class="tb tb-nft"></view>
               {{ t('home.title.nftTradings') }}
             </view>
             <!-- <view class="more">
@@ -154,7 +154,7 @@
         <view class="cnt2">
           <view class="commonTitleBox">
             <view class="title navTitle">
-              <image src="/static/images/msg@2x.png" class="tb" alt="" />
+              <view class="tb tb-msg"></view>
               {{ t('home.title.bulletins') }}
             </view>
             <view class="more" @click="toUrl('/pages/cats/bulletins/list')">
@@ -657,11 +657,26 @@ const toChatGroup = () => {
       height: 64rpx;
       margin-right: 12rpx;
     }
-    // .tb-circus {
-    //   background-color: var(--text-primary);
-    //   -webkit-mask: url('@/static/images/circus.svg') no-repeat center / 100% 100%;
-    //   mask: url('@/static/images/circus.svg') no-repeat center / 100% 100%;
-    // }
+    .tb-circus {
+      background-color: var(--text-primary);
+      -webkit-mask: url('@/static/images/circus.svg') no-repeat center / 100% 100%;
+      mask: url('@/static/images/circus.svg') no-repeat center / 100% 100%;
+    }
+    .tb-hot {
+      background-color: var(--text-primary);
+      -webkit-mask: url('@/static/images/hot.svg') no-repeat center / 100% 100%;
+      mask: url('@/static/images/hot.svg') no-repeat center / 100% 100%;
+    }
+    .tb-nft {
+      background-color: var(--text-primary);
+      -webkit-mask: url('@/static/images/nft.svg') no-repeat center / 100% 100%;
+      mask: url('@/static/images/nft.svg') no-repeat center / 100% 100%;
+    }
+    .tb-msg {
+      background-color: var(--text-primary);
+      -webkit-mask: url('@/static/images/msg.svg') no-repeat center / 100% 100%;
+      mask: url('@/static/images/msg.svg') no-repeat center / 100% 100%;
+    }
   }
   .more {
     display: flex;
