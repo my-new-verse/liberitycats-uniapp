@@ -288,6 +288,11 @@ const logoffAccount = () => {
   }
 }
 
+.menuItemRight {
+  font-size: calc(28rpx * var(--font-scale));
+  line-height: calc(33rpx * var(--font-scale));
+}
+
 .avatar {
   width: 112rpx;
   height: 112rpx;

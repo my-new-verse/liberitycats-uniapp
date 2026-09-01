@@ -103,6 +103,8 @@ const lightVars: Record<string, string> = {
   '--reply-ref-bg-color': 'rgba(0, 0, 0, 0.06)',
   '--promotionCard-bg-color': '#fff2eb',
   '--promotionCard-border-color': '#f8efe6',
+  '--draft-btn-disabled-color': '#cccccc',
+  '--publish-btn-disabled-bg-color': '#ffd4b8',
 }
 
 const darkVars: Record<string, string> = {
@@ -206,6 +208,8 @@ const darkVars: Record<string, string> = {
   '--reply-ref-bg-color': 'rgba(255, 255, 255, 0.06)',
   '--promotionCard-bg-color': '#6d5444',
   '--promotionCard-border-color': '#684f43',
+  '--draft-btn-disabled-color': '#4f4f4f',
+  '--publish-btn-disabled-bg-color': '#704e3a',
 }
 
 export function applyTheme(mode: ThemeMode) {

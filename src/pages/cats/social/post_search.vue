@@ -362,6 +362,7 @@ import { useMessage, useToast } from 'wot-design-uni'
 import { LoadMoreState } from 'wot-design-uni/components/wd-loadmore/types'
 import SharePopup from '@/components/SharePopup/SharePopup.vue'
 import SocialPostItem from '@/components/PostItem/SocialPostItem.vue'
+import { getStoredFontScale, resolveFontScale, type FontScaleMode } from '@/utils/fontScale'
 
 // ============================================================
 // 导航栏布局
@@ -417,9 +418,15 @@ onMounted(() => {
 onUnmounted(() => {
   uni.$off('refreshNormalPost')
   uni.$off('updateNormalPostItem')
+  uni.$off('fontScaleChanged')
   if (typeof uni.offKeyboardHeightChange === 'function') {
     uni.offKeyboardHeightChange()
   }
+})
+
+// 字号档位变化时重算筛选栏占位高度
+uni.$on('fontScaleChanged', (mode: FontScaleMode) => {
+  fontScale.value = resolveFontScale(mode)
 })
 
 const navigateBack = () => {
@@ -1245,8 +1252,14 @@ const selectedUsersCache = computed(() => {
   return map
 })
 
-/** sticky 筛选栏占位高度（nav底部到内容区的间距） */
-const filterStickyHeight = computed(() => (confirmedUserIds.value.length > 0 ? 260 : 110))
+/** sticky 筛选栏占位高度（nav底部到内容区的间距）。
+ * 固定尺寸部分保持写死值；仅文字行高（筛选标签≈34rpx、选中用户名≈29rpx）随字号放大，按差值补齐 */
+const fontScale = ref(resolveFontScale(getStoredFontScale()))
+const filterStickyHeight = computed(() => {
+  const hasSelected = confirmedUserIds.value.length > 0
+  const textLineHeight = hasSelected ? 63 : 34
+  return (hasSelected ? 260 : 110) + textLineHeight * (fontScale.value - 1)
+})
 
 /** 筛选栏用户按钮标签 */
 const selectedUserLabel = computed(() => {

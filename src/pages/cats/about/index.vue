@@ -137,6 +137,9 @@ onLoad(() => {
 
   .cell {
     width: calc(100% - 80rpx);
+    font-size: calc(32rpx * var(--font-scale));
+    font-style: normal;
+    line-height: calc(37rpx * var(--font-scale));
   }
 
   .logo {
@@ -220,6 +223,22 @@ onLoad(() => {
   background-image: url('/static/images/messageDot1@2x.png');
   background-repeat: no-repeat;
   background-size: 100% 100%;
+}
+
+// 特大字号档（1.5x）溢出适配：仅挂 font-scale-xlarge 类时生效，1 倍样式保持原样
+.font-scale-xlarge {
+  .cell {
+    > view:first-child {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    .dot {
+      flex-shrink: 0;
+    }
+  }
 }
 
 .xyBox {

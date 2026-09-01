@@ -57,7 +57,7 @@
         </view>
         <view class="cell" style="padding: 12rpx 32rpx" v-if="collectionDetail?.stats?.floorPrice">
           <view class="quoteItem" style="margin-bottom: 0">
-            <view class="coinBox" style="width: 50%">
+            <view class="coinBox">
               <view class="coinImg" style="overflow: hidden; border-radius: 50%">
                 <image :src="getImageUrl(collectionDetail.image)" mode="widthFix" />
               </view>
@@ -730,10 +730,11 @@ onShow(() => {
   justify-content: space-between;
   height: 120rpx;
   margin-bottom: 20rpx;
+  overflow-x: auto;
   .coinBox {
     display: flex;
     align-items: center;
-    width: 240rpx;
+    // width: 240rpx;
     .coinImg {
       width: 80rpx;
       height: 80rpx;
@@ -763,7 +764,7 @@ onShow(() => {
     display: flex;
     align-items: center;
     justify-content: end;
-    width: calc(100% - 480rpx);
+    // width: calc(100% - 480rpx);
     margin: 0 40rpx;
     font-size: calc(32rpx * var(--font-scale));
     font-weight: 500;

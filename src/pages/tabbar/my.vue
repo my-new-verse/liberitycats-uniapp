@@ -1189,6 +1189,23 @@ const bindArGame = () => {
   }
 }
 
+// 特大字号档（1.5x）溢出适配：仅挂 font-scale-xlarge 类时生效，1 倍样式保持原样
+.font-scale-xlarge {
+  .headCnt {
+    .avatar {
+      flex-shrink: 0;
+    }
+    .info {
+      min-width: 0;
+      .name {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+    }
+  }
+}
+
 .cnt {
   position: fixed;
   top: 0;
@@ -1548,10 +1565,12 @@ const bindArGame = () => {
 
               .point {
                 height: 24rpx;
-                font-size: calc(20rpx * var(--font-scale));
+                // font-size: calc(20rpx * var(--font-scale));
+                font-size: 20rpx;
                 font-style: normal;
                 font-weight: 50 0;
-                line-height: calc(23rpx * var(--font-scale));
+                // line-height: calc(23rpx * var(--font-scale));
+                line-height: 23rpx;
                 color: var(--commentTextArea-color);
                 text-align: center;
               }
@@ -1570,10 +1589,12 @@ const bindArGame = () => {
               width: 72rpx;
               height: 30rpx;
               margin-top: 12rpx;
-              font-size: calc(24rpx * var(--font-scale));
+              //   font-size: calc(24rpx * var(--font-scale));
+              font-size: 24rpx;
               font-style: normal;
               font-weight: 500;
-              line-height: calc(28rpx * var(--font-scale));
+              //   line-height: calc(28rpx * var(--font-scale));
+              line-height: 28rpx;
               color: var(--commentTextArea-color);
               text-align: center;
             }

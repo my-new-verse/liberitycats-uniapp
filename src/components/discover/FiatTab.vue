@@ -311,4 +311,25 @@ const handleFiatBlur = (selectItem: any, e: any) => {
 :deep(.wd-input__placeholder) {
   color: var(--text-secondary);
 }
+
+// 特大字号档（1.5x）溢出适配：仅挂 font-scale-xlarge 类时生效，1 倍样式保持原样
+// 法币名称超宽时单行省略，不换行、不挤压右侧价格标签；价格标签完整显示
+.font-scale-xlarge {
+  .fiatItem {
+    .fiatBox {
+      min-width: 0;
+      .fiatInfo {
+        min-width: 0;
+        .fiatName {
+          overflow: hidden;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+        }
+      }
+    }
+    .fiatPrice {
+      flex-shrink: 0;
+    }
+  }
+}
 </style>

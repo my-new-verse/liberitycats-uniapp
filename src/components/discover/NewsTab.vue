@@ -342,7 +342,7 @@ const changeTab = async (type: NewsTabType) => {
     width: calc(100% - 218rpx - 32rpx);
     .title {
       display: -webkit-box;
-      max-height: 80rpx;
+      max-height: calc(80rpx * var(--font-scale));
       overflow: hidden;
       font-size: calc(32rpx * var(--font-scale));
       font-weight: 400;

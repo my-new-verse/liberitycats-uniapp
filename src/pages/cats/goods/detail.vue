@@ -783,6 +783,43 @@ const addCart = () => {
   }
 }
 
+// 特大字号档（1.5x）溢出适配：仅挂 font-scale-xlarge 类时生效，1 倍样式保持原样
+.font-scale-xlarge {
+  .priceBox.isSupporter {
+    .discountLeft {
+      flex-shrink: 1;
+      min-width: 0;
+      margin: 0 12rpx;
+      padding-right: 12rpx;
+    }
+    .discountBottom {
+      flex-wrap: wrap;
+    }
+    .supporterTag {
+      max-width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+  .buyBarBox {
+    .btnBox {
+      flex: 1;
+      min-width: 0;
+    }
+    .buyBtn {
+      flex: 1;
+      min-width: 0;
+      padding: 0 8rpx;
+      :deep(.wd-button__text) {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+    }
+  }
+}
+
 .attrBox {
   padding: 40rpx;
   margin-top: 20rpx;

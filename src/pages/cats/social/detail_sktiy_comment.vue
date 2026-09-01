@@ -1056,7 +1056,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
         width: 64rpx;
         height: 64rpx;
         overflow: hidden;
-        background-color: #fafafa;
+        background-color: var(--avatar-color);
         border: 2rpx solid var(--fixedCommentBox-color);
         border-radius: 50%;
       }

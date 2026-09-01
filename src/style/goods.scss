@@ -33,10 +33,12 @@
         width: 80rpx;
         height: 40rpx;
         font-family: Montserrat;
-        font-size: calc(22rpx * var(--font-scale));
+        // font-size: calc(22rpx * var(--font-scale));
+        font-size: 22rpx;
         font-style: normal;
         font-weight: 500;
-        line-height: calc(40rpx * var(--font-scale));
+        // line-height: calc(40rpx * var(--font-scale));
+        line-height: 40rpx;
         color: var(--bg-card);
         text-transform: uppercase;
         /* 可选：消除字体渲染差异 */

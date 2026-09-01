@@ -253,4 +253,42 @@ const switchAccount = (item) => {
     }
   }
 }
+
+// 特大字号档（1.5x）溢出适配：仅挂 font-scale-xlarge 类时生效，1 倍样式保持原样
+.font-scale-xlarge {
+  .menuItem {
+    .menuItemTitle {
+      flex: 1;
+      min-width: 0;
+      .avatar {
+        flex-shrink: 0;
+      }
+      // 头像后的文字容器（无类名）承担收缩，让内部省略号生效
+      > view:not(.avatar) {
+        flex: 1;
+        min-width: 0;
+      }
+    }
+    .menuItemRight {
+      flex-shrink: 0;
+    }
+    .nameBox {
+      min-width: 0;
+      .title {
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+      .tag {
+        flex-shrink: 0;
+      }
+    }
+    .subtitle {
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+  }
+}
 </style>

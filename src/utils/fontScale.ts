@@ -7,7 +7,7 @@ export type FontScaleMode = 'standard' | 'large' | 'xlarge'
 export const FONT_SCALE_MAP: Record<FontScaleMode, number> = {
   standard: 1,
   large: 1.15,
-  xlarge: 1.3,
+  xlarge: 1.5,
 }
 
 /** 读取存储的字号档位，无值/非法值默认 standard */
@@ -28,6 +28,8 @@ export function applyFontScale() {
   // #ifdef H5
   if (typeof document !== 'undefined' && document.documentElement) {
     document.documentElement.style.setProperty('--font-scale', String(scale))
+    // 特大档（1.5x）挂类，页面用它做溢出适配；1 倍档不挂，样式保持原样
+    document.documentElement.classList.toggle('font-scale-xlarge', scale === FONT_SCALE_MAP.xlarge)
   }
   // #endif
 }

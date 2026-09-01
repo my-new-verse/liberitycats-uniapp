@@ -1677,4 +1677,23 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
     background-size: 100%;
   }
 }
+
+// 特大字号档（1.5x）溢出适配：仅挂 font-scale-xlarge 类时生效，1 倍样式保持原样
+.font-scale-xlarge {
+  .headCnt {
+    .topRow {
+      .avatar {
+        flex-shrink: 0;
+      }
+      .info {
+        min-width: 0;
+        .name {
+          overflow: hidden;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+        }
+      }
+    }
+  }
+}
 </style>

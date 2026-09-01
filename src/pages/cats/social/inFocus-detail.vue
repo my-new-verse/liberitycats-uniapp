@@ -304,7 +304,7 @@ const openXApp = () => {
   border: 1rpx solid var(--isSupporter-border-color);
   border-radius: 16rpx;
   overflow: hidden;
-  background-color: #fafafa;
+  background-color: var(--avatar-color);
 
   .articleCover {
     width: 100%;
