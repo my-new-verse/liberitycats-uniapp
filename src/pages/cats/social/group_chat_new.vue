@@ -67,6 +67,7 @@
         ref="paging"
         v-model="messages"
         use-chat-record-mode
+        :auto-adjust-position-when-chat="false"
         use-virtual-list
         cell-height-mode="dynamic"
         :safe-area-inset-bottom="false"

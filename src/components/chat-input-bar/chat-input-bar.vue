@@ -1,6 +1,10 @@
 <template>
   <view class="chat-input-bar-container">
-    <view class="fixedCommentBox" style="padding-bottom: calc(env(safe-area-inset-bottom) + 24rpx)">
+    <view
+      class="fixedCommentBox"
+      :class="{ 'is-editor-open': commentPopupVisible }"
+      style="padding-bottom: calc(env(safe-area-inset-bottom) + 24rpx)"
+    >
       <!-- ✅ 使用原生 uni.chooseImage 替代 wd-upload -->
       <view
         class="upload-icon-btn"
@@ -1048,6 +1052,11 @@ onLoad(() => {
   padding-bottom: calc(env(safe-area-inset-bottom) + 24rpx);
   background-color: #ffffff;
   border-top: 1rpx solid #f3f3f4;
+
+  &.is-editor-open {
+    visibility: hidden;
+    pointer-events: none;
+  }
 
   // ✅ 上传图标按钮样式
   .upload-icon-btn {
