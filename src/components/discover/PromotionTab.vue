@@ -61,14 +61,7 @@
 
     <view :style="{ paddingTop: cntPaddingTop + 180 + 36 + 24 + 'rpx' }">
       <!-- 推广卡片列表（可滚动区域） -->
-      <scroll-view
-        class="promoListScroll"
-        scroll-y
-        :style="{ height: scrollHeight }"
-        :scroll-top="scrollTopValue"
-        @scroll="onScroll"
-        @touchmove.stop
-      >
+      <view class="promoList">
         <!-- Loading 状态 -->
         <view v-if="isRefreshing" class="loadingBox">
           <wd-loading color="#ff6b03" size="48px" />
@@ -105,7 +98,7 @@
             <view class="emptyImg"></view>
           </view>
         </template>
-      </scroll-view>
+      </view>
     </view>
     <!-- 发布浮窗（始终显示） -->
     <view class="pubSocial" @click="handlePublishClick">
@@ -255,20 +248,6 @@ const props = defineProps<{
   cntPaddingTop: number
 }>()
 
-/** 计算可滚动区域的高度 */
-const scrollHeight = computed(() => {
-  const sysInfo = uni.getSystemInfoSync()
-  const screenHeight = sysInfo.windowHeight
-  // cardRow 高度约 140rpx
-  const cardRowHeight = uni.rpx2px(140)
-  // 顶部 padding（socialOpBox 高度 + cardRow 高度 + 额外间距）
-  const topPadding = uni.rpx2px(props.cntPaddingTop + 36 + 20)
-  const bottomSafeArea = sysInfo.safeAreaInsets?.bottom || 0
-
-  // 滚动区域高度 = 屏幕高度 - cardRow高度 - 顶部padding - 底部安全区
-  return `${screenHeight - cardRowHeight - topPadding - bottomSafeArea}px`
-})
-
 const emit = defineEmits<{
   'update:state': [state: string]
   'refresh-complete': []
@@ -285,19 +264,6 @@ const postItemRefs = ref<Record<number, any>>({})
 
 const activeFilter = ref('latest')
 
-// 各 tab 独立滚动位置
-const scrollTopMap = ref<Record<string, number>>({})
-const scrollTopValue = ref(0)
-let currentScrollTop = 0
-let isRestoring = false
-let restoreSequence = 0
-const onScroll = (e: any) => {
-  currentScrollTop = Number(e.detail.scrollTop || 0)
-  if (isRestoring) return
-  const key = getCacheKey(activeFilter.value, activeCardType.value)
-  scrollTopMap.value[key] = currentScrollTop
-}
-
 // 推广发布权限
 const hasPermission = ref(true)
 
@@ -313,6 +279,7 @@ type AdListCache = {
   state: string
   loaded: boolean
   loading: boolean
+  scrollTop: number
 }
 
 const createCache = (): AdListCache => ({
@@ -322,6 +289,7 @@ const createCache = (): AdListCache => ({
   state: 'loading',
   loaded: false,
   loading: false,
+  scrollTop: 0,
 })
 
 const adListCache = ref<Record<string, AdListCache>>({})
@@ -441,39 +409,39 @@ const loadData = async (page = 1, refresh = false) => {
   }
 }
 
-const restoreScrollPosition = async () => {
-  const key = getCacheKey(activeFilter.value, activeCardType.value)
-  const saved = scrollTopMap.value[key] || 0
-  const sequence = ++restoreSequence
-  isRestoring = true
-  // PromotionTab 使用独立 scroll-view，外层页面不应保留嵌套滚动产生的偏移。
-  uni.pageScrollTo({ scrollTop: 0, duration: 0 })
-  // scroll-view 内部滚动不会同步更新绑定值，先同步真实位置再设置目标位置。
-  scrollTopValue.value = currentScrollTop
-  await nextTick()
-  if (sequence !== restoreSequence) return
-  uni.pageScrollTo({ scrollTop: 0, duration: 0 })
-  scrollTopValue.value = saved
-  setTimeout(() => {
-    if (sequence === restoreSequence) {
-      isRestoring = false
-      currentScrollTop = saved
-    }
-  }, 200)
+const getPageScrollTop = () => {
+  return new Promise<number>((resolve) => {
+    uni
+      .createSelectorQuery()
+      .selectViewport()
+      .scrollOffset((res: any) => resolve(Number(res?.scrollTop || 0)))
+      .exec()
+  })
 }
 
-const handleFilterChange = (filter: string) => {
+const saveCurrentScrollPosition = async () => {
+  getCurrentCache().scrollTop = await getPageScrollTop()
+}
+
+const restoreScrollPosition = (cache: AdListCache) => {
+  nextTick(() => {
+    uni.pageScrollTo({ scrollTop: cache.loaded ? cache.scrollTop || 0 : 0, duration: 0 })
+  })
+}
+
+const handleFilterChange = async (filter: string) => {
   if (activeFilter.value === filter) return
+  await saveCurrentScrollPosition()
   activeFilter.value = filter
   const cache = getCurrentCache()
   if (cache.loaded) {
     syncCurrentCache()
-    restoreScrollPosition()
+    restoreScrollPosition(cache)
   } else {
     // 新数据：先清空列表并显示 loading，再滚动到顶部，然后加载
     syncCurrentCache()
     isRefreshing.value = true
-    restoreScrollPosition()
+    restoreScrollPosition(cache)
     loadData(1)
   }
 }
@@ -933,7 +901,8 @@ const syncMemberFollowState = (memberId: number, data: any) => {
   })
 }
 
-const handleAdTypeChange = (id: number) => {
+const handleAdTypeChange = async (id: number) => {
+  await saveCurrentScrollPosition()
   if (activeCardType.value === id) {
     activeCardType.value = 0
   } else {
@@ -942,12 +911,12 @@ const handleAdTypeChange = (id: number) => {
   const cache = getCurrentCache()
   if (cache.loaded) {
     syncCurrentCache()
-    restoreScrollPosition()
+    restoreScrollPosition(cache)
   } else {
     // 新数据：先清空列表并显示 loading，再滚动到顶部，然后加载
     syncCurrentCache()
     isRefreshing.value = true
-    restoreScrollPosition()
+    restoreScrollPosition(cache)
     loadData(1)
   }
 }
@@ -1176,11 +1145,9 @@ onUnmounted(() => {
   }
 }
 
-/* 可滚动的推广列表区域 */
-.promoListScroll {
+/* 推广列表使用页面滚动，与 Discover 其他分类保持一致。 */
+.promoList {
   width: 100%;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
 }
 
 :deep(.reportSheet) {
