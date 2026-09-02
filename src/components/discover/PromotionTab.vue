@@ -67,6 +67,7 @@
         :style="{ height: scrollHeight }"
         :scroll-top="scrollTopValue"
         @scroll="onScroll"
+        @touchmove.stop
       >
         <!-- Loading 状态 -->
         <view v-if="isRefreshing" class="loadingBox">
@@ -157,7 +158,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed, nextTick } from 'vue'
 import { t } from '@/locale/index'
 import PromotionPostItem from '@/components/PostItem/PromotionPostItem.vue'
 import {
@@ -287,11 +288,14 @@ const activeFilter = ref('latest')
 // 各 tab 独立滚动位置
 const scrollTopMap = ref<Record<string, number>>({})
 const scrollTopValue = ref(0)
+let currentScrollTop = 0
 let isRestoring = false
+let restoreSequence = 0
 const onScroll = (e: any) => {
+  currentScrollTop = Number(e.detail.scrollTop || 0)
   if (isRestoring) return
   const key = getCacheKey(activeFilter.value, activeCardType.value)
-  scrollTopMap.value[key] = e.detail.scrollTop
+  scrollTopMap.value[key] = currentScrollTop
 }
 
 // 推广发布权限
@@ -437,18 +441,25 @@ const loadData = async (page = 1, refresh = false) => {
   }
 }
 
-const restoreScrollPosition = () => {
+const restoreScrollPosition = async () => {
   const key = getCacheKey(activeFilter.value, activeCardType.value)
   const saved = scrollTopMap.value[key] || 0
+  const sequence = ++restoreSequence
   isRestoring = true
-  // 先设为0再设为目标值，确保值变化触发滚动
-  scrollTopValue.value = 0
+  // PromotionTab 使用独立 scroll-view，外层页面不应保留嵌套滚动产生的偏移。
+  uni.pageScrollTo({ scrollTop: 0, duration: 0 })
+  // scroll-view 内部滚动不会同步更新绑定值，先同步真实位置再设置目标位置。
+  scrollTopValue.value = currentScrollTop
+  await nextTick()
+  if (sequence !== restoreSequence) return
+  uni.pageScrollTo({ scrollTop: 0, duration: 0 })
+  scrollTopValue.value = saved
   setTimeout(() => {
-    scrollTopValue.value = saved
-    setTimeout(() => {
+    if (sequence === restoreSequence) {
       isRestoring = false
-    }, 200)
-  }, 100)
+      currentScrollTop = saved
+    }
+  }, 200)
 }
 
 const handleFilterChange = (filter: string) => {
@@ -460,7 +471,9 @@ const handleFilterChange = (filter: string) => {
     restoreScrollPosition()
   } else {
     // 新数据：先清空列表并显示 loading，再滚动到顶部，然后加载
+    syncCurrentCache()
     isRefreshing.value = true
+    restoreScrollPosition()
     loadData(1)
   }
 }
@@ -932,7 +945,9 @@ const handleAdTypeChange = (id: number) => {
     restoreScrollPosition()
   } else {
     // 新数据：先清空列表并显示 loading，再滚动到顶部，然后加载
+    syncCurrentCache()
     isRefreshing.value = true
+    restoreScrollPosition()
     loadData(1)
   }
 }
