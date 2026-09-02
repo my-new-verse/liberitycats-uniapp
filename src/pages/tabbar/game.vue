@@ -404,7 +404,7 @@ const enterSelectedGame = async () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 88rpx;
+  min-height: 88rpx;
   padding: 20rpx 30rpx;
   background: rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(2px);

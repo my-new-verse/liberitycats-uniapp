@@ -308,7 +308,7 @@ onUnmounted(() => {
   margin-top: 10rpx;
   font-size: calc(24rpx * var(--font-scale));
   line-height: 1.4;
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--appUpdate-version-color);
   text-shadow: 0 4rpx 12rpx rgba(72, 35, 0, 0.22);
 }
 

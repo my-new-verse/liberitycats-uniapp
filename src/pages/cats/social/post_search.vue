@@ -1928,10 +1928,15 @@ const handleLevelIconError = (member: any) => {
 
       .memberInfo {
         flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
         .memberName {
           font-size: calc(28rpx * var(--font-scale));
           color: var(--actions-text);
-          margin-right: 12rpx;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
         .memberId {
           font-size: calc(24rpx * var(--font-scale));
