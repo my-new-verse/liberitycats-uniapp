@@ -429,7 +429,7 @@ const inputBar = ref<{
     senderNickname: string,
     messageContent: string,
   ) => void
-  setDraftContent: (content: string) => void
+  setDraftContent: (content: string, mentionedUsers?: Array<[number, string]>) => void
 } | null>(null)
 // v-model绑定的这个变量不要在分页请求结束中自己赋值！！！
 const messages = ref([])
@@ -447,6 +447,7 @@ let pendingSendAfterReload: {
   messageType: any
   payload: any
   mentioned_member_ids?: number[]
+  mentioned_users?: Array<[number, string]>
   reply_to?: ChatMessageReplyTo
   clientMessageId: string
 } | null = null
@@ -1564,6 +1565,7 @@ const queryList = async (pageNo, pageSize) => {
           info.messageType,
           info.payload,
           info.reply_to,
+          info.mentioned_users,
         ),
         true,
         false,
@@ -1685,6 +1687,7 @@ const createLocalPendingMessage = (
   messageType: ChatMessageType,
   payload: ChatMessagePayload,
   reply_to?: ChatMessageReplyTo,
+  mentioned_users?: Array<[number, string]>,
 ) => {
   const roomId = roomDetail.value?.room.id || routeRoomId.value
   const memberId = Number(userStore.userInfo.member_id || 0)
@@ -1713,6 +1716,7 @@ const createLocalPendingMessage = (
     client_message_id: clientMessageId,
     local_id: clientMessageId,
     local_status: 'sending' as const,
+    mentioned_users,
     reply_to,
   } satisfies ChatMessage
 }
@@ -1859,7 +1863,13 @@ const tryRunPendingRecall = (msg: ChatMessage) => {
     if (!isPageLeaving.value) void handleRecallMessage(msg)
   }, 0)
 }
-const doSend = (messageType, payload, mentioned_member_ids?, reply_to?: ChatMessageReplyTo) => {
+const doSend = (
+  messageType,
+  payload,
+  mentioned_member_ids?,
+  reply_to?: ChatMessageReplyTo,
+  mentioned_users?: Array<[number, string]>,
+) => {
   const clientMessageId = createClientMessageId()
 
   // 先追加暂存的离屏消息（确保时序正确：他人消息在自己消息之前）
@@ -1878,6 +1888,7 @@ const doSend = (messageType, payload, mentioned_member_ids?, reply_to?: ChatMess
       messageType,
       payload,
       mentioned_member_ids,
+      mentioned_users,
       reply_to,
       clientMessageId,
     }
@@ -1887,7 +1898,7 @@ const doSend = (messageType, payload, mentioned_member_ids?, reply_to?: ChatMess
 
   // 乐观追加本地消息，立即展示并滚动到底部
   paging.value?.addChatRecordData(
-    createLocalPendingMessage(clientMessageId, messageType, payload, reply_to),
+    createLocalPendingMessage(clientMessageId, messageType, payload, reply_to, mentioned_users),
     true,
     false,
   )
@@ -2342,7 +2353,7 @@ const handleReeditRecalledMessage = (msg: ChatMessage) => {
     toast.show(t('group.chat.recallTimeExpired'))
     return
   }
-  inputBar.value?.setDraftContent(getRecalledMessageEditableText(msg))
+  inputBar.value?.setDraftContent(getRecalledMessageEditableText(msg), msg.mentioned_users || [])
 }
 
 const handleRecallMessage = async (msg: ChatMessage) => {

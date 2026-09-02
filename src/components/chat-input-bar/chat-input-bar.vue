@@ -39,35 +39,33 @@
             <wd-icon name="close" size="28rpx" color="#999" />
           </view>
         </view>
-        <MentionMemberPopup
-          :visible="mentionVisible"
-          :room-id="roomDetail?.room?.id || 0"
-          :keyword="''"
-          :title-text="t('group.chat.mention.title')"
-          :done-text="t('group.chat.mention.done')"
-          :search-placeholder-text="t('group.chat.mention.searchPlaceholder')"
-          :loading-text="t('group.chat.mention.loading')"
-          :default-multi-select="false"
-          @update:visible="mentionVisible = $event"
-          @select="handleSelectMention"
-          @confirm="handleConfirmMention"
-        />
         <view class="commentTextAreaBox">
-          <wd-textarea
-            v-model="commentContent"
+          <l-editor
+            ref="commentEditor"
+            v-model="editorModel"
             :placeholder="t('social.detail.comment.placeholder')"
-            :maxlength="dynamicMaxlength"
-            show-word-limit
-            auto-height
-            hold-keyboard
-            :adjust-position="false"
-            custom-class="pubCommentTextArea"
-            @keyboardheightchange="textAreaFocus"
-            :focus="shouldFocus"
-            :ignoreCompositionEvent="false"
-            ref="commentTextarea"
-            @input="handleTextareaInput"
-          />
+            :max-num="dynamicMaxlength"
+            :disabled="cannotSpeak"
+            :clear-on-send="false"
+            send-text=""
+            @change="handleEditorChange"
+          >
+            <template #at="{ show, keyword, onSelect, close }">
+              <MentionMemberPopup
+                :visible="show"
+                :room-id="roomDetail?.room?.id || 0"
+                :keyword="keyword"
+                :title-text="t('group.chat.mention.title')"
+                :done-text="t('group.chat.mention.done')"
+                :search-placeholder-text="t('group.chat.mention.searchPlaceholder')"
+                :loading-text="t('group.chat.mention.loading')"
+                :default-multi-select="false"
+                @update:visible="!$event && close()"
+                @select="handleSelectMention($event, onSelect)"
+                @confirm="handleConfirmMention($event, onSelect)"
+              />
+            </template>
+          </l-editor>
         </view>
 
         <view class="opBarBox">
@@ -160,6 +158,8 @@ import { getAliyunOssConfigApi, getAliyunOssConfigApiResponse } from '@/service/
 import { getCachedEmotionUrl } from '@/utils/chatAssetCache'
 import { initEmotionTool } from '@/utils/emotionTool'
 import { useToast } from 'wot-design-uni'
+import LEditor from '@/components/l-editor/l-editor.vue'
+import type { ParsedModel } from '@/components/l-editor/type'
 
 const emit = defineEmits(['sendMsg'])
 const userStore = useUserStore()
@@ -167,7 +167,7 @@ const commentPopupVisible = ref(false)
 const canspeak = ref(1)
 const canSpeakReason = ref('')
 const commentContent = ref('')
-let oldCommentContent = ''
+const editorModel = ref<ParsedModel[]>([])
 const mentionedUsers = ref<Map<number, string>>(new Map()) // memberId → nickname
 const textareaFocus = ref(true)
 const currentOpBtn = ref('keyboard')
@@ -211,6 +211,36 @@ interface ChatDraftCache {
   mentionedUsers: Array<[number, string]>
 }
 
+const modelToPlainText = (model: ParsedModel[]) =>
+  model
+    .map((item) => {
+      if (item.type === 'ate') return `@${item.value.replace(/^@/, '')}`
+      if (item.type === 'text') return item.value.replace(/\u200b/g, '')
+      return ''
+    })
+    .join('')
+
+const plainTextToModel = (content: string, mentions: Map<number, string>): ParsedModel[] => {
+  if (!content) return []
+  const nicknameToId = new Map(Array.from(mentions, ([id, nickname]) => [nickname, id]))
+  const nicknames = Array.from(nicknameToId.keys()).sort((a, b) => b.length - a.length)
+  if (nicknames.length === 0) return [{ type: 'text', value: content }]
+
+  const escaped = nicknames.map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+  const mentionPattern = new RegExp(`@(${escaped.join('|')})(?:\\s|$)`, 'g')
+  const model: ParsedModel[] = []
+  let lastIndex = 0
+  for (const match of content.matchAll(mentionPattern)) {
+    const index = match.index ?? 0
+    if (index > lastIndex) model.push({ type: 'text', value: content.slice(lastIndex, index) })
+    model.push({ type: 'ate', value: match[1], id: nicknameToId.get(match[1]) })
+    if (/\s$/.test(match[0])) model.push({ type: 'text', value: ' ' })
+    lastIndex = index + match[0].length
+  }
+  if (lastIndex < content.length) model.push({ type: 'text', value: content.slice(lastIndex) })
+  return model
+}
+
 const CHAT_DRAFT_STORAGE_PREFIX = 'group_chat_draft_v1'
 const draftStorageKey = computed(() => {
   const roomId = Number(roomDetail.value?.room?.id || 0)
@@ -244,12 +274,12 @@ watch(
     const content = typeof cached === 'string' ? cached : cached?.content
     if (!content) return
     commentContent.value = content
-    oldCommentContent = content
     mentionedUsers.value = new Map(
       typeof cached === 'object' && Array.isArray(cached.mentionedUsers)
         ? cached.mentionedUsers
         : [],
     )
+    editorModel.value = plainTextToModel(content, mentionedUsers.value)
   },
   { immediate: true },
 )
@@ -291,8 +321,7 @@ const changeExpressionCategory = (index: number) => {
   expressionCategory.value = index
 }
 const addEmoji = (emoji: string) => {
-  commentContent.value += emoji
-  oldCommentContent = commentContent.value
+  commentEditor.value?.insertText(emoji)
 }
 
 const changeOpBtn = () => {
@@ -305,7 +334,7 @@ const changeOpBtn = () => {
   }
 }
 
-const commentTextarea = ref()
+const commentEditor = ref<InstanceType<typeof LEditor> | null>(null)
 
 // 修改showCommentPopup方法
 const showCommentPopup = () => {
@@ -327,7 +356,6 @@ const showCommentPopup = () => {
   // 重置键盘高度，避免上次残留值导致 commentHidden 占位过高输入框弹飞
   keyboardHeight.value = 0
   commentPopupVisible.value = true
-  oldCommentContent = commentContent.value
   // 重置焦点状态
   shouldFocus.value = false
   customEmojiList.value = []
@@ -344,6 +372,7 @@ const showCommentPopup = () => {
       // 仅在弹窗仍打开时才聚焦
       if (commentPopupVisible.value) {
         shouldFocus.value = true
+        commentEditor.value?.focus()
       }
     }, 100)
   })
@@ -367,97 +396,17 @@ const handleCloseCommentPopup = () => {
   replyInfo.value = null
 }
 
-const handleTextareaInput = () => {
-  const oldText = oldCommentContent
-  const newText = commentContent.value
-  oldCommentContent = newText
-
-  if (newText.length >= oldText.length) return
-  if (mentionedUsers.value.size === 0) return
-
-  // Diff：找到删除范围
-  let prefixLen = 0
-  while (
-    prefixLen < newText.length &&
-    prefixLen < oldText.length &&
-    newText[prefixLen] === oldText[prefixLen]
-  ) {
-    prefixLen++
+const handleEditorChange = (data: { model: ParsedModel[] }) => {
+  commentContent.value = modelToPlainText(data.model)
+  const activeMentionIds = new Set(
+    data.model
+      .filter((item) => item.type === 'ate')
+      .map((item) => Number(item.id))
+      .filter(Boolean),
+  )
+  for (const id of mentionedUsers.value.keys()) {
+    if (!activeMentionIds.has(id)) mentionedUsers.value.delete(id)
   }
-  let suffixLen = 0
-  while (
-    suffixLen < newText.length - prefixLen &&
-    suffixLen < oldText.length - prefixLen &&
-    newText[newText.length - 1 - suffixLen] === oldText[oldText.length - 1 - suffixLen]
-  ) {
-    suffixLen++
-  }
-
-  const delStart = prefixLen
-  const delEnd = oldText.length - suffixLen
-  if (delStart >= delEnd) return
-
-  // 收集 oldText 中存在的 @提及，按位置降序排列（从后往前处理，避免位置偏移）
-  const mentionsInOld: Array<{
-    id: number
-    fullMention: string
-    mentionPos: number
-    mentionEnd: number
-  }> = []
-  for (const [id, nickname] of mentionedUsers.value) {
-    const fullMention = `@${nickname} `
-    const mentionPos = oldText.indexOf(fullMention)
-    if (mentionPos !== -1) {
-      mentionsInOld.push({
-        id,
-        fullMention,
-        mentionPos,
-        mentionEnd: mentionPos + fullMention.length,
-      })
-    }
-  }
-  mentionsInOld.sort((a, b) => b.mentionPos - a.mentionPos)
-
-  let resultText = newText
-  const usersToDelete: number[] = []
-
-  for (const { id, fullMention, mentionPos, mentionEnd } of mentionsInOld) {
-    // 删除范围与提及是否重叠
-    if (delStart >= mentionEnd || delEnd <= mentionPos) {
-      if (!resultText.includes(fullMention)) {
-        usersToDelete.push(id)
-      }
-      continue
-    }
-
-    // 提及仍完整存在（可能删除发生在边缘）
-    if (resultText.includes(fullMention)) continue
-
-    // 提及被部分删除 → 移除残留部分
-    const remainingParts: Array<[number, number]> = []
-    if (mentionPos < delStart) {
-      remainingParts.push([mentionPos, delStart])
-    }
-    if (mentionEnd > delEnd) {
-      const shift = delEnd - delStart
-      const startInNew = delStart
-      const endInNew = mentionEnd - shift
-      if (endInNew > startInNew) {
-        remainingParts.push([startInNew, endInNew])
-      }
-    }
-    for (const [start, end] of remainingParts) {
-      resultText = resultText.slice(0, start) + resultText.slice(end)
-    }
-
-    usersToDelete.push(id)
-  }
-
-  if (resultText !== newText) {
-    commentContent.value = resultText
-    oldCommentContent = resultText
-  }
-  usersToDelete.forEach((id) => mentionedUsers.value.delete(id))
 }
 
 const keyboardHeight = ref(0)
@@ -802,6 +751,7 @@ const handleSendButtonClick = () => {
 
   doSend('text', payload, mentionedIds)
   commentContent.value = ''
+  editorModel.value = []
 }
 
 const sendExpressionEmoji = async (emotionId?: number, emotionUrl: string) => {
@@ -811,11 +761,13 @@ const sendExpressionEmoji = async (emotionId?: number, emotionUrl: string) => {
   doSend('emotion', payload)
 }
 const doSend = (type, payload, mentioned_member_ids?: number[]) => {
+  const mentionedUsersSnapshot = Array.from(mentionedUsers.value.entries())
   commentPopupVisible.value = false
   shouldFocus.value = false
   clearChatDraft()
   commentContent.value = ''
-  oldCommentContent = ''
+  editorModel.value = []
+  commentEditor.value?.clear()
   customEmojiList.value = []
   mentionedUsers.value.clear()
   const replyTo: ChatMessageReplyTo | undefined = replyInfo.value
@@ -827,48 +779,35 @@ const doSend = (type, payload, mentioned_member_ids?: number[]) => {
       }
     : undefined
   replyInfo.value = null
-  emit('sendMsg', type, payload, mentioned_member_ids, replyTo)
+  emit('sendMsg', type, payload, mentioned_member_ids, replyTo, mentionedUsersSnapshot)
 }
 
-// ── @提及弹窗状态 ──
-const mentionVisible = ref(false)
-
-/** 监听输入内容，检测末尾单独 @ 触发提及弹窗（@ 后有其他字符则不展示） */
-watch(commentContent, (text) => {
-  if (/@$/.test(text)) {
-    mentionVisible.value = true
-  } else {
-    mentionVisible.value = false
-  }
-})
-
 /** 选中提及成员：替换末尾 @ 为 @nickname */
-const handleSelectMention = (member: ChatMember) => {
-  const text = commentContent.value
-  // 弹窗打开时末尾只有 @，直接替换
-  commentContent.value = text.replace(/@$/, `@${member.nickname} `)
-  oldCommentContent = commentContent.value
+const handleSelectMention = (
+  member: ChatMember,
+  onSelect: (member: { name: string; id: number }) => void,
+) => {
   mentionedUsers.value.set(member.member_id, member.nickname)
-  mentionVisible.value = false
+  onSelect({ name: member.nickname, id: member.member_id })
   nextTick(() => {
-    shouldFocus.value = true
+    commentEditor.value?.focus()
   })
 }
 
 /** 多选确认：批量插入 @nickname */
-const handleConfirmMention = (members: ChatMember[]) => {
-  const text = commentContent.value
-  const atMatch = text.match(/@([^@\s]*)$/)
-  const base = atMatch ? text.slice(0, text.length - atMatch[0].length) : text.trimEnd()
-  const mentions = members.map((m) => {
-    mentionedUsers.value.set(m.member_id, m.nickname)
-    return `@${m.nickname}`
-  })
-  commentContent.value = base ? `${base} ${mentions.join(' ')} ` : `${mentions.join(' ')} `
-  oldCommentContent = commentContent.value
-  mentionVisible.value = false
+const handleConfirmMention = async (
+  members: ChatMember[],
+  onSelect: (member: { name: string; id: number }) => void,
+) => {
+  for (const [index, member] of members.entries()) {
+    mentionedUsers.value.set(member.member_id, member.nickname)
+    if (index === 0) onSelect({ name: member.nickname, id: member.member_id })
+    else
+      commentEditor.value?.insertAtom({ type: 'ate', value: member.nickname, id: member.member_id })
+    await nextTick()
+  }
   nextTick(() => {
-    shouldFocus.value = true
+    commentEditor.value?.focus()
   })
 }
 
@@ -879,15 +818,15 @@ const handleConfirmMention = (members: ChatMember[]) => {
 const addMention = (memberId: number, nickname: string) => {
   if (!memberId || !nickname) return
   mentionedUsers.value.set(memberId, nickname)
-  // 若当前正处于 @输入状态，替换末尾 @keyword；否则直接追加
-  const atMatch = commentContent.value.match(/@([^@\s]*)$/)
-  if (atMatch) {
-    const beforeAt = commentContent.value.slice(0, commentContent.value.length - atMatch[0].length)
-    commentContent.value = `${beforeAt}@${nickname} `
-  } else {
-    const prefix = commentContent.value.trimEnd()
-    commentContent.value = prefix ? `${prefix} @${nickname} ` : `@${nickname} `
-  }
+  editorModel.value = [
+    ...editorModel.value,
+    ...(commentContent.value && !commentContent.value.endsWith(' ')
+      ? [{ type: 'text', value: ' ' } as ParsedModel]
+      : []),
+    { type: 'ate', value: nickname, id: memberId },
+    { type: 'text', value: ' ' },
+  ]
+  commentContent.value = modelToPlainText(editorModel.value)
   // 延迟打开弹窗，等 touchend 及合成的 click 事件消费完毕后再显示遮罩
   if (pendingShowPopupTimer) clearTimeout(pendingShowPopupTimer)
   pendingShowPopupTimer = setTimeout(() => {
@@ -909,11 +848,11 @@ const setReply = (messageId: number, memberId: number, nickname: string, content
 }
 
 /** 将已撤回消息回填到输入框中重新编辑。 */
-const setDraftContent = (content: string) => {
+const setDraftContent = (content: string, mentions: Array<[number, string]> = []) => {
   commentContent.value = content
-  oldCommentContent = content
   replyInfo.value = null
-  mentionedUsers.value.clear()
+  mentionedUsers.value = new Map(mentions)
+  editorModel.value = plainTextToModel(content, mentionedUsers.value)
   showCommentPopup()
 }
 
@@ -1001,6 +940,46 @@ onLoad(() => {
 <style scoped lang="scss">
 .pubCommentBox {
   position: relative;
+}
+
+.commentTextAreaBox {
+  // padding: 0 24rpx;
+
+  :deep(.l-editor) {
+    position: relative;
+    bottom: auto;
+    z-index: auto;
+    width: auto;
+    padding-bottom: 0;
+    box-shadow: none;
+  }
+
+  :deep(.editor-wrap) {
+    padding: 12rpx 20rpx;
+    background: #f3f3f4;
+    border-radius: 20rpx;
+  }
+
+  :deep(.editable) {
+    min-height: 96rpx;
+    max-height: 240rpx;
+    overflow-y: auto;
+    font-size: 28rpx;
+    line-height: 40rpx;
+    background: inherit;
+  }
+
+  :deep(.send-btn) {
+    display: none;
+  }
+
+  :deep(.tools) {
+    justify-content: flex-end;
+    margin-top: 8rpx;
+  }
+  :deep(.text-atom) {
+    color: #261000 !important;
+  }
 }
 
 .reply-bar {
