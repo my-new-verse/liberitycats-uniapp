@@ -230,10 +230,10 @@ onReady(() => {
     }
 
     // setJsFile 在下一次页面加载时注入，首次绑定后只重载一次。
-    if (!bridgeReloaded) {
-      bridgeReloaded = true
-      nativeGameWebview.reload?.()
-    }
+    // if (!bridgeReloaded) {
+    //   bridgeReloaded = true
+    //   nativeGameWebview.reload?.()
+    // }
   }
   bindNativeGameWebview()
   // #endif

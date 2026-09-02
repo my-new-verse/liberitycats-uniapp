@@ -28,10 +28,17 @@ export interface ChatRoom {
 }
 
 export interface ChatRoomDetail {
+  unread_count?: number
+  last_read_message_id?: number
+  read_position?: {
+    unread_count: number
+    last_read_message_id: number
+  }
   room: ChatRoom & {
     status?: number
     open_chat_start_at?: number
     open_chat_end_at?: number
+    last_read_message_id?: number
   }
   access: {
     is_joined: 0 | 1
@@ -162,6 +169,9 @@ export interface ChatMessage {
   payload: ChatMessagePayload
   status: number
   display_status?: string
+  can_reedit?: 0 | 1
+  original_payload?: ChatMessagePayload | null
+  recalled_at?: number
   placeholder?: ChatMessagePlaceholder
   reaction_summary?: ChatMessageReactionItem[]
   my_reactions?: ChatMessageMyReactionItem[]
@@ -169,6 +179,8 @@ export interface ChatMessage {
   sender: ChatMessageSender
   is_self: 0 | 1
   client_message_id?: string
+  /** send 接口返回的 data.message.id，用于撤回等服务端操作。 */
+  server_message_id?: number
   local_id?: string
   local_status?: 'sending' | 'failed' | 'sent'
   reply_to?: ChatMessageReplyTo
@@ -277,9 +289,11 @@ export const patchCachedChatRoom = (roomId: number, patch: Partial<ChatRoom>) =>
   cachedChatRoomsAt = Date.now()
 }
 
-export const getChatRoomDetailApi = (code: string) => {
+export const getChatRoomDetailApi = (codeOrRoomId: string | number) => {
   return http.get<ChatRoomDetail>('/v1/community/chat/room/detail', {
-    code,
+    ...(typeof codeOrRoomId === 'number' && codeOrRoomId > 0
+      ? { room_id: codeOrRoomId }
+      : { code: String(codeOrRoomId || '') }),
   })
 }
 
@@ -459,11 +473,23 @@ export const leaveChatRoomApi = (roomId: number) => {
 }
 
 export interface RecallChatMessageResponse {
-  message_id: number
-  room_id: number
-  room_seq: number
-  display_status: string
+  message_id?: number
+  room_id?: number
+  room_seq?: number
+  display_status?: string
   server_time: number
+  message: {
+    id?: number
+    room_id?: number
+    room_seq?: number
+    display_status?: string
+    can_reedit?: 0 | 1
+    original_payload?: ChatMessagePayload | null
+    recalled_at?: number
+    payload: {
+      text: string
+    }
+  }
 }
 
 export interface ReactChatMessageResponse {

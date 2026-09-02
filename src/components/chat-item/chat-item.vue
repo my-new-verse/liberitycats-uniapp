@@ -43,6 +43,18 @@
           </view>
         </view>
       </view>
+      <view v-else-if="item.display_status === 'recalled'" class="system-message recalled-message">
+        <view class="system-text">
+          <text>{{ item.placeholder?.text || t('group.chat.messageRecalled') }}</text>
+          <text
+            v-if="canReeditRecalledMessage"
+            class="reedit-btn"
+            @click.stop="emit('reedit', item)"
+          >
+            {{ t('group.chat.reedit') }}
+          </text>
+        </view>
+      </view>
       <template v-else>
         <!-- <view class="chat-icon-container">
           <image class="chat-icon" :src="item.sender.avatar" mode="aspectFill" />
@@ -594,7 +606,7 @@ import {
 } from '@/utils/avatarCache'
 import { useI18n } from 'vue-i18n'
 
-const emit = defineEmits(['retry', 'mention', 'reply-click'])
+const emit = defineEmits(['retry', 'mention', 'reply-click', 'reedit'])
 const { t } = useI18n()
 
 const props = defineProps({
@@ -602,6 +614,19 @@ const props = defineProps({
     type: Object,
     default: () => ({}),
   },
+})
+
+const MESSAGE_RECALL_TIME_LIMIT_SECONDS = 5 * 60
+const canReeditRecalledMessage = computed(() => {
+  const message = props.item
+  const canReedit =
+    message.display_status === 'recalled' && message.can_reedit === 1 && !!message.original_payload
+  if (!canReedit || message.is_self !== 1) return false
+  if (message.message_type !== 'text' && message.message_type !== 'rich') return false
+
+  const currentTime = Math.floor(Date.now() / 1000)
+  const messageTime = Number(message.recalled_at || message.create_time || 0)
+  return currentTime - messageTime <= MESSAGE_RECALL_TIME_LIMIT_SECONDS
 })
 
 // 处理回复引用点击
@@ -1067,6 +1092,7 @@ const handleAvatarClick = (memberId: number | undefined) => {
       &.recalled-message {
         width: 100%;
         max-width: 100%;
+        padding: 4rpx 0;
       }
 
       .system-text {
