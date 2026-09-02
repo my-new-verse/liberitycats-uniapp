@@ -27,6 +27,8 @@ interface NavigateToOptions {
        "/pages/cats/address/select" |
        "/pages/cats/agreement/detail" |
        "/pages/cats/asset/log" |
+       "/pages/cats/badge/detail" |
+       "/pages/cats/badge/index" |
        "/pages/cats/bulletins/detail" |
        "/pages/cats/bulletins/list" |
        "/pages/cats/discord/auth2" |
