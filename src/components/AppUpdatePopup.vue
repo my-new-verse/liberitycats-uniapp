@@ -14,9 +14,7 @@
       <view class="version" v-if="version">{{ version }}</view>
     </view>
     <view class="contentBox">
-      <view style="color: #000">
-        {{ t('my.menu.update.popup.current_version') }}:{{ currentVersion }}
-      </view>
+      <view>{{ t('my.menu.update.popup.current_version') }}:{{ currentVersion }}</view>
       <view class="content-title">{{ t('my.menu.update.popup.content_title') }}</view>
       <scroll-view class="scrollBox" :scroll-y="true">
         <rich-text :nodes="content"></rich-text>
