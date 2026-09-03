@@ -11,10 +11,10 @@
       </view>
       <view
         class="commentTextArea"
-        :class="{ 'is-muted': cannotSpeak }"
+        :class="{ 'is-muted': cannotSpeak, 'has-draft': !cannotSpeak && !!commentContent }"
         @click="!cannotSpeak && showCommentPopup()"
       >
-        {{ inputPlaceholder }}
+        {{ cannotSpeak ? inputPlaceholder : commentContent || inputPlaceholder }}
       </view>
     </view>
 
@@ -167,6 +167,7 @@ const commentPopupVisible = ref(false)
 const canspeak = ref(1)
 const canSpeakReason = ref('')
 const commentContent = ref('')
+let oldCommentContent = ''
 const mentionedUsers = ref<Map<number, string>>(new Map()) // memberId → nickname
 const textareaFocus = ref(true)
 const currentOpBtn = ref('keyboard')
@@ -204,6 +205,61 @@ const props = defineProps({
   },
 })
 const { roomDetail, selfMuted, selfMuteReason } = toRefs(props)
+
+interface ChatDraftCache {
+  content: string
+  mentionedUsers: Array<[number, string]>
+}
+
+const CHAT_DRAFT_STORAGE_PREFIX = 'group_chat_draft_v1'
+const draftStorageKey = computed(() => {
+  const roomId = Number(roomDetail.value?.room?.id || 0)
+  const memberId = Number(userStore.userInfo?.member_id || 0)
+  return roomId && memberId ? `${CHAT_DRAFT_STORAGE_PREFIX}:${memberId}:${roomId}` : ''
+})
+
+const clearChatDraft = () => {
+  if (draftStorageKey.value) uni.removeStorageSync(draftStorageKey.value)
+}
+
+const persistChatDraft = () => {
+  const key = draftStorageKey.value
+  if (!key) return
+  if (!commentContent.value) {
+    uni.removeStorageSync(key)
+    return
+  }
+  const draft: ChatDraftCache = {
+    content: commentContent.value,
+    mentionedUsers: Array.from(mentionedUsers.value.entries()),
+  }
+  uni.setStorageSync(key, draft)
+}
+
+watch(
+  draftStorageKey,
+  (key) => {
+    if (!key) return
+    const cached = uni.getStorageSync(key) as ChatDraftCache | string
+    const content = typeof cached === 'string' ? cached : cached?.content
+    if (!content) return
+    commentContent.value = content
+    oldCommentContent = content
+    mentionedUsers.value = new Map(
+      typeof cached === 'object' && Array.isArray(cached.mentionedUsers)
+        ? cached.mentionedUsers
+        : [],
+    )
+  },
+  { immediate: true },
+)
+
+watch(
+  () => [commentContent.value, Array.from(mentionedUsers.value.entries())] as const,
+  persistChatDraft,
+  // 输入后同步落盘，避免用户立即退出或关闭 App 时丢失最后一次输入。
+  { deep: true, flush: 'sync' },
+)
 
 /** 综合判断是否可发言：优先 WS 实时禁言，再 fallback 到 roomDetail */
 const cannotSpeak = computed(() => {
@@ -308,13 +364,9 @@ const handleCloseCommentPopup = () => {
   commentPopupVisible.value = false
   shouldFocus.value = false
   keyboardHeight.value = 0
-  commentContent.value = ''
-  oldCommentContent = ''
   replyInfo.value = null
-  mentionedUsers.value.clear()
 }
 
-let oldCommentContent = ''
 const handleTextareaInput = () => {
   const oldText = oldCommentContent
   const newText = commentContent.value
@@ -761,6 +813,7 @@ const sendExpressionEmoji = async (emotionId?: number, emotionUrl: string) => {
 const doSend = (type, payload, mentioned_member_ids?: number[]) => {
   commentPopupVisible.value = false
   shouldFocus.value = false
+  clearChatDraft()
   commentContent.value = ''
   oldCommentContent = ''
   customEmojiList.value = []
@@ -855,6 +908,15 @@ const setReply = (messageId: number, memberId: number, nickname: string, content
   showCommentPopup()
 }
 
+/** 将已撤回消息回填到输入框中重新编辑。 */
+const setDraftContent = (content: string) => {
+  commentContent.value = content
+  oldCommentContent = content
+  replyInfo.value = null
+  mentionedUsers.value.clear()
+  showCommentPopup()
+}
+
 /**
  * 取消回复
  */
@@ -862,7 +924,7 @@ const cancelReply = () => {
   replyInfo.value = null
 }
 
-defineExpose({ addMention, setReply, cancelReply })
+defineExpose({ addMention, setReply, setDraftContent, cancelReply })
 /**
  * 发送消息前的完整校验
  * @returns {boolean} 是否通过校验
@@ -1036,6 +1098,13 @@ onLoad(() => {
     color: rgba(38, 16, 0, 0.3);
     background: var(--fixedCommentBox-color);
     border-radius: 64rpx;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &.has-draft {
+      color: #261000;
+    }
 
     &.is-muted {
       color: #ccc !important;

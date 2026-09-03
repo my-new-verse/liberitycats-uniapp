@@ -3,6 +3,11 @@ import { http } from '@/utils/http'
 export interface PreloadResource {
   url: string
   ext?: string
+  size?: number
+  file_size?: number
+  fileSize?: number
+  content_length?: number
+  contentLength?: number
 }
 
 export interface getGameParamsApiResponse {

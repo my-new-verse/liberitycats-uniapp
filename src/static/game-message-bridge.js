@@ -40,9 +40,11 @@
     }
   }
 
-  window.addEventListener('message', function (event) {
+  function handleWindowMessage(event) {
     handleMessage(event.data)
-  })
+  }
+
+  window.addEventListener('message', handleWindowMessage)
 
   if (!window.AndroidGameBridge) {
     window.AndroidGameBridge = { postMessage: handleMessage }
@@ -58,42 +60,60 @@
     // WKWebView 的原生 messageHandlers 可能不可写，函数包装仍可捕获完成事件
   }
 
-  const wrapTimer = setInterval(function () {
-    const original = window._NotifyGameLoadCompletedToApp
-    if (typeof original !== 'function' || original.__libertyCatsWrapped) return
+  const pendingHooks = [
+    ['_NotifyGameLoadCompletedToApp', 'GameLoadCompleted'],
+    ['_NotifyGameLoadFailedToApp', 'GameLoadFailed'],
+    ['_NotifyCloseGameToApp', 'CloseGame'],
+  ]
+  const HOOK_RETRY_INTERVAL = 250
+  const HOOK_RETRY_TIMEOUT = 5 * 60 * 1000
+  const hookRetryStartedAt = Date.now()
+  let hookRetryTimer = null
+
+  function wrapGameHook(hook) {
+    const hookName = hook[0]
+    const messageType = hook[1]
+    const original = window[hookName]
+    if (typeof original !== 'function') return false
+    if (original.__libertyCatsWrapped) return true
 
     const wrapped = function () {
-      notifyApp('GameLoadCompleted')
+      notifyApp(messageType)
       return original.apply(this, arguments)
     }
     wrapped.__libertyCatsWrapped = true
-    window._NotifyGameLoadCompletedToApp = wrapped
-    clearInterval(wrapTimer)
-  }, 10)
+    window[hookName] = wrapped
+    return true
+  }
 
-  const failedWrapTimer = setInterval(function () {
-    const original = window._NotifyGameLoadFailedToApp
-    if (typeof original !== 'function' || original.__libertyCatsWrapped) return
+  function clearHookRetryTimer() {
+    if (hookRetryTimer === null) return
+    clearInterval(hookRetryTimer)
+    hookRetryTimer = null
+  }
 
-    const wrapped = function () {
-      notifyApp('GameLoadFailed')
-      return original.apply(this, arguments)
+  function tryWrapGameHooks() {
+    for (let index = pendingHooks.length - 1; index >= 0; index -= 1) {
+      if (wrapGameHook(pendingHooks[index])) pendingHooks.splice(index, 1)
     }
-    wrapped.__libertyCatsWrapped = true
-    window._NotifyGameLoadFailedToApp = wrapped
-    clearInterval(failedWrapTimer)
-  }, 10)
 
-  const closeWrapTimer = setInterval(function () {
-    const original = window._NotifyCloseGameToApp
-    if (typeof original !== 'function' || original.__libertyCatsWrapped) return
-
-    const wrapped = function () {
-      notifyApp('CloseGame')
-      return original.apply(this, arguments)
+    if (pendingHooks.length === 0 || Date.now() - hookRetryStartedAt >= HOOK_RETRY_TIMEOUT) {
+      clearHookRetryTimer()
     }
-    wrapped.__libertyCatsWrapped = true
-    window._NotifyCloseGameToApp = wrapped
-    clearInterval(closeWrapTimer)
-  }, 10)
+  }
+
+  function cleanupBridge() {
+    clearHookRetryTimer()
+    window.removeEventListener('message', handleWindowMessage)
+    window.removeEventListener('pagehide', cleanupBridge)
+    window.removeEventListener('beforeunload', cleanupBridge)
+  }
+
+  tryWrapGameHooks()
+  if (pendingHooks.length > 0) {
+    hookRetryTimer = setInterval(tryWrapGameHooks, HOOK_RETRY_INTERVAL)
+  }
+
+  window.addEventListener('pagehide', cleanupBridge)
+  window.addEventListener('beforeunload', cleanupBridge)
 })()

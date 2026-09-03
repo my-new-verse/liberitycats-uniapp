@@ -374,6 +374,7 @@
   "asset.log.page_title": "资产明细",
 
   "game.toast.game_not_open": "游戏正在维护，请稍后再试",
+  "game.toast.load_failed": "游戏加载失败，请重试",
   "game.opening": "正在打开",
   "game.entering": "正在进入游戏",
   "game.extract_coin_guide.title": "自由猫提币引导",
@@ -646,6 +647,7 @@
   "group.chat.loadingMoreHistory": "加载更多消息...",
   "group.chat.noMoreHistory": "没有更多历史消息了",
   "group.chat.newMessages": "条新消息",
+  "group.chat.newMessage": "新消息",
   "group.chat.importantMessages": "重要消息",
   "group.chat.unmuteDialogTitle": "解除禁言",
   "group.chat.unmuteReasonOptionalLabel": "解除禁言原因（选填）",
@@ -669,6 +671,7 @@
   "group.chat.imageLimitHint": "图片必须不超过 10MB，且宽高不超过 4096",
   "group.chat.stressSendFailed": "压测发送失败",
   "group.chat.recalling": "正在撤回",
+  "group.chat.recallWaitingForSend": "消息发送中，将在发送成功后撤回",
   "group.chat.empty_message": "不能发送空消息",
   "group.chat.mention.title": "选择提醒的人",
   "group.chat.mention.multiSelect": "多选",

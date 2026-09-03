@@ -11,14 +11,11 @@ import {
 import { getUserInfoApi, getSystemConfigApiV2 } from '@/service/api/user'
 import { disconnectWalletApi } from '@/service/api/web3'
 import { preloadIosGameWebView as preloadGameWebViews } from '@/utils/iosGameWebviewPreload'
-import { downloadGameResources } from '@/utils/webviewResourceCache'
 import traceContext from '@/utils/traceContext'
 import { useSystemStore } from '@/store/system'
 import buildInfo from '@/../build-info.json'
 
-// 平台类型（避免多次调用 getSystemInfoSync）
-const platform = uni.getSystemInfoSync().platform || ''
-const isAndroid = platform === 'android'
+const isAndroid = (uni.getSystemInfoSync().platform || '').toLowerCase() === 'android'
 
 const initState = {
   nickname: '',
@@ -220,15 +217,10 @@ export const useUserStore = defineStore(
       uni.$emit('mall:refresh')
       uni.$emit('socialMessage:refresh')
 
-      // 登录成功后的游戏资源初始化与 App.vue 冷启动逻辑保持一致。
       // #ifdef APP-PLUS
-      if (isAndroid) {
-        // Android: 预下载游戏资源（用于 overrideResourceRequest 重定向）
-        downloadGameResources()
-      } else {
-        // iOS: 延迟预加载游戏 WebView，避免与登录后跳转抢占资源。
+      if (!isAndroid) {
         setTimeout(() => {
-          preloadGameWebViews()
+          void preloadGameWebViews()
         }, 3000)
       }
       // #endif

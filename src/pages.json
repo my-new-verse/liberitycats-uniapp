@@ -316,6 +316,22 @@
       }
     },
     {
+      "path": "pages/cats/badge/detail",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "徽章详情"
+      }
+    },
+    {
+      "path": "pages/cats/badge/index",
+      "type": "page",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "我的徽章"
+      }
+    },
+    {
       "path": "pages/cats/bulletins/detail",
       "type": "page",
       "style": {

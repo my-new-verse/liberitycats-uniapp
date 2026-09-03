@@ -111,6 +111,7 @@
               @retry="retryFailedMessage"
               @mention="handleMentionUser"
               @reply-click="handleReplyClick"
+              @reedit="handleReeditRecalledMessage"
             ></chat-item>
           </view>
         </template>
@@ -144,13 +145,16 @@
       </z-paging>
       <!-- 右侧悬浮按钮 -->
       <view
-        v-if="showFloatBtn && !isFromHistory"
+        v-if="(showFloatBtn || showUnreadFloatBtn) && !isFromHistory"
         class="float-action-btn"
         @click="handleFloatAction"
       >
         <wd-icon name="arrow-up" size="24rpx"></wd-icon>
         <text class="float-action-text">
-          {{ t('group.chat.importantMessages') }} ({{ importantUnreadMessages.length }})
+          <template v-if="showFloatBtn">
+            {{ t('group.chat.importantMessages') }} ({{ importantUnreadMessages.length }})
+          </template>
+          <template v-else>{{ t('group.chat.newMessage') }} ({{ roomUnreadCount }})</template>
         </text>
       </view>
       <!-- WeChat 风格气泡菜单 -->
@@ -201,6 +205,45 @@
           :style="messagePopoverArrowStyle"
         />
       </view>
+      <!-- 禁言设置弹窗，与群成员页保持一致 -->
+      <wd-popup v-model="showMutePopup" position="bottom" :close-on-click-modal="false">
+        <view class="mute-popup">
+          <view class="popup-header">
+            <text class="popup-title">{{ t('group.chat.member.muteDialogTitle') }}</text>
+            <view class="close-btn" @click="showMutePopup = false">
+              <wd-icon name="close" size="20px"></wd-icon>
+            </view>
+          </view>
+          <view class="popup-content">
+            <view class="form-item">
+              <text class="label">{{ t('group.chat.member.muteReasonLabel') }}</text>
+              <wd-input
+                v-model="muteReason"
+                :placeholder="t('group.chat.member.muteReasonPlaceholder')"
+                clearable
+                :maxlength="100"
+              />
+            </view>
+            <view class="form-item">
+              <text class="label">{{ t('group.chat.member.muteUntilLabel') }}</text>
+              <wd-calendar
+                v-model="muteUntilTimestamp"
+                type="datetime"
+                :min-date="Date.now()"
+                :placeholder="t('group.chat.member.muteUntilPlaceholder')"
+              />
+            </view>
+          </view>
+          <view class="popup-footer">
+            <wd-button custom-class="cancel-btn" @click="showMutePopup = false">
+              {{ t('common.cancel') }}
+            </wd-button>
+            <wd-button type="primary" custom-class="confirm-btn" @click="confirmMessageMute">
+              {{ t('common.confirm') }}
+            </wd-button>
+          </view>
+        </view>
+      </wd-popup>
       <wd-popup v-model="showUnmuteReasonPopup" position="bottom" :close-on-click-modal="false">
         <view class="mute-popup">
           <view class="popup-header">
@@ -347,6 +390,41 @@ const runtimeSystemInfo = uni.getSystemInfoSync()
 const isTouchRuntime = ['ios', 'android'].includes(runtimeSystemInfo.platform)
 const isIosRuntime = runtimeSystemInfo.platform === 'ios'
 
+type MessageMenuAction =
+  | 'reply'
+  | 'copy'
+  | 'recall'
+  | 'delete'
+  | 'mute'
+  | 'unmute'
+  | 'kick'
+  | 'removed'
+type MessageMenuItem = { content: string; action: MessageMenuAction }
+type ActionSheetAction = {
+  name: string
+  action?: MessageMenuAction
+  iconName?: string
+  iconSrc?: string
+  destructive?: boolean
+}
+
+type MessageStatePayload = {
+  message_id: number
+  room_id?: number
+  room_seq?: number
+  display_status: string
+  placeholder?: {
+    text?: string
+  }
+  payload?: {
+    text?: string
+  }
+  can_reedit?: 0 | 1
+  original_payload?: ChatMessagePayload | null
+  recalled_at?: number
+  server_time?: number
+}
+
 const inputBar = ref<{
   addMention: (memberId: number, nickname: string) => void
   setReply: (
@@ -355,6 +433,7 @@ const inputBar = ref<{
     senderNickname: string,
     messageContent: string,
   ) => void
+  setDraftContent: (content: string) => void
 } | null>(null)
 // v-model绑定的这个变量不要在分页请求结束中自己赋值！！！
 const messages = ref([])
@@ -378,6 +457,18 @@ let pendingSendAfterReload: {
 const showFloatBtn = ref(false)
 const importantUnreadMessages = ref<Array<{ message_id: number }>>([])
 const currentUnreadIndex = ref(0)
+const roomUnreadCount = ref(0)
+const lastReadMessageId = ref(0)
+const hasHandledUnreadPosition = ref(false)
+const hasLoadedImportantUnread = ref(false)
+const showUnreadFloatBtn = computed(
+  () =>
+    !showFloatBtn.value &&
+    hasLoadedImportantUnread.value &&
+    !hasHandledUnreadPosition.value &&
+    roomUnreadCount.value > 0 &&
+    lastReadMessageId.value > 0,
+)
 const roomDetail = ref<ChatRoomDetail | null>(null)
 const roomCode = ref('')
 const routeRoomId = ref<number>(0)
@@ -387,6 +478,7 @@ const toast = useToast()
 const { t } = useI18n()
 const roomDetailLoading = ref(false)
 const showArrow = ref(false)
+const pendingRecallClientMessageIds = new Set<string>()
 
 // 布局相关的
 const { safeAreaInsets } = uni.getSystemInfoSync()
@@ -473,9 +565,8 @@ onShow(() => {
     loadCurrentAnnouncement(roomId)
   }
   // 页面回到前台时，检查并回填可能缺失的消息
-  const lastPersistedMessage = getLastPersistedMessage()
-  if (lastPersistedMessage) {
-    backfillMissingMessagesByRoomSeq(lastPersistedMessage)
+  if (getLastPersistedMessageId()) {
+    backfillMissingMessagesByRoomSeq()
   }
 })
 onUnmounted(() => {
@@ -488,6 +579,7 @@ onUnmounted(() => {
   chatSocketClient.value = null
   pendingRealtimeMessages.clear()
   pendingRealtimeScrollToLatest = false
+  pendingRecallClientMessageIds.clear()
   uni.$off(GROUP_CHAT_REFRESH_SENDERS_EVENT, handleRefreshMessageSendersEvent)
 })
 const handleMentionUser = ({ member_id, nickname }: { member_id: number; nickname: string }) => {
@@ -646,22 +738,22 @@ const applyMessagesBatch = (incomingMessages: ChatMessage[], scrollToLatest = fa
   normalizedMessages.forEach((message) => stageReadMessage(message.id))
 }
 
-const getLastPersistedMessage = () => {
-  for (let index = messages.value.length - 1; index >= 0; index--) {
-    const message = messages.value[index]
-    const messageId = Number(message?.id || 0)
-    if (Number.isFinite(messageId) && messageId > 0) {
-      return message
-    }
-  }
-  return null
-}
-const getLastPersistedMessageId = () => getLastPersistedMessage()?.id || null
+// 服务端最新消息游标：不从虚拟列表顺序推断，只由服务端结果推进。
+const lastPersistedMessageId = ref<number | null>(null)
+let hasInitializedLastPersistedMessageId = false
 
-const backfillMissingMessagesByRoomSeq = async (incomingMessage: ChatMessage) => {
+const persistLatestMessageId = (messageId?: number | string | null) => {
+  const normalizedId = Number(messageId || 0)
+  if (!Number.isFinite(normalizedId) || normalizedId <= 0) return
+  lastPersistedMessageId.value = normalizedId
+}
+
+const getLastPersistedMessageId = () => lastPersistedMessageId.value
+
+const backfillMissingMessagesByRoomSeq = async (incomingMessage?: ChatMessage) => {
   const roomId = roomDetail.value?.room.id || routeRoomId.value
   const lastMessageId = getLastPersistedMessageId()
-  if (!roomId || !lastMessageId || !incomingMessage?.id) return
+  if (!roomId || !lastMessageId) return
 
   let nextAfterMessageId = Number(lastMessageId)
   if (!Number.isFinite(nextAfterMessageId) || nextAfterMessageId <= 0) return
@@ -685,7 +777,10 @@ const backfillMissingMessagesByRoomSeq = async (incomingMessage: ChatMessage) =>
     }))
     applyMessagesBatch(normalizedMessages, false)
 
-    if (messageList.some((message) => Number(message.id) === Number(incomingMessage.id))) {
+    if (
+      incomingMessage?.id &&
+      messageList.some((message) => Number(message.id) === Number(incomingMessage.id))
+    ) {
       break
     }
 
@@ -829,6 +924,8 @@ const handleRealtimeEvent = async (eventName: string, payload: any) => {
   // 处理消息创建事件（新消息）
   if (normalizedEventName === 'message.created' || normalizedEventName === 'GroupMessageEvent') {
     if (message?.id) {
+      // WebSocket 最后一次收到的新消息是当前最新消息。
+      persistLatestMessageId(message.id)
       const is_self = message.sender?.member_id === userStore.userInfo.member_id
       // 不在此处计数，由 flushRealtimeMessages 统一在「不在底部」时计数，避免重复累加
       enqueueRealtimeMessage({ ...message, is_self }, false)
@@ -930,7 +1027,9 @@ const resolveDeletedMessageText = (
 const applyMessageDisplayStatus = (payload: MessageStatePayload) => {
   if (!payload.message_id || !payload.display_status) return false
 
-  const targetIndex = messages.value.findIndex((msg) => msg.id === payload.message_id)
+  const targetIndex = messages.value.findIndex(
+    (msg) => msg.id === payload.message_id || msg.server_message_id === payload.message_id,
+  )
   if (targetIndex < 0) return false
 
   const currentMessage = messages.value[targetIndex]
@@ -942,6 +1041,9 @@ const applyMessageDisplayStatus = (payload: MessageStatePayload) => {
   const nextMessage: ChatMessage = {
     ...currentMessage,
     display_status: payload.display_status,
+    can_reedit: payload.can_reedit ?? currentMessage.can_reedit,
+    original_payload: payload.original_payload ?? currentMessage.original_payload,
+    recalled_at: payload.recalled_at ?? currentMessage.recalled_at,
     placeholder: deletedText ? { text: deletedText } : payload.placeholder,
     ...(deletedText
       ? {
@@ -1103,12 +1205,13 @@ const flushRealtimeMessages = () => {
           (m) => m.is_self === 1 && m.local_status === 'sending',
         )
         if (localPendingIndex >= 0) {
-          messages.value.splice(localPendingIndex, 1, {
-            ...messages.value[localPendingIndex],
+          const localPendingMessage = messages.value[localPendingIndex]
+          matched = updateChatMessageByClientMessageId(localPendingMessage.client_message_id, {
             ...msg,
+            server_message_id: msg.id,
+            client_message_id: localPendingMessage.client_message_id,
             local_status: 'sent',
           })
-          matched = true
         }
       }
       // 3. 若 API 响应已先于 WS 更新了本地消息（id 已替换为服务端 id），直接跳过
@@ -1294,7 +1397,13 @@ const handleJumpToLatestMessage = () => {
 
 // 加载未读通知
 const loadUnreadNotifications = async (roomId: number) => {
-  if (isFromContext.value) return // 从聊天记录跳转过来的不展示重要消息按钮
+  if (isFromContext.value) {
+    hasLoadedImportantUnread.value = true
+    return // 从聊天记录跳转过来的不展示重要消息按钮
+  }
+  hasLoadedImportantUnread.value = false
+  showFloatBtn.value = false
+  importantUnreadMessages.value = []
   try {
     const res = await getUnreadNotificationsApi(roomId)
     if (res.code === 1 && res.data) {
@@ -1315,6 +1424,8 @@ const loadUnreadNotifications = async (roomId: number) => {
     }
   } catch (e) {
     // 忽略错误
+  } finally {
+    hasLoadedImportantUnread.value = true
   }
 }
 
@@ -1381,17 +1492,22 @@ const highlightMessages = (messageIds: number[]) => {
 // 悬浮按钮点击 - 依次跳转到未读重要消息，每跳转一条计数减 1
 const handleFloatAction = () => {
   const msgs = importantUnreadMessages.value
-  if (msgs.length === 0) return
-  // 取第一条未读消息，跳转后从数组中移除
-  const msg = msgs[0]
-  scrollIntoViewById(String(msg.message_id))
-  importantUnreadMessages.value = msgs.slice(1)
+  if (showFloatBtn.value && msgs.length > 0) {
+    // 重要消息优先：取第一条未读重要消息，跳转后从数组中移除。
+    const msg = msgs[0]
+    scrollIntoViewById(String(msg.message_id))
+    importantUnreadMessages.value = msgs.slice(1)
 
-  // 所有未读消息都已跳转完，隐藏按钮
-  if (importantUnreadMessages.value.length === 0) {
-    showFloatBtn.value = false
-    currentUnreadIndex.value = 0
+    if (importantUnreadMessages.value.length === 0) {
+      showFloatBtn.value = false
+      currentUnreadIndex.value = 0
+    }
+    return
   }
+
+  if (!showUnreadFloatBtn.value) return
+  hasHandledUnreadPosition.value = true
+  scrollIntoViewById(String(lastReadMessageId.value))
 }
 //  向下的箭头 ⬇️⬇️⬇️⬇️⬇️⬇️⬇️⬇️⬇️ end
 const messageCache = new Map()
@@ -1509,6 +1625,15 @@ const getChatMessageList = async (beforeMessageId: string | number = null, silen
   const res = await getChatMessageListApi(params)
   if (res.code !== 1 || !res.data) return
 
+  // 仅用 getChatMessageList 的第一次成功响应初始化最新消息游标。
+  if (!hasInitializedLastPersistedMessageId) {
+    hasInitializedLastPersistedMessageId = true
+    // 若列表请求返回前已收到 WS 或发送成功，不用旧列表游标回退。
+    if (!lastPersistedMessageId.value) {
+      persistLatestMessageId(res.data.next_after_message_id)
+    }
+  }
+
   const messageList = res.data.messages || []
   // 没有历史数据了，不再做后续处理
   if (messageList.length === 0) {
@@ -1614,9 +1739,13 @@ const sendChatMessageWithClientMessageId = async (
   if (res.code === 1) {
     const nextMessage = {
       ...res.data.message,
+      server_message_id: res.data.message.id,
       client_message_id: res.data.message.client_message_id || clientMessageId,
       local_status: 'sent' as const,
     }
+
+    // 自己发送成功时，以发送接口返回的消息 id 推进游标。
+    persistLatestMessageId(res.data.message.id)
 
     const updated = updateChatMessageByClientMessageId(clientMessageId, nextMessage)
     if (updated) {
@@ -1654,6 +1783,7 @@ const sendChatMessageWithClientMessageId = async (
 // 本地消息发送失败处理
 const markLocalMessageFailed = (clientMessageId: string | undefined) => {
   if (!clientMessageId) return
+  pendingRecallClientMessageIds.delete(clientMessageId)
   updateChatMessageByClientMessageId(clientMessageId, {
     local_status: 'failed',
   })
@@ -1704,11 +1834,34 @@ const updateChatMessageByClientMessageId = (
   const index = messages.value.findIndex((msg) => msg.client_message_id === clientMessageId)
   if (index < 0) return false
 
-  messages.value.splice(index, 1, {
+  const updatedMessage = {
     ...messages.value[index],
     ...message,
-  })
+  }
+  messages.value.splice(index, 1, updatedMessage)
+  tryRunPendingRecall(updatedMessage)
   return true
+}
+
+const getServerMessageId = (msg: ChatMessage): number | null => {
+  const serverMessageId = Number(msg.server_message_id || 0)
+  if (serverMessageId > 0) return serverMessageId
+
+  // 带 client_message_id 的 sending 消息，其 id 是本地临时值，禁止用于服务端操作。
+  if (msg.client_message_id && msg.local_status !== 'sent') return null
+  const messageId = Number(msg.id || 0)
+  return messageId > 0 ? messageId : null
+}
+
+const tryRunPendingRecall = (msg: ChatMessage) => {
+  const clientMessageId = msg.client_message_id
+  if (!clientMessageId || !pendingRecallClientMessageIds.has(clientMessageId)) return
+  if (!getServerMessageId(msg)) return
+
+  pendingRecallClientMessageIds.delete(clientMessageId)
+  setTimeout(() => {
+    if (!isPageLeaving.value) void handleRecallMessage(msg)
+  }, 0)
 }
 const doSend = (messageType, payload, mentioned_member_ids?, reply_to?: ChatMessageReplyTo) => {
   const clientMessageId = createClientMessageId()
@@ -1812,7 +1965,8 @@ const ensureRoomDetailLoaded = async () => {
 
   roomDetailPreloadPromise = (async () => {
     try {
-      const res = await getChatRoomDetailApi(roomCode.value)
+      const roomIdentifier = routeRoomId.value || roomCode.value
+      const res = await getChatRoomDetailApi(roomIdentifier)
       if (res.code !== 1) {
         toast.show(res.msg || t('common.loadFailed'))
         return false
@@ -1820,6 +1974,19 @@ const ensureRoomDetailLoaded = async () => {
 
       roomDetail.value = res.data
       routeRoomId.value = res.data.room.id
+      roomUnreadCount.value = Number(
+        res.data.read_state?.unread_count ??
+          res.data.unread_count ??
+          res.data.room.unread_count ??
+          0,
+      )
+      lastReadMessageId.value = Number(
+        res.data.read_state?.last_read_message_id ??
+          res.data.last_read_message_id ??
+          res.data.room.last_read_message_id ??
+          0,
+      )
+      hasHandledUnreadPosition.value = false
       await loadCurrentAnnouncement(res.data.room.id)
       await loadUnreadNotifications(res.data.room.id)
       return true
@@ -1911,6 +2078,9 @@ const createClientMessageId = () => {
 // 弹窗相关的响应式变量
 const showUnmuteReasonPopup = ref(false)
 const unmuteReason = ref('')
+const showMutePopup = ref(false)
+const muteReason = ref('')
+const muteUntilTimestamp = ref<number | null>(null)
 
 const showDeleteReasonPopup = ref(false)
 const deleteReason = ref('')
@@ -2132,20 +2302,101 @@ const handleCopyMessage = (msg: ChatMessage) => {
 }
 
 const canRecallMessage = (msg: ChatMessage) => {
-  if (msg.is_self !== 1 || msg.display_status === 'recalled') return false
+  const currentMemberId = Number(userStore.userInfo?.member_id || 0)
+  const senderMemberId = Number(msg.sender?.member_id || msg.member_id || 0)
+  const isMessageSender =
+    currentMemberId > 0 && senderMemberId > 0 && currentMemberId === senderMemberId
+  if (!isMessageSender || msg.display_status === 'recalled' || msg.local_status === 'failed') {
+    return false
+  }
 
   const currentTime = Math.floor(Date.now() / 1000)
-  const messageTime = msg.create_time || 0
-  return currentTime - messageTime <= MESSAGE_RECALL_TIME_LIMIT_SECONDS
+  const messageTime = Number(msg.create_time || 0)
+  return (
+    messageTime > 0 &&
+    currentTime >= messageTime &&
+    currentTime - messageTime <= MESSAGE_RECALL_TIME_LIMIT_SECONDS
+  )
 }
 
 const canReeditRecalledMessage = (msg: ChatMessage) => {
-  if (msg.is_self !== 1 || msg.display_status !== 'recalled') return false
-  if (!msg.placeholder?.text) return false
+  const canReedit =
+    msg.display_status === 'recalled' && msg.can_reedit === 1 && !!msg.original_payload
+  if (!canReedit || msg.is_self !== 1) return false
+  if (msg.message_type !== 'text' && msg.message_type !== 'rich') return false
 
   const currentTime = Math.floor(Date.now() / 1000)
-  const messageTime = msg.create_time || 0
+  const messageTime = msg.recalled_at || msg.create_time || 0
   return currentTime - messageTime <= MESSAGE_RECALL_TIME_LIMIT_SECONDS
+}
+
+const getRecalledMessageEditableText = (msg: ChatMessage) => {
+  if (msg.message_type === 'text') return msg.original_payload?.text || ''
+  if (msg.message_type === 'rich') {
+    return (msg.original_payload?.parts || [])
+      .filter((part) => part.type === 'text' && !!part.text)
+      .map((part) => part.text || '')
+      .join('')
+  }
+  return ''
+}
+
+const handleReeditRecalledMessage = (msg: ChatMessage) => {
+  if (!canReeditRecalledMessage(msg)) {
+    toast.show(t('group.chat.recallTimeExpired'))
+    return
+  }
+  inputBar.value?.setDraftContent(getRecalledMessageEditableText(msg))
+}
+
+const handleRecallMessage = async (msg: ChatMessage) => {
+  const currentMessage = msg.client_message_id
+    ? messages.value.find((item) => item.client_message_id === msg.client_message_id) || msg
+    : msg
+
+  if (!canRecallMessage(currentMessage)) {
+    toast.show(t('group.chat.recallTimeExpired'))
+    return
+  }
+
+  const serverMessageId = getServerMessageId(currentMessage)
+  if (!serverMessageId) {
+    const clientMessageId = currentMessage.client_message_id
+    if (clientMessageId) {
+      pendingRecallClientMessageIds.add(clientMessageId)
+      toast.show(t('group.chat.recallWaitingForSend'))
+    }
+    return
+  }
+
+  try {
+    uni.showLoading({ title: t('group.chat.recalling'), mask: true })
+    const res = await recallChatMessageApi(currentMessage.room_id, serverMessageId)
+    if (res.code !== 1) {
+      toast.show(res.msg || t('group.chat.recallFailed'))
+      return
+    }
+    const recalledMessage = res.data.message
+    applyMessageDisplayStatus({
+      // 乐观发送的本地 id 可能与服务端 id 不同，直接更新当前被撤回的列表项。
+      message_id: currentMessage.id,
+      room_id: recalledMessage?.room_id || res.data.room_id || currentMessage.room_id,
+      room_seq: recalledMessage?.room_seq || res.data.room_seq || currentMessage.room_seq,
+      display_status: recalledMessage?.display_status || res.data.display_status || 'recalled',
+      placeholder: {
+        text: recalledMessage?.payload?.text || t('group.chat.messageRecalled'),
+      },
+      can_reedit: recalledMessage?.can_reedit,
+      original_payload: recalledMessage?.original_payload,
+      recalled_at: recalledMessage?.recalled_at || res.data.server_time,
+      server_time: res.data.server_time,
+    })
+    toast.show(t('group.chat.recallSuccess'))
+  } catch (error: any) {
+    toast.show(error?.message || t('group.chat.recallFailed'))
+  } finally {
+    uni.hideLoading()
+  }
 }
 // 菜单动作分发（复制、删除、禁言、踢人…）
 const handleMessageMenuClick = ({ item }: { item: MessageMenuItem }, msg: ChatMessage) => {
@@ -2155,6 +2406,9 @@ const handleMessageMenuClick = ({ item }: { item: MessageMenuItem }, msg: ChatMe
       break
     case 'copy':
       handleCopyMessage(msg)
+      break
+    case 'recall':
+      void handleRecallMessage(msg)
       break
     case 'delete':
       handleDeleteMessage(msg)
@@ -2182,7 +2436,7 @@ const canManageTargetMute = (targetRole?: string, isSelf = false) => {
 
   return currentRank >= 2
 }
-const MESSAGE_RECALL_TIME_LIMIT_SECONDS = 2 * 60
+const MESSAGE_RECALL_TIME_LIMIT_SECONDS = 5 * 60
 
 const isMessageSenderRemoved = (msg: ChatMessage) => {
   const memberId = Number(msg.sender?.member_id || msg.member_id || 0)
@@ -2322,20 +2576,24 @@ const getMessageMenuOptions = (msg: ChatMessage): MessageMenuItem[] => {
   }
 
   const menuOptions: MessageMenuItem[] = []
-  const isSelf = msg.is_self === 1
 
-  if (!isSelf) {
-    menuOptions.push({
-      content: t('common.reply'),
-      action: 'reply',
-    })
-  }
+  menuOptions.push({
+    content: t('common.reply'),
+    action: 'reply',
+  })
 
   // 只有 text 类型消息才能复制
   if (msg.message_type === 'text') {
     menuOptions.push({
       content: t('common.copy'),
       action: 'copy',
+    })
+  }
+
+  if (canRecallMessage(msg)) {
+    menuOptions.push({
+      content: t('group.chat.recall'),
+      action: 'recall',
     })
   }
 
@@ -2415,6 +2673,8 @@ const messageActionSheetActions = computed<ActionSheetAction[]>(() => {
           return 'file-copy'
         case 'reply':
           return 'chat'
+        case 'recall':
+          return 'rollback'
         default:
           return undefined
       }
@@ -2422,6 +2682,32 @@ const messageActionSheetActions = computed<ActionSheetAction[]>(() => {
   }))
 })
 // 弹窗确认函数（由长按菜单项触发）
+const confirmMessageMute = async () => {
+  const targetMessage = selectedMessageActionTarget.value
+  const roomId = targetMessage?.room_id || roomDetail.value?.room.id || routeRoomId.value
+  const memberId = getMessageTargetMemberId(targetMessage)
+  if (!roomId || !memberId) return
+
+  const reason = muteReason.value.trim()
+  const muteUntil = muteUntilTimestamp.value ? Math.floor(muteUntilTimestamp.value / 1000) : 0
+
+  try {
+    uni.showLoading({ title: t('common.processing'), mask: true })
+    const res = await muteMemberApi(roomId, memberId, muteUntil, reason)
+    if (res.code !== 1) {
+      toast.show(res.msg || t('common.operationFailed'))
+      return
+    }
+    showMutePopup.value = false
+    await refreshMessageSendersBeforeCurrentLast(memberId, res.data.status)
+    toast.show(t('group.member.action.muteSuccess'))
+  } catch (error: any) {
+    toast.show(error?.message || t('common.operationFailed'))
+  } finally {
+    uni.hideLoading()
+  }
+}
+
 // 解除禁言确认
 const confirmMessageUnmute = async () => {
   const targetMessage = selectedMessageActionTarget.value
@@ -2566,22 +2852,10 @@ const handleMessageMemberMuteAction = async (msg: ChatMessage) => {
     return
   }
 
-  // 非禁言状态直接禁言（不弹窗）
-  uni.showLoading({ title: t('common.processing'), mask: true })
-  try {
-    const res = await muteMemberApi(roomId, memberId, 0)
-    if (res.code === 1) {
-      await refreshMessageSendersBeforeCurrentLast(memberId, res.data.status)
-      uni.hideLoading()
-      toast.show(t('group.member.action.muteSuccess'))
-      return
-    }
-    uni.hideLoading()
-    toast.show(res.msg || t('common.operationFailed'))
-  } catch (error: any) {
-    uni.hideLoading()
-    toast.show(error?.message || t('common.operationFailed'))
-  }
+  selectedMessageActionTarget.value = msg
+  muteReason.value = ''
+  muteUntilTimestamp.value = null
+  showMutePopup.value = true
 }
 
 // 处理“删除消息”动作（弹出删除原因弹窗）

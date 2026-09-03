@@ -527,7 +527,8 @@ const RECENT_MEMBERS_KEY = 'promo_search_recent_members'
 const recentMembers = ref<any[]>([])
 const loadRecentMembers = () => {
   try {
-    const stored = uni.getStorageSync(RECENT_MEMBERS_KEY)
+    let stored = uni.getStorageSync(RECENT_MEMBERS_KEY)
+    if (stored && Array.isArray(stored)) stored = stored.filter((m) => m?.level?.level >= 2)
     if (stored && Array.isArray(stored)) recentMembers.value = stored.slice(0, 5)
   } catch (e) {
     /* ignore */

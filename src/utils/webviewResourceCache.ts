@@ -2,7 +2,7 @@
  * WebView 资源离线缓存
  *
  * 核心思路：
- * 1. 提前下载：App 启动 / 登录成功后，用 plus.downloader.createDownload 将 WebView
+ * 1. 按需下载：用户点击游戏入口后，用 plus.downloader.createDownload 将 WebView
  *    所需的静态资源直接下载到 _doc/webview_cache/
  * 2. 拦截返回：WebView 发出资源请求时，用 overrideResourceRequest 拦截，
  *    若本地已有匹配的文件则直接返回本地路径，不走网络
@@ -19,6 +19,7 @@
 
 import { ref } from 'vue'
 import { getGameParamsApi } from '@/service/api/game'
+import type { getGameParamsApiResponse } from '@/service/api/game'
 import { useResourceCacheStore } from '@/store/resourceCache'
 declare const plus: any
 
@@ -36,7 +37,7 @@ const getCompletedIosGameVersion = () => {
 export const downloadProgressLines = ref<string[]>([])
 
 /** Android 游戏资源整体加载状态，供游戏入口拦截使用 */
-export const gameResourceLoadState = ref<'idle' | 'loading' | 'ready'>('idle')
+export const gameResourceLoadState = ref<'idle' | 'loading' | 'ready' | 'failed'>('idle')
 
 /** iOS 游戏 WebView 预加载状态，由游戏的完成或失败消息更新。 */
 export const iosGameResourceLoadState = ref<'idle' | 'loading' | 'ready' | 'failed'>(
@@ -72,6 +73,8 @@ export interface ResourceDescriptor {
   ext: string
   /** 版本号，如 1_0_0 或 2_3_1 */
   version: string
+  /** 服务端提供的文件大小（字节），用于断点续传完整性校验 */
+  size?: number
 }
 
 /** 缓存清单条目 */
@@ -88,6 +91,14 @@ export interface CacheEntry {
   status: 'pending' | 'downloading' | 'done' | 'error'
   /** 本地文件路径（下载完成后赋值） */
   localPath?: string
+  /** 已验证的本地文件大小 */
+  fileSize?: number
+  /** 预期文件大小 */
+  expectedSize?: number
+  /** 预期大小的可信来源；旧 manifest 无此字段时不予信任 */
+  expectedSizeSource?: 'api' | 'downloader'
+  /** 资源物理地址变更时，下次下载前清理旧文件 */
+  needsCleanDownload?: boolean
   /** 最后一次下载失败的 HTTP 状态码（用于判断是否可重试） */
   lastErrorStatusCode?: number
 }
@@ -104,8 +115,10 @@ const MANIFEST_KEY = 'webview_cache_manifest'
 let initialized = false
 /** 内存中的缓存清单："{ext}_{version}" -> CacheEntry */
 let manifest: Map<string, CacheEntry> = new Map()
-/** 当前正在下载的 url 集合，防止重复 */
-const activeDownloadUrls = new Set<string>()
+/** 同一 ext + version 只允许一个真实下载任务 */
+const activeDownloadPromises = new Map<string, Promise<void>>()
+/** 当前由游戏缓存创建的 Downloader 任务，用于 App 前后台暂停/恢复 */
+const activeDownloadTasks = new Map<string, any>()
 /** App 是否处于后台；后台期间不启动完整性校验中的自动重试。 */
 let appInBackground = false
 /** 本轮游戏版本要求的全部资源，用于下载结束后的完整性校验 */
@@ -135,25 +148,8 @@ export const backgroundDownloadState = ref<{
 
 /** 当前后台下载的 Promise（用于防重入和等待） */
 let backgroundDownloadPromise: Promise<void> | null = null
-/** 回到前台时下载仍在运行，任务结束后再检查是否需要刷新 URL 恢复。 */
-let resumeAfterCurrentDownload = false
-
-/** 恢复下载尝试次数（每次 onShow 恢复时递增） */
-let resumeAttemptCount = 0
-/** 最大恢复尝试次数，超过后不再自动重试 */
-const MAX_RESUME_ATTEMPTS = 3
-
-// ======================== 后台保活 ========================
-
-/** Android wakelock 实例 */
-let androidWakeLock: any = null
-
-/** iOS background task ID */
-let iosBackgroundTaskId: any = null
-
-/** 是否已开启后台保活 */
-let backgroundLockAcquired = false
-
+/** 下载期间新增的资源会合并到同一工作队列，不丢弃后续批次。 */
+const queuedBackgroundResources = new Map<string, ResourceDescriptor>()
 /** 获取系统平台 */
 function getPlatform(): string {
   try {
@@ -162,78 +158,6 @@ function getPlatform(): string {
   } catch {
     return ''
   }
-}
-
-/**
- * 请求后台保活（在下载开始时调用）
- * - Android: 获取 PARTIAL_WAKE_LOCK，保持 CPU 运行，下载不被系统挂起
- * - iOS: 开启 backgroundTask，获取有限的后台执行时间
- */
-function acquireBackgroundLock(): void {
-  if (backgroundLockAcquired) return
-
-  // #ifdef APP-PLUS
-  const platform = getPlatform()
-
-  try {
-    if (platform === 'android') {
-      const main = plus.android.runtimeMainActivity()
-      const pm = plus.android.invoke(main, 'getSystemService', 'power')
-      // PARTIAL_WAKE_LOCK = 0x00000001
-      androidWakeLock = plus.android.invoke(
-        pm,
-        'newWakeLock',
-        1,
-        'libertycats:webview-cache-download',
-      )
-      plus.android.invoke(androidWakeLock, 'acquire')
-      backgroundLockAcquired = true
-      console.log('[WebViewCache] Android wakelock 已获取')
-    } else if (platform === 'ios') {
-      const UIApplication = plus.ios.import('UIApplication')
-      const app = UIApplication.sharedApplication()
-      iosBackgroundTaskId = app.beginBackgroundTaskWithExpirationHandler(function () {
-        console.warn('[WebViewCache] iOS 后台时间即将到期')
-        releaseBackgroundLock()
-      })
-      backgroundLockAcquired = true
-      console.log('[WebViewCache] iOS background task 已开启, taskId:', iosBackgroundTaskId)
-    }
-  } catch (e) {
-    console.warn('[WebViewCache] 获取后台保活失败:', e)
-  }
-  // #endif
-}
-
-/**
- * 释放后台保活（在下载完成或失败时调用）
- */
-function releaseBackgroundLock(): void {
-  if (!backgroundLockAcquired) return
-
-  // #ifdef APP-PLUS
-  try {
-    if (androidWakeLock) {
-      const isHeld = plus.android.invoke(androidWakeLock, 'isHeld')
-      if (isHeld) {
-        plus.android.invoke(androidWakeLock, 'release')
-      }
-      androidWakeLock = null
-      console.log('[WebViewCache] Android wakelock 已释放')
-    }
-    if (iosBackgroundTaskId) {
-      const UIApplication = plus.ios.import('UIApplication')
-      const app = UIApplication.sharedApplication()
-      app.endBackgroundTask(iosBackgroundTaskId)
-      iosBackgroundTaskId = null
-      console.log('[WebViewCache] iOS background task 已结束')
-    }
-  } catch (e) {
-    console.warn('[WebViewCache] 释放后台保活失败:', e)
-  }
-  // #endif
-
-  backgroundLockAcquired = false
 }
 
 // ======================== 工具方法 ========================
@@ -267,6 +191,19 @@ function extractExtFromUrl(url: string): string {
   return 'bin'
 }
 
+function extractResourceSize(item: any): number | undefined {
+  if (!item || typeof item === 'string') return undefined
+  const size = Number(
+    item.size ??
+      item.file_size ??
+      item.fileSize ??
+      item.filesize ??
+      item.content_length ??
+      item.contentLength,
+  )
+  return Number.isFinite(size) && size > 0 ? size : undefined
+}
+
 /** 去掉临时签名参数，用于判断两个游戏是否引用同一个物理资源。 */
 function getResourceIdentity(url: string): string {
   let identity = url
@@ -281,16 +218,32 @@ function isSameResourceUrl(firstUrl: string, secondUrl: string): boolean {
   return getResourceIdentity(firstUrl) === getResourceIdentity(secondUrl)
 }
 
-/** JUMP 与 MATCH_THREE 引用相同资源时只保留一个下载任务。 */
+/** JUMP 与 MATCH_THREE 按 ext + version 共用本地资源。 */
 function dedupeResources(resources: ResourceDescriptor[]): ResourceDescriptor[] {
   const uniqueResources = new Map<string, ResourceDescriptor>()
   resources.forEach((resource) => {
-    const identity = `${getResourceIdentity(resource.url)}|${resource.ext}|${resource.version}`
-    if (!uniqueResources.has(identity)) {
-      uniqueResources.set(identity, resource)
+    const key = buildCacheKey(resource.ext, resource.version)
+    const existing = uniqueResources.get(key)
+    if (!existing) {
+      uniqueResources.set(key, resource)
+    } else if (!isSameResourceUrl(existing.url, resource.url)) {
+      console.warn(`[WebViewCache] 同一缓存键返回了不同资源，仅保留第一个: ${key}`)
     }
   })
   return Array.from(uniqueResources.values())
+}
+
+function assertNoCacheKeyConflicts(resources: ResourceDescriptor[]): void {
+  const identities = new Map<string, string>()
+  resources.forEach((resource) => {
+    const key = buildCacheKey(resource.ext, resource.version)
+    const identity = getResourceIdentity(resource.url)
+    const existingIdentity = identities.get(key)
+    if (existingIdentity && existingIdentity !== identity) {
+      throw new Error(`同一版本存在冲突资源: ${key}`)
+    }
+    identities.set(key, identity)
+  })
 }
 
 /** 确保缓存目录存在（返回 Promise，可 await） */
@@ -326,8 +279,89 @@ function getLocalPath(localName: string): string {
   return `${CACHE_DIR}${localName}`
 }
 
-function clearActiveDownload(url: string): void {
-  activeDownloadUrls.delete(url)
+function getFileNameFromPath(path: string): string {
+  const normalized = String(path || '').split('?')[0]
+  return normalized.slice(normalized.lastIndexOf('/') + 1)
+}
+
+/** 新建 Downloader 任务前删除旧残片及系统生成的 (1)/(2) 副本。 */
+async function removeResourceFileVariants(localName: string): Promise<boolean> {
+  await ensureCacheDir()
+  const dotIndex = localName.lastIndexOf('.')
+  const stem = dotIndex >= 0 ? localName.slice(0, dotIndex) : localName
+  const extension = dotIndex >= 0 ? localName.slice(dotIndex) : ''
+
+  return await new Promise<boolean>((resolve) => {
+    plus.io.resolveLocalFileSystemURL(
+      CACHE_DIR,
+      (dirEntry: any) => {
+        dirEntry.createReader().readEntries(
+          (entries: any[]) => {
+            const variants = entries.filter((entry) => {
+              const name = String(entry.name || '')
+              return (
+                entry.isFile &&
+                (name === localName ||
+                  (name.startsWith(`${stem}(`) && name.endsWith(`)${extension}`)))
+              )
+            })
+            Promise.all(
+              variants.map(
+                (entry) =>
+                  new Promise<boolean>((removeResolve) => {
+                    entry.remove(
+                      () => removeResolve(true),
+                      () => removeResolve(false),
+                    )
+                  }),
+              ),
+            ).then((results) => resolve(results.every(Boolean)))
+          },
+          () => resolve(false),
+        )
+      },
+      () => resolve(true),
+    )
+  })
+}
+
+/** Downloader 如果产生了 (1) 副本，下载成功后将它原子收口到标准文件名。 */
+async function normalizeDownloadedResourcePath(
+  downloadedPath: string,
+  localName: string,
+): Promise<string | null> {
+  const targetPath = getLocalPath(localName)
+  if (downloadedPath === targetPath || getFileNameFromPath(downloadedPath) === localName) {
+    return targetPath
+  }
+
+  return await new Promise<string | null>((resolve) => {
+    plus.io.resolveLocalFileSystemURL(
+      downloadedPath,
+      (downloadedEntry: any) => {
+        plus.io.resolveLocalFileSystemURL(
+          CACHE_DIR,
+          (dirEntry: any) => {
+            const moveToTarget = () => {
+              downloadedEntry.moveTo(
+                dirEntry,
+                localName,
+                () => resolve(targetPath),
+                () => resolve(null),
+              )
+            }
+            plus.io.resolveLocalFileSystemURL(
+              targetPath,
+              (targetEntry: any) => targetEntry.remove(moveToTarget, () => resolve(null)),
+              moveToTarget,
+            )
+          },
+          () => resolve(null),
+        )
+      },
+      () => resolve(null),
+    )
+  })
 }
 
 // ======================== 清单持久化 ========================
@@ -357,56 +391,155 @@ function loadManifest(): void {
 // ======================== 下载 ========================
 
 /** 下载单个资源到 App 私有目录（使用 HTML5+ Downloader） */
+function getLocalFileSize(localPath: string): Promise<number | null> {
+  return new Promise((resolve) => {
+    plus.io.resolveLocalFileSystemURL(
+      localPath,
+      (fileEntry: any) => {
+        fileEntry.file(
+          (file: any) => resolve(Number(file?.size) || null),
+          () => resolve(null),
+        )
+      },
+      () => resolve(null),
+    )
+  })
+}
+
 function downloadOne(
   entry: CacheEntry,
   onProgress?: (localName: string, progress: number) => void,
 ): Promise<void> {
-  return new Promise((resolve) => {
+  const resourceKey = buildCacheKey(entry.ext, entry.version)
+  const activePromise = activeDownloadPromises.get(resourceKey)
+  if (activePromise) {
+    console.log(`[WebViewCache] 复用正在下载的任务: ${resourceKey}`)
+    return activePromise
+  }
+
+  const downloadPromise = new Promise<void>((resolve) => {
     entry.status = 'downloading'
     entry.lastErrorStatusCode = undefined
+    saveManifest()
     const targetPath = getLocalPath(entry.localName)
 
     console.log(`[WebViewCache] 开始下载: ${entry.url} -> ${targetPath}`)
 
     const startDownload = () => {
       try {
+        let callbackHandled = false
+
+        const finishDownload = async (task: any, status: number) => {
+          if (callbackHandled) return
+          const pausedByApp =
+            appInBackground || task.state === 5 || Date.now() < Number(task.__ignorePause999Until)
+          const downloadedPath = task.filename || targetPath
+          // 接口 size 优先；接口未提供时，HTML5+ Downloader.totalSize
+          // 是下载任务文件的总大小，可作为完整性标准。
+          const taskTotalSize = Number(task.totalSize) || 0
+          const expectedSize = entry.expectedSize || taskTotalSize
+          if (!entry.expectedSize && taskTotalSize > 0) {
+            entry.expectedSize = taskTotalSize
+            entry.expectedSizeSource = 'downloader'
+            saveManifest()
+          }
+          const localFileSize = await getLocalFileSize(downloadedPath)
+
+          const sizeMatches = !!expectedSize && Number(localFileSize) === Number(expectedSize)
+          const responseSucceeded = status === 200 || status === 206 || status === 416
+
+          if (sizeMatches && responseSucceeded) {
+            const normalizedPath = await normalizeDownloadedResourcePath(
+              downloadedPath,
+              entry.localName,
+            )
+            const normalizedSize = normalizedPath ? await getLocalFileSize(normalizedPath) : null
+            if (!normalizedPath || Number(normalizedSize) !== Number(expectedSize)) {
+              callbackHandled = true
+              activeDownloadTasks.delete(resourceKey)
+              entry.status = 'error'
+              entry.localPath = undefined
+              entry.needsCleanDownload = true
+              entry.lastErrorStatusCode = undefined
+              saveManifest()
+              console.warn(
+                `[WebViewCache] 下载文件归一化失败: ${resourceKey}, path=${downloadedPath}`,
+              )
+              resolve()
+              return
+            }
+            callbackHandled = true
+            activeDownloadTasks.delete(resourceKey)
+            entry.status = 'done'
+            entry.localPath = normalizedPath
+            entry.localName = getFileNameFromPath(normalizedPath)
+            entry.fileSize = Number(normalizedSize)
+            entry.expectedSize = Number(expectedSize)
+            entry.needsCleanDownload = false
+            entry.lastErrorStatusCode = undefined
+            saveManifest()
+            console.log(`[WebViewCache] 下载完成: ${resourceKey} -> ${downloadedPath}`)
+            resolve()
+            return
+          }
+
+          if (status === 999 && pausedByApp) {
+            entry.status = 'downloading'
+            entry.lastErrorStatusCode = undefined
+            saveManifest()
+            console.log(`[WebViewCache] 忽略暂停产生的 999: ${resourceKey}`)
+
+            // 回到前台后给原任务一个恢复窗口；窗口结束仍终止才算真失败。
+            if (!appInBackground && !task.__failureCheckTimer) {
+              task.__failureCheckTimer = setTimeout(() => {
+                task.__failureCheckTimer = undefined
+                if (callbackHandled || task.state !== 4) return
+                task.__ignorePause999Until = 0
+                void finishDownload(task, 999)
+              }, 3100)
+            }
+            return
+          }
+
+          callbackHandled = true
+          activeDownloadTasks.delete(resourceKey)
+          entry.status = 'error'
+          entry.localPath = undefined
+          entry.needsCleanDownload =
+            status === 416 ||
+            (!!localFileSize && (!expectedSize || Number(localFileSize) > Number(expectedSize)))
+          entry.lastErrorStatusCode = status > 0 ? status : undefined
+          console.warn(
+            `[WebViewCache] 下载失败: ${entry.url}, statusCode=${status}, fileSize=${localFileSize}, expectedSize=${expectedSize}`,
+          )
+          saveManifest()
+          resolve()
+        }
+
         const downloadTask = plus.downloader.createDownload(
           entry.url,
           {
             filename: targetPath,
             priority: 100,
             timeout: 0,
-            retry: 3,
-            retryInterval: 5,
+            // 禁止原生自动重试，避免旧连接未关闭时又创建新的 data/wasm 请求。
+            retry: 0,
           },
-          (task: any, status: number) => {
-            clearActiveDownload(entry.url)
-
-            if (status === 200 && task.filename) {
-              entry.status = 'done'
-              entry.localPath = targetPath
-              entry.lastErrorStatusCode = undefined
-              console.log(`[WebViewCache] 下载完成: ${entry.url} -> ${task.filename}`)
-            } else {
-              entry.status = 'error'
-              entry.localPath = undefined
-              entry.lastErrorStatusCode = status > 0 ? status : undefined
-              console.warn(`[WebViewCache] 下载失败: ${entry.url}, statusCode=${status}`)
-            }
-
-            saveManifest()
-            resolve()
-          },
+          (task: any, status: number) => void finishDownload(task, status),
         )
 
         downloadTask.addEventListener(
           'statechanged',
           (task: any) => {
             if (task.state !== 3 || !task.totalSize) return
-            const progress = Math.min(
-              100,
-              Math.round((Number(task.downloadedSize) / Number(task.totalSize)) * 100),
-            )
+            const totalSize = Number(task.totalSize) || 0
+            const downloadedSize = Number(task.downloadedSize) || 0
+            if (totalSize > 0 && !entry.expectedSize) {
+              entry.expectedSize = totalSize
+              entry.expectedSizeSource = 'downloader'
+              saveManifest()
+            }
+            const progress = Math.min(100, Math.round((downloadedSize / totalSize) * 100))
             console.log(
               `[WebViewCache] 下载进度 ${entry.localName}: ${progress}% (${task.downloadedSize}/${task.totalSize})`,
             )
@@ -415,10 +548,23 @@ function downloadOne(
           false,
         )
 
-        activeDownloadUrls.add(entry.url)
-        downloadTask.start()
+        // OSS 默认会对越界 Range 返回 200 + 完整对象；标准模式改为 416，防止全量流量放大。
+        const isSignedOssUrl = /[?&](?:OSSAccessKeyId|Signature|x-oss-signature)=/i.test(entry.url)
+        if (entry.url.includes('.aliyuncs.com/') && !isSignedOssUrl) {
+          downloadTask.setRequestHeader?.('x-oss-range-behavior', 'standard')
+        } else if (isSignedOssUrl) {
+          console.warn(
+            '[WebViewCache] OSS 签名 URL 未添加 x-oss-range-behavior，需要服务端将该请求头纳入签名',
+          )
+        }
+        activeDownloadTasks.set(resourceKey, downloadTask)
+        if (appInBackground) {
+          console.log(`[WebViewCache] App 已在后台，延迟启动下载: ${resourceKey}`)
+        } else {
+          downloadTask.start()
+        }
       } catch (error) {
-        clearActiveDownload(entry.url)
+        activeDownloadTasks.delete(resourceKey)
         entry.status = 'error'
         entry.localPath = undefined
         entry.lastErrorStatusCode = undefined
@@ -428,17 +574,58 @@ function downloadOne(
       }
     }
 
-    ensureCacheDir().then(() => {
-      // createDownload 指定固定 filename 时先删除旧文件，避免覆盖失败或返回旧内容。
-      plus.io.resolveLocalFileSystemURL(
-        targetPath,
-        (fileEntry: any) => {
-          fileEntry.remove(startDownload, startDownload)
-        },
-        startDownload,
-      )
+    // pause/resume 仍复用同一个原生任务续传。但任务已失败后必须新建 Downloader，
+    // HTML5+ 在目标已存在时会生成 (1)/(2) 副本，所以新建前统一清理残片。
+    ensureCacheDir().then(async () => {
+      const existingSize = await getLocalFileSize(targetPath)
+      const expectedSize = entry.expectedSize
+      if (
+        !entry.needsCleanDownload &&
+        existingSize &&
+        expectedSize &&
+        Number(existingSize) === Number(expectedSize)
+      ) {
+        entry.status = 'done'
+        entry.localPath = targetPath
+        entry.fileSize = Number(existingSize)
+        entry.lastErrorStatusCode = undefined
+        saveManifest()
+        resolve()
+        return
+      }
+
+      if (!existingSize) {
+        entry.needsCleanDownload = false
+        saveManifest()
+        startDownload()
+        return
+      }
+
+      const removed = await removeResourceFileVariants(entry.localName)
+      if (removed) {
+        entry.needsCleanDownload = false
+        saveManifest()
+        startDownload()
+      } else {
+        entry.status = 'error'
+        entry.localPath = undefined
+        entry.needsCleanDownload = true
+        entry.lastErrorStatusCode = undefined
+        saveManifest()
+        console.warn(`[WebViewCache] 清理不完整文件失败，已取消本次下载: ${targetPath}`)
+        resolve()
+      }
     })
   })
+
+  let trackedPromise: Promise<void>
+  trackedPromise = downloadPromise.finally(() => {
+    if (activeDownloadPromises.get(resourceKey) === trackedPromise) {
+      activeDownloadPromises.delete(resourceKey)
+    }
+  })
+  activeDownloadPromises.set(resourceKey, trackedPromise)
+  return trackedPromise
 }
 
 // ======================== 拦截 ========================
@@ -467,23 +654,63 @@ async function restoreCacheEntryFromDisk(res: ResourceDescriptor): Promise<boole
   const localName = buildLocalName(res.ext, res.version)
   const localPath = getLocalPath(localName)
 
-  if (existing?.status === 'done' && existing.localPath) {
-    const exists = await checkFileExists(existing.localPath)
-    if (exists) {
+  if (existing) {
+    if (existing.needsCleanDownload) return false
+    const existingPath = existing.localPath || localPath
+    const fileSize = await getLocalFileSize(existingPath)
+    // 接口 size 优先；否则仅信任新版明确标记为 Downloader.totalSize 的记录。
+    // 旧 manifest 没有 expectedSizeSource，避免继续复用曾被误判的 20MB 残片。
+    const expectedSize =
+      res.size ||
+      (existing.expectedSizeSource === 'api' || existing.expectedSizeSource === 'downloader'
+        ? existing.expectedSize
+        : undefined)
+    const isComplete = !!fileSize && !!expectedSize && Number(fileSize) === Number(expectedSize)
+    if (isComplete) {
+      const normalizedPath = await normalizeDownloadedResourcePath(existingPath, localName)
+      const normalizedSize = normalizedPath ? await getLocalFileSize(normalizedPath) : null
+      if (!normalizedPath || Number(normalizedSize) !== Number(expectedSize)) {
+        existing.status = 'pending'
+        existing.localPath = undefined
+        existing.fileSize = undefined
+        existing.expectedSize = expectedSize
+        existing.needsCleanDownload = true
+        saveManifest()
+        return false
+      }
       if (existing.url !== res.url) {
         existing.url = res.url
-        saveManifest()
       }
+      existing.status = 'done'
+      existing.localPath = normalizedPath
+      existing.localName = localName
+      existing.fileSize = Number(normalizedSize)
+      existing.expectedSize = expectedSize
+      if (res.size) existing.expectedSizeSource = 'api'
+      existing.lastErrorStatusCode = undefined
+      saveManifest()
       return true
     }
+
+    // 文件不存在或大小不完整时，必须同步废弃旧的 done 状态。
+    // 否则后续仅检查 done + localPath 会把进程被杀留下的残片当成完整缓存。
+    existing.status = 'pending'
+    existing.localPath = undefined
+    existing.fileSize = undefined
+    existing.expectedSize = expectedSize
+    // 已知总大小且本地文件更小时保留残片，交给 Downloader 续传。
+    // 大小未知或文件越界时才要求清理后重下。
+    existing.needsCleanDownload =
+      !!fileSize && (!expectedSize || Number(fileSize) > Number(expectedSize))
+    existing.lastErrorStatusCode = undefined
+    saveManifest()
+    return false
   }
 
-  // 只在 manifest 完全缺失时从磁盘恢复。pending/downloading/error 对应的文件可能只是
-  // plus.downloader 正在写入的部分文件，不能据此提前标记为 done。
-  if (existing) return false
-
-  const existsOnDisk = await checkFileExists(localPath)
-  if (!existsOnDisk) return false
+  const fileSize = await getLocalFileSize(localPath)
+  // manifest 丢失时，只有接口给出可校验的完整大小才允许从磁盘恢复。
+  // 否则无法区分完整文件和强杀进程后留下的下载残片。
+  if (!fileSize || !res.size || Number(fileSize) !== Number(res.size)) return false
 
   manifest.set(key, {
     url: res.url,
@@ -492,6 +719,9 @@ async function restoreCacheEntryFromDisk(res: ResourceDescriptor): Promise<boole
     localName,
     localPath,
     status: 'done',
+    fileSize: Number(fileSize),
+    expectedSize: res.size,
+    expectedSizeSource: res.size ? 'api' : undefined,
   })
   saveManifest()
   console.log(`[WebViewCache] 从磁盘恢复缓存记录: ${key} -> ${localPath}`)
@@ -508,11 +738,17 @@ async function restoreCacheEntryFromDisk(res: ResourceDescriptor): Promise<boole
  *    不使用 plus.io.convertLocalFileSystemURL 转出的 file:// 绝对路径
  * 3. 加入规则前先用 plus.io.resolveLocalFileSystemURL 确认文件存在
  */
-async function buildOverrideRules(): Promise<Array<{ match: string; redirect: string }>> {
+async function buildOverrideRules(
+  expectedKeys: Set<string>,
+): Promise<Array<{ match: string; redirect: string }>> {
   const rules: Array<{ match: string; redirect: string }> = []
   const checks: Promise<void>[] = []
 
-  manifest.forEach((entry) => {
+  // 当前接口没有给出资源时，禁止回退扫描历史 manifest。
+  if (expectedKeys.size === 0) return rules
+
+  manifest.forEach((entry, key) => {
+    if (!expectedKeys.has(key)) return
     if (entry.status === 'done' && entry.localPath) {
       checks.push(
         (async () => {
@@ -560,6 +796,89 @@ async function buildOverrideRules(): Promise<Array<{ match: string; redirect: st
   return rules
 }
 
+/** 只保留当前版本的共享资源，清理旧 manifest 和本地文件。 */
+async function pruneStaleResources(resources: ResourceDescriptor[]): Promise<void> {
+  const expectedKeys = new Set(
+    resources.map((resource) => buildCacheKey(resource.ext, resource.version)),
+  )
+  if (expectedKeys.size === 0) return
+
+  const staleEntries = Array.from(manifest.entries()).filter(
+    ([key]) => !expectedKeys.has(key) && !activeDownloadPromises.has(key),
+  )
+  const protectedLocalNames = new Set(
+    resources.map((resource) => buildLocalName(resource.ext, resource.version)),
+  )
+  // 兼容旧任务已经成功但 Downloader 曾生成 (1) 副本的情况：
+  // 先保护 manifest 真实指向的已完成文件，避免在恢复校验前被当作孤儿删除。
+  expectedKeys.forEach((key) => {
+    const entry = manifest.get(key)
+    if (entry?.status === 'done' && entry.localPath) {
+      protectedLocalNames.add(getFileNameFromPath(entry.localPath))
+    }
+  })
+  activeDownloadPromises.forEach((_, key) => {
+    const activeEntry = manifest.get(key)
+    if (activeEntry) protectedLocalNames.add(activeEntry.localName)
+  })
+  await Promise.all(
+    staleEntries.map(async ([key, entry]) => {
+      const localPath = entry.localPath || getLocalPath(entry.localName)
+      await new Promise<void>((resolve) => {
+        plus.io.resolveLocalFileSystemURL(
+          localPath,
+          (fileEntry: any) =>
+            fileEntry.remove(
+              () => resolve(),
+              () => resolve(),
+            ),
+          () => resolve(),
+        )
+      })
+      manifest.delete(key)
+      console.log(`[WebViewCache] 已清理旧版本资源: ${key} -> ${localPath}`)
+    }),
+  )
+
+  // 清理 manifest 已丢失但仍留在缓存目录中的历史大文件。
+  await new Promise<void>((resolve) => {
+    plus.io.resolveLocalFileSystemURL(
+      CACHE_DIR,
+      (dirEntry: any) => {
+        const reader = dirEntry.createReader()
+        reader.readEntries(
+          (entries: any[]) => {
+            Promise.all(
+              entries
+                .filter(
+                  (fileEntry) =>
+                    fileEntry.isFile &&
+                    String(fileEntry.name || '').startsWith(`${FILE_PREFIX}_`) &&
+                    !protectedLocalNames.has(String(fileEntry.name || '')),
+                )
+                .map(
+                  (fileEntry) =>
+                    new Promise<void>((removeResolve) => {
+                      fileEntry.remove(
+                        () => {
+                          console.log(`[WebViewCache] 已清理孤儿缓存文件: ${fileEntry.name}`)
+                          removeResolve()
+                        },
+                        () => removeResolve(),
+                      )
+                    }),
+                ),
+            ).finally(resolve)
+          },
+          () => resolve(),
+        )
+      },
+      () => resolve(),
+    )
+  })
+  if (staleEntries.length > 0) saveManifest()
+}
+
 // ======================== 对外 API ========================
 
 /**
@@ -577,6 +896,11 @@ export function initWebViewResourceCache(): void {
 
   // 对已下载但本地文件可能丢失的条目做校验（异步）
   manifest.forEach((entry) => {
+    // App 被杀后内存中已无对应任务，持久化的 downloading 必须转回 pending。
+    if (entry.status === 'downloading') {
+      entry.status = 'pending'
+      saveManifest()
+    }
     if (entry.status === 'done' && entry.localPath) {
       plus.io.resolveLocalFileSystemURL(
         entry.localPath,
@@ -649,6 +973,8 @@ export async function downloadResources(
       version: res.version,
       localName: buildLocalName(res.ext, res.version),
       status: 'pending',
+      expectedSize: res.size,
+      expectedSizeSource: res.size ? 'api' : undefined,
     }
 
     // 兜底：确保 localName 始终是最新的（旧 manifest 可能存的是不带扩展名的格式）
@@ -658,7 +984,16 @@ export async function downloadResources(
     }
 
     // 更新 URL（版本不变但 URL 变了的情况上面已处理；版本变了要更新 URL）
+    if (entry.url && !isSameResourceUrl(entry.url, res.url)) {
+      entry.needsCleanDownload = true
+      entry.fileSize = undefined
+      entry.expectedSize = res.size
+    }
     entry.url = res.url
+    if (res.size) {
+      entry.expectedSize = res.size
+      entry.expectedSizeSource = 'api'
+    }
     if (!existing) {
       manifest.set(key, entry)
     }
@@ -701,13 +1036,8 @@ export async function downloadResources(
  * 检查 manifest 状态 + 文件是否真实存在
  */
 async function verifyResourceComplete(res: ResourceDescriptor): Promise<boolean> {
-  const key = buildCacheKey(res.ext, res.version)
-  const entry = manifest.get(key)
-  if (!entry || entry.status !== 'done' || !entry.localPath) {
-    return await restoreCacheEntryFromDisk(res)
-  }
-  // 检查文件是否真实存在
-  return await checkFileExists(entry.localPath)
+  // 统一执行状态、路径和文件大小校验，不能只判断文件存在。
+  return await restoreCacheEntryFromDisk(res)
 }
 
 /** 根据本轮所需资源的实际文件状态更新入口可用状态 */
@@ -724,11 +1054,11 @@ async function refreshGameResourceLoadState(): Promise<void> {
 /**
  * 校验所有资源完整性，对未完成的资源自动重试下载
  * @param resources 原始资源列表
- * @param maxRetries 最大重试次数（默认 3 次）
+ * @param maxRetries 最大自动重试次数（默认 0，由用户在弹窗中明确重试）
  */
 async function verifyAndRetryResources(
   resources: ResourceDescriptor[],
-  maxRetries = 3,
+  maxRetries = 0,
 ): Promise<void> {
   // 确保缓存目录存在
   await ensureCacheDir()
@@ -787,6 +1117,8 @@ async function verifyAndRetryResources(
           version: res.version,
           localName: buildLocalName(res.ext, res.version),
           status: 'pending',
+          expectedSize: res.size,
+          expectedSizeSource: res.size ? 'api' : undefined,
         })
       }
     }
@@ -816,28 +1148,27 @@ async function verifyAndRetryResources(
  * @param webview plus.webview 创建的 WebView 实例
  */
 export async function applyResourceOverride(webview: any): Promise<void> {
-  if (typeof plus === 'undefined') return
-  if (!webview) return
+  if (typeof plus === 'undefined') throw new Error('Plus runtime 不可用')
+  if (!webview) throw new Error('游戏 WebView 不存在')
   // 仅 Android 支持 overrideResourceRequest，iOS WKWebView 不支持
   if (getPlatform() !== 'android') return
 
-  // 1. 构建拦截规则（同时校验文件是否存在，缺失的会被标记为 pending）
-  let rules = await buildOverrideRules()
-
-  // 2. 检查是否有缺失资源需要重新下载
-  const missingResources: ResourceDescriptor[] = []
   const expectedKeys = new Set(
     expectedGameResources.map((resource) => buildCacheKey(resource.ext, resource.version)),
   )
-  manifest.forEach((entry, key) => {
-    if (expectedKeys.size > 0 && !expectedKeys.has(key)) return
-    if (entry.status !== 'done') {
-      missingResources.push({
-        url: entry.url,
-        ext: entry.ext,
-        version: entry.version,
-      })
-    }
+  if (expectedKeys.size === 0) {
+    console.warn('[WebViewCache] 当前资源集合为空，拒绝扫描历史 manifest 和注入拦截规则')
+    throw new Error('当前游戏资源集合为空')
+  }
+
+  // 1. 仅为当前接口资源构建拦截规则。
+  let rules = await buildOverrideRules(expectedKeys)
+
+  // 2. 检查当前资源是否缺失。
+  // 必须遍历预期集合，不能只遍历 manifest，否则清单中完全缺失的项无法补下载。
+  const missingResources = expectedGameResources.filter((resource) => {
+    const entry = manifest.get(buildCacheKey(resource.ext, resource.version))
+    return !(entry?.status === 'done' && entry.localPath)
   })
 
   // 3. 如果有缺失资源，触发下载并等待完成
@@ -849,12 +1180,19 @@ export async function applyResourceOverride(webview: any): Promise<void> {
     await waitForBackgroundDownload()
 
     // 下载完成后重新构建拦截规则
-    rules = await buildOverrideRules()
+    rules = await buildOverrideRules(expectedKeys)
   }
 
-  if (rules.length === 0) {
-    console.warn('[WebViewCache] 暂无可用拦截规则（资源可能仍未下载完成或文件丢失）')
-    return
+  // WebView 启动前再做一次逐文件大小校验，防止入口检查后文件被删除或截断。
+  const readiness = await Promise.all(
+    expectedGameResources.map((resource) => verifyResourceComplete(resource)),
+  )
+  if (readiness.some((ready) => !ready) || rules.length !== expectedKeys.size) {
+    gameResourceLoadState.value = 'failed'
+    console.warn(
+      `[WebViewCache] 禁止加载游戏：完整资源 ${readiness.filter(Boolean).length}/${readiness.length}，拦截规则 ${rules.length}/${expectedKeys.size}`,
+    )
+    throw new Error('游戏资源未完整加载')
   }
   console.log(`[WebViewCache] 准备注入 ${rules.length} 条拦截规则`, rules)
   console.log(webview.overrideResourceRequest, ' webview.overrideResourceRequest')
@@ -863,7 +1201,9 @@ export async function applyResourceOverride(webview: any): Promise<void> {
     webview.overrideResourceRequest(rules)
     console.log(`[WebViewCache] 已为 WebView 注入 ${rules.length} 条资源拦截规则`)
   } catch (e) {
-    console.warn('[WebViewCache] overrideResourceRequest 失败（iOS WKWebView 不支持）:', e)
+    gameResourceLoadState.value = 'failed'
+    console.warn('[WebViewCache] overrideResourceRequest 失败，禁止加载游戏:', e)
+    throw e
   }
 }
 
@@ -905,10 +1245,9 @@ export function wrapWebViewForCache(webview: any): void {
         console.log('[WebViewCache] wrapWebViewForCache: 规则已注入，加载 URL:', url)
         originalLoadURL(url, ...args)
       })
-      .catch(() => {
-        // 注入失败时不阻塞，降级为直接加载（资源走网络）
-        console.warn('[WebViewCache] wrapWebViewForCache: 注入失败，降级直接加载:', url)
-        originalLoadURL(url, ...args)
+      .catch((error) => {
+        // 资源校验或规则注入失败时禁止加载，避免 WebView 启动残缺游戏。
+        console.warn('[WebViewCache] wrapWebViewForCache: 禁止加载游戏:', error, url)
       })
   }
 }
@@ -1036,67 +1375,63 @@ export async function retryFailed(): Promise<void> {
  * @returns Promise<void>，下载完成后 resolve
  */
 export function startBackgroundDownload(resources: ResourceDescriptor[]): Promise<void> {
-  // 已有下载在进行中，复用
-  if (backgroundDownloadPromise) {
-    console.log('[WebViewCache] 后台下载已在进行中，复用现有任务')
-    return backgroundDownloadPromise
-  }
-
   if (resources.length === 0) return Promise.resolve()
 
-  // 先跨游戏去重，再过滤已完成的资源，避免相同 URL 同时创建多个 Download 任务。
-  const needDownload = dedupeResources(resources).filter((res) => {
+  // 新请求先合并进队列；已在下载、已排队或已完成的 key 不重复加入。
+  let addedCount = 0
+  dedupeResources(resources).forEach((res) => {
     const key = buildCacheKey(res.ext, res.version)
     const existing = manifest.get(key)
-    return !(existing && existing.status === 'done' && existing.localPath)
+    if (existing?.status === 'done' && existing.localPath) return
+    if (activeDownloadPromises.has(key) || queuedBackgroundResources.has(key)) return
+    queuedBackgroundResources.set(key, res)
+    addedCount++
   })
 
-  if (needDownload.length === 0) {
+  if (!backgroundDownloadPromise && queuedBackgroundResources.size === 0) {
     console.log('[WebViewCache] 所有资源已缓存，无需后台下载')
     return Promise.resolve()
   }
 
-  console.log(`[WebViewCache] 启动后台下载: ${needDownload.length} 个资源`)
+  if (backgroundDownloadPromise) {
+    if (addedCount > 0) {
+      backgroundDownloadState.value.total += addedCount
+      console.log(`[WebViewCache] 已向当前下载队列追加 ${addedCount} 个资源`)
+    }
+    return backgroundDownloadPromise
+  }
+
+  console.log(`[WebViewCache] 启动后台下载: ${queuedBackgroundResources.size} 个资源`)
 
   backgroundDownloadState.value = {
     running: true,
-    total: needDownload.length,
+    total: queuedBackgroundResources.size,
     completed: 0,
     failed: 0,
     progress: 0,
   }
 
-  // 获取后台保活，确保 App 切到后台后下载继续
-  acquireBackgroundLock()
-
-  backgroundDownloadPromise = downloadResources(needDownload, {
-    onResourceComplete: (success) => {
-      const state = backgroundDownloadState.value
-      if (success) {
-        state.completed++
-      } else {
-        state.failed++
-      }
-      state.progress = Math.round(((state.completed + state.failed) / state.total) * 100)
-    },
-  }).finally(() => {
-    const shouldResume = resumeAfterCurrentDownload && !appInBackground
-    resumeAfterCurrentDownload = false
+  backgroundDownloadPromise = (async () => {
+    while (queuedBackgroundResources.size > 0) {
+      const batch = Array.from(queuedBackgroundResources.values())
+      queuedBackgroundResources.clear()
+      await downloadResources(batch, {
+        onResourceComplete: (success) => {
+          const state = backgroundDownloadState.value
+          if (success) state.completed++
+          else state.failed++
+          state.progress = Math.round(((state.completed + state.failed) / state.total) * 100)
+        },
+      })
+    }
+  })().finally(() => {
     backgroundDownloadState.value.running = false
-    backgroundDownloadState.value.progress = 100
+    backgroundDownloadState.value.progress =
+      backgroundDownloadState.value.failed > 0 ? backgroundDownloadState.value.progress : 100
     backgroundDownloadPromise = null
-    // 释放后台保活
-    releaseBackgroundLock()
     console.log(
       `[WebViewCache] 后台下载结束 (成功 ${backgroundDownloadState.value.completed}/${backgroundDownloadState.value.total})`,
     )
-    if (shouldResume) {
-      setTimeout(() => {
-        resumeBackgroundDownloadIfNeeded().catch((error) => {
-          console.warn('[WebViewCache] 下载结束后恢复未完成资源失败:', error)
-        })
-      }, 0)
-    }
   })
 
   return backgroundDownloadPromise
@@ -1121,84 +1456,69 @@ export function waitForBackgroundDownload(): Promise<void> {
 }
 
 /**
- * App 进入后台时调用。Android 保持现有 DownloadTask 继续运行；
- * 只暂停失败后的自动重试，避免后台使用可能过期的资源 URL 发起新请求。
+ * App 进入后台时暂停由游戏缓存创建的 DownloadTask。
  */
 export function handleAppBackgroundDownload(): void {
   appInBackground = true
-  try {
-    plus.downloader.enumerate((tasks: any[]) => {
-      tasks.forEach((task) => {
-        if (task.state === 5) {
-          task.resume()
-        }
-      })
-      plus.downloader.startAll()
-      console.log(`[WebViewCache] App进入后台，保持 ${tasks.length} 个 HTML5+ 下载任务继续运行`)
-    })
-  } catch (error) {
-    console.warn('[WebViewCache] 后台维持下载任务失败:', error)
-  }
+  activeDownloadTasks.forEach((task, resourceKey) => {
+    try {
+      const totalSize = Number(task.totalSize) || 0
+      const downloadedSize = Number(task.downloadedSize) || 0
+      if (totalSize > 0 && downloadedSize >= totalSize) {
+        // 字节已齐时不 pause，仍等 Downloader 最终回调和文件校验。
+        console.log(`[WebViewCache] App 进入后台，资源已齐等待最终回调: ${resourceKey}`)
+      } else if (task.state === 1 || task.state === 2 || task.state === 3) {
+        task.__ignorePause999Until = Number.MAX_SAFE_INTEGER
+        task.pause()
+        console.log(`[WebViewCache] App 进入后台，已暂停游戏资源: ${resourceKey}`)
+      }
+    } catch (error) {
+      console.warn(`[WebViewCache] 暂停游戏资源失败: ${resourceKey}`, error)
+    }
+  })
 }
 
 /**
- * 恢复后台下载（如果之前被中断）
- * 在 App onShow（从后台切回前台）时调用，检查并恢复未完成的下载
- *
- * 限制：
- * - 最多重试 MAX_RESUME_ATTEMPTS 次，避免无限循环
- * - 恢复前重新请求游戏参数，避免继续使用已失效的临时资源 URL
- * - 仅恢复 pending / error 状态的资源
+ * App 回到前台时只恢复本次点击游戏后已创建的任务。
+ * 不扫描 manifest，也不在启动/登录/普通 onShow 时发起新下载。
  */
 export async function resumeBackgroundDownloadIfNeeded(): Promise<void> {
   appInBackground = false
-
-  if (backgroundDownloadPromise) {
-    resumeAfterCurrentDownload = true
-    console.log('[WebViewCache] 后台下载仍在运行，任务结束后自动检查并恢复失败资源')
-    return
-  }
-
-  if (resumeAttemptCount >= MAX_RESUME_ATTEMPTS) {
-    console.log(`[WebViewCache] 已达最大恢复尝试次数 ${MAX_RESUME_ATTEMPTS}，不再自动重试`)
-    return
-  }
-
-  // 检查是否有未完成的资源（仅 pending 和 error 状态）。HTTP 400 也需要恢复，
-  // 因为资源地址可能是临时签名 URL，回前台后必须通过接口刷新。
-  let pendingCount = 0
-  manifest.forEach((entry) => {
-    if (entry.status === 'pending' || entry.status === 'error') {
-      pendingCount++
+  activeDownloadTasks.forEach((task, resourceKey) => {
+    try {
+      const totalSize = Number(task.totalSize) || 0
+      const downloadedSize = Number(task.downloadedSize) || 0
+      if (totalSize > 0 && downloadedSize >= totalSize) {
+        // 不从 EOF resume，仍等 Downloader 最终回调。
+        console.log(`[WebViewCache] App 回到前台，资源已齐等待最终回调: ${resourceKey}`)
+      } else if (task.__ignorePause999Until === Number.MAX_SAFE_INTEGER) {
+        task.__ignorePause999Until = Date.now() + 3000
+        task.resume()
+        console.log(`[WebViewCache] App 回到前台，恢复后台暂停资源: ${resourceKey}`)
+      } else if (task.state === 0) {
+        task.start()
+        console.log(`[WebViewCache] App 回到前台，已启动游戏资源: ${resourceKey}`)
+      } else if (task.state === 5) {
+        task.__ignorePause999Until = Date.now() + 3000
+        task.resume()
+        console.log(`[WebViewCache] App 回到前台，已恢复游戏资源: ${resourceKey}`)
+      }
+    } catch (error) {
+      console.warn(`[WebViewCache] 恢复游戏资源失败: ${resourceKey}`, error)
     }
   })
-
-  if (pendingCount > 0) {
-    resumeAttemptCount++
-    console.log(
-      `[WebViewCache] 检测到 ${pendingCount} 个未完成资源，第 ${resumeAttemptCount}/${MAX_RESUME_ATTEMPTS} 次刷新 URL 并恢复下载`,
-    )
-    await downloadGameResources({ resetResumeAttempts: false })
-  }
 }
 
 /**
- * 根据游戏接口预下载游戏资源（后台非阻塞）
- * 在 App onLaunch 已登录态 或 登录成功后调用
+ * 根据游戏接口下载游戏资源。
  *
  * 注意：仅 Android 平台执行。iOS WKWebView 不支持 overrideResourceRequest，
  * 预下载后无法重定向，因此跳过。
  */
-export async function downloadGameResources(
-  options: { resetResumeAttempts?: boolean } = {},
-): Promise<void> {
+export async function downloadGameResources(): Promise<void> {
   if (getPlatform() !== 'android') return
   gameResourceLoadState.value = 'loading'
   try {
-    // 重置恢复下载计数，允许新一轮重试
-    if (options.resetResumeAttempts !== false) {
-      resumeAttemptCount = 0
-    }
     const types = ['MATCH_THREE', 'JUMP']
     const allResources: ResourceDescriptor[] = []
     let validGameConfigCount = 0
@@ -1228,11 +1548,12 @@ export async function downloadGameResources(
             ext = extractExtFromUrl(url)
           }
           if (url && ext) {
-            allResources.push({ url, ext, version: ver })
+            allResources.push({ url, ext, version: ver, size: extractResourceSize(item) })
           }
         })
       }
     }
+    assertNoCacheKeyConflicts(allResources)
     const uniqueResources = dedupeResources(allResources)
     console.log(
       `[WebViewCache] 游戏资源去重: ${allResources.length} -> ${uniqueResources.length}`,
@@ -1246,6 +1567,7 @@ export async function downloadGameResources(
     }
     await refreshGameResourceLoadState()
   } catch (e) {
+    gameResourceLoadState.value = 'failed'
     console.warn('[WebViewCache] 预下载游戏资源失败:', e)
   }
 }
@@ -1263,7 +1585,7 @@ export async function downloadGameResources(
  * 5. 等待下载完成
  *
  * @param gameType 游戏类型，如 'MATCH_THREE' / 'JUMP'
- * @returns Promise<void>，资源就绪后 resolve
+ * @returns 本次接口返回的游戏参数，供跳转直接复用，避免重复获取 token
  */
 export async function ensureGameResourcesReady(
   gameType: string,
@@ -1271,10 +1593,13 @@ export async function ensureGameResourcesReady(
     onDownloadRequired?: () => void
     onGameParamsError?: (message?: string) => void
   } = {},
-): Promise<void> {
+): Promise<getGameParamsApiResponse | undefined> {
   console.log(`[WebViewCache] ensureGameResourcesReady: ${gameType}`)
   // 仅 Android 平台需要预下载+重定向，iOS 直接跳过
-  if (getPlatform() !== 'android') return
+  if (getPlatform() !== 'android') return undefined
+  // 冷启动后先恢复持久化 manifest，再判断本地文件是否完整。
+  // 否则下载中强杀进程后，入口检查可能基于空的内存清单。
+  if (!initialized) initWebViewResourceCache()
 
   // 1. 调用接口获取最新参数
   const res = await getGameParamsApi(gameType)
@@ -1309,10 +1634,32 @@ export async function ensureGameResourcesReady(
         ext = extractExtFromUrl(url)
       }
       if (url && ext) {
-        allResources.push({ url, ext, version: ver })
+        allResources.push({ url, ext, version: ver, size: extractResourceSize(item) })
       }
     })
   }
+
+  if (allResources.length === 0) {
+    expectedGameResources = []
+    gameResourceLoadState.value = 'failed'
+    const message = res.msg || '游戏资源配置不完整'
+    options.onGameParamsError?.(message)
+    throw new Error(`${gameType} preloadResources 为空`)
+  }
+
+  try {
+    assertNoCacheKeyConflicts(allResources)
+  } catch (error) {
+    expectedGameResources = []
+    gameResourceLoadState.value = 'failed'
+    const message = error instanceof Error ? error.message : '游戏资源配置冲突'
+    options.onGameParamsError?.(message)
+    throw error
+  }
+
+  // 消消乐和跳一跳在版本相同时共用 ext + version 缓存；
+  // 只清理不在当前版本集合中的历史文件。
+  await pruneStaleResources(allResources)
 
   // 4. 如果 preloadResources 变化，检查是否有 URL 变化需要强制重下
   if (hasChanged) {
@@ -1329,6 +1676,10 @@ export async function ensureGameResourcesReady(
           // 资源物理地址确实变化，才强制重新下载。
           existing.status = 'error'
           existing.localPath = undefined
+          existing.fileSize = undefined
+          existing.expectedSize = res.size
+          existing.expectedSizeSource = res.size ? 'api' : undefined
+          existing.needsCleanDownload = true
           existing.lastErrorStatusCode = undefined
           console.log(`[WebViewCache] 资源地址变化，强制重下: ${key}`)
         }
@@ -1338,12 +1689,10 @@ export async function ensureGameResourcesReady(
   }
 
   // 5. 检查是否有未完成的资源，如有则触发/继续下载
-  await Promise.all(allResources.map((resource) => restoreCacheEntryFromDisk(resource)))
-  const needDownload = allResources.filter((res) => {
-    const key = buildCacheKey(res.ext, res.version)
-    const existing = manifest.get(key)
-    return !(existing && existing.status === 'done' && existing.localPath)
-  })
+  const restoredResults = await Promise.all(
+    allResources.map((resource) => restoreCacheEntryFromDisk(resource)),
+  )
+  const needDownload = allResources.filter((_, index) => !restoredResults[index])
 
   if (needDownload.length > 0) {
     gameResourceLoadState.value = 'loading'
@@ -1359,30 +1708,26 @@ export async function ensureGameResourcesReady(
     console.log(`[WebViewCache] ${gameType} 所有资源已就绪`)
     expectedGameResources = allResources
     await refreshGameResourceLoadState()
-    return
+    return res.data
   }
 
-  // 6. 等待当前批次完成。如果当前单例任务属于另一款游戏，再补充下载本游戏缺失资源。
+  // 6. 等待当前批次完成。一次点击不自动创建第二批请求。
   await waitForBackgroundDownload()
-  let readiness = await Promise.all(
+  const readiness = await Promise.all(
     allResources.map((resource) => verifyResourceComplete(resource)),
   )
-  let notReady = allResources.filter((_, index) => !readiness[index])
+  const notReady = allResources.filter((_, index) => !readiness[index])
 
   if (notReady.length > 0) {
-    console.log(`[WebViewCache] 当前批次结束后仍缺少 ${notReady.length} 个资源，继续下载`)
-    await startBackgroundDownload(notReady)
-    readiness = await Promise.all(allResources.map((resource) => verifyResourceComplete(resource)))
-    notReady = allResources.filter((_, index) => !readiness[index])
-  }
-
-  await refreshGameResourceLoadState()
-
-  if (notReady.length > 0) {
+    gameResourceLoadState.value = 'failed'
     throw new Error(
       `${gameType} 仍有 ${notReady.length} 个资源未就绪: ${notReady
         .map((resource) => `${resource.ext}_${resource.version}`)
         .join(', ')}`,
     )
   }
+
+  // 当前点击的游戏资源已逐个校验通过，直接收口弹窗状态。
+  gameResourceLoadState.value = 'ready'
+  return res.data
 }
