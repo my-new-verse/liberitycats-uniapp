@@ -1238,10 +1238,15 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   background-color: var(--bg-primary);
   align-items: flex-end !important;
   padding-bottom: 12rpx;
+  // 英文大字号标签放不下时整行左右滑动；顶部留出角标空间防止被裁剪
+  overflow-x: auto;
+  padding-top: 16rpx;
 }
 
 .opItem {
   position: relative;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .opItemBadge {
