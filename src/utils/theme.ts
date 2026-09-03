@@ -268,7 +268,11 @@ export function watchSystemTheme() {
   const mql = window.matchMedia('(prefers-color-scheme: dark)')
   mql.addEventListener('change', () => {
     if (getStoredTheme() === 'system') {
-      applyTheme(mql.matches ? 'dark' : 'light')
+      const mode = mql.matches ? 'dark' : 'light'
+      applyTheme(mode)
+      // 主题变化：清协议本地缓存并广播，富文本页面按新主题重新请求
+      uni.removeStorageSync('agreements')
+      uni.$emit('themeChanged', mode)
     }
   })
   // #endif

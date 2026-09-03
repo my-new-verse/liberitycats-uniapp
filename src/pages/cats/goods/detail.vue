@@ -426,25 +426,37 @@ const handleQuantityBlur = () => {
   }
 }
 
+const goodsId = ref<number>(0)
+
+const loadGoodsDetail = (id: number) => {
+  uni.showLoading()
+  getGoodsDetailApi(id)
+    .then((res) => {
+      const data = res.data
+      if (data.covers && data.covers.length > 0) {
+        data.covers.forEach((item, index) => {
+          data.covers[index] = getImageUrl(item)
+        })
+      }
+      goodsDetail.value = data
+      buyerQuantity.value = 1
+      console.log('goodsDetail->', goodsDetail.value)
+    })
+    .finally(() => {
+      uni.hideLoading()
+    })
+}
+
 onLoad((options) => {
   if ('goods_id' in options) {
-    uni.showLoading()
-    getGoodsDetailApi(options.goods_id)
-      .then((res) => {
-        const data = res.data
-        if (data.covers && data.covers.length > 0) {
-          data.covers.forEach((item, index) => {
-            data.covers[index] = getImageUrl(item)
-          })
-        }
-        goodsDetail.value = data
-        buyerQuantity.value = 1
-        console.log('goodsDetail->', goodsDetail.value)
-      })
-      .finally(() => {
-        uni.hideLoading()
-      })
+    goodsId.value = Number(options.goods_id)
+    loadGoodsDetail(goodsId.value)
   }
+})
+
+// 主题切换：商品详情按新主题重新请求（后端按 X-App-Theme 返回对应颜色的富文本）
+uni.$on('themeChanged', () => {
+  if (goodsId.value) loadGoodsDetail(goodsId.value)
 })
 
 onMounted(() => {
@@ -454,6 +466,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  uni.$off('themeChanged')
   if (countdownTimer) {
     clearInterval(countdownTimer)
   }

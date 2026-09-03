@@ -143,6 +143,7 @@
 import { ref, computed } from 'vue'
 import i18n, { t } from '@/locale/index'
 import { useUserStore } from '@/store/user'
+import { useSystemStore } from '@/store/system'
 import { applyTheme, getStoredTheme, type ThemeMode } from '@/utils/theme'
 import { applyFontScale, getStoredFontScale, type FontScaleMode } from '@/utils/fontScale'
 
@@ -170,11 +171,15 @@ const themeActions = computed(() => [
   { name: t('setting.index.theme_dark'), value: 'dark' },
   { name: t('setting.index.theme_system'), value: 'system' },
 ])
+const systemStore = useSystemStore()
 const onThemeSelect = ({ item }: any) => {
   const mode = item.value as ThemeMode
   themeMode.value = mode
   uni.setStorageSync('app_theme', mode)
   applyTheme(mode)
+  // 主题切换：清协议缓存并广播，富文本页面按新主题重新请求
+  systemStore.resetAgreements()
+  uni.$emit('themeChanged', mode)
 }
 
 // 字体大小（标准/大/特大 三档）

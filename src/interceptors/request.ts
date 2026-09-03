@@ -3,6 +3,7 @@ import qs from 'qs'
 import { useUserStore } from '@/store'
 import { platform } from '@/utils/platform'
 import { getEnvBaseUrl } from '@/utils'
+import { getStoredTheme, getSystemTheme } from '@/utils/theme'
 import buildInfo from '@/../build-info.json'
 import traceContext from '@/utils/traceContext'
 
@@ -69,6 +70,10 @@ const httpInterceptor = {
     options.header['X-App-Environment'] =
       process.env.VITE_MODE === 'production' ? 'production' : 'test'
     if (version != null) options.header['X-App-Version'] = version
+
+    // 5. 添加主题请求头（light/dark）
+    const themeMode = getStoredTheme()
+    options.header['X-App-Theme'] = themeMode === 'system' ? getSystemTheme() : themeMode
 
     // 4. 添加链路追踪请求头（W3C Trace Context）
     options.header.traceparent = traceContext.buildTraceparent()

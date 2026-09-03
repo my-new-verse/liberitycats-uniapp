@@ -193,6 +193,7 @@ import i18n, { t } from '@/locale/index'
 import { formatNumber, getImageUrl, openOkx, toUrl } from '@/utils'
 import { createWebDataForKeyApi } from '@/service/api/web3'
 import { useUserStore } from '@/store'
+import { useSystemStore } from '@/store/system'
 import { useToast } from 'wot-design-uni'
 import { getAgreementsByKeys, QuoteKeyAgreementList } from '@/service/api/agreement'
 import { getNftDetailApi, NftItem, redeemNftApi, createPledgeApi } from '@/service/api/pledge'
@@ -280,6 +281,17 @@ const handlePledgeSubmit = () => {
 }
 
 const agreementsMap = ref<QuoteKeyAgreementList>()
+const systemStore = useSystemStore()
+
+// 主题切换：协议内容按新主题重新请求（后端按 X-App-Theme 返回对应颜色）
+uni.$on('themeChanged', async () => {
+  systemStore.resetAgreements()
+  await systemStore.ensureAgreements()
+  agreementsMap.value = systemStore.agreements
+})
+onUnmounted(() => {
+  uni.$off('themeChanged')
+})
 
 const handleRedeem = () => {
   pledgeRedeemPopupShow.value = true

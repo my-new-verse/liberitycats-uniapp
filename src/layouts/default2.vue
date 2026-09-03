@@ -1,5 +1,9 @@
 <template>
-  <wd-config-provider :theme-vars="themeVars">
+  <wd-config-provider
+    :theme-vars="themeVars"
+    :font-scale="fontScale"
+    :change:font-scale="fontScaleRenderjs.setFontScale"
+  >
     <!-- 主要内容区域，添加底部内边距防止内容被tabbar遮挡 -->
     <view class="page-container" :style="{ paddingBottom: showTabbar ? '50px' : '0' }">
       <slot />
@@ -22,15 +26,11 @@
       @btn-click="appBtnClick"
       :main-btn-text="t('common.btn.update_btn_txt')"
     />
-    <!-- 临时：夜间模式测试开关 -->
-    <view class="darkModeTestSwitch" @click="toggleDarkModeTest">
-      {{ isDarkTest ? '☀' : '☾' }}
-    </view>
   </wd-config-provider>
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import type { ConfigProviderThemeVars } from 'wot-design-uni'
 import CustomTabbar from '@/components/CustomTabbar.vue'
 import AppUpdatePopup from '@/components/AppUpdatePopup.vue'
@@ -40,12 +40,21 @@ import buildInfo from '@/../build-info.json'
 import { getSystemConfigApiV2 } from '@/service/api/user'
 import { useSystemStore } from '@/store/system'
 import { t } from '@/locale'
+import { resolveFontScale, getStoredFontScale, type FontScaleMode } from '@/utils/fontScale'
 const version = `${buildInfo.version}`
 const systemStore = useSystemStore()
 
 const themeVars: ConfigProviderThemeVars = {
   // 主题变量配置
 }
+
+const fontScale = ref(resolveFontScale(getStoredFontScale()))
+uni.$on('fontScaleChanged', (mode: FontScaleMode) => {
+  fontScale.value = resolveFontScale(mode)
+})
+onUnmounted(() => {
+  uni.$off('fontScaleChanged')
+})
 
 // 使用计算属性获取当前路径
 const currentPath = computed(() => {
@@ -141,39 +150,25 @@ const appBtnClick = (isOpenUrl: boolean) => {
 const closeAppUpdatePopup = () => {
   dismissUpdate()
 }
+</script>
 
-// 临时：夜间模式测试开关
-const isDarkTest = ref(
-  typeof document !== 'undefined' && document.documentElement
-    ? document.documentElement.style.getPropertyValue('--bg-primary').trim() === '#1a1a1a'
-    : false,
-)
-async function toggleDarkModeTest() {
-  const mode = isDarkTest.value ? 'light' : 'dark'
-  isDarkTest.value = !isDarkTest.value
-  const { applyTheme } = await import('@/utils/theme')
-  applyTheme(mode)
-  uni.setStorageSync('app_theme', mode)
+<script module="fontScaleRenderjs" lang="renderjs">
+// 视图层脚本：运行在真实 WebView 环境，可操作 DOM。
+// 用于验证 App 端能否通过 renderjs 注入 CSS 变量（字号缩放方案的关键前提）
+export default {
+  methods: {
+    setFontScale(newVal) {
+      if (document?.documentElement) {
+        document.documentElement.style.setProperty('--font-scale', String(newVal))
+        // 特大档（1.5x，与 FONT_SCALE_MAP.xlarge 一致）挂类，供页面做溢出适配
+        document.documentElement.classList.toggle('font-scale-xlarge', newVal === 1.5)
+      }
+    },
+  },
 }
 </script>
 
 <style lang="scss" scoped>
-.darkModeTestSwitch {
-  position: fixed;
-  bottom: 200rpx;
-  right: 20rpx;
-  width: 72rpx;
-  height: 72rpx;
-  background: rgba(0, 0, 0, 0.5);
-  color: var(--bg-card);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 36rpx;
-  z-index: 99999;
-}
-
 /* 添加过渡效果 */
 .page-container {
   box-sizing: border-box;

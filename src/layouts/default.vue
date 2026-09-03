@@ -1,51 +1,45 @@
 <template>
-  <wd-config-provider :themeVars="themeVars">
+  <wd-config-provider
+    :theme-vars="themeVars"
+    :font-scale="fontScale"
+    :change:font-scale="fontScaleRenderjs.setFontScale"
+  >
     <slot />
     <ActivityPopupHost />
     <wd-toast />
     <wd-message-box />
-    <!-- 临时：夜间模式测试开关 -->
-    <view class="darkModeTestSwitch" @click="toggleDarkModeTest">
-      {{ isDarkTest ? '☀' : '☾' }}
-    </view>
   </wd-config-provider>
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue'
+import { ref, onUnmounted } from 'vue'
 import type { ConfigProviderThemeVars } from 'wot-design-uni'
 import ActivityPopupHost from '@/components/ActivityPopup/ActivityPopupHost.vue'
+import { resolveFontScale, getStoredFontScale, type FontScaleMode } from '@/utils/fontScale'
 
 const themeVars: ConfigProviderThemeVars = {}
 
-const isDarkTest = ref(
-  typeof document !== 'undefined' && document.documentElement
-    ? document.documentElement.style.getPropertyValue('--bg-primary').trim() === '#1a1a1a'
-    : false,
-)
-async function toggleDarkModeTest() {
-  const mode = isDarkTest.value ? 'light' : 'dark'
-  isDarkTest.value = !isDarkTest.value
-  const { applyTheme } = await import('@/utils/theme')
-  applyTheme(mode)
-  uni.setStorageSync('app_theme', mode)
-}
+// 字号缩放系数：初始读存储，设置页切换时通过事件通知更新，renderjs 注入视图层
+const fontScale = ref(resolveFontScale(getStoredFontScale()))
+uni.$on('fontScaleChanged', (mode: FontScaleMode) => {
+  fontScale.value = resolveFontScale(mode)
+})
+onUnmounted(() => {
+  uni.$off('fontScaleChanged')
+})
 </script>
 
-<style lang="scss" scoped>
-.darkModeTestSwitch {
-  position: fixed;
-  bottom: 200rpx;
-  right: 20rpx;
-  width: 72rpx;
-  height: 72rpx;
-  background: rgba(0, 0, 0, 0.5);
-  color: var(--bg-card);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 36rpx;
-  z-index: 99999;
+<script module="fontScaleRenderjs" lang="renderjs">
+// 视图层脚本：运行在真实 WebView 环境，可操作 DOM，注入字号变量
+export default {
+  methods: {
+    setFontScale(newVal) {
+      if (document?.documentElement) {
+        document.documentElement.style.setProperty('--font-scale', String(newVal))
+        // 特大档（1.5x，与 FONT_SCALE_MAP.xlarge 一致）挂类，供页面做溢出适配
+        document.documentElement.classList.toggle('font-scale-xlarge', newVal === 1.5)
+      }
+    },
+  },
 }
-</style>
+</script>
