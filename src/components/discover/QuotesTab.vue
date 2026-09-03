@@ -83,32 +83,7 @@
           </view>
         </view>
       </template>
-      <view class="cell">
-        <view class="quoteOpBar">
-          <view>{{ t('discover.quotes.op.title') }}</view>
-          <view>{{ t('discover.quotes.op.currency_usdt') }}</view>
-        </view>
-        <view class="quoteItem" v-for="item in quotesList.data" :key="item.id">
-          <view class="coinBox">
-            <view class="coinImg">
-              <image :src="getImageUrl(item.icon)" mode="widthFix" />
-            </view>
-            <view class="coinInfo">
-              <view class="coinName">{{ item.short_name }}</view>
-              <view class="chain">{{ item.name }}</view>
-            </view>
-          </view>
-          <view class="coinPrice">
-            <view class="coinPricePrefix">$</view>
-            <view class="coinPriceTxt">{{ item.price }}</view>
-          </view>
-          <view class="upDown" :class="{ down: item.up_down_rate > 0 }">
-            <text class="upDownTxt">
-              {{ (item.up_down_rate > 0 ? '+' : '') + item.up_down_rate }}%
-            </text>
-          </view>
-        </view>
-      </view>
+      <CryptoQuotesList :items="quotesList.data" />
     </view>
     <view :style="{ paddingTop: cntPaddingTop + 36 + 20 + 'rpx' }">
       <QuoteWebview
@@ -146,6 +121,7 @@ import {
 import { formatNumber, getImageUrl, getServerOnOff, openUrl } from '@/utils'
 import { t } from '@/locale'
 import QuoteWebview from '@/components/quote-webview/quote-webview.vue'
+import CryptoQuotesList from '@/components/discover/CryptoQuotesList.vue'
 import { useUserStore } from '@/store'
 
 type LoadMoreState = 'loading' | 'finished' | 'error' | 'success'
@@ -718,21 +694,12 @@ onShow(() => {
   background-color: #efefef;
 }
 // quotes start
-.quoteOpBar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 48rpx;
-  color: var(--text-secondary);
-  //background-color: #efefef;
-}
 .quoteItem {
   display: flex;
   align-items: center;
   justify-content: space-between;
   height: 120rpx;
   margin-bottom: 20rpx;
-  // 整行不滑动，三列位置固定；内容溢出时列内各自横向滑动
   .coinBox {
     display: flex;
     align-items: center;
@@ -786,30 +753,6 @@ onShow(() => {
       overflow-x: auto;
       white-space: nowrap;
     }
-  }
-  .upDown {
-    display: flex;
-    align-items: center;
-    width: 160rpx;
-    height: 64rpx;
-    padding: 0 16rpx;
-    box-sizing: border-box;
-    flex-shrink: 0;
-    overflow-x: auto;
-    font-size: calc(28rpx * var(--font-scale));
-    font-weight: 500;
-    line-height: calc(33rpx * var(--font-scale));
-    color: var(--bg-card);
-    background-color: #1ec880;
-    border-radius: 24rpx;
-    // 文字用 margin:auto 居中：不溢出时居中，溢出时可滚动且两侧 padding 都生效
-    .upDownTxt {
-      margin: auto;
-      white-space: nowrap;
-    }
-  }
-  .down {
-    background-color: #f04f45;
   }
 }
 // quotes end
