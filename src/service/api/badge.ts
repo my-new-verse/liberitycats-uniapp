@@ -17,6 +17,14 @@ export interface BadgeItem {
   progressUnit: string
   actionType: string
   earnedAt: string | null
+  // 引导操作配置
+  guidanceAction?: {
+    label: string
+    target: {
+      name: string
+      params?: Record<string, any>
+    }
+  }
 }
 
 export interface NearestBadge {
@@ -47,8 +55,8 @@ export interface UpdateEquippedBadgeResponse {
   equippedCommunityBadge: EquippedCommunityBadge | null
 }
 
-export const getMyBadgesApi = (status: BadgeListStatus = 'ALL') => {
-  return http.get<MyBadgeList>('/v1/me/badges', { status })
+export const getMyBadgesApi = (category: BadgeListStatus = 'ALL') => {
+  return http.get<MyBadgeList>('/v1/me/badges', { category })
 }
 
 export const getBadgeDetailApi = (badgeCode: string) => {

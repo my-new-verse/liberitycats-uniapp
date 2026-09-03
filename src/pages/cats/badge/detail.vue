@@ -12,101 +12,127 @@
     <custom-nav2 title="徽章详情" pageBackgroundColor="#ffffff">
       <template #default>
         <scroll-view class="content-scroll" scroll-y sticky-scroll-bar :upper-threshold="10">
-          <template v-if="badgeData">
-            <view class="badge-card">
-              <image class="badge-large-icon" :src="badgeData.iconUrl" mode="aspectFit"></image>
-              <text class="badge-title">{{ badgeData.name }}</text>
-              <text class="badge-category">{{ badgeData.category }}</text>
-              <text class="badge-desc">{{ badgeData.description }}</text>
-            </view>
+          <!-- 徽章卡片 -->
+          <view class="badge-card">
+            <image class="badge-large-icon" :src="badgeData.iconUrl" mode="aspectFit"></image>
+            <text class="badge-title">{{ badgeData.name }}</text>
+            <text class="badge-category">{{ badgeData.category }}</text>
+            <text class="badge-desc">{{ badgeData.description }}</text>
+          </view>
 
-            <!-- 未获得状态 -->
-            <view v-if="!isEarned" class="unlocked-section">
-              <view class="unlock-progress">
-                <view class="progress-labels">
-                  <text class="label">解锁进度</text>
-                  <text class="num">
-                    {{ badgeData.progressCurrent }} / {{ badgeData.progressTarget }}
-                  </text>
-                </view>
-                <view class="progress-bar">
-                  <view class="progress-fill" :style="{ width: progressPercentage + '%' }"></view>
-                </view>
-                <!-- <wd-progress
+          <!-- 未获得状态 -->
+          <view v-if="!isEarned" class="unlocked-section">
+            <view class="unlock-progress">
+              <view class="progress-labels">
+                <text class="label">解锁进度</text>
+                <text class="num">
+                  {{ badgeData.progressCurrent }} / {{ badgeData.progressTarget }}
+                </text>
+              </view>
+              <view class="progress-bar">
+                <view class="progress-fill" :style="{ width: progressPercentage + '%' }"></view>
+              </view>
+              <!-- <wd-progress
                 :percentage="progressPercentage"
                 hide-text
                 custom-class="custom-progress"
               /> -->
-                <text class="progress-tip">{{ progressTip }}</text>
-              </view>
+              <text class="progress-tip">{{ progressTip }}</text>
+            </view>
 
-              <!-- <view class="action-btn" @click="handleGoParticipate">去参与评论</view> -->
-              <wd-button custom-class="action-btn" plain hairline>去参与评论</wd-button>
+            <!-- <view class="action-btn" @click="handleGoParticipate">去参与评论</view> -->
+            <wd-button custom-class="action-btn" plain hairline @click="handleActionClick">
+              {{ getActionButtonText() }}
+            </wd-button>
 
-              <!-- 佩戴后展示预览 -->
-              <view class="preview-section">
-                <text class="preview-title">佩戴后展示</text>
-                <view class="nickname-preview">
+            <!-- 佩戴后展示预览 -->
+            <view class="preview-section">
+              <text class="preview-title">佩戴后展示</text>
+              <view class="nickname-preview">
+                <!-- 头像 + 会员等级角标 -->
+                <view class="avatar-container">
                   <image
                     class="avatar"
-                    src="/static/images/user/default-avatar.png"
+                    :src="userStore.userInfo.avatar || '/static/images/user/default-avatar.png'"
                     mode="aspectFill"
                   ></image>
-                  <text class="nickname">何金银</text>
-                  <image class="badge-small-icon" :src="badgeData.iconUrl" mode="aspectFit"></image>
+                  <!-- 会员等级角标 -->
+                  <view
+                    v-if="userStore.userInfo.level"
+                    class="level-badge"
+                    :class="getLevelClass(userStore.userInfo.level)"
+                  >
+                    {{ getLevelText(userStore.userInfo.level) }}
+                  </view>
                 </view>
-                <text class="preview-desc">Supporter 保留头像角标；昵称旁只展示徽章图形</text>
-              </view>
-
-              <!-- 底部按钮 -->
-              <view class="bottom-action">
-                <wd-button custom-class="disable-btn" disabled>获得后可佩戴</wd-button>
+                <!-- 昵称 -->
+                <text class="nickname">{{ userStore.userInfo.nickname }}</text>
+                <!-- 徽章图标 -->
+                <image class="badge-small-icon" :src="badgeData?.iconUrl" mode="aspectFit"></image>
               </view>
             </view>
 
-            <!-- 已获得状态 -->
-            <view v-else class="obtained-section">
-              <!-- 获取信息 -->
-              <view class="info-list">
-                <view class="info-item">
-                  <text class="info-label">获得方式</text>
-                  <text class="info-value">{{ badgeData.description }}</text>
-                </view>
-                <view class="info-item">
-                  <text class="info-label">获得时间</text>
-                  <text class="info-value">{{ badgeData.earnedAt || '-' }}</text>
-                </view>
-                <view class="info-item obtained-status">
-                  <text class="info-label">状态</text>
-                  <text class="info-value obtained-tag">
-                    {{ isEquipped ? '已佩戴' : '已获得' }}
-                  </text>
-                </view>
-              </view>
+            <!-- 底部按钮 -->
+            <view class="bottom-action">
+              <wd-button custom-class="disable-btn" disabled>获得后可佩戴</wd-button>
+            </view>
+          </view>
 
-              <!-- 昵称展示预览 -->
-              <view class="preview-section">
-                <text class="preview-title">昵称展示预览</text>
-                <view class="nickname-preview">
-                  <image
-                    class="avatar"
-                    src="/static/images/user/default-avatar.png"
-                    mode="aspectFill"
-                  ></image>
-                  <text class="nickname">何金银</text>
-                  <image class="badge-small-icon" :src="badgeData.iconUrl" mode="aspectFit"></image>
-                </view>
-                <text class="preview-desc">会员等级使用头像角标；昵称旁只展示徽章图形</text>
+          <!-- 已获得状态 -->
+          <view v-else class="obtained-section">
+            <!-- 获取信息 -->
+            <view class="info-list">
+              <view class="info-item">
+                <text class="info-label">获得方式</text>
+                <text class="info-value">{{ badgeData.description }}</text>
               </view>
-
-              <!-- 底部按钮 -->
-              <view class="bottom-action">
-                <button class="primary-btn" :disabled="submitting" @click="handleEquippedAction">
-                  {{ isEquipped ? '取消佩戴' : '佩戴这枚徽章' }}
-                </button>
+              <view class="info-item">
+                <text class="info-label">获得时间</text>
+                <text class="info-value">{{ badgeData.earnedAt || '-' }}</text>
+              </view>
+              <view class="info-item obtained-status">
+                <text class="info-label">状态</text>
+                <text class="info-value obtained-tag">
+                  {{ isEquipped ? '已佩戴' : '已获得' }}
+                </text>
               </view>
             </view>
-          </template>
+
+            <!-- 昵称展示预览 -->
+            <view class="preview-section">
+              <text class="preview-title">昵称展示预览</text>
+              <view class="nickname-preview">
+                <!-- 头像 + 会员等级角标 -->
+                <view class="avatar-container">
+                  <image
+                    class="avatar"
+                    :src="userStore.userInfo.avatar || '/static/images/user/default-avatar.png'"
+                    mode="aspectFill"
+                  ></image>
+                  <!-- 会员等级角标 -->
+                  <view
+                    v-if="userStore.userInfo.level"
+                    class="level-badge"
+                    :class="getLevelClass(userStore.userInfo.level)"
+                  >
+                    {{ getLevelText(userStore.userInfo.level) }}
+                  </view>
+                </view>
+                <!-- 昵称 -->
+                <text class="nickname">{{ userStore.userInfo.nickname }}</text>
+                <!-- 徽章图标 -->
+                <image class="badge-small-icon" :src="badgeData?.iconUrl" mode="aspectFit"></image>
+              </view>
+              <text class="preview-desc">会员等级使用头像角标；昵称旁只展示徽章图形</text>
+            </view>
+
+            <!-- 底部按钮 -->
+            <view class="bottom-action">
+              <button class="primary-btn" :disabled="submitting" @click="handleEquippedAction">
+                {{ isEquipped ? '取消佩戴' : '佩戴这枚徽章' }}
+              </button>
+            </view>
+          </view>
         </scroll-view>
       </template>
     </custom-nav2>
@@ -116,7 +142,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { t } from '@/locale/index'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onHide } from '@dcloudio/uni-app'
+import { toUrl } from '@/utils'
 import CustomNav2 from '@/components/CustomNav/CustomNav2.vue'
 import {
   equipBadgeApi,
@@ -194,12 +221,131 @@ const handleEquippedAction = async () => {
       ...badgeData.value,
       status: wasEquipped ? 'EARNED' : 'EQUIPPED',
     }
-    uni.showToast({ title: wasEquipped ? '已取消佩戴' : '佩戴成功', icon: 'success' })
+
+    // 成功修改佩戴状态后，广播事件通知 index 页面刷新数据
+    const currentCode = badgeData.value.code
+    uni.$emit('badge_equipment_updated', {
+      badgeCode: currentCode,
+      newStatus: wasEquipped ? 'UNEQUIPPED' : 'EQUIPPED',
+      timestamp: Date.now(),
+    })
+
+    uni.showToast({
+      title: wasEquipped ? '已取消佩戴' : '佩戴成功',
+      icon: 'success',
+    })
     void userStore.getUserInfo()
   } catch (error) {
     console.warn('[Badge] 更新佩戴状态失败:', error)
   } finally {
     submitting.value = false
+  }
+}
+
+// 获取会员等级文本
+const getLevelText = (level: number): string => {
+  const levelMap: Record<number, string> = {
+    1: '铜牌',
+    2: '银牌',
+    3: '金牌',
+    4: '钻石',
+    5: '皇冠',
+  }
+  return levelMap[level] || `Lv.${level}`
+}
+
+// 获取会员等级样式类名
+const getLevelClass = (level: number): string => {
+  return `level-${level}`
+}
+
+// 获取操作按钮文字
+const getActionButtonText = () => {
+  if (badgeData.value?.guidanceAction) {
+    return badgeData.value.guidanceAction.label
+  }
+  // 默认文字
+  return isEquipped.value ? '查看详情' : '去参与'
+}
+
+// 处理点击事件
+const handleActionClick = async () => {
+  const guidanceAction = badgeData.value?.guidanceAction
+  if (!guidanceAction) {
+    uni.showToast({
+      title: '该徽章暂不支持此操作',
+      icon: 'none',
+    })
+    return
+  }
+
+  try {
+    const { name, params } = guidanceAction.target
+
+    // 根据不同的目标名称执行不同的跳转逻辑
+    switch (name) {
+      case 'profile_edit':
+        // 完善头像和昵称，打开资料设置入口
+        toUrl('/pages/cats/settings/index', params)
+        break
+
+      case 'post_create':
+        if (params.category === 'normal') {
+          toUrl('/pages/cats/social/publish', params || {}) // 读取 params.category
+        } else {
+          toUrl('/pages/cats/social/publish?category=promotion', params || {}) // 读取 params.category
+        }
+        break
+
+      case 'community_discussion':
+        // 参与社区评论，切换至社区发现页
+        uni.switchTab({
+          url: '/pages/tabbar/discover',
+          complete: () => {
+            // 可以在这里添加定位到评论区的相关逻辑
+            // uni.showToast({
+            //   title: '已切换至社区发现页',
+            //   icon: 'success',
+            // })
+          },
+        })
+        break
+
+      case 'check_in':
+        // 前往签到入口，切换至“我的”页并定位签到区域
+        uni.switchTab({
+          url: '/pages/tabbar/my',
+          complete: () => {
+            // 延迟后定位签到区域（等待页面加载完成后）
+            setTimeout(() => {
+              // 这里可以添加滚动到签到区域的逻辑
+              // 如果有相应的 API 或方法的话
+              uni.showToast({
+                title: '请查看顶部签到区域',
+                icon: 'none',
+              })
+            }, 300)
+          },
+        })
+        break
+
+      case 'staking':
+        // 查看质押，打开质押页
+        toUrl('/pages/cats/pledge/index', params)
+        break
+
+      default:
+        uni.showToast({
+          title: '未定义的操作',
+          icon: 'none',
+        })
+    }
+  } catch (error) {
+    console.error('[Badge] 跳转失败:', error)
+    uni.showToast({
+      title: '跳转失败，请重试',
+      icon: 'none',
+    })
   }
 }
 </script>
@@ -233,8 +379,8 @@ const handleEquippedAction = async () => {
 
   .badge-large-icon {
     display: flex;
-    width: 160rpx;
-    height: 160rpx;
+    width: 240rpx;
+    height: 240rpx;
     justify-content: center;
     align-items: center;
     border-radius: 50%;
@@ -355,7 +501,7 @@ const handleEquippedAction = async () => {
   padding: 32rpx;
   background: #ffffff;
   border-radius: 24rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+  // box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
 
   .info-list {
     margin-bottom: 40rpx;
@@ -365,7 +511,7 @@ const handleEquippedAction = async () => {
       justify-content: space-between;
       align-items: center;
       padding: 20rpx 0;
-      border-bottom: 1rpx solid #f0f0f0;
+      // border-bottom: 1rpx solid #f0f0f0;
 
       &:last-child {
         border-bottom: none;
@@ -384,16 +530,91 @@ const handleEquippedAction = async () => {
 
       &.obtained-status {
         .obtained-tag {
-          color: #27c86b;
+          color: #2ca66f;
         }
       }
     }
   }
 }
 
-// 预览区域
+// 昵称预览区域（通用样式）
+.nickname-preview {
+  display: flex;
+  align-items: center;
+  padding: 24rpx;
+  background: #f7f6f4;
+  border-radius: 16rpx;
+  margin-bottom: 16rpx;
+
+  .avatar-container {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 16rpx;
+
+    .avatar {
+      width: 64rpx;
+      height: 64rpx;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .level-badge {
+      position: absolute;
+      bottom: -4rpx;
+      right: -4rpx;
+      padding: 6rpx 10rpx;
+      min-width: 44rpx;
+      height: 28rpx;
+      line-height: 24rpx;
+      text-align: center;
+      font-size: 18rpx;
+      font-weight: 600;
+      color: #ffffff;
+      border-radius: 14rpx;
+
+      &.level-1 {
+        background: linear-gradient(135deg, #cd7f32 0%, #a0522d 100%);
+      }
+
+      &.level-2 {
+        background: linear-gradient(135deg, #c0c0c0 0%, #808080 100%);
+      }
+
+      &.level-3 {
+        background: linear-gradient(135deg, #ffd700 0%, #daa520 100%);
+      }
+
+      &.level-4 {
+        background: linear-gradient(135deg, #b9f2ff 0%, #00ced1 100%);
+        color: #006666;
+      }
+
+      &.level-5 {
+        background: linear-gradient(135deg, #e6e6fa 0%, #9370db 100%);
+        color: #4b0082;
+      }
+    }
+  }
+
+  .nickname {
+    // flex: 1;
+    font-size: 28rpx;
+    color: #333333;
+    font-weight: 500;
+  }
+
+  .badge-small-icon {
+    width: 48rpx;
+    height: 48rpx;
+    margin-left: 16rpx;
+  }
+}
+
+// 预览区域包装容器（用于包含标题）
 .preview-section {
-  margin: 0 0 40rpx;
+  margin-bottom: 80rpx; // 增加底部间距
 
   .preview-title {
     display: block;
@@ -401,42 +622,6 @@ const handleEquippedAction = async () => {
     font-weight: 600;
     color: #333333;
     margin-bottom: 20rpx;
-  }
-
-  .nickname-preview {
-    display: flex;
-    align-items: center;
-    padding: 24rpx;
-    background: #f7f6f4;
-    border-radius: 16rpx;
-    margin-bottom: 16rpx;
-
-    .avatar {
-      width: 64rpx;
-      height: 64rpx;
-      border-radius: 50%;
-      margin-right: 16rpx;
-    }
-
-    .nickname {
-      flex: 1;
-      font-size: 28rpx;
-      color: #333333;
-      font-weight: 500;
-    }
-
-    .badge-small-icon {
-      width: 48rpx;
-      height: 48rpx;
-      margin-left: 16rpx;
-    }
-  }
-
-  .preview-desc {
-    display: block;
-    font-size: 26rpx;
-    color: #999999;
-    line-height: 1.4;
   }
 }
 
@@ -483,5 +668,47 @@ const handleEquippedAction = async () => {
     height: 18rpx !important;
     border-radius: 38rpx;
   }
+}
+
+// 会员等级角标
+.level-badge {
+  position: absolute;
+  bottom: -4rpx;
+  right: -4rpx;
+  padding: 6rpx 10rpx;
+  min-width: 44rpx;
+  height: 28rpx;
+  line-height: 24rpx;
+  text-align: center;
+  font-size: 18rpx;
+  font-weight: 600;
+  color: #ffffff;
+  border-radius: 14rpx;
+
+  &.level-1 {
+    background: linear-gradient(135deg, #cd7f32 0%, #a0522d 100%);
+  }
+
+  &.level-2 {
+    background: linear-gradient(135deg, #c0c0c0 0%, #808080 100%);
+  }
+
+  &.level-3 {
+    background: linear-gradient(135deg, #ffd700 0%, #daa520 100%);
+  }
+
+  &.level-4 {
+    background: linear-gradient(135deg, #b9f2ff 0%, #00ced1 100%);
+    color: #006666;
+  }
+
+  &.level-5 {
+    background: linear-gradient(135deg, #e6e6fa 0%, #9370db 100%);
+    color: #4b0082;
+  }
+}
+
+.avatar-container {
+  position: relative;
 }
 </style>
