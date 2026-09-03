@@ -1480,7 +1480,8 @@ const bindArGame = () => {
           height: 28rpx;
           padding: 10rpx 26rpx;
 
-          font-size: calc(24rpx * var(--font-scale));
+          //   font-size: calc(24rpx * var(--font-scale));
+          font-size: 24rpx;
           font-style: normal;
           font-weight: 600;
           line-height: calc(28rpx * var(--font-scale));

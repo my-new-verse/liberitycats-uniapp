@@ -118,6 +118,7 @@
     display: flex;
     align-items: center;
     justify-content: start;
+    flex-shrink: 0;
     .icon2 {
       width: 40rpx;
       height: 40rpx;
@@ -140,6 +141,7 @@
     display: flex;
     align-items: center;
     justify-content: end;
+    min-width: 0;
     color: var(--text-primary);
     .rightTitle {
       margin-right: 16rpx;
@@ -148,6 +150,12 @@
       font-weight: 500;
       line-height: calc(33rpx * var(--font-scale));
       color: var(--text-secondary);
+      // 值过长时省略号展示，左侧标题不压缩
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .arrow {
       width: 56rpx;

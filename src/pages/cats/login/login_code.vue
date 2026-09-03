@@ -222,7 +222,7 @@ const doLogin = async () => {
   margin-top: 54rpx;
   //background: green;
   .title {
-    height: 56rpx;
+    min-height: calc(56rpx * var(--font-scale));
     font-size: calc(48rpx * var(--font-scale));
     font-style: normal;
     font-weight: 600;

@@ -670,12 +670,15 @@ onShow(() => {
   width: 100%;
   margin-bottom: 36rpx;
   padding-bottom: 12rpx;
+  overflow-x: auto;
   .opItem {
     margin-right: 16rpx;
     font-size: calc(28rpx * var(--font-scale));
     font-weight: 400;
     line-height: calc(33rpx * var(--font-scale));
     color: #999999;
+    white-space: nowrap; // 文字单行，不换行
+    flex-shrink: 0;
   }
 
   .opItem.active {

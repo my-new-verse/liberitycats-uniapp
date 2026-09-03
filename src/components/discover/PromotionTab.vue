@@ -1099,10 +1099,12 @@ onUnmounted(() => {
 .cardRow {
   display: flex;
   gap: 16rpx;
+  // 卡片不压缩，按内容宽度撑开；超出屏幕时整行左右滑动
+  overflow-x: auto;
   // padding: 12rpx 40rpx 16rpx;
   background-color: var(--liberty-cats-page-background-color, #f7f6f4);
   z-index: 10;
-  height: 180rpx;
+  min-height: 180rpx;
   width: calc(100vw - 2 * 32rpx);
   &.cardRow--sticky {
     position: fixed;
@@ -1111,7 +1113,7 @@ onUnmounted(() => {
   }
 
   .cardItem {
-    flex: 1;
+    flex: 1 0 auto;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1156,6 +1158,7 @@ onUnmounted(() => {
       font-size: calc(24rpx * var(--font-scale));
       color: var(--actions-text);
       margin-top: 16rpx;
+      white-space: nowrap;
     }
   }
 }

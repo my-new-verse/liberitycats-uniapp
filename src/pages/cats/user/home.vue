@@ -1305,10 +1305,14 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
       // justify-content: center;
       width: 100%;
       margin-top: 20rpx;
+      // 英文大字号时统计项变宽，整行左右滑动
+      overflow-x: auto;
       .statItem {
         display: flex;
         align-items: baseline;
         padding: 0 24rpx;
+        flex-shrink: 0;
+        white-space: nowrap;
         .statCount {
           font-size: calc(44rpx * var(--font-scale));
           font-weight: 600;
