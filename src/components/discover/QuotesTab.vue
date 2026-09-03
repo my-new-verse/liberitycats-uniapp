@@ -103,7 +103,9 @@
             <view class="coinPriceTxt">{{ item.price }}</view>
           </view>
           <view class="upDown" :class="{ down: item.up_down_rate > 0 }">
-            {{ (item.up_down_rate > 0 ? '+' : '') + item.up_down_rate }}%
+            <text class="upDownTxt">
+              {{ (item.up_down_rate > 0 ? '+' : '') + item.up_down_rate }}%
+            </text>
           </view>
         </view>
       </view>
@@ -730,33 +732,40 @@ onShow(() => {
   justify-content: space-between;
   height: 120rpx;
   margin-bottom: 20rpx;
-  overflow-x: auto;
+  // 整行不滑动，三列位置固定；内容溢出时列内各自横向滑动
   .coinBox {
     display: flex;
     align-items: center;
-    // width: 240rpx;
+    flex: 1 1 auto;
+    min-width: 0;
     .coinImg {
       width: 80rpx;
       height: 80rpx;
       margin-right: 16rpx;
+      flex-shrink: 0;
       image {
         width: 100%;
         height: 100%;
       }
     }
     .coinInfo {
+      flex: 1;
+      min-width: 0;
+      overflow-x: auto;
       .coinName {
         margin-bottom: 4rpx;
         font-size: calc(32rpx * var(--font-scale));
         font-weight: 500;
         line-height: calc(38rpx * var(--font-scale));
         color: var(--text-primary);
+        white-space: nowrap;
       }
       .chain {
         font-size: calc(24rpx * var(--font-scale));
         font-weight: 500;
         line-height: calc(28rpx * var(--font-scale));
         color: var(--black-40);
+        white-space: nowrap;
       }
     }
   }
@@ -764,25 +773,40 @@ onShow(() => {
     display: flex;
     align-items: center;
     justify-content: end;
-    // width: calc(100% - 480rpx);
+    flex-shrink: 1;
+    min-width: 0;
+    max-width: 260rpx;
     margin: 0 40rpx;
     font-size: calc(32rpx * var(--font-scale));
     font-weight: 500;
     line-height: calc(38rpx * var(--font-scale));
     color: var(--text-primary);
+    .coinPriceTxt {
+      min-width: 0;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
   }
   .upDown {
     display: flex;
     align-items: center;
-    justify-content: center;
     width: 160rpx;
     height: 64rpx;
+    padding: 0 16rpx;
+    box-sizing: border-box;
+    flex-shrink: 0;
+    overflow-x: auto;
     font-size: calc(28rpx * var(--font-scale));
     font-weight: 500;
     line-height: calc(33rpx * var(--font-scale));
     color: var(--bg-card);
     background-color: #1ec880;
     border-radius: 24rpx;
+    // 文字用 margin:auto 居中：不溢出时居中，溢出时可滚动且两侧 padding 都生效
+    .upDownTxt {
+      margin: auto;
+      white-space: nowrap;
+    }
   }
   .down {
     background-color: #f04f45;
