@@ -64,7 +64,7 @@
                   class="tab-text"
                   :class="{ active: activeSubtype === option.value && !isShowingAll }"
                 >
-                  {{ option.label }}
+                  <text class="tab-text-inner">{{ option.label }}</text>
                 </view>
               </view>
             </template>
@@ -1596,6 +1596,9 @@ onUnmounted(() => {
 
 // 文字样式
 .tab-text {
+  display: flex;
+  width: 100%;
+  overflow-x: auto;
   font-size: calc(24rpx * var(--font-scale));
   font-weight: 500;
   color: var(--actions-text);
@@ -1608,6 +1611,11 @@ onUnmounted(() => {
   span {
     font-family: 'Alimama FangYuanTi VF' !important;
     color: red;
+  }
+  // 不溢出居中，溢出时可左右滑动且两端都到
+  .tab-text-inner {
+    margin: auto;
+    white-space: nowrap;
   }
 }
 ::v-deep .wd-swipe-action__right {

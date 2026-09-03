@@ -1479,6 +1479,7 @@ const bindArGame = () => {
           justify-content: center;
           height: 28rpx;
           padding: 10rpx 26rpx;
+          flex-shrink: 0;
 
           //   font-size: calc(24rpx * var(--font-scale));
           font-size: 24rpx;
