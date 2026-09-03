@@ -21,27 +21,6 @@
         <view class="container">
           <view class="socialBox">
             <view class="socialItem">
-              <view
-                class="delBox"
-                v-if="postDetail.member_id === userStore.userInfo?.member_id"
-                @click="handleDelMainPost"
-              ></view>
-              <view class="jbBox" v-else @click="reportPost(postDetail)"></view>
-              <view
-                v-if="getMemberFollowInfo(postDetail?.member)"
-                class="followBtn"
-                :class="getMemberFollowInfo(postDetail?.member).style"
-                @click.stop="handleFollowClick(postDetail?.member)"
-              >
-                {{ getMemberFollowInfo(postDetail?.member).text }}
-                <wd-icon
-                  custom-style="margin-left: 12rpx"
-                  name="star-on"
-                  size="22rpx"
-                  color="#ff6b03"
-                  v-if="postDetail.member.is_special_following === 1"
-                ></wd-icon>
-              </view>
               <view class="socialHead">
                 <view class="avatarBox" @click="debouncedToUserHomeRef?.(postDetail?.member_id)">
                   <image
@@ -81,6 +60,27 @@
                 >
                   {{ postDetail.tag?.name }}
                 </view>
+                <view
+                  v-if="getMemberFollowInfo(postDetail?.member)"
+                  class="followBtn"
+                  :class="getMemberFollowInfo(postDetail?.member).style"
+                  @click.stop="handleFollowClick(postDetail?.member)"
+                >
+                  {{ getMemberFollowInfo(postDetail?.member).text }}
+                  <wd-icon
+                    custom-style="margin-left: 12rpx"
+                    name="star-on"
+                    size="22rpx"
+                    color="#ff6b03"
+                    v-if="postDetail.member.is_special_following === 1"
+                  ></wd-icon>
+                </view>
+                <view
+                  class="delBox"
+                  v-if="postDetail.member_id === userStore.userInfo?.member_id"
+                  @click="handleDelMainPost"
+                ></view>
+                <view class="jbBox" v-else @click="reportPost(postDetail)"></view>
               </view>
               <view class="socialCntBox">
                 <view class="socialCnt">
@@ -2416,12 +2416,20 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   }
 }
 
-/* ========== 关注按钮 ========== */
+/* ========== 头部行：头像/标签/按钮不可压缩，仅名字省略 ========== */
 .nameWrap {
   display: flex;
   align-items: center;
   gap: 12rpx;
   margin-bottom: 6rpx;
+  flex: 1;
+  min-width: 0;
+  .name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 .followBtn {
   display: inline-flex;
@@ -2438,13 +2446,24 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   border: 1rpx solid transparent;
   background-color: #ff6b03;
   color: var(--bg-card);
-  position: absolute;
-  right: 48rpx;
-  top: 0;
+  margin-left: 16rpx;
   &.followed {
     background-color: var(--bg-card);
     color: var(--text-secondary);
     border-color: #ddd;
   }
+}
+.socialHead {
+  .avatarBox,
+  .tag {
+    flex-shrink: 0;
+  }
+}
+/* 覆盖共享样式中的 absolute 定位（共享规则嵌套层级更深，需提高特异性） */
+.socialItem .socialHead .delBox,
+.socialItem .socialHead .jbBox {
+  position: static !important;
+  flex-shrink: 0;
+  margin-left: 16rpx;
 }
 </style>

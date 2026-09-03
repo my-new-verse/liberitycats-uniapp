@@ -685,13 +685,15 @@ onLoad((options: any) => {
   }
 }
 
-/* ========== 关注按钮（固定宽度） ========== */
+/* ========== 关注按钮 ========== */
 .followBtn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 160rpx;
+  width: auto;
+  min-width: 160rpx;
   height: 56rpx;
+  padding: 0 24rpx;
   border-radius: 28rpx;
   font-size: calc(24rpx * var(--font-scale));
   line-height: 1;
