@@ -274,7 +274,7 @@ const handleFiatBlur = (selectItem: any, e: any) => {
         font-size: calc(24rpx * var(--font-scale));
         font-weight: 500;
         line-height: calc(28rpx * var(--font-scale));
-        color: #999999;
+        color: var(--text-secondary);
       }
     }
   }

@@ -249,7 +249,7 @@ const doLogin = async () => {
     font-style: normal;
     font-weight: 400;
     line-height: calc(36rpx * var(--font-scale));
-    color: #999999;
+    color: var(--text-secondary);
   }
   .custom-count-down {
     margin-left: 8rpx;

@@ -384,7 +384,7 @@ const loadPledgeAsset = () => {
     font-style: normal;
     font-weight: normal;
     line-height: calc(23rpx * var(--font-scale));
-    color: #999999;
+    color: var(--text-secondary);
     text-align: center;
   }
 }

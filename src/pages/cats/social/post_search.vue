@@ -2152,7 +2152,7 @@ const handleLevelIconError = (member: any) => {
 
   .emptyText {
     font-size: calc(28rpx * var(--font-scale));
-    color: #999999;
+    color: var(--text-secondary);
   }
 }
 </style>

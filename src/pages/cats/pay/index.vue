@@ -299,20 +299,20 @@ const pay = async () => {
 .payTitle {
   font-size: calc(28rpx * var(--font-scale));
   font-weight: 400;
-  color: #999999;
+  color: var(--text-secondary);
 }
 
 .orderSn {
   font-size: calc(22rpx * var(--font-scale));
   font-weight: 400;
-  color: #999999;
+  color: var(--text-secondary);
 }
 
 .payMethod {
   margin: 48rpx 0 24rpx 0;
   font-size: calc(24rpx * var(--font-scale));
   font-weight: 400;
-  color: #999999;
+  color: var(--text-secondary);
 }
 
 .priceBox {
@@ -329,7 +329,7 @@ const pay = async () => {
     margin-left: 12rpx;
     font-size: calc(28rpx * var(--font-scale));
     font-weight: 400;
-    color: #999999;
+    color: var(--text-secondary);
     text-transform: uppercase;
   }
 }

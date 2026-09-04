@@ -453,7 +453,7 @@ const enterSelectedGame = async () => {
     .name {
       font-size: calc(48rpx * var(--font-scale));
       font-weight: 600;
-      color: #333333;
+      color: var(--actions-text);
     }
 
     .memo {

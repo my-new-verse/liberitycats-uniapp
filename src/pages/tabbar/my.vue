@@ -1382,7 +1382,7 @@ const bindArGame = () => {
           .heroLabel {
             font-size: calc(24rpx * var(--font-scale));
             font-weight: 400;
-            color: #999999;
+            color: var(--text-secondary);
             margin-bottom: 8rpx;
           }
 
@@ -1424,7 +1424,7 @@ const bindArGame = () => {
             .statLabel {
               font-size: calc(22rpx * var(--font-scale));
               font-weight: 400;
-              color: #999999;
+              color: var(--text-secondary);
               margin-bottom: 6rpx;
             }
 
@@ -1677,7 +1677,7 @@ const bindArGame = () => {
         font-style: normal;
         font-weight: 400;
         line-height: calc(24rpx * var(--font-scale));
-        color: #999999;
+        color: var(--text-secondary);
       }
     }
     .labelBox {

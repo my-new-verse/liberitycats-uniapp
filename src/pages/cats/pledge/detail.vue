@@ -421,7 +421,7 @@ const handleRedeemSubmit = () => {
     .nftAttrLabel {
       font-size: calc(28rpx * var(--font-scale));
       line-height: calc(33rpx * var(--font-scale));
-      color: #999999;
+      color: var(--text-secondary);
     }
 
     .nftAttrValue {

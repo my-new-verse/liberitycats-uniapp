@@ -217,7 +217,7 @@ const switchAccount = (item) => {
   font-size: calc(28rpx * var(--font-scale));
   font-style: normal;
   font-weight: normal;
-  color: #999999;
+  color: var(--text-secondary);
   text-align: left;
 }
 
