@@ -73,16 +73,29 @@
           </view>
         </view>
         <view class="chat-content-container">
-          <text
+          <view
             v-if="!isNewsMessageType(item.message_type)"
+            class="chat-user-row"
             :class="{
-              'chat-user-name': true,
               'chat-location-me': item.is_self,
               is_self: item.is_self,
             }"
           >
-            {{ item.is_self ? '' : getMessageSenderDisplayName(item) }}
-          </text>
+            <text class="chat-user-name">
+              {{ item.is_self ? '' : getMessageSenderDisplayName(item) }}
+            </text>
+            <view
+              v-if="!item.is_self && item.sender?.equippedCommunityBadge?.iconUrl"
+              class="chat-badge-target"
+              @click.stop="handleBadgeClick"
+            >
+              <image
+                class="chat-badge-icon"
+                :src="getImageUrl(item.sender.equippedCommunityBadge.iconUrl)"
+                mode="aspectFit"
+              />
+            </view>
+          </view>
           <view
             class="chat-text-container-super"
             :style="[{ justifyContent: item.is_self ? 'flex-end' : 'flex-start' }]"
@@ -270,7 +283,20 @@
                 </text>
               </view>
               <view class="news-top-row">
-                <text class="chat-user-name">{{ getMessageSenderDisplayName(item) }}</text>
+                <view class="chat-user-row">
+                  <text class="chat-user-name">{{ getMessageSenderDisplayName(item) }}</text>
+                  <view
+                    v-if="item.sender?.equippedCommunityBadge?.iconUrl"
+                    class="chat-badge-target"
+                    @click.stop="handleBadgeClick"
+                  >
+                    <image
+                      class="chat-badge-icon"
+                      :src="getImageUrl(item.sender.equippedCommunityBadge.iconUrl)"
+                      mode="aspectFit"
+                    />
+                  </view>
+                </view>
                 <view
                   v-if="
                     item.payload?.card_type === 'hourly_flash_digest' ||
@@ -341,7 +367,20 @@
               class="news-wrapper"
             >
               <view class="news-top-row">
-                <text class="chat-user-name">{{ getMessageSenderDisplayName(item) }}</text>
+                <view class="chat-user-row">
+                  <text class="chat-user-name">{{ getMessageSenderDisplayName(item) }}</text>
+                  <view
+                    v-if="item.sender?.equippedCommunityBadge?.iconUrl"
+                    class="chat-badge-target"
+                    @click.stop="handleBadgeClick"
+                  >
+                    <image
+                      class="chat-badge-icon"
+                      :src="getImageUrl(item.sender.equippedCommunityBadge.iconUrl)"
+                      mode="aspectFit"
+                    />
+                  </view>
+                </view>
                 <view
                   v-if="
                     item.payload?.card_type === 'hourly_flash_digest' ||
@@ -406,7 +445,20 @@
               class="news-wrapper"
             >
               <view class="news-top-row">
-                <text class="chat-user-name">{{ getMessageSenderDisplayName(item) }}</text>
+                <view class="chat-user-row">
+                  <text class="chat-user-name">{{ getMessageSenderDisplayName(item) }}</text>
+                  <view
+                    v-if="item.sender?.equippedCommunityBadge?.iconUrl"
+                    class="chat-badge-target"
+                    @click.stop="handleBadgeClick"
+                  >
+                    <image
+                      class="chat-badge-icon"
+                      :src="getImageUrl(item.sender.equippedCommunityBadge.iconUrl)"
+                      mode="aspectFit"
+                    />
+                  </view>
+                </view>
                 <view
                   v-if="
                     !(item.reply_to || item.reply_message) &&
@@ -488,7 +540,20 @@
               class="news-wrapper"
             >
               <view class="news-top-row">
-                <text class="chat-user-name">{{ getMessageSenderDisplayName(item) }}</text>
+                <view class="chat-user-row">
+                  <text class="chat-user-name">{{ getMessageSenderDisplayName(item) }}</text>
+                  <view
+                    v-if="item.sender?.equippedCommunityBadge?.iconUrl"
+                    class="chat-badge-target"
+                    @click.stop="handleBadgeClick"
+                  >
+                    <image
+                      class="chat-badge-icon"
+                      :src="getImageUrl(item.sender.equippedCommunityBadge.iconUrl)"
+                      mode="aspectFit"
+                    />
+                  </view>
+                </view>
                 <view
                   v-if="
                     !(item.reply_to || item.reply_message) &&
@@ -894,6 +959,16 @@ const handleAvatarClick = (memberId: number | undefined) => {
     url: `/pages/cats/user/home?member_id=${memberId}`,
   })
 }
+
+const handleBadgeClick = () => {
+  const badgeCode = props.item?.sender?.equippedCommunityBadge?.code
+  const memberId = props.item?.sender?.member_id || props.item?.member_id
+  if (!badgeCode || !memberId) return
+
+  toUrl(
+    `/pages/cats/badge/detail?code=${encodeURIComponent(badgeCode)}&memberId=${encodeURIComponent(memberId)}`,
+  )
+}
 </script>
 
 <style scoped lang="scss">
@@ -971,9 +1046,28 @@ const handleAvatarClick = (memberId: number | undefined) => {
   flex: 1;
   min-width: 0;
 }
+.chat-user-row {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  width: fit-content;
+}
 .chat-user-name {
   @include chat-font;
   color: var(--chat-user-name-color);
+}
+.chat-badge-target {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36rpx;
+  height: 36rpx;
+  flex-shrink: 0;
+}
+.chat-badge-icon {
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
 .chat-text-container {
   text-align: left;
