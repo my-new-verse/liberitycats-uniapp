@@ -62,23 +62,29 @@
                   </view>
                 </view>
                 <view class="nameWrapTitle">
-                  <view class="name">{{ formatNickname(postDetail?.member?.nickname, 22) }}</view>
-                  <!-- 徽章图标 - 显示在昵称右边 -->
-                  <wd-img
-                    width="42rpx"
-                    height="42rpx"
-                    v-if="postDetail?.member?.equippedCommunityBadge?.iconUrl"
-                    class="badge-icon"
-                    :src="getImageUrl(postDetail.member.equippedCommunityBadge.iconUrl)"
-                    mode="aspectFit"
-                    :enable-preview="false"
-                    @click.stop="
-                      handleBadgeClick(
-                        postDetail.member.equippedCommunityBadge.code,
-                        postDetail.member_id,
-                      )
-                    "
-                  />
+                  <view style="display: flex; gap: 8rpx">
+                    <view class="name">{{ formatNickname(postDetail?.member?.nickname, 22) }}</view>
+                    <!-- 徽章图标 - 显示在昵称右边 -->
+                    <view
+                      v-if="postDetail?.member?.equippedCommunityBadge?.iconUrl"
+                      class="badge-click-target"
+                      @click.stop="
+                        handleBadgeClick(
+                          postDetail.member.equippedCommunityBadge.code,
+                          postDetail.member_id,
+                        )
+                      "
+                    >
+                      <wd-img
+                        width="42rpx"
+                        height="42rpx"
+                        class="badge-icon"
+                        :src="getImageUrl(postDetail.member.equippedCommunityBadge.iconUrl)"
+                        mode="aspectFit"
+                        :enable-preview="false"
+                      />
+                    </view>
+                  </view>
                   <view class="metaRow">
                     <text class="metaTime">
                       {{
@@ -258,18 +264,22 @@
                   <view class="nameWrap">
                     <text class="nickname">{{ item._nickname }}</text>
                     <!-- 徽章图标 - 显示在昵称右边 -->
-                    <wd-img
-                      width="42rpx"
-                      height="42rpx"
+                    <view
                       v-if="item.member?.equippedCommunityBadge?.iconUrl"
-                      class="badge-icon"
-                      :src="getImageUrl(item.member.equippedCommunityBadge.iconUrl)"
-                      mode="aspectFit"
-                      enable-preview="false"
+                      class="badge-click-target"
                       @click.stop="
                         handleBadgeClick(item.member.equippedCommunityBadge.code, item.member_id)
                       "
-                    />
+                    >
+                      <wd-img
+                        width="42rpx"
+                        height="42rpx"
+                        class="badge-icon"
+                        :src="getImageUrl(item.member.equippedCommunityBadge.iconUrl)"
+                        mode="aspectFit"
+                        :enable-preview="false"
+                      />
+                    </view>
                     <text class="authorTag" v-if="item.member_id === postDetail.member_id">
                       {{ t('social.detail.authorTag') }}
                     </text>
@@ -374,21 +384,25 @@
                               {{ reply.member.nickname }}
                             </text>
                             <!-- 徽章图标 - 显示在昵称右边 -->
-                            <wd-img
-                              width="42rpx"
-                              height="42rpx"
+                            <view
                               v-if="reply.member?.equippedCommunityBadge?.iconUrl"
-                              class="badge-icon"
-                              :src="getImageUrl(reply.member.equippedCommunityBadge.iconUrl)"
-                              mode="aspectFit"
-                              enable-preview="false"
+                              class="badge-click-target"
                               @click.stop="
                                 handleBadgeClick(
                                   reply.member.equippedCommunityBadge.code,
                                   reply.member_id || reply.member.id,
                                 )
                               "
-                            />
+                            >
+                              <wd-img
+                                width="42rpx"
+                                height="42rpx"
+                                class="badge-icon"
+                                :src="getImageUrl(reply.member.equippedCommunityBadge.iconUrl)"
+                                mode="aspectFit"
+                                :enable-preview="false"
+                              />
+                            </view>
                             <text class="authorTag" v-if="reply.member_id === postDetail.member_id">
                               {{ t('social.detail.authorTag') }}
                             </text>
@@ -2730,6 +2744,20 @@ const handleEditPost = () => {
     }
   }
 }
+
+.badge-click-target {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42rpx;
+  height: 42rpx;
+  flex-shrink: 0;
+
+  :deep(.badge-icon) {
+    pointer-events: none;
+  }
+}
+
 .followBtn {
   display: inline-flex;
   align-items: center;
