@@ -196,7 +196,7 @@ const agreementsMap = ref<QuoteKeyAgreementList>()
       font-style: normal;
       font-weight: 400;
       line-height: calc(28rpx * var(--font-scale));
-      color: #999999;
+      color: var(--text-secondary);
 
       text {
         color: #ff6b03;
@@ -235,7 +235,7 @@ const agreementsMap = ref<QuoteKeyAgreementList>()
       font-style: normal;
       font-weight: 400;
       line-height: calc(32rpx * var(--font-scale));
-      color: #999999;
+      color: var(--text-secondary);
 
       text {
         color: #ff6b03;

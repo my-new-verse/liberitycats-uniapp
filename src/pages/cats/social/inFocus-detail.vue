@@ -446,7 +446,7 @@ const openXApp = () => {
     line-height: calc(80rpx * var(--font-scale));
     font-size: calc(28rpx * var(--font-scale));
     font-weight: 500;
-    color: #999999;
+    color: var(--text-secondary);
     text-align: center;
     background-color: var(--fixedCommentBox-color);
     border-radius: 40rpx;

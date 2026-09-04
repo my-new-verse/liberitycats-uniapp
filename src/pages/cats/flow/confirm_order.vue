@@ -323,7 +323,7 @@ const submitOrder = async () => {
       font-style: normal;
       font-weight: 400;
       line-height: calc(40rpx * var(--font-scale));
-      color: #999999;
+      color: var(--text-secondary);
     }
   }
 

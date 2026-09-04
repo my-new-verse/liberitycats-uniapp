@@ -459,7 +459,7 @@
                 <view class="icon2">
                   <image class="iconImg" src="@/static/images/wishlist.png" mode="widthFix" />
                 </view>
-                <view class="title">{{ t('my.menu.my_wishlist') }}</view>
+                <view class="title">{{ t('my.badge.achievements') }}</view>
               </view>
               <view class="menuItemRight">
                 <view class="arrow"></view>
@@ -1381,7 +1381,7 @@ const bindArGame = () => {
           .heroLabel {
             font-size: calc(24rpx * var(--font-scale));
             font-weight: 400;
-            color: #999999;
+            color: var(--text-secondary);
             margin-bottom: 8rpx;
           }
 
@@ -1423,7 +1423,7 @@ const bindArGame = () => {
             .statLabel {
               font-size: calc(22rpx * var(--font-scale));
               font-weight: 400;
-              color: #999999;
+              color: var(--text-secondary);
               margin-bottom: 6rpx;
             }
 
@@ -1676,7 +1676,7 @@ const bindArGame = () => {
         font-style: normal;
         font-weight: 400;
         line-height: calc(24rpx * var(--font-scale));
-        color: #999999;
+        color: var(--text-secondary);
       }
     }
     .labelBox {

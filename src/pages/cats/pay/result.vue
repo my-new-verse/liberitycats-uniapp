@@ -201,7 +201,7 @@ onUnmounted(() => {
 .payTitle {
   font-size: calc(28rpx * var(--font-scale));
   font-weight: 400;
-  color: #999999;
+  color: var(--text-secondary);
 }
 
 .payResult {
@@ -224,7 +224,7 @@ onUnmounted(() => {
     margin-top: 24rpx;
     font-size: calc(28rpx * var(--font-scale));
     font-weight: 400;
-    color: #999999;
+    color: var(--text-secondary);
   }
 }
 

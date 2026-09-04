@@ -117,6 +117,11 @@ const lightVars: Record<string, string> = {
   '--l-editor-btn-active-color': '#ffffff',
   '--l-editor-link': '#167fff',
   '--l-editor-danger': '#f56c6c',
+  '--white-90': 'rgba(255, 255, 255, 0.9)',
+  '--white-80': 'rgba(255, 255, 255, 0.8)',
+  '--filter-tag-color': '#6f6f73',
+  '--badge-desc-color': '#777',
+  '--badge-category-bg-color': '#fff3e8',
 }
 
 const darkVars: Record<string, string> = {
@@ -234,6 +239,11 @@ const darkVars: Record<string, string> = {
   '--l-editor-btn-active-color': '#ffffff',
   '--l-editor-link': '#6ca9ff',
   '--l-editor-danger': '#ff7875',
+  '--white-90': 'rgba(0, 0, 0, 0.9)',
+  '--white-80': 'rgba(0, 0, 0, 0.8)',
+  '--filter-tag-color': '#94949b',
+  '--badge-desc-color': '#9c9c9c',
+  '--badge-category-bg-color': '#3f3731',
 }
 
 export function applyTheme(mode: ThemeMode) {

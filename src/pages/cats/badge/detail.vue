@@ -2,14 +2,14 @@
 {
   style: {
     navigationStyle: 'custom',
-    navigationBarTitleText: '徽章详情',
+    navigationBarTitleText: '%badge.detail.title%',
   },
 }
 </route>
 <template>
   <view class="badge-detail-page">
     <!-- 自定义导航栏 -->
-    <custom-nav2 title="徽章详情" pageBackgroundColor="var(--bg-primary)">
+    <custom-nav2 :title="t('badge.detail.title')" pageBackgroundColor="#ffffff">
       <template #default>
         <view class="content-scroll-wrap">
           <view v-if="loading" class="loading-state"><wd-loading /></view>
@@ -92,28 +92,28 @@
               <!-- 获取信息 -->
               <view class="info-list">
                 <view class="info-item">
-                  <text class="info-label">获得方式</text>
+                  <text class="info-label">{{ t('badge.detail.acquisition') }}</text>
                   <text class="info-value">
                     {{ badgeData.acquisition?.method || badgeData.description }}
                   </text>
                 </view>
                 <view class="info-item">
-                  <text class="info-label">获得时间</text>
+                  <text class="info-label">{{ t('badge.detail.time') }}</text>
                   <text class="info-value">
                     {{ badgeData.acquisition?.earnedAt || badgeData.earnedAt || '-' }}
                   </text>
                 </view>
                 <view class="info-item obtained-status">
-                  <text class="info-label">状态</text>
+                  <text class="info-label">{{ t('badge.detail.status') }}</text>
                   <text class="info-value obtained-tag">
-                    {{ isEquipped ? '已佩戴' : '已获得' }}
+                    {{ isEquipped ? t('badge.equipped') : t('badge.earned') }}
                   </text>
                 </view>
               </view>
 
               <!-- 昵称展示预览 - 只在自己的徽章页显示 -->
               <view v-if="!isPublicView" class="preview-section">
-                <text class="preview-title">昵称展示预览</text>
+                <text class="preview-title">{{ t('badge.detail.preview_title') }}</text>
                 <view class="nickname-preview">
                   <!-- 头像 + 会员等级角标 -->
                   <view class="avatar-container">
@@ -123,12 +123,12 @@
                       mode="aspectFill"
                     ></image>
                     <!-- 会员等级角标 -->
-                    <view class="levelIcon">
-                      <view
-                        v-if="userStore.userInfo.level?.level"
-                        class="levelBadge"
-                        :style="getLevelClass(userStore.userInfo.level?.level)"
-                      ></view>
+                    <view
+                      v-if="userStore.userInfo.level"
+                      class="level-badge"
+                      :class="getLevelClass(userStore.userInfo.level)"
+                    >
+                      {{ getLevelText(userStore.userInfo.level) }}
                     </view>
                   </view>
                   <!-- 昵称 -->
@@ -136,7 +136,7 @@
                   <!-- 徽章图标 -->
                   <image class="badge-small-icon" :src="previewIconUrl" mode="aspectFit"></image>
                 </view>
-                <text class="preview-desc">会员等级使用头像角标；昵称旁只展示徽章图形</text>
+                <text class="preview-desc">{{ t('badge.detail.preview_desc') }}</text>
               </view>
             </view>
 
@@ -247,10 +247,11 @@ const canRunEquipmentAction = computed(() =>
 )
 const equipActionText = computed(() => {
   if (badgeData.value?.capabilities?.equipDisabledReasonCode === 'BADGE_NOT_EARNED')
-    return '获得后可佩戴'
-  if (isEquipped.value) return '取消佩戴'
-  if (badgeData.value?.capabilities?.equipDisabledReasonCode === 'ALREADY_EQUIPPED') return '已佩戴'
-  return '佩戴这枚徽章'
+    return t('badge.detail.equip_after_earned')
+  if (isEquipped.value) return t('badge.detail.unequip')
+  if (badgeData.value?.capabilities?.equipDisabledReasonCode === 'ALREADY_EQUIPPED')
+    return t('badge.equipped')
+  return t('badge.detail.equip_this')
 })
 
 // 计算属性
@@ -360,10 +361,10 @@ const handleActionClick = () => {
 }
 
 const getStageStatusText = (status: BadgeStatus) => {
-  if (status === 'EQUIPPED') return '已佩戴'
-  if (status === 'EARNED') return '已获得'
-  if (status === 'IN_PROGRESS') return '进行中'
-  return '未解锁'
+  if (status === 'EQUIPPED') return t('badge.equipped')
+  if (status === 'EARNED') return t('badge.earned')
+  if (status === 'IN_PROGRESS') return t('badge.in_progress')
+  return t('badge.locked')
 }
 </script>
 
@@ -371,6 +372,10 @@ const getStageStatusText = (status: BadgeStatus) => {
 // 全局字体设置
 * {
   font-family: Alibaba PuHuiTi2 !important;
+}
+
+:deep(.cnt2) {
+  background-color: var(--bg-card) !important;
 }
 
 :deep(.zh-Hans, .zh-Hant) {
@@ -427,12 +432,14 @@ const getStageStatusText = (status: BadgeStatus) => {
   margin: 0 24rpx 40rpx;
   padding: 32rpx;
   background: var(--bg-card);
+  background: var(--bg-card);
   border-radius: 24rpx;
 
   .section-title {
     display: block;
+    color: var(--text-black);
     margin-bottom: 20rpx;
-    font-size: 32rpx;
+    font-size: calc(32rpx * var(--font-scale));
     font-weight: 600;
   }
 
@@ -441,6 +448,7 @@ const getStageStatusText = (status: BadgeStatus) => {
     align-items: center;
     gap: 20rpx;
     padding: 20rpx 0;
+    border-bottom: 1rpx solid var(--border-light);
     border-bottom: 1rpx solid var(--border-light);
 
     &:last-child {
@@ -464,13 +472,14 @@ const getStageStatusText = (status: BadgeStatus) => {
   }
 
   .stage-name {
-    font-size: 26rpx;
+    font-size: calc(26rpx * var(--font-scale));
     font-weight: 500;
+    color: var(--text-black);
   }
 
   .stage-progress,
   .stage-status {
-    font-size: 22rpx;
+    font-size: calc(22rpx * var(--font-scale));
     color: var(--text-secondary);
   }
 }
@@ -479,6 +488,7 @@ const getStageStatusText = (status: BadgeStatus) => {
 .badge-card {
   margin: 40rpx 24rpx;
   padding: 40rpx;
+  background: var(--bg-card);
   background: var(--bg-card);
   // border-radius: 24rpx;
   text-align: center;
@@ -502,7 +512,7 @@ const getStageStatusText = (status: BadgeStatus) => {
     padding: 6rpx 16rpx;
     background: var(--promotionCard-bg-color);
     color: var(--liberty-cats-primary-color);
-    font-size: 24rpx;
+    font-size: calc(24rpx * var(--font-scale));
     border-radius: 18rpx;
     margin: 0 8rpx 16rpx;
   }
@@ -513,18 +523,19 @@ const getStageStatusText = (status: BadgeStatus) => {
     flex-direction: column;
     align-items: center;
     text-align: center;
-    font-size: 48rpx;
+    font-size: calc(48rpx * var(--font-scale));
     font-weight: 700;
     font-family: Alibaba PuHuiTi2 !important;
+    color: var(--text-black);
     span {
       font-family: Alibaba PuHuiTi2 !important;
     }
   }
 
   .badge-desc {
-    color: var(--text-secondary);
+    color: var(--badge-desc-color);
     text-align: center;
-    font-size: 26rpx;
+    font-size: calc(26rpx * var(--font-scale));
     font-weight: 400;
     display: block;
   }
@@ -534,6 +545,7 @@ const getStageStatusText = (status: BadgeStatus) => {
 .unlocked-section {
   margin: 0 24rpx 24rpx;
   padding: 32rpx;
+  background: var(--bg-card);
   background: var(--bg-card);
   // border-radius: 24rpx;
   // box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
@@ -551,13 +563,13 @@ const getStageStatusText = (status: BadgeStatus) => {
       margin-bottom: 16rpx;
 
       .label {
-        font-size: 32rpx;
+        font-size: calc(32rpx * var(--font-scale));
         font-weight: 600;
-        color: var(--text-primary);
+        color: var(--actions-text);
       }
 
       .num {
-        font-size: 32rpx;
+        font-size: calc(32rpx * var(--font-scale));
         font-weight: 600;
         color: #ff6b03;
       }
@@ -565,6 +577,7 @@ const getStageStatusText = (status: BadgeStatus) => {
 
     .progress-bar {
       height: 16rpx;
+      background: var(--border-light);
       background: var(--border-light);
       border-radius: 6rpx;
 
@@ -582,7 +595,7 @@ const getStageStatusText = (status: BadgeStatus) => {
     .progress-tip {
       display: block;
       margin-top: 12rpx;
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       color: var(--text-secondary);
     }
   }
@@ -593,9 +606,10 @@ const getStageStatusText = (status: BadgeStatus) => {
     line-height: 88rpx;
     text-align: center;
     background: var(--bg-card);
+    background: var(--bg-card);
     border: 2rpx solid #ff6b03;
     border-radius: 44rpx;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     color: #ff6b03;
     font-weight: 500;
     margin-bottom: 88rpx;
@@ -606,6 +620,7 @@ const getStageStatusText = (status: BadgeStatus) => {
 .obtained-section {
   margin: 0 24rpx 24rpx;
   padding: 32rpx;
+  background: var(--bg-card);
   background: var(--bg-card);
   border-radius: 24rpx;
   // box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
@@ -625,14 +640,16 @@ const getStageStatusText = (status: BadgeStatus) => {
       }
 
       .info-label {
-        font-size: 26rpx;
+        font-size: calc(26rpx * var(--font-scale));
         color: var(--text-secondary);
       }
 
       .info-value {
-        font-size: 26rpx;
-        color: var(--text-primary);
+        font-size: calc(26rpx * var(--font-scale));
+        color: var(--actions-text);
         font-weight: 500;
+        // 英文换行时保持各行右对齐，与第一行一致
+        text-align: right;
       }
 
       &.obtained-status {
@@ -649,6 +666,7 @@ const getStageStatusText = (status: BadgeStatus) => {
   display: flex;
   align-items: center;
   padding: 24rpx;
+  background: var(--bg-primary);
   background: var(--bg-primary);
   border-radius: 16rpx;
   margin-bottom: 16rpx;
@@ -673,21 +691,41 @@ const getStageStatusText = (status: BadgeStatus) => {
       bottom: 6rpx;
       width: 28rpx;
       height: 28rpx;
+      line-height: calc(24rpx * var(--font-scale));
+      text-align: center;
+      font-size: calc(18rpx * var(--font-scale));
+      font-weight: 600;
+      color: var(--bg-card);
+      border-radius: 14rpx;
 
-      .levelBadge {
-        width: 100%;
-        height: 100%;
-        background-position: center;
-        background-repeat: no-repeat;
-        background-size: contain;
+      &.level-1 {
+        background: linear-gradient(135deg, #cd7f32 0%, #a0522d 100%);
+      }
+
+      &.level-2 {
+        background: linear-gradient(135deg, #c0c0c0 0%, #808080 100%);
+      }
+
+      &.level-3 {
+        background: linear-gradient(135deg, #ffd700 0%, #daa520 100%);
+      }
+
+      &.level-4 {
+        background: linear-gradient(135deg, #b9f2ff 0%, #00ced1 100%);
+        color: #006666;
+      }
+
+      &.level-5 {
+        background: linear-gradient(135deg, #e6e6fa 0%, #9370db 100%);
+        color: #4b0082;
       }
     }
   }
 
   .nickname {
     // flex: 1;
-    font-size: 28rpx;
-    color: var(--text-primary);
+    font-size: calc(28rpx * var(--font-scale));
+    color: var(--actions-text);
     font-weight: 500;
   }
 
@@ -704,13 +742,13 @@ const getStageStatusText = (status: BadgeStatus) => {
 
   .preview-title {
     display: block;
-    font-size: 32rpx;
+    font-size: calc(32rpx * var(--font-scale));
     font-weight: 600;
-    color: var(--text-primary);
+    color: var(--actions-text);
     margin-bottom: 20rpx;
   }
   .preview-desc {
-    font-size: 26rpx;
+    font-size: calc(26rpx * var(--font-scale));
     color: var(--text-secondary);
   }
 }
@@ -723,9 +761,9 @@ const getStageStatusText = (status: BadgeStatus) => {
   .disable-btn {
     width: 100%;
     height: 96rpx;
-    background: var(--wot-button-info-bg-color);
+    background: var(--wot-search-input-bg);
     border-radius: 48rpx;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     color: var(--text-secondary);
     display: flex;
     align-items: center;
@@ -737,8 +775,8 @@ const getStageStatusText = (status: BadgeStatus) => {
     height: 96rpx;
     background: linear-gradient(135deg, #ff6b03 0%, #ee941a 100%);
     border-radius: 48rpx;
-    font-size: 28rpx;
-    color: #ffffff;
+    font-size: calc(28rpx * var(--font-scale));
+    color: var(--bg-card);
     font-weight: 600;
     display: flex;
     align-items: center;
@@ -748,8 +786,8 @@ const getStageStatusText = (status: BadgeStatus) => {
 
 // 关闭按钮
 .close-btn {
-  font-size: 48rpx;
-  color: var(--text-primary);
+  font-size: calc(48rpx * var(--font-scale));
+  color: var(--actions-text);
   padding: 8rpx;
   line-height: 1;
 }
@@ -768,11 +806,11 @@ const getStageStatusText = (status: BadgeStatus) => {
   padding: 6rpx 10rpx;
   min-width: 44rpx;
   height: 28rpx;
-  line-height: 24rpx;
+  line-height: calc(24rpx * var(--font-scale));
   text-align: center;
-  font-size: 18rpx;
+  font-size: calc(18rpx * var(--font-scale));
   font-weight: 600;
-  color: #ffffff;
+  color: var(--bg-card);
   border-radius: 14rpx;
 
   &.level-1 {

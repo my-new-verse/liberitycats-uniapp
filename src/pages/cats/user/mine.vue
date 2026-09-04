@@ -1307,7 +1307,7 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
       overflow-x: auto;
       .statItem {
         display: flex;
-        flex: 1;
+        flex: 1 0 auto;
         align-items: baseline;
         padding: 0 16rpx;
         flex-shrink: 0;

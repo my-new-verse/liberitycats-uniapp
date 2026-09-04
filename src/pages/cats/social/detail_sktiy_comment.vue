@@ -1082,7 +1082,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
         font-size: calc(24rpx * var(--font-scale));
         font-weight: 400;
         line-height: calc(36rpx * var(--font-scale));
-        color: #999999;
+        color: var(--text-secondary);
       }
       .commentCnt {
         font-size: calc(28rpx * var(--font-scale));
@@ -1113,7 +1113,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
           font-size: calc(24rpx * var(--font-scale));
           font-weight: 400;
           line-height: calc(36rpx * var(--font-scale));
-          color: #999999;
+          color: var(--text-secondary);
         }
 
         .rightBox {
@@ -1141,7 +1141,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
               margin-left: 4rpx;
               font-size: calc(24rpx * var(--font-scale));
               font-weight: 400;
-              color: #999999;
+              color: var(--text-secondary);
             }
           }
 

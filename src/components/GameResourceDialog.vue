@@ -149,7 +149,7 @@ const close = () => emit('update:modelValue', false)
   font-size: calc(38rpx * var(--font-scale));
   font-weight: 700;
   line-height: 1.4;
-  color: #333333;
+  color: var(--actions-text);
 }
 
 .resource-dialog-description {
@@ -174,7 +174,7 @@ const close = () => emit('update:modelValue', false)
   padding: 0 30rpx;
   font-size: calc(24rpx * var(--font-scale));
   line-height: 1.6;
-  color: #999999;
+  color: var(--text-secondary);
 }
 
 .resource-dialog-notice {

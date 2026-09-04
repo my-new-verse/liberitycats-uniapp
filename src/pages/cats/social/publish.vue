@@ -1061,7 +1061,7 @@ onUnmounted(() => {
 $border-color: var(--publish-border-color);
 $border-radius: 8px;
 $btn-border-raduis: 8px;
-$tipColor: #999999;
+$tipColor: var(--text-secondary);
 $main-color: var(--text-color);
 $minor-color: var(--wot-message-box-content-color);
 
