@@ -1309,7 +1309,7 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
         display: flex;
         flex: 1;
         align-items: baseline;
-        padding: 0 24rpx;
+        padding: 0 16rpx;
         flex-shrink: 0;
         white-space: nowrap;
         .statCount {
