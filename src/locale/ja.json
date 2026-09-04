@@ -18,5 +18,11 @@
   "common.request.network.disconnected": "インターネット接続が切断されたようです",
   "home.goods.goods1": "自由猫白色连帽卫衣",
   "goods.detail.spot_delivery": "Spot Delivery",
-  "game.opening": "開いています..."
+  "game.opening": "開いています...",
+
+  "my.menu.my_wishlist": "マイウィッシュリスト",
+  "my.menu.my_achievements": "マイ達成",
+  "my.menu.settings": "設定",
+  "my.menu.about": "关于我们",
+  "my.menu.update": "アプリの更新"
 }

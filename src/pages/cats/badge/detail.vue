@@ -2,14 +2,14 @@
 {
   style: {
     navigationStyle: 'custom',
-    navigationBarTitleText: '%badge.detail.title%',
+    navigationBarTitleText: '',
   },
 }
 </route>
 <template>
   <view class="badge-detail-page">
     <!-- 自定义导航栏 -->
-    <custom-nav2 :title="t('badge.detail.title')" pageBackgroundColor="#ffffff">
+    <custom-nav2 :title="t('badge.detail.title')" pageBackgroundColor="var(--bg-primary)">
       <template #default>
         <view class="content-scroll-wrap">
           <view v-if="loading" class="loading-state"><wd-loading /></view>
@@ -34,7 +34,7 @@
             <view v-if="!isEarned" class="unlocked-section">
               <view class="unlock-progress">
                 <view class="progress-labels">
-                  <text class="label">解锁进度</text>
+                  <text class="label">{{ t('badge.detail.unlock_progress') }}</text>
                   <text class="num">{{ progressCurrent }} / {{ progressTarget }}</text>
                 </view>
                 <view class="progress-bar">
@@ -61,7 +61,7 @@
 
               <!-- 佩戴后展示预览 - 只在自己的徽章页显示 -->
               <view v-if="!isPublicView" class="preview-section">
-                <text class="preview-title">佩戴后展示</text>
+                <text class="preview-title">{{ t('badge.detail.preview_after_equipping') }}</text>
                 <view class="nickname-preview">
                   <!-- 头像 + 会员等级角标 -->
                   <view class="avatar-container">
@@ -100,7 +100,7 @@
                 <view class="info-item">
                   <text class="info-label">{{ t('badge.detail.time') }}</text>
                   <text class="info-value">
-                    {{ badgeData.acquisition?.earnedAt || badgeData.earnedAt || '-' }}
+                    {{ formatTime(badgeData.acquisition?.earnedAt || badgeData.earnedAt) }}
                   </text>
                 </view>
                 <view class="info-item obtained-status">
@@ -113,7 +113,7 @@
 
               <!-- 昵称展示预览 - 只在自己的徽章页显示 -->
               <view v-if="!isPublicView" class="preview-section">
-                <text class="preview-title">{{ t('badge.detail.preview_title') }}</text>
+                <text class="preview-title">{{ t('badge.detail.nickname_preview') }}</text>
                 <view class="nickname-preview">
                   <!-- 头像 + 会员等级角标 -->
                   <view class="avatar-container">
@@ -136,7 +136,7 @@
                   <!-- 徽章图标 -->
                   <image class="badge-small-icon" :src="previewIconUrl" mode="aspectFit"></image>
                 </view>
-                <text class="preview-desc">{{ t('badge.detail.preview_desc') }}</text>
+                <text class="preview-desc">{{ t('badge.detail.preview_description') }}</text>
               </view>
             </view>
 
@@ -197,6 +197,7 @@ import { useUserStore } from '@/store/user'
 import { executeBadgeNavigationTarget } from '@/utils/badgeNavigation'
 import { markBadgeListRefreshRequired } from '@/utils/badgeRefresh'
 import { getLevelBadgeStyle, getCachedMemberAvatar, cacheMemberAvatars } from '@/utils/avatarCache'
+import { formatTime } from '@/utils'
 
 // 当前徽章数据 - 初始设置为空对象或默认值
 const badgeData = ref<BadgeDetail | null>(null)
@@ -267,9 +268,8 @@ const progressTip = computed(() => {
     badgeData.value?.progress?.remaining ??
     Math.max(0, progressTarget.value - progressCurrent.value)
   const unit = badgeData.value?.progress?.unit || badgeData.value?.progressUnit || ''
-  return `再完成 ${remaining}${unit}即可获得`
+  return t('badge.detail.remaining_to_earn', { remaining, unit })
 })
-console.log('=====', userStore.userInfo?.member_id)
 // 判断是否是查看他人的徽章
 const isPublicView = computed(
   () => viewedMemberId.value !== null && viewedMemberId.value != userStore.userInfo?.member_id,
@@ -337,8 +337,7 @@ const handleEquippedAction = async () => {
     markBadgeListRefreshRequired()
 
     uni.showToast({
-      title: wasEquipped ? '已取消佩戴' : '佩戴成功',
-      icon: 'success',
+      title: wasEquipped ? t('badge.detail.unequip_success') : t('badge.detail.equip_success'),
     })
     void userStore.getUserInfo()
   } catch (error) {
@@ -490,7 +489,7 @@ const getStageStatusText = (status: BadgeStatus) => {
   padding: 40rpx;
   background: var(--bg-card);
   background: var(--bg-card);
-  // border-radius: 24rpx;
+  border-radius: 24rpx;
   text-align: center;
   // box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
 
@@ -547,7 +546,7 @@ const getStageStatusText = (status: BadgeStatus) => {
   padding: 32rpx;
   background: var(--bg-card);
   background: var(--bg-card);
-  // border-radius: 24rpx;
+  border-radius: 24rpx;
   // box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
 
   .unlock-progress {

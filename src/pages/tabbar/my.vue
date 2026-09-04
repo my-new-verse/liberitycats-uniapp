@@ -415,7 +415,7 @@
                 <view class="icon2">
                   <image class="iconImg" src="@/static/images/badge.png" mode="widthFix" />
                 </view>
-                <view class="title">我的成就</view>
+                <view class="title">{{ t('my.menu.my_achievements') }}</view>
               </view>
               <view class="menuItemRight">
                 <view class="arrow"></view>
@@ -459,7 +459,7 @@
                 <view class="icon2">
                   <image class="iconImg" src="@/static/images/wishlist.png" mode="widthFix" />
                 </view>
-                <view class="title">{{ t('my.badge.achievements') }}</view>
+                <view class="title">{{ t('my.menu.my_wishlist') }}</view>
               </view>
               <view class="menuItemRight">
                 <view class="arrow"></view>

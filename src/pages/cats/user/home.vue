@@ -1329,6 +1329,8 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
         display: flex;
         flex: 1 0 auto;
         align-items: baseline;
+        padding: 0 16rpx;
+        flex-shrink: 0;
         justify-content: center;
         padding: 0 8rpx;
         white-space: nowrap;

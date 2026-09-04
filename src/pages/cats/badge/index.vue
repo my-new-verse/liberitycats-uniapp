@@ -16,7 +16,7 @@
       <template #default>
         <view class="current-badge-card">
           <view class="card-header"></view>
-          <view v-if="currentBadge" class="badge-info">
+          <view v-if="currentBadge" class="badge-info" @click="toDetail">
             <image class="badge-icon" :src="currentBadge.iconUrl" mode="aspectFit"></image>
             <view class="badge-detail">
               <text class="label">{{ t('badge.current_equipped') }}</text>
@@ -24,7 +24,7 @@
               <text class="badge-name">{{ currentBadge.name }}</text>
               <text class="badge-desc">{{ currentBadge.description }}</text>
             </view>
-            <text class="chevron" @click="toDetail">
+            <text class="chevron">
               <wd-icon name="chevron-right" size="22px" color="#fff"></wd-icon>
             </text>
           </view>
