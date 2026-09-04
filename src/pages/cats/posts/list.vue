@@ -455,11 +455,11 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   padding: 6rpx 14rpx;
   border-radius: 50rpx;
   background-color: #ff6b03;
-  color: #fff;
-  font-size: 22rpx;
+  color: var(--bg-card);
+  font-size: calc(22rpx * var(--font-scale));
   &.followed {
-    background-color: #fff;
-    color: #999;
+    background-color: var(--bg-card);
+    color: var(--text-secondary);
     border: 1rpx solid #ddd;
   }
 }
@@ -467,7 +467,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
 .postFilterBar {
   position: relative;
   display: flex;
-  background: #fff;
+  background: var(--bg-card);
   border-radius: 32rpx;
   padding: 6rpx;
   margin-bottom: 20rpx;
@@ -482,14 +482,14 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
     z-index: 1;
 
     .postFilterTabText {
-      font-size: 28rpx;
-      color: #333;
+      font-size: calc(28rpx * var(--font-scale));
+      color: var(--actions-text);
       position: relative;
       z-index: 2;
     }
 
     &.active .postFilterTabText {
-      color: #fff;
+      color: var(--bg-card);
       font-weight: 500;
     }
   }
@@ -528,13 +528,13 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
     margin-bottom: 8rpx;
     .tag {
       padding: 4rpx 16rpx;
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       text-transform: uppercase;
       border-radius: 8rpx;
       line-height: 1.4;
     }
     .tag1 {
-      color: #fff;
+      color: var(--bg-card);
       background: var(--wot-color-primary);
     }
     .tag2 {
@@ -548,10 +548,10 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   }
   .title {
     flex: 1;
-    color: #1d1d1f !important;
+    color: var(--text-color) !important;
   }
   .content {
-    color: #666666 !important;
+    color: var(--wot-message-box-content-color) !important;
   }
 }
 
@@ -563,7 +563,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
 }
 
 .adTagChip {
-  font-size: 22rpx;
+  font-size: calc(22rpx * var(--font-scale));
   color: var(--liberty-cats-primary-color);
   padding: 4rpx 0;
   border-radius: 8rpx;

@@ -340,19 +340,19 @@ onNavigationBarButtonTap(() => {
   }
 
   .loading-title {
-    font-size: 32rpx;
+    font-size: calc(32rpx * var(--font-scale));
     font-weight: 600;
-    color: #fff;
+    color: var(--bg-card);
   }
 
   .loading-progress {
-    font-size: 36rpx;
+    font-size: calc(36rpx * var(--font-scale));
     font-weight: 700;
     color: #ff6b03;
   }
 
   .loading-subtext {
-    font-size: 24rpx;
+    font-size: calc(24rpx * var(--font-scale));
     color: rgba(255, 255, 255, 0.6);
   }
 }
@@ -376,9 +376,9 @@ onNavigationBarButtonTap(() => {
   background-color: rgba(0, 0, 0, 0.85);
 
   .entering-game-content {
-    font-size: 32rpx;
+    font-size: calc(32rpx * var(--font-scale));
     font-weight: 600;
-    color: #fff;
+    color: var(--bg-card);
   }
 }
 
@@ -387,7 +387,7 @@ onNavigationBarButtonTap(() => {
   right: 12px;
   bottom: 12px;
   left: 12px;
-  font-size: 12px;
+  font-size: calc(12px * var(--font-scale));
   line-height: 1.4;
   color: #0f0;
   white-space: pre-wrap;

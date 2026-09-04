@@ -29,7 +29,7 @@
       :style="{ top: navHeaderPaddingTop + 'rpx' }"
       @click="toUrl('/pages/cats/goods/search')"
     >
-      <image src="/static/images/search.png" mode="widthFix" />
+      <view class="searchIcon"></view>
     </view>
     <wd-tabs
       v-if="tabList.length > 0"
@@ -553,9 +553,15 @@ const handleRefreshError = () => {
   min-height: calc(100vh - 300rpx);
   padding: 40rpx;
   padding-top: calc(var(--safe-top-rpx) + 100rpx);
+  background-color: var(--bg-card);
+}
+
+:deep(.page-container) {
+  background-color: var(--bg-card);
 }
 
 .page3 {
+  background-color: var(--bg-card);
   .search {
     position: fixed;
     top: 16rpx;
@@ -566,28 +572,35 @@ const handleRefreshError = () => {
     justify-content: center;
     width: 48rpx;
     height: 48rpx;
-    background-color: #ffffff;
+    background-color: var(--bg-card);
+  }
+  .searchIcon {
+    width: 48rpx;
+    height: 48rpx;
+    background-color: var(--text-primary);
+    -webkit-mask: url('@/static/images/search.svg') no-repeat center / 100% 100%;
+    mask: url('@/static/images/search.svg') no-repeat center / 100% 100%;
   }
 }
 
 :deep(.mallTabs) {
   .wd-sticky__container {
     top: 0 !important;
-    background: #ffffff;
+    background: var(--bg-card);
   }
   .wd-tabs__nav-item-text {
-    font-size: 36rpx;
+    font-size: calc(36rpx * var(--font-scale));
     font-style: normal;
     font-weight: 400;
-    line-height: 42rpx;
-    color: #261000;
+    line-height: calc(42rpx * var(--font-scale));
+    color: var(--text-primary);
   }
   .wd-tabs__nav-item.is-active {
     .wd-tabs__nav-item-text {
-      font-size: 36rpx;
+      font-size: calc(36rpx * var(--font-scale));
       font-style: normal;
       font-weight: 600;
-      line-height: 42rpx;
+      line-height: calc(42rpx * var(--font-scale));
       color: var(--liberty-cats-primary-color);
     }
   }
@@ -611,7 +624,7 @@ const handleRefreshError = () => {
     right: 0;
     left: 0;
     z-index: 96;
-    background: #ffffff;
+    background: var(--bg-card);
   }
 }
 :deep(.wd-tabs) {
@@ -634,7 +647,7 @@ const handleRefreshError = () => {
   position: fixed;
   width: 100vw;
   z-index: 90;
-  background-color: #ffffff; // 必须设置背景色，否则滚动时下方内容会透出来
+  background-color: var(--bg-card); // 必须设置背景色，否则滚动时下方内容会透出来
   align-items: flex-end;
   padding-bottom: 24rpx;
   //color: #999;
@@ -646,7 +659,7 @@ const handleRefreshError = () => {
     right: 0;
     z-index: 95;
     padding: 0 40rpx;
-    background-color: #ffffff;
+    background-color: var(--bg-card);
     box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
   }
 
@@ -660,9 +673,9 @@ const handleRefreshError = () => {
     align-items: center;
     justify-content: center;
     margin-right: 24rpx;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-weight: 400;
-    line-height: 33rpx;
+    line-height: calc(33rpx * var(--font-scale));
     color: #999999;
 
     .updown {
@@ -697,6 +710,19 @@ const handleRefreshError = () => {
       margin-top: 4rpx;
       background: url('/static/images/updown_active.svg') no-repeat center center / 16rpx 32rpx;
       transform: rotate(180deg) rotateY(180deg);
+    }
+  }
+}
+
+// 特大字号档（1.5x）溢出适配：仅挂 font-scale-xlarge 类时生效，1 倍样式保持原样
+// 商品信息区写死 80rpx 高度装不下放大后的文字，改为内容撑开，卡片高度同步放开
+.font-scale-xlarge {
+  .goodsBox {
+    .goodsItem {
+      height: auto;
+    }
+    .goodsInfo {
+      height: auto;
     }
   }
 }

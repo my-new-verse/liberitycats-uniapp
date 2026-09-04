@@ -215,7 +215,7 @@
     </wd-popup>
     <wd-action-sheet
       custom-class="messageActionSheet"
-      custom-style="margin: 0 10px calc(var(--window-bottom) + 10px) 10px; border-radius: 16px; background: #fff;"
+      custom-style="margin: 0 10px calc(var(--window-bottom) + 10px) 10px; border-radius: 16px; background: var(--bg-card);"
       v-model="memberActionSheetVisible"
       :title="t('group.chat.member.actionSheetTitle')"
     >
@@ -234,6 +234,14 @@
               :size="item.iconSize || '38rpx'"
               class="action-sheet-item-icon"
             />
+            <view
+              v-else-if="item.key === 'setAdmin' || item.key === 'removeAdmin'"
+              class="action-sheet-item-icon action-sheet-item-icon--admin"
+            ></view>
+            <view
+              v-else-if="item.key === 'mute' || item.key === 'unmute'"
+              class="action-sheet-item-icon action-sheet-item-icon--mute"
+            ></view>
             <image
               v-else-if="item.iconSrc"
               :src="item.iconSrc"
@@ -455,8 +463,6 @@ const buildMemberActionList = (item: ApiChatMember): MemberActionItem[] => {
 
 const canUseMemberLongpress = computed(() => getRoleRank(currentUserRole.value) > 0)
 let scrollHeight = 'calc(100vh - 200rpx)' // iOS scroll-view 需要明确高度
-const MEMBER_ACTION_ADMIN_ICON = '/static/images/add_administrator.png'
-const MEMBER_ACTION_MUTE_ICON = '/static/images/mute_1.png'
 
 const memberActionSheetActions = computed<ActionSheetAction[]>(() => {
   const targetMember = selectedMemberActionTarget.value
@@ -467,12 +473,6 @@ const memberActionSheetActions = computed<ActionSheetAction[]>(() => {
     key: action.key,
     destructive: action.destructive,
     iconName: action.key === 'kick' ? 'user-clear' : undefined,
-    iconSrc:
-      action.key === 'setAdmin' || action.key === 'removeAdmin'
-        ? MEMBER_ACTION_ADMIN_ICON
-        : action.key === 'mute' || action.key === 'unmute'
-          ? MEMBER_ACTION_MUTE_ICON
-          : undefined,
   }))
 })
 
@@ -893,6 +893,10 @@ const confirmMute = async () => {
 <style lang="scss" scoped>
 @import '/src/style/base';
 
+:deep(.wd-search) {
+  background-color: var(--bg-card);
+}
+
 .page {
   background-color: var(--liberty-cats-page-background-color);
   display: flex;
@@ -962,9 +966,9 @@ const confirmMute = async () => {
             gap: 8rpx;
 
             .main-title {
-              font-size: 30rpx;
+              font-size: calc(30rpx * var(--font-scale));
               font-weight: bold;
-              color: #fff;
+              color: var(--bg-card);
               max-width: 240rpx;
               overflow: hidden;
               text-overflow: ellipsis;
@@ -1012,18 +1016,18 @@ const confirmMute = async () => {
   justify-content: center;
   min-width: 72rpx;
   height: 72rpx;
-  font-size: 44rpx;
+  font-size: calc(44rpx * var(--font-scale));
   line-height: 1;
   color: #1f1f1f;
 }
 .group-title {
   padding: 24rpx;
-  font-size: 24rpx;
-  color: #666;
+  font-size: calc(24rpx * var(--font-scale));
+  color: var(--wot-message-box-content-color);
 }
 
 .member-group {
-  background: #fff;
+  background: var(--bg-card);
   border-radius: 12rpx;
   margin-bottom: 20rpx;
   overflow: hidden;
@@ -1033,7 +1037,7 @@ const confirmMute = async () => {
   display: flex;
   align-items: center;
   padding: 24rpx 32rpx;
-  border-bottom: 1rpx solid #f0f0f0;
+  border-bottom: 1rpx solid var(--divider-color);
 
   &:last-child {
     border-bottom: none;
@@ -1080,7 +1084,7 @@ const confirmMute = async () => {
   width: 96rpx;
   height: 96rpx;
   border-radius: 50%;
-  background-color: #eee;
+  background-color: var(--userFilterHeader-border-color);
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
@@ -1095,16 +1099,16 @@ const confirmMute = async () => {
 }
 
 .member-name {
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   // font-weight: 500;
-  color: #333;
+  color: var(--actions-text);
   margin-bottom: 8rpx;
   display: flex;
   align-items: center;
 
   .mute-badge {
     margin-left: 8rpx;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     color: #ff4d4f;
 
     .mute-badge-icon {
@@ -1125,8 +1129,8 @@ const confirmMute = async () => {
 }
 
 .action-text {
-  font-size: 24rpx;
-  color: #666;
+  font-size: calc(24rpx * var(--font-scale));
+  color: var(--wot-message-box-content-color);
   line-height: 1.2;
 }
 
@@ -1138,21 +1142,21 @@ const confirmMute = async () => {
   padding: 80rpx 0;
 
   text {
-    font-size: 28rpx;
-    color: #999;
+    font-size: calc(28rpx * var(--font-scale));
+    color: var(--text-secondary);
   }
 }
 
 .list-status-text {
   padding: 24rpx 0 32rpx;
   text-align: center;
-  font-size: 24rpx;
-  color: #999;
+  font-size: calc(24rpx * var(--font-scale));
+  color: var(--text-secondary);
 }
 
 // 禁言弹窗样式
 .mute-popup {
-  background: #fff;
+  background: var(--bg-card);
   border-radius: 24rpx 24rpx 0 0;
   padding: 32rpx;
   max-height: 80vh;
@@ -1165,9 +1169,9 @@ const confirmMute = async () => {
     margin-bottom: 32rpx;
 
     .popup-title {
-      font-size: 32rpx;
+      font-size: calc(32rpx * var(--font-scale));
       font-weight: 600;
-      color: #333;
+      color: var(--actions-text);
     }
 
     .close-btn {
@@ -1182,8 +1186,8 @@ const confirmMute = async () => {
 
       .label {
         display: block;
-        font-size: 28rpx;
-        color: #666;
+        font-size: calc(28rpx * var(--font-scale));
+        color: var(--wot-message-box-content-color);
         margin-bottom: 16rpx;
       }
     }
@@ -1246,8 +1250,22 @@ const confirmMute = async () => {
 .action-sheet-item-icon {
   width: 38rpx;
   text-align: center;
-  color: #333;
+  color: var(--actions-text);
   flex-shrink: 0;
+}
+
+.action-sheet-item-icon--admin {
+  height: 36rpx;
+  background-color: var(--text-primary);
+  -webkit-mask: url('@/static/images/add_administrator.svg') no-repeat center / 100% 100%;
+  mask: url('@/static/images/add_administrator.svg') no-repeat center / 100% 100%;
+}
+
+.action-sheet-item-icon--mute {
+  height: 38rpx;
+  background-color: var(--text-primary);
+  -webkit-mask: url('@/static/images/mute.svg') no-repeat center / 100% 100%;
+  mask: url('@/static/images/mute.svg') no-repeat center / 100% 100%;
 }
 
 .action-sheet-item-image {
@@ -1263,8 +1281,8 @@ const confirmMute = async () => {
 }
 
 .action-sheet-item-text {
-  font-size: 30rpx;
+  font-size: calc(30rpx * var(--font-scale));
   line-height: 1.4;
-  color: #333;
+  color: var(--actions-text);
 }
 </style>

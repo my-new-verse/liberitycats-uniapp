@@ -193,6 +193,7 @@ import i18n, { t } from '@/locale/index'
 import { formatNumber, getImageUrl, openOkx, toUrl } from '@/utils'
 import { createWebDataForKeyApi } from '@/service/api/web3'
 import { useUserStore } from '@/store'
+import { useSystemStore } from '@/store/system'
 import { useToast } from 'wot-design-uni'
 import { getAgreementsByKeys, QuoteKeyAgreementList } from '@/service/api/agreement'
 import { getNftDetailApi, NftItem, redeemNftApi, createPledgeApi } from '@/service/api/pledge'
@@ -280,6 +281,17 @@ const handlePledgeSubmit = () => {
 }
 
 const agreementsMap = ref<QuoteKeyAgreementList>()
+const systemStore = useSystemStore()
+
+// 主题切换：协议内容按新主题重新请求（后端按 X-App-Theme 返回对应颜色）
+uni.$on('themeChanged', async () => {
+  systemStore.resetAgreements()
+  await systemStore.ensureAgreements()
+  agreementsMap.value = systemStore.agreements
+})
+onUnmounted(() => {
+  uni.$off('themeChanged')
+})
 
 const handleRedeem = () => {
   pledgeRedeemPopupShow.value = true
@@ -308,6 +320,14 @@ const handleRedeemSubmit = () => {
 <style lang="scss" scoped>
 @import '/src/style/base';
 
+:deep(.cnt) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
+:deep(.fbg) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
 .page {
   .cnt {
     padding-bottom: 160rpx;
@@ -318,12 +338,12 @@ const handleRedeemSubmit = () => {
   width: 100%;
   height: 88rpx !important;
 
-  font-size: 32rpx;
+  font-size: calc(32rpx * var(--font-scale));
   font-style: normal;
   font-weight: 600;
   color: #ff6b03 !important;
   text-align: center;
-  background: #fff !important;
+  background: var(--bg-card) !important;
   border: 4rpx solid #ff6b03;
 
   &.is-primary {
@@ -333,19 +353,19 @@ const handleRedeemSubmit = () => {
 
 .pointLabel {
   margin-top: 24rpx;
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   font-weight: normal;
-  line-height: 33rpx;
-  color: #261000;
+  line-height: calc(33rpx * var(--font-scale));
+  color: var(--text-primary);
   text-align: center;
 }
 
 .pointValue {
-  font-size: 48rpx;
+  font-size: calc(48rpx * var(--font-scale));
   font-style: normal;
   font-weight: normal;
-  line-height: 56rpx;
-  color: #261000;
+  line-height: calc(56rpx * var(--font-scale));
+  color: var(--text-primary);
   text-align: center;
   &.active {
     color: #ff6b03;
@@ -355,7 +375,7 @@ const handleRedeemSubmit = () => {
 .nftDetailBox {
   margin-bottom: 24rpx;
   overflow: hidden;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
   border-radius: 40rpx;
   .nftImg {
     width: 100%;
@@ -367,20 +387,20 @@ const handleRedeemSubmit = () => {
     align-items: center;
     justify-content: space-between;
     padding: 20rpx 32rpx;
-    color: #261000;
+    color: var(--text-primary);
 
     .nftId {
-      font-size: 40rpx;
+      font-size: calc(40rpx * var(--font-scale));
       font-style: normal;
       font-weight: normal;
-      line-height: 56rpx;
+      line-height: calc(56rpx * var(--font-scale));
     }
 
     .nftName {
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       font-style: normal;
       font-weight: normal;
-      line-height: 33rpx;
+      line-height: calc(33rpx * var(--font-scale));
     }
   }
 }
@@ -388,7 +408,7 @@ const handleRedeemSubmit = () => {
 .nftAttrBox {
   padding: 32rpx;
   margin: 24rpx 0;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
   border-radius: 40rpx;
 
   .nftAttrItem {
@@ -399,15 +419,15 @@ const handleRedeemSubmit = () => {
     margin-bottom: 16rpx;
 
     .nftAttrLabel {
-      font-size: 28rpx;
-      line-height: 33rpx;
+      font-size: calc(28rpx * var(--font-scale));
+      line-height: calc(33rpx * var(--font-scale));
       color: #999999;
     }
 
     .nftAttrValue {
-      font-size: 28rpx;
-      line-height: 33rpx;
-      color: #261000;
+      font-size: calc(28rpx * var(--font-scale));
+      line-height: calc(33rpx * var(--font-scale));
+      color: var(--text-primary);
     }
   }
 }
@@ -416,15 +436,15 @@ const handleRedeemSubmit = () => {
   width: calc(100% - 128rpx - 48rpx - 48rpx);
   height: 780rpx;
   padding: 48rpx;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
   border-radius: 24rpx;
 
   .titleBox {
     height: 52rpx;
     margin-bottom: 24rpx;
-    font-size: 36rpx;
-    line-height: 52rpx;
-    color: rgba(0, 0, 0, 0.9);
+    font-size: calc(36rpx * var(--font-scale));
+    line-height: calc(52rpx * var(--font-scale));
+    color: var(--black-90);
     text-align: center;
   }
 
@@ -434,9 +454,9 @@ const handleRedeemSubmit = () => {
 
     .lineP {
       margin-bottom: 16rpx;
-      font-size: 28rpx;
-      line-height: 40rpx;
-      color: rgba(0, 0, 0, 0.6);
+      font-size: calc(28rpx * var(--font-scale));
+      line-height: calc(40rpx * var(--font-scale));
+      color: var(--black-60);
       text-align: left;
     }
   }
@@ -446,9 +466,9 @@ const handleRedeemSubmit = () => {
     align-items: center;
     justify-content: start;
     height: 80rpx;
-    font-size: 24rpx;
-    line-height: 32rpx;
-    color: #261000;
+    font-size: calc(24rpx * var(--font-scale));
+    line-height: calc(32rpx * var(--font-scale));
+    color: var(--text-primary);
   }
 
   .btnBox {
@@ -474,9 +494,9 @@ const handleRedeemSubmit = () => {
   }
 
   .txt {
-    font-size: 24rpx;
-    line-height: 28rpx;
-    color: #261000;
+    font-size: calc(24rpx * var(--font-scale));
+    line-height: calc(28rpx * var(--font-scale));
+    color: var(--text-primary);
   }
 }
 
@@ -485,11 +505,14 @@ const handleRedeemSubmit = () => {
   align-items: center;
   justify-content: space-between;
   width: 100%;
+  .nftAttrValue {
+    color: var(--text-black);
+  }
 }
 
 .pledgeTime {
   padding-top: 40rpx;
   margin-top: 40rpx;
-  border-top: 2rpx solid #f0f0f0;
+  border-top: 2rpx solid var(--divider-color);
 }
 </style>

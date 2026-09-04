@@ -53,7 +53,7 @@
                     width: 80%;
                     height: 200rpx;
                     margin: 40rpx auto 0 auto;
-                    font-size: 24rpx;
+                    font-size: calc(24rpx * var(--font-scale));
                     color: #999;
                     text-align: center;
                   "
@@ -84,7 +84,7 @@
                       width: 80%;
                       height: 200rpx;
                       margin: 40rpx auto 0 auto;
-                      font-size: 24rpx;
+                      font-size: calc(24rpx * var(--font-scale));
                       color: #999;
                       text-align: center;
                     "
@@ -101,7 +101,7 @@
                   width: 80%;
                   height: 200rpx;
                   margin: 40rpx auto 0 auto;
-                  font-size: 24rpx;
+                  font-size: calc(24rpx * var(--font-scale));
                   color: #999;
                   text-align: center;
                 "
@@ -221,21 +221,29 @@ const loadPledgeAsset = () => {
 <style lang="scss" scoped>
 @import '/src/style/base';
 
+:deep(.cnt) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
+:deep(.fbg) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
 .pointLabel {
   margin-bottom: 16rpx;
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   font-weight: normal;
-  line-height: 33rpx;
-  color: #261000;
+  line-height: calc(33rpx * var(--font-scale));
+  color: var(--text-primary);
   text-align: center;
 }
 
 .pointValue {
-  font-size: 48rpx;
+  font-size: calc(48rpx * var(--font-scale));
   font-style: normal;
   font-weight: normal;
-  line-height: 56rpx;
-  color: #261000;
+  line-height: calc(56rpx * var(--font-scale));
+  color: var(--text-primary);
   text-align: center;
   &.active {
     color: #ff6b03;
@@ -246,7 +254,7 @@ const loadPledgeAsset = () => {
 .NftBox {
   padding: 28rpx 32rpx;
   margin-bottom: 24rpx;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
   border-radius: 40rpx;
 
   .titleBox {
@@ -273,15 +281,16 @@ const loadPledgeAsset = () => {
       }
 
       .txt {
-        font-size: 24rpx;
-        line-height: 28rpx;
-        color: #261000;
+        font-size: calc(24rpx * var(--font-scale));
+        line-height: calc(28rpx * var(--font-scale));
+        color: var(--text-primary);
       }
     }
 
     .titleLeft {
       display: flex;
       align-items: center;
+      color: var(--text-black);
       .refresh {
         width: 36rpx;
         height: 36rpx;
@@ -291,11 +300,11 @@ const loadPledgeAsset = () => {
     }
 
     .title {
-      font-size: 36rpx;
+      font-size: calc(36rpx * var(--font-scale));
       font-style: normal;
       font-weight: 500;
-      line-height: 42rpx;
-      color: #261000;
+      line-height: calc(42rpx * var(--font-scale));
+      color: var(--text-primary);
     }
   }
   .nftConnect {
@@ -306,10 +315,10 @@ const loadPledgeAsset = () => {
     height: 88rpx;
     margin: 42rpx auto;
 
-    font-size: 32rpx;
+    font-size: calc(32rpx * var(--font-scale));
     font-style: normal;
     font-weight: 500;
-    line-height: 38rpx;
+    line-height: calc(38rpx * var(--font-scale));
     color: #ff6b03;
     border: 2rpx solid #ff6b03;
     border-radius: 44rpx;
@@ -336,11 +345,11 @@ const loadPledgeAsset = () => {
       .nftTitle {
         height: 30rpx;
         margin-top: 16rpx;
-        font-size: 24rpx;
+        font-size: calc(24rpx * var(--font-scale));
         font-style: normal;
         font-weight: 400;
-        line-height: 28rpx;
-        color: #000000;
+        line-height: calc(28rpx * var(--font-scale));
+        color: var(--text-black);
         text-align: center;
       }
     }
@@ -371,10 +380,10 @@ const loadPledgeAsset = () => {
 .fixedBtnBox {
   .txt2 {
     margin: 16rpx 0;
-    font-size: 20rpx;
+    font-size: calc(20rpx * var(--font-scale));
     font-style: normal;
     font-weight: normal;
-    line-height: 23rpx;
+    line-height: calc(23rpx * var(--font-scale));
     color: #999999;
     text-align: center;
   }

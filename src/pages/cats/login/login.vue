@@ -61,18 +61,17 @@
       <view class="unionBox">
         <!-- #ifdef APP-PLUS -->
         <view v-if="isIOS" class="item" @click="loginWithApple()">
-          <image src="@/static/images/apple@2x.png" mode="widthFix" />
+          <view class="appleIcon"></view>
         </view>
         <!-- #endif -->
         <view class="item" @click="loginWithDiscord()" v-if="getServerOnOff('enable_discord')">
           <image src="@/static/images/discoard@2x.png" mode="widthFix" />
         </view>
         <view class="item" @click="toUrl('/pages/cats/login/virtual/login')">
-          <image
-            src="@/static/images/virtual-email.png"
-            mode="widthFix"
-            style="width: 54rpx; margin-left: 6rpx"
-          />
+          <view class="virtualEmailIcon">
+            <view class="virtualEmailEnvelope"></view>
+            <view class="virtualEmailBadge"></view>
+          </view>
         </view>
       </view>
     </view>
@@ -236,11 +235,21 @@ const loginWithApple = () => {
 <style lang="scss" scoped>
 @import '/src/style/base';
 
+:deep(.cnt) {
+  background-color: var(--bg-card) !important;
+}
+
+:deep(.wd-icon) {
+  color: var(--text-black);
+}
+
+:deep(.wd-input__clear) {
+  background-color: none;
+}
+
 .headBg {
   height: 142rpx;
-  background:
-    linear-gradient(360deg, #ffffff 0%, rgba(255, 255, 255, 0) 100%),
-    linear-gradient(90deg, #fefcf5 0%, #fcfdd4 25%, #ffe8d7 71%);
+  background: var(--login-head-bg);
 }
 
 .nav {
@@ -255,15 +264,16 @@ const loginWithApple = () => {
 
 .cnt {
   padding: 64rpx;
+  height: 100vh;
   //margin-top: 54rpx;
   //background: green;
   .title {
     height: 56rpx;
-    font-size: 48rpx;
+    font-size: calc(48rpx * var(--font-scale));
     font-style: normal;
     font-weight: 600;
-    line-height: 56rpx;
-    color: #261000;
+    line-height: calc(56rpx * var(--font-scale));
+    color: var(--text-primary);
   }
   .inputBox {
     display: flex;
@@ -272,7 +282,7 @@ const loginWithApple = () => {
     height: 72rpx;
     padding: 8rpx 24rpx;
     margin: 64rpx 0;
-    background: #f7f6f4;
+    background: var(--bg-primary);
     border-radius: 16rpx;
     .emailInput {
       width: 100%;
@@ -283,10 +293,10 @@ const loginWithApple = () => {
     display: flex;
     align-items: center;
     .txt {
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       font-style: normal;
       font-weight: 400;
-      line-height: 32rpx;
+      line-height: calc(32rpx * var(--font-scale));
       color: #999999;
 
       text {
@@ -313,10 +323,10 @@ const loginWithApple = () => {
       width: 100%;
       height: 88rpx;
 
-      font-size: 32rpx;
+      font-size: calc(32rpx * var(--font-scale));
       font-style: normal;
       font-weight: 600;
-      color: #ffffff;
+      color: var(--bg-card);
       text-align: center;
       background: #ff6b03;
     }
@@ -337,6 +347,37 @@ const loginWithApple = () => {
       border-radius: 50%;
       image {
         width: 48rpx;
+      }
+      .appleIcon {
+        width: 48rpx;
+        height: 46rpx;
+        background-color: var(--text-primary);
+        -webkit-mask: url('@/static/images/apple.svg') no-repeat center / 100% 100%;
+        mask: url('@/static/images/apple.svg') no-repeat center / 100% 100%;
+      }
+      .virtualEmailIcon {
+        position: relative;
+        width: 54rpx;
+        height: 51rpx;
+        margin-left: 6rpx;
+      }
+      .virtualEmailEnvelope,
+      .virtualEmailBadge {
+        position: absolute;
+        left: 0;
+        top: 0;
+        right: 0;
+        bottom: 0;
+      }
+      .virtualEmailEnvelope {
+        background-color: var(--text-primary);
+        -webkit-mask: url('@/static/images/virtual-email.svg') no-repeat center / 100% 100%;
+        mask: url('@/static/images/virtual-email.svg') no-repeat center / 100% 100%;
+      }
+      .virtualEmailBadge {
+        background-color: #ff6b03;
+        -webkit-mask: url('@/static/images/virtual-email-badge.svg') no-repeat center / 100% 100%;
+        mask: url('@/static/images/virtual-email-badge.svg') no-repeat center / 100% 100%;
       }
     }
   }

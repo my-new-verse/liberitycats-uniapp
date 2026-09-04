@@ -165,7 +165,7 @@
           </view> -->
           <view class="checkinBox" v-if="userStore.isLogin">
             <view class="titleBox">
-              <view class="titleLeft" style="font-size: 28rpx">
+              <view class="titleLeft" style="font-size: calc(28rpx * var(--font-scale))">
                 {{ t('my.check_in_prefix') }}
                 <text class="checkinDays">{{ checkinData.continuous_days }}</text>
                 {{ t('my.check_in_suffix') }}
@@ -344,7 +344,7 @@
                       width: 80%;
                       height: 200rpx;
                       margin: 40rpx auto 0 auto;
-                      font-size: 24rpx;
+                      font-size: calc(24rpx * var(--font-scale));
                       color: #999;
                       text-align: center;
                     "
@@ -365,7 +365,7 @@
                 width: 80%;
                 height: 200rpx;
                 margin: 40rpx auto 0 auto;
-                font-size: 24rpx;
+                font-size: calc(24rpx * var(--font-scale));
                 color: #999;
                 text-align: center;
               "
@@ -1072,7 +1072,7 @@ const bindArGame = () => {
       width: 176rpx;
       height: 176rpx;
       overflow: hidden;
-      background-color: #ffffff;
+      background-color: var(--bg-card);
       border-radius: 50%;
       image {
         width: 100%;
@@ -1084,11 +1084,11 @@ const bindArGame = () => {
       margin-left: 32rpx;
       flex: 1;
       .name {
-        font-size: 48rpx;
+        font-size: calc(48rpx * var(--font-scale));
         font-style: normal;
         font-weight: 600;
-        line-height: 56rpx;
-        color: #ffffff;
+        line-height: calc(56rpx * var(--font-scale));
+        color: var(--bg-card);
       }
       .asset-resps {
         display: flex !important;
@@ -1098,10 +1098,10 @@ const bindArGame = () => {
         width: 100%;
       }
       .points {
-        font-size: 24rpx;
+        font-size: calc(24rpx * var(--font-scale));
         font-style: normal;
-        line-height: 56rpx;
-        color: #ffffff;
+        line-height: calc(56rpx * var(--font-scale));
+        color: var(--bg-card);
         display: flex;
         align-items: center;
         .amount {
@@ -1122,10 +1122,10 @@ const bindArGame = () => {
         width: 220rpx;
         height: 40rpx;
         margin-top: 16rpx;
-        font-size: 24rpx;
+        font-size: calc(24rpx * var(--font-scale));
         font-style: normal;
         font-weight: 500;
-        line-height: 28rpx;
+        line-height: calc(28rpx * var(--font-scale));
         color: #ffef6c;
         border: 2rpx solid #ffef6c;
         border-radius: 20rpx;
@@ -1153,11 +1153,11 @@ const bindArGame = () => {
       }
 
       .point {
-        font-size: 24rpx;
+        font-size: calc(24rpx * var(--font-scale));
         font-style: normal;
         font-weight: 400;
-        line-height: 28rpx;
-        color: #ffffff;
+        line-height: calc(28rpx * var(--font-scale));
+        color: var(--bg-card);
         text {
           font-weight: 600;
         }
@@ -1178,6 +1178,23 @@ const bindArGame = () => {
         .gmAr.on {
           background-image: url('~@/static/images/game1.png');
         }
+      }
+    }
+  }
+}
+
+// 特大字号档（1.5x）溢出适配：仅挂 font-scale-xlarge 类时生效，1 倍样式保持原样
+.font-scale-xlarge {
+  .headCnt {
+    .avatar {
+      flex-shrink: 0;
+    }
+    .info {
+      min-width: 0;
+      .name {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
       }
     }
   }
@@ -1205,7 +1222,7 @@ const bindArGame = () => {
     .NftBox {
       padding: 28rpx 32rpx;
       margin-bottom: 24rpx;
-      background-color: #ffffff;
+      background-color: var(--bg-card);
       border-radius: 40rpx;
 
       .titleBox {
@@ -1216,10 +1233,10 @@ const bindArGame = () => {
 
         .titleRight {
           padding: 5rpx 32rpx;
-          font-size: 28rpx;
+          font-size: calc(28rpx * var(--font-scale));
           font-style: normal;
           font-weight: 600;
-          color: #ffffff;
+          color: var(--bg-card);
           background: #ff6b03;
           border-radius: 8rpx 10rpx 8rpx 8rpx;
         }
@@ -1248,18 +1265,18 @@ const bindArGame = () => {
         }
 
         .nftTitle {
-          font-size: 32rpx;
+          font-size: calc(32rpx * var(--font-scale));
           font-style: normal;
           font-weight: 500;
-          color: #261000;
+          color: var(--text-primary);
         }
 
         .title {
-          font-size: 36rpx;
+          font-size: calc(36rpx * var(--font-scale));
           font-style: normal;
           font-weight: 500;
-          line-height: 42rpx;
-          color: #261000;
+          line-height: calc(42rpx * var(--font-scale));
+          color: var(--text-primary);
         }
       }
       .emptyTextRow {
@@ -1285,10 +1302,10 @@ const bindArGame = () => {
 
         margin-top: 40rpx;
 
-        font-size: 20rpx;
+        font-size: calc(20rpx * var(--font-scale));
         font-style: normal;
         font-weight: 500;
-        line-height: 38rpx;
+        line-height: calc(38rpx * var(--font-scale));
         color: #ff6b03;
         border: 2rpx solid #ff6b03;
         border-radius: 44rpx;
@@ -1315,11 +1332,11 @@ const bindArGame = () => {
           .nftTitle {
             height: 30rpx;
             margin-top: 16rpx;
-            font-size: 24rpx;
+            font-size: calc(24rpx * var(--font-scale));
             font-style: normal;
             font-weight: 400;
-            line-height: 28rpx;
-            color: #000000;
+            line-height: calc(28rpx * var(--font-scale));
+            color: var(--text-black);
             text-align: center;
           }
         }
@@ -1352,7 +1369,7 @@ const bindArGame = () => {
       .nftValuation {
         margin-top: 24rpx;
         overflow: hidden;
-        background: #fff8f0;
+        background: var(--nftValuation-bg-color);
         border: 2rpx solid #ff6b03;
         border-radius: 24rpx;
 
@@ -1363,7 +1380,7 @@ const bindArGame = () => {
           padding: 28rpx 32rpx 20rpx 32rpx;
 
           .heroLabel {
-            font-size: 24rpx;
+            font-size: calc(24rpx * var(--font-scale));
             font-weight: 400;
             color: #999999;
             margin-bottom: 8rpx;
@@ -1374,14 +1391,14 @@ const bindArGame = () => {
             align-items: baseline;
 
             .currency {
-              font-size: 32rpx;
+              font-size: calc(32rpx * var(--font-scale));
               font-weight: 600;
               color: #ff6b03;
               margin-right: 4rpx;
             }
 
             .amount {
-              font-size: 50rpx;
+              font-size: calc(50rpx * var(--font-scale));
               font-weight: 700;
               color: #ff6b03;
               line-height: 1.2;
@@ -1405,7 +1422,7 @@ const bindArGame = () => {
             }
 
             .statLabel {
-              font-size: 22rpx;
+              font-size: calc(22rpx * var(--font-scale));
               font-weight: 400;
               color: #999999;
               margin-bottom: 6rpx;
@@ -1414,18 +1431,19 @@ const bindArGame = () => {
             .statValue {
               display: flex;
               align-items: baseline;
+              color: var(--text-black);
 
               .currency {
-                font-size: 22rpx;
+                font-size: calc(22rpx * var(--font-scale));
                 font-weight: 600;
-                color: #261000;
+                color: var(--text-primary);
                 margin-right: 2rpx;
               }
 
               .amount {
-                font-size: 32rpx;
+                font-size: calc(32rpx * var(--font-scale));
                 font-weight: 700;
-                color: #261000;
+                color: var(--text-primary);
               }
             }
           }
@@ -1439,7 +1457,7 @@ const bindArGame = () => {
     .checkinBox {
       padding: 28rpx 0;
       margin-bottom: 24rpx;
-      background-color: #ffffff;
+      background-color: var(--bg-card);
       border-radius: 40rpx;
 
       .titleBox {
@@ -1455,36 +1473,39 @@ const bindArGame = () => {
           justify-content: center;
           height: 28rpx;
           padding: 10rpx 26rpx;
+          flex-shrink: 0;
 
+          //   font-size: calc(24rpx * var(--font-scale));
           font-size: 24rpx;
           font-style: normal;
           font-weight: 600;
-          line-height: 28rpx;
-          color: #999;
+          line-height: calc(28rpx * var(--font-scale));
+          color: var(--text-secondary);
           text-align: center;
-          background: #f3f3f4;
+          background: var(--fixedCommentBox-color);
           border-radius: 24rpx;
         }
 
         .titleRight.active {
-          color: #ffffff;
+          color: var(--bg-card);
           background: #ff6b03;
         }
 
         .titleLeft {
+          color: var(--text-black);
           .checkinDays {
-            font-size: 28rpx;
+            font-size: calc(28rpx * var(--font-scale));
             font-weight: 600;
             color: #ff6b03;
           }
         }
 
         .title {
-          font-size: 28rpx;
+          font-size: calc(28rpx * var(--font-scale));
           font-style: normal;
           font-weight: 500;
-          line-height: 33rpx;
-          color: #261000;
+          line-height: calc(33rpx * var(--font-scale));
+          color: var(--text-primary);
         }
       }
 
@@ -1535,16 +1556,18 @@ const bindArGame = () => {
               width: 40rpx;
               height: 74rpx;
               padding: 16rpx;
-              background: #f9f9f9;
+              background: var(--pointBox-bg-color);
               border-radius: 16rpx;
 
               .point {
                 height: 24rpx;
+                // font-size: calc(20rpx * var(--font-scale));
                 font-size: 20rpx;
                 font-style: normal;
                 font-weight: 50 0;
+                // line-height: calc(23rpx * var(--font-scale));
                 line-height: 23rpx;
-                color: rgba(38, 16, 0, 0.2);
+                color: var(--commentTextArea-color);
                 text-align: center;
               }
 
@@ -1562,11 +1585,13 @@ const bindArGame = () => {
               width: 72rpx;
               height: 30rpx;
               margin-top: 12rpx;
+              //   font-size: calc(24rpx * var(--font-scale));
               font-size: 24rpx;
               font-style: normal;
               font-weight: 500;
+              //   line-height: calc(28rpx * var(--font-scale));
               line-height: 28rpx;
-              color: rgba(38, 16, 0, 0.3);
+              color: var(--commentTextArea-color);
               text-align: center;
             }
           }
@@ -1575,7 +1600,7 @@ const bindArGame = () => {
           .pointBox {
             width: 36rpx;
             height: 70rpx;
-            background: #fffaf8;
+            background: var(--pointBox-active-bg-color);
             border: 2rpx solid #ff6b03;
             .gift {
               background-image: url('~@/static/images/checkin2.png');
@@ -1600,8 +1625,8 @@ const bindArGame = () => {
 }
 .version-number {
   margin-top: 32rpx;
-  font-size: 28rpx;
-  color: #ddd;
+  font-size: calc(28rpx * var(--font-scale));
+  color: var(--wot-divider);
   text-align: center;
 }
 
@@ -1632,7 +1657,7 @@ const bindArGame = () => {
     flex-direction: column;
     width: calc(50% - 42rpx);
     padding: 16rpx;
-    background-color: #f9f9f9;
+    background-color: var(--pointBox-bg-color);
     border-radius: 16rpx;
 
     .amountBox {
@@ -1640,18 +1665,18 @@ const bindArGame = () => {
       align-items: center;
       justify-content: flex-start;
       .amount {
-        font-size: 28rpx;
+        font-size: calc(28rpx * var(--font-scale));
         font-style: normal;
         font-weight: 600;
-        color: #261000;
+        color: var(--text-primary);
         text-align: left;
       }
       .unit {
         margin-left: 4rpx;
-        font-size: 20rpx;
+        font-size: calc(20rpx * var(--font-scale));
         font-style: normal;
         font-weight: 400;
-        line-height: 24rpx;
+        line-height: calc(24rpx * var(--font-scale));
         color: #999999;
       }
     }
@@ -1695,10 +1720,10 @@ const bindArGame = () => {
       }
 
       .label {
-        font-size: 24rpx;
+        font-size: calc(24rpx * var(--font-scale));
         font-style: normal;
         font-weight: 500;
-        color: rgba(38, 16, 0, 0.6);
+        color: var(--goodsAttr-color);
         text-align: left;
       }
 

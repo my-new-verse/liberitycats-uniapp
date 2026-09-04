@@ -1,0 +1,10 @@
+<svg width="235" height="222" viewBox="0 0 235 222" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- 白色区域为可见（圆形徽章），黑色区域镂空（V 字母） -->
+    <mask id="m">
+      <rect width="235" height="222" fill="white"/>
+      <path d="M159.279 48.7773H170.006L175.218 65.8041L180.607 48.7773H191.005L179.595 75.6457H170.462L159.279 48.7773Z" fill="black"/>
+    </mask>
+  </defs>
+  <circle cx="175.142" cy="60.8893" r="31.3414" fill="black" mask="url(#m)"/>
+</svg>

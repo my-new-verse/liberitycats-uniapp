@@ -113,7 +113,7 @@ onMounted(() => {
 //
 .version-info {
   margin-top: 30rpx;
-  font-size: 12px;
+  font-size: calc(12px * var(--font-scale));
   color: #efefef;
   text-align: center;
 }

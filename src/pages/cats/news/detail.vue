@@ -71,6 +71,14 @@ onLoad((options) => {
 <style lang="scss" scoped>
 @import '/src/style/base';
 
+:deep(.cnt) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
+:deep(.fbg) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
 :deep(.zh-Hans, .zh-Hant) {
   * {
     font-family: Alibaba PuHuiTi2 !important;
@@ -81,11 +89,11 @@ onLoad((options) => {
 }
 
 .title {
-  font-size: 48rpx;
+  font-size: calc(48rpx * var(--font-scale));
   font-style: normal;
   font-weight: 500;
-  line-height: 56rpx;
-  color: #261000;
+  line-height: calc(56rpx * var(--font-scale));
+  color: var(--text-primary);
 }
 
 .infoBox {
@@ -93,11 +101,11 @@ onLoad((options) => {
   align-items: center;
   justify-content: start;
   margin: 30rpx 0;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   font-style: normal;
   font-weight: 40 0;
-  line-height: 28rpx;
-  color: rgba(38, 16, 0, 0.3);
+  line-height: calc(28rpx * var(--font-scale));
+  color: var(--commentTextArea-color);
 
   .dot {
     margin: 0 16rpx;
@@ -115,11 +123,11 @@ onLoad((options) => {
 }
 
 .newContent {
-  font-size: 32rpx;
+  font-size: calc(32rpx * var(--font-scale));
   font-style: normal;
   font-weight: 400;
-  line-height: 48rpx;
-  color: #261000;
+  line-height: calc(48rpx * var(--font-scale));
+  color: var(--text-primary);
 
   img,
   image {

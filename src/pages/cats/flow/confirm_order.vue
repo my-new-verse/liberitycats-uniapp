@@ -257,11 +257,24 @@ const submitOrder = async () => {
 
 <style lang="scss" scoped>
 @import '/src/style/base';
+
+:deep(.cnt) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
+:deep(.fbg) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
+.inputBox {
+  color: var(--text-black);
+}
+
 .addTxt {
-  font-size: 32rpx;
+  font-size: calc(32rpx * var(--font-scale));
   font-style: normal;
   font-weight: 500;
-  line-height: 48rpx;
+  line-height: calc(48rpx * var(--font-scale));
   color: #ff6b03;
 }
 
@@ -278,27 +291,27 @@ const submitOrder = async () => {
       justify-content: start;
       margin-bottom: 12rpx;
       .name {
-        font-size: 36rpx;
+        font-size: calc(36rpx * var(--font-scale));
         font-style: normal;
         font-weight: 600;
-        line-height: 52rpx;
-        color: #261000;
+        line-height: calc(52rpx * var(--font-scale));
+        color: var(--text-primary);
       }
       .phone {
         margin: 0 24rpx;
-        font-size: 32rpx;
+        font-size: calc(32rpx * var(--font-scale));
         font-style: normal;
         font-weight: 400;
-        line-height: 48rpx;
-        color: #261000;
+        line-height: calc(48rpx * var(--font-scale));
+        color: var(--text-primary);
       }
       .default {
         padding: 0 8rpx;
-        font-size: 24rpx;
+        font-size: calc(24rpx * var(--font-scale));
         font-style: normal;
         font-weight: 400;
-        line-height: 40rpx;
-        color: #ffffff;
+        line-height: calc(40rpx * var(--font-scale));
+        color: var(--bg-card);
         text-align: left;
         background: #ff6b03;
         border: 2rpx solid #ff6b03;
@@ -306,10 +319,10 @@ const submitOrder = async () => {
       }
     }
     .address {
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       font-style: normal;
       font-weight: 400;
-      line-height: 40rpx;
+      line-height: calc(40rpx * var(--font-scale));
       color: #999999;
     }
   }

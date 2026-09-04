@@ -181,6 +181,10 @@
                     size="42rpx"
                     :color="item.destructive ? '#ff6b6b' : '#fff'"
                   />
+                  <view
+                    v-else-if="item.action === 'mute' || item.action === 'unmute'"
+                    class="msg-popover-item-icon-mute"
+                  ></view>
                   <image
                     v-else-if="item.iconSrc"
                     :src="item.iconSrc"
@@ -2687,12 +2691,8 @@ const messageActionSheetActions = computed<ActionSheetAction[]>(() => {
           return undefined
       }
     })(),
-    iconSrc:
-      item.action === 'mute' || item.action === 'unmute' ? MESSAGE_ACTION_MUTE_ICON : undefined,
   }))
 })
-// 辅助变量（用于菜单图标等）
-const MESSAGE_ACTION_MUTE_ICON = '/static/images/mute_1.png'
 // 弹窗确认函数（由长按菜单项触发）
 const confirmMessageMute = async () => {
   const targetMessage = selectedMessageActionTarget.value
@@ -3083,7 +3083,7 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
   right: 0;
   top: 20vh;
   z-index: 100;
-  background-color: #fff;
+  background-color: var(--bg-card);
   border-radius: 999px 0 0 999px;
   padding: 18rpx 24rpx;
   box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
@@ -3096,8 +3096,8 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
 }
 
 .float-action-text {
-  font-size: 24rpx;
-  color: #333;
+  font-size: calc(24rpx * var(--font-scale));
+  color: var(--actions-text);
   font-weight: 500;
 }
 .customNav {
@@ -3151,7 +3151,7 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
             width: 56rpx; // 头像尺寸
             height: 56rpx;
             border-radius: 50%; // 剪裁成圆形
-            background-color: #eee;
+            background-color: var(--userFilterHeader-border-color);
             background-position: center;
             background-repeat: no-repeat;
             background-size: cover;
@@ -3165,21 +3165,21 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
             gap: 8rpx;
 
             .main-title {
-              font-size: 30rpx;
+              font-size: calc(30rpx * var(--font-scale));
               font-weight: bold;
-              color: #1a1a1a;
+              color: var(--chat-text-color);
               /* 防止标题过长 */
               max-width: 240rpx;
               overflow: hidden;
               text-overflow: ellipsis;
               white-space: nowrap;
-              color: #fff;
+              color: var(--bg-card);
             }
 
             .sub-title {
-              font-size: 28rpx;
-              color: #1a1a1a;
-              color: #fff;
+              font-size: calc(28rpx * var(--font-scale));
+              color: var(--chat-text-color);
+              color: var(--bg-card);
             }
           }
         }
@@ -3217,9 +3217,9 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
   }
 
   .history-tip-text {
-    font-size: 22rpx;
+    font-size: calc(22rpx * var(--font-scale));
     line-height: 1.4;
-    color: #999;
+    color: var(--text-secondary);
   }
 
   .virtual-spacer {
@@ -3235,8 +3235,8 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
     margin: 32rpx 0;
 
     .divider-time {
-      font-size: 24rpx;
-      color: #999;
+      font-size: calc(24rpx * var(--font-scale));
+      color: var(--text-secondary);
       padding: 8rpx 24rpx;
       background-color: rgba(0, 0, 0, 0.05);
       border-radius: 16rpx;
@@ -3265,8 +3265,8 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
         }
 
         .system-text {
-          font-size: 24rpx;
-          color: #999;
+          font-size: calc(24rpx * var(--font-scale));
+          color: var(--text-secondary);
           text-align: center;
           line-height: 1.5;
           word-break: break-all;
@@ -3282,7 +3282,7 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
         }
 
         .msg-time {
-          font-size: 20rpx;
+          font-size: calc(20rpx * var(--font-scale));
           color: #bbb;
         }
       }
@@ -3299,7 +3299,7 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
         height: 88rpx;
         overflow: hidden;
         border-radius: 50%; // 圆形头像
-        background-color: #eee;
+        background-color: var(--userFilterHeader-border-color);
         background-position: center;
         background-repeat: no-repeat;
         background-size: cover;
@@ -3336,8 +3336,8 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
       }
 
       .u-name {
-        font-size: 24rpx;
-        color: #888;
+        font-size: calc(24rpx * var(--font-scale));
+        color: var(--chat-user-name-color);
         margin-bottom: 8rpx;
         margin-left: 8rpx;
       }
@@ -3347,13 +3347,13 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
         max-width: 100%;
 
         .text-bubble {
-          background-color: #ffffff;
+          background-color: var(--bg-card);
           padding: 20rpx 28rpx;
           /* 他人消息气泡圆角：左上角为小圆角，其余大圆角 */
           border-radius: 8rpx 30rpx 30rpx 30rpx;
-          font-size: 28rpx;
+          font-size: calc(28rpx * var(--font-scale));
           line-height: 1.5;
-          color: #1a1a1a;
+          color: var(--chat-text-color);
           box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.03);
           word-break: break-all;
           display: inline-block;
@@ -3366,8 +3366,8 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
         }
 
         .text-bubble.is-recalled {
-          color: #999;
-          background-color: #f5f5f5;
+          color: var(--text-secondary);
+          background-color: var(--wot-action-sheet-active-color);
           box-shadow: none;
         }
 
@@ -3445,7 +3445,7 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
         }
 
         .msg-time {
-          font-size: 24rpx;
+          font-size: calc(24rpx * var(--font-scale));
           color: #bbb;
           margin-top: 12rpx;
           display: block;
@@ -3469,7 +3469,7 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
         padding: 0 16rpx;
         border-radius: 999rpx;
         background: rgba(0, 0, 0, 0.06);
-        color: #666;
+        color: var(--wot-message-box-content-color);
 
         &.active {
           background: rgba(255, 107, 3, 0.14);
@@ -3482,19 +3482,19 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
       }
 
       .reaction-emoji {
-        font-size: 24rpx;
+        font-size: calc(24rpx * var(--font-scale));
         line-height: 1;
       }
 
       .reaction-count {
-        font-size: 22rpx;
+        font-size: calc(22rpx * var(--font-scale));
         line-height: 1;
       }
 
       .message-status {
         margin-top: 10rpx;
-        font-size: 22rpx;
-        color: #999;
+        font-size: calc(22rpx * var(--font-scale));
+        color: var(--text-secondary);
 
         &.failed {
           color: #e25b5b;
@@ -3516,7 +3516,7 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
       }
 
       .message-resend-icon {
-        font-size: 24rpx;
+        font-size: calc(24rpx * var(--font-scale));
         line-height: 1;
         font-weight: 600;
       }
@@ -3534,7 +3534,7 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
         .bubble-wrap {
           .text-bubble {
             background-color: #ff6b03; // 使用您的主题橙色
-            color: #ffffff;
+            color: var(--bg-card);
             /* 自己消息气泡圆角：右上角为小圆角，其余大圆角 */
             border-radius: 30rpx 8rpx 30rpx 30rpx;
             display: inline-block;
@@ -3580,14 +3580,14 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
   gap: 10rpx;
   min-height: 72rpx;
   padding: 0 28rpx;
-  background: #ffffff;
+  background: var(--bg-card);
   border-radius: 999rpx;
   box-shadow: 0 12rpx 32rpx rgba(0, 0, 0, 0.12);
   transform: translateX(-50%);
 }
 
 .new-message-indicator-text {
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   line-height: 1;
   color: #1f1f1f;
   white-space: nowrap;
@@ -3616,8 +3616,8 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
   height: calc(120rpx - 48rpx);
   padding: 24rpx;
   padding-bottom: calc(env(safe-area-inset-bottom) + 24rpx);
-  background-color: #ffffff;
-  border-top: 1rpx solid #f3f3f4;
+  background-color: var(--bg-card);
+  border-top: 1rpx solid var(--fixedCommentBox-color);
 
   // ✅ 上传图标按钮样式
   .upload-icon-btn {
@@ -3641,11 +3641,11 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
     flex: 1;
     height: calc(100% - 36rpx);
     padding: 18rpx 24rpx;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-weight: 400;
-    line-height: 36rpx;
+    line-height: calc(36rpx * var(--font-scale));
     color: rgba(38, 16, 0, 0.3);
-    background: #f3f3f4;
+    background: var(--fixedCommentBox-color);
     border-radius: 64rpx;
 
     &.is-muted {
@@ -3691,7 +3691,7 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
 }
 
 .perf-panel-title {
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   font-weight: 600;
   color: #8a4c19;
 }
@@ -3725,12 +3725,12 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
 }
 
 .perf-label {
-  font-size: 20rpx;
+  font-size: calc(20rpx * var(--font-scale));
   color: rgba(88, 51, 20, 0.66);
 }
 
 .perf-value {
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   line-height: 1.35;
   color: #3d2209;
   word-break: break-all;
@@ -3772,17 +3772,21 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
     }
 
     .opIcon.keyboard {
-      background-image: url('/static/images/keyboard@2x.png');
+      background-color: var(--text-primary);
+      -webkit-mask: url('@/static/images/keyboard.svg') no-repeat center / 100% 100%;
+      mask: url('@/static/images/keyboard.svg') no-repeat center / 100% 100%;
     }
 
     .opIcon.expression {
-      background-image: url('/static/images/expiression@2x.png');
+      background-color: var(--text-primary);
+      -webkit-mask: url('@/static/images/expiression@.svg') no-repeat center / 100% 100%;
+      mask: url('@/static/images/expiression@.svg') no-repeat center / 100% 100%;
     }
   }
 
   .pubCommentBox {
     .commentTextAreaBox {
-      background-color: #f3f3f4 !important;
+      background-color: var(--fixedCommentBox-color) !important;
       border-radius: 32rpx;
 
       .emojiBox2 {
@@ -3821,13 +3825,13 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
     min-height: 108rpx;
     padding: 24rpx !important;
     padding-bottom: 0 !important;
-    background-color: #f3f3f4 !important;
+    background-color: var(--fixedCommentBox-color) !important;
     border-radius: 32rpx;
   }
 
   .commentHidden {
     width: 100%;
-    background-color: #fff;
+    background-color: var(--bg-card);
   }
 
   // 表情包 start
@@ -3836,7 +3840,7 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
     height: 600rpx;
     padding-top: 24rpx;
     margin-top: 24rpx;
-    border-top: 1rpx solid #f3f3f4;
+    border-top: 1rpx solid var(--fixedCommentBox-color);
 
     .category {
       display: flex;
@@ -3861,7 +3865,7 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
       }
 
       .categoryItem.active {
-        background: #f3f3f4;
+        background: var(--fixedCommentBox-color);
         border-radius: 84rpx;
       }
     }
@@ -3897,7 +3901,7 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
         margin-bottom: 12rpx;
 
         .emoji {
-          font-size: 48rpx;
+          font-size: calc(48rpx * var(--font-scale));
         }
       }
 
@@ -3914,7 +3918,7 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
   display: flex;
   flex-direction: column;
   height: 100%; // 必须撑满
-  background-color: #fff;
+  background-color: var(--bg-card);
 
   .member-scroll {
     flex: 1; // 占据剩余高度
@@ -3923,10 +3927,10 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
   }
 
   .section-label {
-    background-color: #f7f6f4;
+    background-color: var(--bg-primary);
     padding: 16rpx 30rpx;
-    font-size: 24rpx;
-    color: #999;
+    font-size: calc(24rpx * var(--font-scale));
+    color: var(--text-secondary);
   }
 
   .member-item {
@@ -3935,7 +3939,7 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
     align-items: center;
     padding: 24rpx 30rpx;
     border-bottom: 1rpx solid #f2f2f2;
-    background: #fff;
+    background: var(--bg-card);
 
     &:active {
       background: #f9f9f9;
@@ -3961,7 +3965,7 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
           width: 18rpx;
           height: 18rpx;
           border-radius: 50%;
-          border: 4rpx solid #fff;
+          border: 4rpx solid var(--bg-card);
           background: #ccc;
 
           &.online {
@@ -3978,19 +3982,19 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
           gap: 8rpx;
 
           .m-name {
-            font-size: 28rpx;
-            color: #333;
+            font-size: calc(28rpx * var(--font-scale));
+            color: var(--actions-text);
             font-weight: 500;
           }
 
           .owner-icon {
-            font-size: 24rpx;
+            font-size: calc(24rpx * var(--font-scale));
           }
         }
 
         .m-status {
-          font-size: 22rpx;
-          color: #999;
+          font-size: calc(22rpx * var(--font-scale));
+          color: var(--text-secondary);
           margin-top: 4rpx;
         }
       }
@@ -4021,7 +4025,7 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
 }
 
 .mute-popup {
-  background: #fff;
+  background: var(--bg-card);
   border-radius: 24rpx 24rpx 0 0;
   padding: 32rpx;
   max-height: 80vh;
@@ -4034,9 +4038,9 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
     margin-bottom: 32rpx;
 
     .popup-title {
-      font-size: 32rpx;
+      font-size: calc(32rpx * var(--font-scale));
       font-weight: 600;
-      color: #333;
+      color: var(--actions-text);
     }
 
     .close-btn {
@@ -4051,8 +4055,8 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
 
       .label {
         display: block;
-        font-size: 28rpx;
-        color: #666;
+        font-size: calc(28rpx * var(--font-scale));
+        color: var(--wot-message-box-content-color);
         margin-bottom: 16rpx;
       }
     }
@@ -4080,8 +4084,8 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
   margin: 20rpx 0;
 
   .divider-time {
-    font-size: 24rpx;
-    color: #999;
+    font-size: calc(24rpx * var(--font-scale));
+    color: var(--text-secondary);
     background-color: rgba(0, 0, 0, 0.05);
     padding: 8rpx 20rpx;
     border-radius: 8rpx;
@@ -4164,6 +4168,14 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
   height: 42rpx;
 }
 
+.msg-popover-item-icon-mute {
+  width: 42rpx;
+  height: 42rpx;
+  background-color: #fff;
+  -webkit-mask: url('@/static/images/mute.svg') no-repeat center / 100% 100%;
+  mask: url('@/static/images/mute.svg') no-repeat center / 100% 100%;
+}
+
 .msg-popover-icon-placeholder {
   width: 42rpx;
   height: 42rpx;
@@ -4171,7 +4183,7 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
 
 .msg-popover-item-text {
   margin-top: 10rpx;
-  font-size: 22rpx;
+  font-size: calc(22rpx * var(--font-scale));
   color: rgba(255, 255, 255, 0.92);
   text-align: center;
   white-space: nowrap;
@@ -4204,7 +4216,7 @@ const markAsRead = async (roomId: number, lastReadMessageId: number) => {
 }
 .current-announcement-text {
   margin-left: 24rpx;
-  font-size: 28rpx !important;
+  font-size: calc(28rpx * var(--font-scale)) !important;
   font-family: Alibaba PuHuiTi2 !important;
 }
 .msg-row-highlight {

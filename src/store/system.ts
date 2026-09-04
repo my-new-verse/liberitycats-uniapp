@@ -31,6 +31,13 @@ export const useSystemStore = defineStore('system', {
       uni.setStorageSync('agreements', data)
     },
 
+    /** 清空协议缓存（内存 + 本地），主题切换后协议富文本需按新主题重新请求 */
+    resetAgreements() {
+      this.agreements = null
+      this.agreementsReady = false
+      uni.removeStorageSync('agreements')
+    },
+
     /**
      * 确保 systemConfig 已就绪，如果未就绪则主动获取
      * 多次调用只发一次请求（通过 configReady 守卫）

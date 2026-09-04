@@ -75,7 +75,7 @@ const radioChange = (evt) => {
   display: flex;
   flex-direction: column;
   width: 100%;
-  background-color: #fff;
+  background-color: var(--bg-card);
   border-radius: 12px;
 }
 

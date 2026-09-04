@@ -14,12 +14,10 @@
       <view class="version" v-if="version">{{ version }}</view>
     </view>
     <view class="contentBox">
-      <view style="color: #000">
-        {{ t('my.menu.update.popup.current_version') }}:{{ currentVersion }}
-      </view>
+      <view>{{ t('my.menu.update.popup.current_version') }}:{{ currentVersion }}</view>
       <view class="content-title">{{ t('my.menu.update.popup.content_title') }}</view>
       <scroll-view class="scrollBox" :scroll-y="true">
-        <rich-text :nodes="content" style="color: #000"></rich-text>
+        <rich-text :nodes="content"></rich-text>
       </scroll-view>
     </view>
     <view v-if="isDownloading" class="progress">
@@ -616,36 +614,36 @@ const closePopup = () => {
   width: calc(100% - 128rpx);
   padding: 0;
   padding-bottom: 48rpx !important;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
   border-radius: 24rpx;
   font-family: 'Alibaba PuHuiTi2' !important;
 
   .wd-popup__close {
-    color: #ffffff;
+    color: var(--bg-card);
   }
   .titleBox {
     height: 124rpx;
     margin-bottom: 24rpx;
-    font-size: 32rpx;
-    color: rgba(0, 0, 0, 0.9);
+    font-size: calc(32rpx * var(--font-scale));
+    color: #fff;
     align-items: center;
     text-align: center;
     background: linear-gradient(135deg, #ff6b03, #ff8833);
     display: flex;
     padding: 0 24rpx;
-    color: #fff;
+    color: var(--bg-card);
     gap: 24rpx;
     .version {
       font-weight: 600;
-      color: rgba(255, 255, 255, 0.92);
-      background: rgba(255, 255, 255, 0.2);
+      color: var(--appUpdate-version-color);
+      background: var(--appUpdate-version-bg);
       padding: 4px 14px;
       border-radius: 20px;
       backdrop-filter: blur(4px);
       -webkit-backdrop-filter: blur(4px);
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      border: 1px solid var(--appUpdate-version-border-color);
       flex-shrink: 0;
-      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+      text-shadow: var(--appUpdate-version-shadow);
     }
   }
 
@@ -654,6 +652,7 @@ const closePopup = () => {
     max-height: 560rpx;
     overflow-y: scroll;
     margin: 24rpx 48rpx;
+    color: var(--text-black);
     .content-title {
       color: var(--liberty-cats-primary-color);
       font-weight: 500;
@@ -677,7 +676,7 @@ const closePopup = () => {
       display: flex;
       justify-content: space-between;
       color: #6b6b80;
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       font-weight: 500;
       margin-bottom: 12rpx;
     }
@@ -689,14 +688,14 @@ const closePopup = () => {
     border: 1px solid rgba(255, 77, 54, 0.2);
     border-radius: 12rpx;
     .error-text {
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       color: #e53935;
       font-weight: 500;
       margin-bottom: 8rpx;
     }
     .error-hint {
-      font-size: 24rpx;
-      color: #999;
+      font-size: calc(24rpx * var(--font-scale));
+      color: var(--text-secondary);
       line-height: 1.5;
     }
   }
@@ -707,7 +706,7 @@ const closePopup = () => {
     gap: 14rpx;
     .mainBtnPlain {
       border-color: #ff6b03 !important;
-      background: #ffffff !important;
+      background: var(--bg-card) !important;
       color: #ff6b03 !important;
     }
   }

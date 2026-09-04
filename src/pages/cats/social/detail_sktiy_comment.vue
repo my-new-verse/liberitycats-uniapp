@@ -856,16 +856,20 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
       background-size: 100% 100%;
     }
     .opIcon.keyboard {
-      background-image: url('/static/images/keyboard@2x.png');
+      background-color: var(--text-primary);
+      -webkit-mask: url('@/static/images/keyboard.svg') no-repeat center / 100% 100%;
+      mask: url('@/static/images/keyboard.svg') no-repeat center / 100% 100%;
     }
     .opIcon.expression {
-      background-image: url('/static/images/expiression@2x.png');
+      background-color: var(--text-primary);
+      -webkit-mask: url('@/static/images/expiression@.svg') no-repeat center / 100% 100%;
+      mask: url('@/static/images/expiression@.svg') no-repeat center / 100% 100%;
     }
   }
 
   .pubCommentBox {
     .commentTextAreaBox {
-      background-color: #f3f3f4 !important;
+      background-color: var(--fixedCommentBox-color) !important;
       border-radius: 32rpx;
 
       .emojiBox2 {
@@ -902,12 +906,12 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
     min-height: 108rpx;
     padding: 24rpx !important;
     padding-bottom: 0 !important;
-    background-color: #f3f3f4 !important;
+    background-color: var(--fixedCommentBox-color) !important;
     border-radius: 32rpx;
   }
   .commentHidden {
     width: 100%;
-    background-color: #fff;
+    background-color: var(--bg-card);
   }
 
   // 表情包 start
@@ -916,7 +920,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
     height: 600rpx;
     padding-top: 24rpx;
     margin-top: 24rpx;
-    border-top: 1rpx solid #f3f3f4;
+    border-top: 1rpx solid var(--fixedCommentBox-color);
 
     .category {
       display: flex;
@@ -938,7 +942,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
         }
       }
       .categoryItem.active {
-        background: #f3f3f4;
+        background: var(--fixedCommentBox-color);
         border-radius: 84rpx;
       }
     }
@@ -971,7 +975,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
         margin-right: 38rpx;
         margin-bottom: 12rpx;
         .emoji {
-          font-size: 48rpx;
+          font-size: calc(48rpx * var(--font-scale));
         }
       }
       .emojiItem:nth-child(7n) {
@@ -992,17 +996,17 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   height: calc(120rpx - 48rpx);
   padding: 24rpx;
   padding-bottom: env(safe-area-inset-bottom);
-  background-color: #ffffff;
-  border-top: 1rpx solid #f3f3f4;
+  background-color: var(--bg-card);
+  border-top: 1rpx solid var(--fixedCommentBox-color);
   .commentTextArea {
     width: calc(100% - 48rpx);
     height: calc(100% - 36rpx);
     padding: 18rpx 24rpx;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-weight: 400;
-    line-height: 36rpx;
+    line-height: calc(36rpx * var(--font-scale));
     color: rgba(38, 16, 0, 0.3);
-    background: #f3f3f4;
+    background: var(--fixedCommentBox-color);
     border-radius: 64rpx;
   }
 }
@@ -1010,20 +1014,20 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
 .socialBox {
   padding: 40rpx;
   padding-bottom: 20rpx;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
 }
 .commentBox {
   padding: 40rpx;
   padding-bottom: 160rpx;
   margin-top: 16rpx;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
   .commentFilterBox {
-    background-color: #fff;
+    background-color: var(--bg-card);
     .opTitle {
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       font-weight: 600;
-      line-height: 44rpx;
-      color: #261000;
+      line-height: calc(44rpx * var(--font-scale));
+      color: var(--text-primary);
     }
     .opBox {
       display: flex;
@@ -1052,8 +1056,8 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
         width: 64rpx;
         height: 64rpx;
         overflow: hidden;
-        background-color: #fafafa;
-        border: 2rpx solid #f3f3f4;
+        background-color: var(--avatar-color);
+        border: 2rpx solid var(--fixedCommentBox-color);
         border-radius: 50%;
       }
       .levelIcon {
@@ -1075,16 +1079,16 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
       justify-content: center;
       width: calc(100% - 64rpx - 16rpx);
       .nickname {
-        font-size: 24rpx;
+        font-size: calc(24rpx * var(--font-scale));
         font-weight: 400;
-        line-height: 36rpx;
+        line-height: calc(36rpx * var(--font-scale));
         color: #999999;
       }
       .commentCnt {
-        font-size: 28rpx;
+        font-size: calc(28rpx * var(--font-scale));
         font-weight: 400;
-        line-height: 40rpx;
-        color: #261000;
+        line-height: calc(40rpx * var(--font-scale));
+        color: var(--text-primary);
         word-break: break-all;
       }
       .commentMedia {
@@ -1106,9 +1110,9 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
         justify-content: space-between;
         margin-top: 12rpx;
         .time {
-          font-size: 24rpx;
+          font-size: calc(24rpx * var(--font-scale));
           font-weight: 400;
-          line-height: 36rpx;
+          line-height: calc(36rpx * var(--font-scale));
           color: #999999;
         }
 
@@ -1135,7 +1139,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
             }
             .likeTxt {
               margin-left: 4rpx;
-              font-size: 24rpx;
+              font-size: calc(24rpx * var(--font-scale));
               font-weight: 400;
               color: #999999;
             }
@@ -1178,7 +1182,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   padding: 40rpx;
   padding-bottom: 160rpx;
   margin-top: 16rpx;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
 
   .fixedCommentClose {
     position: relative;
@@ -1207,7 +1211,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
     height: 70vh;
     padding-top: 0;
     overflow-y: auto;
-    background: #fff;
+    background: var(--bg-card);
     border-radius: 24rpx 24rpx 0 0;
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease;
@@ -1229,13 +1233,13 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
       width: 100%;
       padding: 20rpx 0;
       margin-bottom: 20rpx;
-      background: #fff;
+      background: var(--bg-card);
 
       .opTitle {
-        font-size: 28rpx;
+        font-size: calc(28rpx * var(--font-scale));
         font-weight: 600;
-        line-height: 44rpx;
-        color: #261000;
+        line-height: calc(44rpx * var(--font-scale));
+        color: var(--text-primary);
       }
 
       .opBox {
@@ -1245,13 +1249,13 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
         .opBtn {
           padding: 8rpx 16rpx;
           margin-left: 16rpx;
-          font-size: 24rpx;
-          color: #999;
-          background: #f5f5f5;
+          font-size: calc(24rpx * var(--font-scale));
+          color: var(--text-secondary);
+          background: var(--wot-action-sheet-active-color);
           border-radius: 30rpx;
 
           &.active {
-            color: #fff;
+            color: var(--bg-card);
             background: #ff6b03;
           }
         }

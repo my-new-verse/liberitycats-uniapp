@@ -21,27 +21,6 @@
         <view class="container">
           <view class="socialBox">
             <view class="socialItem">
-              <view
-                class="delBox"
-                v-if="postDetail.member_id === userStore.userInfo?.member_id"
-                @click="handleDelMainPost"
-              ></view>
-              <view class="jbBox" v-else @click="reportPost(postDetail)"></view>
-              <view
-                v-if="getMemberFollowInfo(postDetail?.member)"
-                class="followBtn"
-                :class="getMemberFollowInfo(postDetail?.member).style"
-                @click.stop="handleFollowClick(postDetail?.member)"
-              >
-                {{ getMemberFollowInfo(postDetail?.member).text }}
-                <wd-icon
-                  custom-style="margin-left: 12rpx"
-                  name="star-on"
-                  size="22rpx"
-                  color="#ff6b03"
-                  v-if="postDetail.member.is_special_following === 1"
-                ></wd-icon>
-              </view>
               <view class="socialHead">
                 <view class="avatarBox" @click="debouncedToUserHomeRef?.(postDetail?.member_id)">
                   <image
@@ -97,6 +76,27 @@
                 >
                   {{ postDetail.tag?.name }}
                 </view>
+                <view
+                  v-if="getMemberFollowInfo(postDetail?.member)"
+                  class="followBtn"
+                  :class="getMemberFollowInfo(postDetail?.member).style"
+                  @click.stop="handleFollowClick(postDetail?.member)"
+                >
+                  {{ getMemberFollowInfo(postDetail?.member).text }}
+                  <wd-icon
+                    custom-style="margin-left: 12rpx"
+                    name="star-on"
+                    size="22rpx"
+                    color="#ff6b03"
+                    v-if="postDetail.member.is_special_following === 1"
+                  ></wd-icon>
+                </view>
+                <view
+                  class="delBox"
+                  v-if="postDetail.member_id === userStore.userInfo?.member_id"
+                  @click="handleDelMainPost"
+                ></view>
+                <view class="jbBox" v-else @click="reportPost(postDetail)"></view>
               </view>
               <view class="socialCntBox">
                 <view class="socialCnt">
@@ -640,15 +640,14 @@ const reportPost = (post: any) => {
 
   // 关注相关操作
   if (isFollowing) {
-    actions.push({ name: t('social.index.user.unfollow'), type: 'follow', color: '#333' })
+    actions.push({ name: t('social.index.user.unfollow'), type: 'follow' })
     actions.push({
       name: isSpecial ? t('social.index.user.special.cancel') : t('social.index.user.special.set'),
       type: 'specialFollow',
-      color: '#333',
     })
   } else {
     actions.push({ name: t('social.index.user.follow'), type: 'follow', color: '#ff6b03' })
-    actions.push({ name: t('social.index.user.special.set'), type: 'specialFollow', color: '#333' })
+    actions.push({ name: t('social.index.user.special.set'), type: 'specialFollow' })
   }
 
   actions.push({ name: '', type: 'divider', disabled: true })
@@ -1887,17 +1886,27 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
 <style lang="scss" scoped>
 @import '/src/style/base';
 @import '/src/style/social';
+.emptyTxt {
+  color: var(--text-black);
+}
 :deep(.reportSheet) {
   font-family:
     Alimama FangYuanTi VF,
     sans-serif;
+
+  background-color: var(--bg-card);
+
+  .wd-action-sheet__action {
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+  }
 
   .wd-action-sheet__action--disabled {
     height: 2rpx !important;
     min-height: 2rpx !important;
     margin: 16rpx 0;
     padding: 0 !important;
-    background: #f0f0f0;
+    background: var(--divider-color);
     pointer-events: none;
     border: none !important;
     overflow: hidden;
@@ -1925,6 +1934,9 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   user-select: text;
 }
 
+:deep(.cnt2) {
+  background-color: var(--bg-primary) !important;
+}
 .page {
   padding-bottom: 120rpx;
   .cnt {
@@ -1971,16 +1983,20 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
       background-size: 100% 100%;
     }
     .opIcon.keyboard {
-      background-image: url('/static/images/keyboard@2x.png');
+      background-color: var(--text-primary);
+      -webkit-mask: url('@/static/images/keyboard.svg') no-repeat center / 100% 100%;
+      mask: url('@/static/images/keyboard.svg') no-repeat center / 100% 100%;
     }
     .opIcon.expression {
-      background-image: url('/static/images/expiression@2x.png');
+      background-color: var(--text-primary);
+      -webkit-mask: url('@/static/images/expiression@.svg') no-repeat center / 100% 100%;
+      mask: url('@/static/images/expiression@.svg') no-repeat center / 100% 100%;
     }
   }
 
   .pubCommentBox {
     .commentTextAreaBox {
-      background-color: #f3f3f4 !important;
+      background-color: var(--fixedCommentBox-color) !important;
       border-radius: 32rpx;
 
       .emojiBox2 {
@@ -2017,12 +2033,12 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
     min-height: 108rpx;
     padding: 24rpx !important;
     padding-bottom: 0 !important;
-    background-color: #f3f3f4 !important;
+    background-color: var(--fixedCommentBox-color) !important;
     border-radius: 32rpx;
   }
   .commentHidden {
     width: 100%;
-    background-color: #fff;
+    background-color: var(--bg-card);
   }
 
   // 表情包 start
@@ -2031,7 +2047,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
     height: 600rpx;
     padding-top: 24rpx;
     margin-top: 24rpx;
-    border-top: 1rpx solid #f3f3f4;
+    border-top: 1rpx solid var(--fixedCommentBox-color);
 
     .category {
       display: flex;
@@ -2053,7 +2069,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
         }
       }
       .categoryItem.active {
-        background: #f3f3f4;
+        background: var(--fixedCommentBox-color);
         border-radius: 84rpx;
       }
     }
@@ -2086,7 +2102,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
         margin-right: 38rpx;
         margin-bottom: 12rpx;
         .emoji {
-          font-size: 48rpx;
+          font-size: calc(48rpx * var(--font-scale));
         }
       }
       .emojiItem:nth-child(7n) {
@@ -2107,17 +2123,17 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   height: calc(120rpx - 48rpx);
   padding: 24rpx;
   padding-bottom: env(safe-area-inset-bottom);
-  background-color: #ffffff;
-  border-top: 1rpx solid #f3f3f4;
+  background-color: var(--bg-card);
+  border-top: 1rpx solid var(--fixedCommentBox-color);
   .commentTextArea {
     width: calc(100% - 48rpx);
     height: calc(100% - 36rpx);
     padding: 18rpx 24rpx;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-weight: 400;
-    line-height: 36rpx;
-    color: rgba(38, 16, 0, 0.3);
-    background: #f3f3f4;
+    line-height: calc(36rpx * var(--font-scale));
+    color: var(--commentTextArea-color);
+    background: var(--fixedCommentBox-color);
     border-radius: 64rpx;
   }
 }
@@ -2131,23 +2147,23 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
 .socialBox {
   padding: 40rpx;
   padding-bottom: 20rpx;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
 }
 .commentBox {
   flex: 1;
   padding: 40rpx;
   margin-top: 32rpx;
   overflow-y: auto;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
   .commentFilterBox {
     display: flex;
     align-items: center;
     justify-content: space-between;
     .opTitle {
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       font-weight: 600;
-      line-height: 44rpx;
-      color: #261000;
+      line-height: calc(44rpx * var(--font-scale));
+      color: var(--text-primary);
     }
     .opBox {
       display: flex;
@@ -2155,6 +2171,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
       justify-content: end;
       .opBtn {
         margin-left: 16rpx;
+        color: var(--text-primary);
       }
       .opBtn.active {
         color: #ff6b03;
@@ -2176,8 +2193,8 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
         width: 64rpx;
         height: 64rpx;
         overflow: hidden;
-        background-color: #fafafa;
-        border: 2rpx solid #f3f3f4;
+        background-color: var(--avatar-color);
+        border: 2rpx solid var(--fixedCommentBox-color);
         border-radius: 50%;
       }
       .levelIcon {
@@ -2199,17 +2216,17 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
       justify-content: center;
       width: calc(100% - 64rpx - 16rpx);
       .nickname {
-        font-size: 24rpx;
+        font-size: calc(24rpx * var(--font-scale));
         font-weight: 400;
-        line-height: 36rpx;
-        color: #999999;
+        line-height: calc(36rpx * var(--font-scale));
+        color: var(--text-secondary);
         // margin-bottom: 6rpx;
       }
       .commentCnt {
-        font-size: 28rpx;
+        font-size: calc(28rpx * var(--font-scale));
         font-weight: 400;
-        line-height: 40rpx;
-        color: #261000;
+        line-height: calc(40rpx * var(--font-scale));
+        color: var(--text-primary);
         word-break: break-all;
       }
       .commentMedia {
@@ -2231,10 +2248,10 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
         justify-content: space-between;
         margin-top: 12rpx;
         .time {
-          font-size: 24rpx;
+          font-size: calc(24rpx * var(--font-scale));
           font-weight: 400;
-          line-height: 36rpx;
-          color: #999999;
+          line-height: calc(36rpx * var(--font-scale));
+          color: var(--text-secondary);
         }
 
         .rightBox {
@@ -2269,9 +2286,9 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
             }
             .likeTxt {
               margin-left: 4rpx;
-              font-size: 24rpx;
+              font-size: calc(24rpx * var(--font-scale));
               font-weight: 400;
-              color: #999999;
+              color: var(--text-secondary);
             }
           }
 
@@ -2292,7 +2309,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
     }
   }
   .highlight {
-    background-color: #f0f0f0 !important; // 加!important确保覆盖原有样式
+    background-color: var(--border-light) !important; // 加!important确保覆盖原有样式
     transition: background-color 0.3s ease;
   }
 }
@@ -2305,14 +2322,14 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   display: flex;
   align-items: center;
   gap: 8rpx;
-  font-size: 24rpx;
-  color: #999;
+  font-size: calc(24rpx * var(--font-scale));
+  color: var(--text-secondary);
   .arrow {
     width: 0;
     height: 0;
     border-left: 6rpx solid transparent;
     border-right: 6rpx solid transparent;
-    border-top: 6rpx solid #999;
+    border-top: 6rpx solid var(--text-secondary);
     transition: transform 0.2s;
     &.up {
       transform: rotate(180deg);
@@ -2324,7 +2341,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
 }
 .authorTag {
   padding: 0 18rpx;
-  font-size: 22rpx;
+  font-size: calc(22rpx * var(--font-scale));
   margin-left: 8rpx;
   font-weight: 400;
   line-height: 1;
@@ -2349,7 +2366,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   width: 36rpx;
   height: 36rpx;
   border-radius: 50%;
-  background: #f5f5f5;
+  background: var(--wot-action-sheet-active-color);
 }
 .replyAvatarWrap {
   position: relative;
@@ -2376,7 +2393,7 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
 }
 
 .share-container {
-  background-color: #fff;
+  background-color: var(--bg-card);
   padding: 40rpx 0 60rpx;
   position: relative;
 
@@ -2396,10 +2413,10 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
     text-align: center;
     margin-bottom: 50rpx;
 
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-weight: 600;
-    line-height: 44rpx;
-    color: #261000;
+    line-height: calc(44rpx * var(--font-scale));
+    color: var(--text-primary);
     font-family:
       Alimama FangYuanTi VF,
       sans-serif;
@@ -2424,8 +2441,8 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
       }
 
       .share-text {
-        font-size: 24rpx;
-        color: #666;
+        font-size: calc(24rpx * var(--font-scale));
+        color: var(--wot-message-box-content-color);
         font-family:
           Alimama FangYuanTi VF,
           sans-serif;
@@ -2456,12 +2473,20 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   }
 }
 
-/* ========== 关注按钮 ========== */
+/* ========== 头部行：头像/标签/按钮不可压缩，仅名字省略 ========== */
 .nameWrap {
   display: flex;
   align-items: center;
   gap: 12rpx;
   margin-bottom: 6rpx;
+  flex: 1;
+  min-width: 0;
+  .name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 .followBtn {
   display: inline-flex;
@@ -2470,21 +2495,32 @@ const doHandlePreview = (images: string[], currentIndex: number = 0) => {
   height: 40rpx;
   padding: 0 20rpx;
   border-radius: 22rpx;
-  font-size: 22rpx;
+  font-size: calc(22rpx * var(--font-scale));
   line-height: 1;
   white-space: nowrap;
   flex-shrink: 0;
   box-sizing: border-box;
   border: 1rpx solid transparent;
   background-color: #ff6b03;
-  color: #fff;
-  position: absolute;
-  right: 48rpx;
-  top: 0;
+  color: var(--bg-card);
+  margin-left: 16rpx;
   &.followed {
-    background-color: #ffffff;
-    color: #999;
+    background-color: var(--bg-card);
+    color: var(--text-secondary);
     border-color: #ddd;
   }
+}
+.socialHead {
+  .avatarBox,
+  .tag {
+    flex-shrink: 0;
+  }
+}
+/* 覆盖共享样式中的 absolute 定位（共享规则嵌套层级更深，需提高特异性） */
+.socialItem .socialHead .delBox,
+.socialItem .socialHead .jbBox {
+  position: static !important;
+  flex-shrink: 0;
+  margin-left: 16rpx;
 }
 </style>

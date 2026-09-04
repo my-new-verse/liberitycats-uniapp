@@ -862,7 +862,7 @@ watch(
 }
 
 .text-num {
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   color: var(--l-editor-text-muted, #999);
   transition: color 0.3s;
 
@@ -877,7 +877,7 @@ watch(
   background-color: var(--l-editor-btn-disabled-bg, #e0e0e0);
   color: var(--l-editor-btn-disabled-color, #999);
   border-radius: 32rpx;
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   font-weight: 500;
   transition: all 0.3s;
   user-select: none;
@@ -916,7 +916,7 @@ watch(
   align-items: center;
   padding: 4rpx 8rpx;
   border-radius: 6rpx;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   gap: 4rpx;
 }
 
@@ -935,8 +935,8 @@ watch(
 }
 
 .mp-atom-close {
-  color: #999;
-  font-size: 28rpx;
+  color: var(--text-secondary);
+  font-size: calc(28rpx * var(--font-scale));
   line-height: 1;
   padding: 0 4rpx;
 }
@@ -945,14 +945,14 @@ watch(
   width: 100%;
   min-height: 72rpx;
   max-height: 240rpx;
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   color: var(--l-editor-text, #333);
   background: transparent;
   box-sizing: border-box;
 }
 
 .mp-atom--image {
-  color: #999;
+  color: var(--text-secondary);
   font-style: italic;
 }
 </style>

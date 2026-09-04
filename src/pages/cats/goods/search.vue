@@ -229,7 +229,7 @@ const recommendSearch = (keyword: string) => {
 @import '/src/style/goods';
 
 .page {
-  background-color: #ffffff;
+  background-color: var(--bg-card);
 }
 
 .customNav {
@@ -273,7 +273,7 @@ const recommendSearch = (keyword: string) => {
         width: calc(100% - 48rpx - 16rpx - 12rpx);
         height: 56rpx;
         padding: 6rpx;
-        background-color: #ffffff;
+        background-color: var(--bg-card);
         border-radius: 34rpx;
 
         .searchBtn {
@@ -314,7 +314,7 @@ const recommendSearch = (keyword: string) => {
       .fbg {
         width: 100%;
         height: 100%;
-        background-color: #fff;
+        background-color: var(--bg-card);
       }
     }
 
@@ -336,11 +336,11 @@ const recommendSearch = (keyword: string) => {
 .hotKey {
   padding: 32rpx 0;
   .key {
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-style: normal;
     font-weight: 400;
-    line-height: 33rpx;
-    color: #000000;
+    line-height: calc(33rpx * var(--font-scale));
+    color: var(--text-black);
   }
   .list {
     margin-top: 48rpx;
@@ -349,13 +349,13 @@ const recommendSearch = (keyword: string) => {
       padding: 16rpx 24rpx;
       margin-right: 24rpx;
       margin-bottom: 24rpx;
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       font-style: normal;
 
       font-weight: 400;
-      line-height: 33rpx;
-      color: #999999;
-      border: 1rpx solid rgba(38, 16, 0, 0.1);
+      line-height: calc(33rpx * var(--font-scale));
+      color: var(--text-secondary);
+      border: 1rpx solid var(--item-border-color);
       border-radius: 34rpx;
     }
   }
@@ -363,5 +363,18 @@ const recommendSearch = (keyword: string) => {
 
 .goodsBox {
   margin-top: 32rpx;
+}
+
+// 特大字号档（1.5x）溢出适配：仅挂 font-scale-xlarge 类时生效，1 倍样式保持原样
+// 商品信息区写死 80rpx 高度装不下放大后的文字，改为内容撑开，卡片高度同步放开
+.font-scale-xlarge {
+  .goodsBox {
+    .goodsItem {
+      height: auto;
+    }
+    .goodsInfo {
+      height: auto;
+    }
+  }
 }
 </style>

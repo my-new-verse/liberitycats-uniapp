@@ -57,7 +57,7 @@
         </view>
         <view class="cell" style="padding: 12rpx 32rpx" v-if="collectionDetail?.stats?.floorPrice">
           <view class="quoteItem" style="margin-bottom: 0">
-            <view class="coinBox" style="width: 50%">
+            <view class="coinBox">
               <view class="coinImg" style="overflow: hidden; border-radius: 50%">
                 <image :src="getImageUrl(collectionDetail.image)" mode="widthFix" />
               </view>
@@ -68,7 +68,12 @@
             </view>
             <view
               class="coinPrice"
-              style="justify-content: end; margin: 0; font-size: 36rpx; color: #ff6b03"
+              style="
+                justify-content: end;
+                margin: 0;
+                font-size: calc(36rpx * var(--font-scale));
+                color: #ff6b03;
+              "
             >
               <view class="coinPricePrefix">$</view>
               <view class="coinPriceTxt">
@@ -78,30 +83,7 @@
           </view>
         </view>
       </template>
-      <view class="cell">
-        <view class="quoteOpBar">
-          <view>{{ t('discover.quotes.op.title') }}</view>
-          <view>{{ t('discover.quotes.op.currency_usdt') }}</view>
-        </view>
-        <view class="quoteItem" v-for="item in quotesList.data" :key="item.id">
-          <view class="coinBox">
-            <view class="coinImg">
-              <image :src="getImageUrl(item.icon)" mode="widthFix" />
-            </view>
-            <view class="coinInfo">
-              <view class="coinName">{{ item.short_name }}</view>
-              <view class="chain">{{ item.name }}</view>
-            </view>
-          </view>
-          <view class="coinPrice">
-            <view class="coinPricePrefix">$</view>
-            <view class="coinPriceTxt">{{ item.price }}</view>
-          </view>
-          <view class="upDown" :class="{ down: item.up_down_rate > 0 }">
-            {{ (item.up_down_rate > 0 ? '+' : '') + item.up_down_rate }}%
-          </view>
-        </view>
-      </view>
+      <CryptoQuotesList :items="quotesList.data" />
     </view>
     <view :style="{ paddingTop: cntPaddingTop + 36 + 20 + 'rpx' }">
       <QuoteWebview
@@ -139,6 +121,7 @@ import {
 import { formatNumber, getImageUrl, getServerOnOff, openUrl } from '@/utils'
 import { t } from '@/locale'
 import QuoteWebview from '@/components/quote-webview/quote-webview.vue'
+import CryptoQuotesList from '@/components/discover/CryptoQuotesList.vue'
 import { useUserStore } from '@/store'
 
 type LoadMoreState = 'loading' | 'finished' | 'error' | 'success'
@@ -687,12 +670,15 @@ onShow(() => {
   width: 100%;
   margin-bottom: 36rpx;
   padding-bottom: 12rpx;
+  overflow-x: auto;
   .opItem {
     margin-right: 16rpx;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-weight: 400;
-    line-height: 33rpx;
+    line-height: calc(33rpx * var(--font-scale));
     color: #999999;
+    white-space: nowrap; // 文字单行，不换行
+    flex-shrink: 0;
   }
 
   .opItem.active {
@@ -707,18 +693,10 @@ onShow(() => {
   justify-content: center;
   height: 64rpx;
   margin-bottom: 20rpx;
-  color: #999;
+  color: var(--text-secondary);
   background-color: #efefef;
 }
 // quotes start
-.quoteOpBar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 48rpx;
-  color: #999;
-  //background-color: #efefef;
-}
 .quoteItem {
   display: flex;
   align-items: center;
@@ -728,29 +706,36 @@ onShow(() => {
   .coinBox {
     display: flex;
     align-items: center;
-    width: 240rpx;
+    flex: 1 1 auto;
+    min-width: 0;
     .coinImg {
       width: 80rpx;
       height: 80rpx;
       margin-right: 16rpx;
+      flex-shrink: 0;
       image {
         width: 100%;
         height: 100%;
       }
     }
     .coinInfo {
+      flex: 1;
+      min-width: 0;
+      overflow-x: auto;
       .coinName {
         margin-bottom: 4rpx;
-        font-size: 32rpx;
+        font-size: calc(32rpx * var(--font-scale));
         font-weight: 500;
-        line-height: 38rpx;
-        color: #261000;
+        line-height: calc(38rpx * var(--font-scale));
+        color: var(--text-primary);
+        white-space: nowrap;
       }
       .chain {
-        font-size: 24rpx;
+        font-size: calc(24rpx * var(--font-scale));
         font-weight: 500;
-        line-height: 28rpx;
-        color: rgba(0, 0, 0, 0.4);
+        line-height: calc(28rpx * var(--font-scale));
+        color: var(--black-40);
+        white-space: nowrap;
       }
     }
   }
@@ -758,28 +743,19 @@ onShow(() => {
     display: flex;
     align-items: center;
     justify-content: end;
-    width: calc(100% - 480rpx);
+    flex-shrink: 1;
+    min-width: 0;
+    max-width: 260rpx;
     margin: 0 40rpx;
-    font-size: 32rpx;
+    font-size: calc(32rpx * var(--font-scale));
     font-weight: 500;
-    line-height: 38rpx;
-    color: #261000;
-  }
-  .upDown {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 160rpx;
-    height: 64rpx;
-    font-size: 28rpx;
-    font-weight: 500;
-    line-height: 33rpx;
-    color: #ffffff;
-    background-color: #1ec880;
-    border-radius: 24rpx;
-  }
-  .down {
-    background-color: #f04f45;
+    line-height: calc(38rpx * var(--font-scale));
+    color: var(--text-primary);
+    .coinPriceTxt {
+      min-width: 0;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
   }
 }
 // quotes end
@@ -800,16 +776,16 @@ onShow(() => {
       justify-content: flex-start;
       .title {
         margin-right: 10rpx;
-        font-size: 32rpx;
+        font-size: calc(32rpx * var(--font-scale));
         font-style: normal;
         font-weight: 600;
-        color: #261000;
+        color: var(--text-primary);
         text-align: left;
       }
     }
     .desc {
       margin-top: 10rpx;
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       font-style: normal;
       font-weight: 400;
       color: #999999;
@@ -833,7 +809,7 @@ onShow(() => {
 }
 
 .floorPrice {
-  font-size: 16px;
+  font-size: calc(16px * var(--font-scale));
   font-style: normal;
   font-weight: 600;
   color: #ff6b03;

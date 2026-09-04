@@ -87,12 +87,7 @@
               />
             </view>
             <view class="tagBar">
-              <wd-img
-                src="/static/images/label.png"
-                width="68rpx"
-                mode="widthFix"
-                @click="openTagPopup"
-              ></wd-img>
+              <view class="tagBarLabel" @click="openTagPopup"></view>
               <view class="selectedTagsBox" v-if="selectedTagList.length > 0">
                 <view v-for="tag in selectedTagList" :key="tag.id" class="tagChip">
                   <text class="tagChipText"># {{ tag.value.replace(/^#/, '') }}</text>
@@ -1063,12 +1058,20 @@ onUnmounted(() => {
 <style lang="scss" scoped>
 @import '/src/style/base';
 
-$border-color: #ededed;
+$border-color: var(--publish-border-color);
 $border-radius: 8px;
 $btn-border-raduis: 8px;
 $tipColor: #999999;
-$main-color: #1d1d1f;
-$minor-color: #666666;
+$main-color: var(--text-color);
+$minor-color: var(--wot-message-box-content-color);
+
+:deep(.cnt) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
+:deep(.fbg) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
 
 :deep(.zh-Hans, .zh-Hant) {
   .wd-textarea * {
@@ -1077,12 +1080,12 @@ $minor-color: #666666;
 }
 
 .page {
-  background-color: #f7f6f4;
+  background-color: var(--bg-primary);
 
   .pbl,
   .pbr {
     .fbg {
-      background-color: #f7f6f4;
+      background-color: var(--bg-primary);
     }
   }
 }
@@ -1099,11 +1102,11 @@ $minor-color: #666666;
 }
 
 :deep(.custom-tab) {
-  background-color: #f7f6f4 !important;
+  background-color: var(--bg-primary) !important;
   z-index: 10;
 
   .wd-tabs__nav {
-    background-color: #f7f6f4 !important;
+    background-color: var(--bg-primary) !important;
     padding: 0 var(--liberty-cats-page-common-border-radius);
     box-sizing: border-box;
     font-family:
@@ -1124,7 +1127,7 @@ $minor-color: #666666;
 }
 
 :deep(.cnt) {
-  background-color: #f7f6f4 !important;
+  background-color: var(--bg-primary) !important;
   padding: 24rpx !important;
   padding-top: calc(80rpx + var(--liberty-cats-page-common-border-radius)) !important;
 }
@@ -1141,15 +1144,15 @@ $minor-color: #666666;
 }
 
 .draftBtnNav {
-  font-size: 26rpx;
-  color: #999;
+  font-size: calc(26rpx * var(--font-scale));
+  color: var(--text-secondary);
 }
 
 .kf {
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   font-weight: 500;
-  line-height: 32rpx;
-  color: #ffffff;
+  line-height: calc(32rpx * var(--font-scale));
+  color: var(--bg-card);
 }
 
 .kf.disabled {
@@ -1160,7 +1163,7 @@ $minor-color: #666666;
 .card {
   // margin: 0 32rpx 24rpx;
   padding: 32rpx 24rpx;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
   border-radius: 12px;
   box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
   margin-bottom: 32rpx;
@@ -1168,7 +1171,7 @@ $minor-color: #666666;
 
 .cardTitle {
   margin-bottom: 24rpx;
-  font-size: 30rpx;
+  font-size: calc(30rpx * var(--font-scale));
   font-weight: 700;
   color: $main-color;
   font-family: 'Alibaba PuHuiTi2' !important;
@@ -1182,7 +1185,7 @@ $minor-color: #666666;
 .title-card {
   .tip {
     font-family: 'Alibaba PuHuiTi2' !important;
-    font-size: 26rpx;
+    font-size: calc(26rpx * var(--font-scale));
     color: $tipColor;
     margin-top: 18rpx;
   }
@@ -1193,7 +1196,7 @@ $minor-color: #666666;
   border: 1px solid $border-color;
 
   .wd-input__inner {
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-weight: 500;
     //padding: 20rpx 0;
     font-family: 'Alibaba PuHuiTi2' !important;
@@ -1240,7 +1243,7 @@ $minor-color: #666666;
   :deep(.editable) {
     font-family: 'Alibaba PuHuiTi2' !important;
     min-height: 300rpx;
-    font-size: 26rpx;
+    font-size: calc(26rpx * var(--font-scale));
     padding-left: 24rpx;
 
     &:empty::before {
@@ -1303,7 +1306,7 @@ $minor-color: #666666;
 
 .formLabel {
   margin-bottom: 12rpx;
-  font-size: 26rpx;
+  font-size: calc(26rpx * var(--font-scale));
   font-weight: 500;
   color: $minor-color;
   width: 18%;
@@ -1329,7 +1332,7 @@ $minor-color: #666666;
 .typeChip {
   padding: 14rpx 36rpx;
   border-radius: $border-radius;
-  font-size: 26rpx;
+  font-size: calc(26rpx * var(--font-scale));
   color: $minor-color;
   transition: all 0.2s ease;
   border: 1px solid $border-color;
@@ -1337,7 +1340,7 @@ $minor-color: #666666;
   &.active {
     background-color: #ff6b03;
     border: 1px solid #ff6b03;
-    color: #ffffff;
+    color: var(--bg-card);
     font-weight: 600;
   }
 }
@@ -1352,15 +1355,15 @@ $minor-color: #666666;
   text-align: center;
   padding: 20rpx 0;
   border-radius: $border-radius;
-  font-size: 26rpx;
-  color: #666;
+  font-size: calc(26rpx * var(--font-scale));
+  color: var(--wot-message-box-content-color);
   transition: all 0.2s ease;
   border: 1px solid $border-color;
 
   &.active {
     background-color: #ff6b03;
     border: 1px solid #ff6b03;
-    color: #ffffff;
+    color: var(--bg-card);
     font-weight: 600;
   }
 }
@@ -1371,7 +1374,7 @@ $minor-color: #666666;
   justify-content: center;
   height: 88rpx;
   border-radius: $btn-border-raduis;
-  font-size: 32rpx;
+  font-size: calc(32rpx * var(--font-scale));
   // font-weight: 600;
   margin-top: 24rpx;
   transition: opacity 0.2s ease;
@@ -1380,13 +1383,13 @@ $minor-color: #666666;
 
 /* 草稿按钮 */
 .draftBtn {
-  background-color: #fff;
+  background-color: var(--bg-card);
   color: $minor-color;
   border: 1px solid $border-color;
 
   &.disabled {
-    background-color: #fafafa;
-    color: #cccccc;
+    background-color: var(--avatar-color);
+    color: var(--draft-btn-disabled-color);
     border: 0;
   }
 }
@@ -1394,11 +1397,11 @@ $minor-color: #666666;
 /* 发布按钮 */
 .publishBtn {
   background-color: #ff6b03;
-  color: #ffffff;
+  color: var(--bg-card);
 
   &.disabled {
-    background-color: #ffd4b8;
-    color: #ffffff;
+    background-color: var(--publish-btn-disabled-bg-color);
+    color: var(--bg-card);
   }
 }
 
@@ -1433,7 +1436,7 @@ $minor-color: #666666;
   height: 32rpx;
   margin-right: 12rpx;
   border-radius: 50%;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
   transition: all 0.2s ease;
   border: 1px solid $border-color;
 
@@ -1450,15 +1453,15 @@ $minor-color: #666666;
 }
 
 .visibilityText {
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   font-weight: 500;
-  color: #333;
+  color: var(--actions-text);
 }
 
 /* 注释文案 */
 .footerNote {
   margin-top: 16rpx;
-  font-size: 26rpx;
+  font-size: calc(26rpx * var(--font-scale));
   color: $tipColor;
   line-height: 1.5;
   text-align: center;
@@ -1484,7 +1487,7 @@ $minor-color: #666666;
   height: 32rpx;
   margin-right: 12rpx;
   border-radius: $border-radius;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
   transition: all 0.2s ease;
   border: 1px solid $border-color;
 
@@ -1495,8 +1498,8 @@ $minor-color: #666666;
 }
 
 .agreementText {
-  font-size: 24rpx;
-  color: #666;
+  font-size: calc(24rpx * var(--font-scale));
+  color: var(--wot-message-box-content-color);
 }
 
 /* ========== 标签选择弹窗 ========== */
@@ -1513,9 +1516,9 @@ $minor-color: #666666;
 }
 
 .tagPopupTitle {
-  font-size: 32rpx;
+  font-size: calc(32rpx * var(--font-scale));
   font-weight: 600;
-  color: #333;
+  color: var(--actions-text);
 }
 
 .tagPopupClose {
@@ -1524,8 +1527,8 @@ $minor-color: #666666;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32rpx;
-  color: #999;
+  font-size: calc(32rpx * var(--font-scale));
+  color: var(--text-secondary);
 }
 
 .tagSearchBox {
@@ -1535,10 +1538,10 @@ $minor-color: #666666;
 :deep(.tagSearchInput) {
   .wd-input__inner {
     height: 72rpx;
-    background-color: #f5f5f5;
+    background-color: var(--wot-action-sheet-active-color);
     border-radius: 36rpx;
     padding-left: 28rpx;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
   }
 }
 
@@ -1555,7 +1558,7 @@ $minor-color: #666666;
 
 .tagItem {
   padding: 16rpx 32rpx;
-  background-color: #f5f5f5;
+  background-color: var(--wot-action-sheet-active-color);
   border-radius: 12rpx;
   transition: background-color 0.2s ease;
 
@@ -1565,15 +1568,15 @@ $minor-color: #666666;
 }
 
 .tagItemText {
-  font-size: 28rpx;
-  color: #333;
+  font-size: calc(28rpx * var(--font-scale));
+  color: var(--actions-text);
 }
 
 .tagEmpty {
   text-align: center;
   padding: 80rpx 0;
-  font-size: 28rpx;
-  color: #999;
+  font-size: calc(28rpx * var(--font-scale));
+  color: var(--text-secondary);
 }
 
 /* ---------- 遮罩层（固定全屏） ---------- */
@@ -1603,7 +1606,7 @@ $minor-color: #666666;
 
 /* ---------- 弹出层主体（从下方滑入） ---------- */
 .popup {
-  background: #ffffff;
+  background: var(--bg-card);
   width: 100%;
   max-width: 500px;
   /* 移动端适配，限制最大宽度 */
@@ -1638,26 +1641,26 @@ $minor-color: #666666;
   float: right;
   background: none;
   border: none;
-  font-size: 28px;
-  color: #999;
+  font-size: calc(28px * var(--font-scale));
+  color: var(--text-secondary);
   cursor: pointer;
   line-height: 1;
   transition: 0.2s;
 }
 
 .popup .close-btn:hover {
-  color: #333;
+  color: var(--actions-text);
   transform: rotate(90deg);
 }
 
 .popup h2 {
-  font-size: 22px;
+  font-size: calc(22px * var(--font-scale));
   margin-bottom: 12px;
   color: #1a1a2e;
 }
 
 .popup p {
-  font-size: 16px;
+  font-size: calc(16px * var(--font-scale));
   line-height: 1.7;
   color: #555;
   margin-bottom: 20px;
@@ -1668,10 +1671,10 @@ $minor-color: #666666;
   width: 100%;
   padding: 14px;
   background: #4f6ef7;
-  color: #fff;
+  color: var(--bg-card);
   border: none;
   border-radius: 16px;
-  font-size: 17px;
+  font-size: calc(17px * var(--font-scale));
   font-weight: 600;
   cursor: pointer;
 }
@@ -1686,8 +1689,8 @@ $minor-color: #666666;
   border-radius: 12px;
   padding: 16px;
   margin: 16px 0;
-  font-size: 14px;
-  color: #666;
+  font-size: calc(14px * var(--font-scale));
+  color: var(--wot-message-box-content-color);
 }
 </style>
 <style>
@@ -1716,7 +1719,7 @@ $minor-color: #666666;
   bottom: 0;
   left: 0;
   right: 0;
-  background: #ffffff;
+  background: var(--bg-card);
   border-radius: 40rpx 40rpx 0 0;
   border-top: 1rpx solid rgba(0, 0, 0, 0.08);
   box-shadow: 0 -8rpx 30rpx rgba(0, 0, 0, 0.15);
@@ -1737,22 +1740,22 @@ $minor-color: #666666;
 }
 
 .popup-title {
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   font-weight: 600;
-  color: #333;
+  color: var(--actions-text);
   font-family: 'Alibaba PuHuiTi2' !important;
 }
 
 .popup-close {
-  font-size: 36rpx;
-  color: #999;
+  font-size: calc(36rpx * var(--font-scale));
+  color: var(--text-secondary);
   padding: 10rpx;
   font-family: 'Alibaba PuHuiTi2' !important;
 }
 
 .popup-tag-item {
   padding: 24rpx 40rpx;
-  border-bottom: 1rpx solid #f0f0f0;
+  border-bottom: 1rpx solid var(--divider-color);
   font-family: 'Alibaba PuHuiTi2' !important;
 }
 
@@ -1761,8 +1764,8 @@ $minor-color: #666666;
 }
 
 .popup-tag-name {
-  font-size: 24rpx;
-  color: #333;
+  font-size: calc(24rpx * var(--font-scale));
+  color: var(--actions-text);
   font-family: 'Alibaba PuHuiTi2' !important;
 }
 
@@ -1793,7 +1796,7 @@ $minor-color: #666666;
   bottom: 0;
   left: 0;
   right: 0;
-  background: #ffffff;
+  background: var(--bg-card);
   border-radius: 40rpx 40rpx 0 0;
   border-top: 1rpx solid rgba(0, 0, 0, 0.08);
   box-shadow: 0 -8rpx 30rpx rgba(0, 0, 0, 0.15);
@@ -1825,11 +1828,11 @@ $minor-color: #666666;
 }
 .tag-popup-confirm-btn {
   height: 80rpx;
-  line-height: 80rpx;
+  line-height: calc(80rpx * var(--font-scale));
   text-align: center;
   background: var(--wot-color-theme);
-  color: #fff;
-  font-size: 28rpx;
+  color: var(--bg-card);
+  font-size: calc(28rpx * var(--font-scale));
   border-radius: 40rpx;
   font-family: 'Alibaba PuHuiTi2' !important;
 }
@@ -1843,6 +1846,14 @@ $minor-color: #666666;
   padding: 0 0 20rpx;
 }
 
+.tagBarLabel {
+  width: 68rpx;
+  height: 64rpx;
+  background-color: var(--text-primary);
+  -webkit-mask: url('@/static/images/label.svg') no-repeat center / 100% 100%;
+  mask: url('@/static/images/label.svg') no-repeat center / 100% 100%;
+}
+
 .selectedTagsBox {
   display: flex;
   flex-wrap: wrap;
@@ -1853,28 +1864,28 @@ $minor-color: #666666;
 .tagChip {
   display: flex;
   align-items: center;
-  background: #f0f0f0;
+  background: var(--divider-color);
   border-radius: 24rpx;
   padding: 8rpx 20rpx;
-  font-size: 24rpx;
-  color: #333;
+  font-size: calc(24rpx * var(--font-scale));
+  color: var(--actions-text);
   font-family: 'Alibaba PuHuiTi2' !important;
 }
 
 .tagChipText {
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
 }
 
 .tagChipClose {
   margin-left: 8rpx;
-  font-size: 28rpx;
-  color: #999;
+  font-size: calc(28rpx * var(--font-scale));
+  color: var(--text-secondary);
 }
 
 :deep(.editable) {
   font-family: 'Alibaba PuHuiTi2' !important;
   min-height: 300rpx;
-  font-size: 26rpx;
+  font-size: calc(26rpx * var(--font-scale));
   padding-left: 24rpx;
 
   /* &:empty::before {

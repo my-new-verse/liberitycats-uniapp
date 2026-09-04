@@ -138,6 +138,7 @@
       "allowsInlineMediaPlayback": true,
       "mediaPlaybackRequiresUserAction": false
     },
+    "darkmode": true,
     "compatible": {
       "ignoreVersion": true
     },

@@ -211,7 +211,7 @@ onUnmounted(() => {
 .group-container {
   height: 100%;
   max-height: calc(100vh - var(--tabs-height, 88rpx));
-  background: #f7f4ee;
+  background: var(--bg-primary);
   overflow: hidden;
 }
 
@@ -297,18 +297,18 @@ onUnmounted(() => {
 }
 
 .g-name {
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   line-height: 1.2;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--bg-card);
   text-shadow: 0 4rpx 12rpx rgba(72, 35, 0, 0.28);
 }
 
 .g-sub-title {
   margin-top: 10rpx;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   line-height: 1.4;
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--appUpdate-version-color);
   text-shadow: 0 4rpx 12rpx rgba(72, 35, 0, 0.22);
 }
 
@@ -329,22 +329,22 @@ onUnmounted(() => {
   background-color: #ff4d4f; /* 醒目红色 */
   // background-color: #d4380d; /* 深橘红色 */
   background-color: var(--wot-button-primary-bg-color);
-  color: #ffffff;
-  font-size: 20rpx;
-  line-height: 32rpx;
+  color: var(--bg-card);
+  font-size: calc(20rpx * var(--font-scale));
+  line-height: calc(32rpx * var(--font-scale));
   text-align: center;
   box-sizing: border-box;
   pointer-events: none;
-  border: 1px solid #ffffff;
+  border: 1px solid var(--bg-card);
   z-index: 10;
 }
 
 .join-button {
   // min-width: 180rpx;
   border-radius: 999rpx;
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   background: var(--wot-button-primary-bg-color) !important;
-  color: #fff !important;
+  color: var(--bg-card) !important;
   border-color: rgba(255, 208, 86, 1) !important;
   height: var(--wot-button-medium-height, 18px);
   padding: var(--wot-button-medium-padding, 0 12px) !important;

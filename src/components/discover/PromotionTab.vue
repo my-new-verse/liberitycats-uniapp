@@ -507,7 +507,7 @@ const updateBanAction = (isBanned: boolean) => {
     reportActionIndex.unban = -1
   }
   if (isBanned) {
-    actions.push({ name: t('report.admin.unban_post.action'), type: 'unban', color: '#333' })
+    actions.push({ name: t('report.admin.unban_post.action'), type: 'unban' })
     reportActionIndex.unban = actions.length - 1
   } else {
     actions.push({ name: t('report.admin.ban_post.action'), type: 'ban', color: '#FF3B30' })
@@ -603,18 +603,17 @@ const reportPost = async (post: any) => {
   const isSpecial = member?.is_special_following === 1
   const actions: any[] = []
   if (isFollowing) {
-    actions.push({ name: t('social.index.user.unfollow'), type: 'follow', color: '#333' })
+    actions.push({ name: t('social.index.user.unfollow'), type: 'follow' })
     reportActionIndex.follow = actions.length - 1
     actions.push({
       name: isSpecial ? t('social.index.user.special.cancel') : t('social.index.user.special.set'),
       type: 'special',
-      color: '#333',
     })
     reportActionIndex.special = actions.length - 1
   } else {
     actions.push({ name: t('social.index.user.follow'), type: 'follow', color: '#ff6b03' })
     reportActionIndex.follow = actions.length - 1
-    actions.push({ name: t('social.index.user.special.set'), type: 'special', color: '#333' })
+    actions.push({ name: t('social.index.user.special.set'), type: 'special' })
     reportActionIndex.special = actions.length - 1
   }
   actions.push({ name: '', type: 'divider', disabled: true })
@@ -1046,13 +1045,13 @@ onUnmounted(() => {
 .banDialog {
   padding: 16rpx 0;
   .banLabel {
-    font-size: 28rpx;
-    color: #333;
+    font-size: calc(28rpx * var(--font-scale));
+    color: var(--actions-text);
     margin-bottom: 24rpx;
   }
   .banDaysTitle {
-    font-size: 26rpx;
-    color: #666;
+    font-size: calc(26rpx * var(--font-scale));
+    color: var(--wot-message-box-content-color);
     margin-bottom: 12rpx;
   }
   .banDaysRow {
@@ -1063,12 +1062,12 @@ onUnmounted(() => {
       flex: 1;
       padding: 16rpx 0;
       text-align: center;
-      font-size: 28rpx;
-      color: #333;
-      background: #f5f5f5;
+      font-size: calc(28rpx * var(--font-scale));
+      color: var(--actions-text);
+      background: var(--wot-action-sheet-active-color);
       border-radius: 12rpx;
       &.active {
-        color: #fff;
+        color: var(--bg-card);
         background: #ff6b03;
       }
     }
@@ -1084,10 +1083,12 @@ onUnmounted(() => {
 .cardRow {
   display: flex;
   gap: 16rpx;
+  // 卡片不压缩，按内容宽度撑开；超出屏幕时整行左右滑动
+  overflow-x: auto;
   // padding: 12rpx 40rpx 16rpx;
   background-color: var(--liberty-cats-page-background-color, #f7f6f4);
   z-index: 10;
-  height: 180rpx;
+  min-height: 180rpx;
   width: calc(100vw - 2 * 32rpx);
   &.cardRow--sticky {
     position: fixed;
@@ -1096,12 +1097,12 @@ onUnmounted(() => {
   }
 
   .cardItem {
-    flex: 1;
+    flex: 1 0 auto;
     display: flex;
     flex-direction: column;
     align-items: center;
     padding: 24rpx 0;
-    background: #fff;
+    background: var(--bg-card);
     border-radius: 16rpx;
 
     &.active {
@@ -1138,9 +1139,10 @@ onUnmounted(() => {
     }
 
     .cardType {
-      font-size: 24rpx;
-      color: #333;
+      font-size: calc(24rpx * var(--font-scale));
+      color: var(--actions-text);
       margin-top: 16rpx;
+      white-space: nowrap;
     }
   }
 }
@@ -1152,13 +1154,19 @@ onUnmounted(() => {
 
 :deep(.reportSheet) {
   margin-bottom: calc(env(safe-area-inset-bottom) + 120rpx) !important;
+  background-color: var(--bg-card);
+
+  .wd-action-sheet__action {
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+  }
 
   .wd-action-sheet__action--disabled {
     height: 2rpx !important;
     min-height: 2rpx !important;
     margin: 16rpx 0;
     padding: 0 !important;
-    background: #f0f0f0;
+    background: var(--divider-color);
     pointer-events: none;
     border: none !important;
     overflow: hidden;
@@ -1206,7 +1214,7 @@ onUnmounted(() => {
 }
 
 .adTagChip {
-  font-size: 22rpx;
+  font-size: calc(22rpx * var(--font-scale));
   color: var(--liberty-cats-primary-color);
   // background: rgba(255, 107, 3, 0.08);
   padding: 4rpx 0;
@@ -1231,14 +1239,14 @@ onUnmounted(() => {
     .tag {
       padding: 4rpx 16rpx;
       // margin-left: 12rpx;
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       // font-weight: 600;
       // text-transform: uppercase;
       border-radius: 8rpx;
       line-height: 1.4;
     }
     .tag1 {
-      color: #fff;
+      color: var(--bg-card);
       background: var(--wot-color-primary);
     }
     .tag2 {
@@ -1252,10 +1260,10 @@ onUnmounted(() => {
   }
   .title {
     flex: 1;
-    color: #1d1d1f !important;
+    color: var(--text-color) !important;
   }
   .content {
-    color: #666666 !important;
+    color: var(--wot-message-box-content-color) !important;
   }
 }
 </style>

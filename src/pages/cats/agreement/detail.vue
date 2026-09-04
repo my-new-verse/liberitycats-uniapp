@@ -45,53 +45,76 @@ onPageScroll((e) => {
 })
 
 const detail = ref<AgreementType>({} as AgreementType)
+const agreementId = ref<number>(0)
+
+const loadDetail = (id: number) => {
+  uni.showLoading()
+  getAgreementDetailApi(id)
+    .then((res) => {
+      if (res.code === 1) {
+        detail.value = res.data
+        // 设置页面标题
+        if (detail.value?.i18n_content?.name) {
+          uni.setNavigationBarTitle({
+            title: detail.value.i18n_content.name,
+          })
+        }
+      } else {
+        toast.show(res.msg)
+      }
+    })
+    .finally(() => {
+      uni.hideLoading()
+    })
+}
+
 onLoad((options) => {
   if (options?.id) {
-    uni.showLoading()
-    getAgreementDetailApi(options.id)
-      .then((res) => {
-        if (res.code === 1) {
-          detail.value = res.data
-          // 设置页面标题
-          if (detail.value?.i18n_content?.name) {
-            uni.setNavigationBarTitle({
-              title: detail.value.i18n_content.name,
-            })
-          }
-        } else {
-          toast.show(res.msg)
-        }
-      })
-      .finally(() => {
-        uni.hideLoading()
-      })
+    agreementId.value = Number(options.id)
+    loadDetail(agreementId.value)
   }
+})
+
+// 主题切换：协议详情按新主题重新请求（后端按 X-App-Theme 返回对应颜色）
+uni.$on('themeChanged', () => {
+  if (agreementId.value) loadDetail(agreementId.value)
+})
+onUnmounted(() => {
+  uni.$off('themeChanged')
 })
 </script>
 
 <style lang="scss" scoped>
 @import '/src/style/base';
 
+:deep(.cnt) {
+  background-color: var(--bg-card) !important;
+}
+
+:deep(.fbg) {
+  background-color: var(--bg-card) !important;
+}
+
 .page {
   .cnt {
     min-height: 100vh;
-    background-color: #fff;
+    background-color: var(--bg-card);
   }
   .pbl,
   .pbr {
     .fbg {
-      background-color: #fff;
+      background-color: var(--bg-card);
     }
   }
 }
 
 .title {
   margin-bottom: 24rpx;
-  font-size: 48rpx;
+  font-size: calc(48rpx * var(--font-scale));
   font-style: normal;
   font-weight: 500;
-  line-height: 56rpx;
-  color: #261000;
+  line-height: calc(56rpx * var(--font-scale));
+  color: var(--text-primary);
 }
 
 .infoBox {
@@ -99,10 +122,10 @@ onLoad((options) => {
   align-items: center;
   justify-content: start;
   margin: 30rpx 0;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   font-style: normal;
   font-weight: 40 0;
-  line-height: 28rpx;
+  line-height: calc(28rpx * var(--font-scale));
   color: rgba(38, 16, 0, 0.3);
 
   .dot {
@@ -121,10 +144,10 @@ onLoad((options) => {
 }
 
 .content {
-  font-size: 32rpx;
+  font-size: calc(32rpx * var(--font-scale));
   font-style: normal;
   font-weight: 400;
-  line-height: 48rpx;
-  color: #261000;
+  line-height: calc(48rpx * var(--font-scale));
+  color: var(--text-primary);
 }
 </style>

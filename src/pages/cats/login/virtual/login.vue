@@ -155,11 +155,13 @@ const agreementsMap = ref<QuoteKeyAgreementList>()
 <style lang="scss" scoped>
 @import '/src/style/base';
 
+:deep(.cnt) {
+  background-color: var(--bg-card) !important;
+}
+
 .headBg {
   height: 142rpx;
-  background:
-    linear-gradient(360deg, #ffffff 0%, rgba(255, 255, 255, 0) 100%),
-    linear-gradient(90deg, #fefcf5 0%, #fcfdd4 25%, #ffe8d7 71%);
+  background: var(--login-head-bg);
 }
 
 .nav {
@@ -174,25 +176,26 @@ const agreementsMap = ref<QuoteKeyAgreementList>()
 
 .cnt {
   padding: 64rpx;
+  height: 100vh;
   //margin-top: 54rpx;
   //background: green;
   .title {
     height: 56rpx;
-    font-size: 48rpx;
+    font-size: calc(48rpx * var(--font-scale));
     font-style: normal;
     font-weight: 600;
-    line-height: 56rpx;
-    color: #261000;
+    line-height: calc(56rpx * var(--font-scale));
+    color: var(--text-primary);
   }
   .subTitle {
     display: flex;
     align-items: center;
     margin-top: 16rpx;
     .txt {
-      font-size: 20rpx;
+      font-size: calc(20rpx * var(--font-scale));
       font-style: normal;
       font-weight: 400;
-      line-height: 28rpx;
+      line-height: calc(28rpx * var(--font-scale));
       color: #999999;
 
       text {
@@ -201,10 +204,10 @@ const agreementsMap = ref<QuoteKeyAgreementList>()
     }
     .learnMOre {
       margin-left: 8rpx;
-      font-size: 20rpx;
+      font-size: calc(20rpx * var(--font-scale));
       font-style: normal;
       font-weight: 400;
-      line-height: 28rpx;
+      line-height: calc(28rpx * var(--font-scale));
       color: #ff6b03;
 
       //text-decoration: underline;
@@ -217,7 +220,7 @@ const agreementsMap = ref<QuoteKeyAgreementList>()
     height: 72rpx;
     padding: 8rpx 24rpx;
     margin: 64rpx 0;
-    background: #f7f6f4;
+    background: var(--bg-primary);
     border-radius: 16rpx;
     .emailInput {
       width: 100%;
@@ -228,10 +231,10 @@ const agreementsMap = ref<QuoteKeyAgreementList>()
     display: flex;
     align-items: center;
     .txt {
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       font-style: normal;
       font-weight: 400;
-      line-height: 32rpx;
+      line-height: calc(32rpx * var(--font-scale));
       color: #999999;
 
       text {
@@ -258,10 +261,10 @@ const agreementsMap = ref<QuoteKeyAgreementList>()
       width: 100%;
       height: 88rpx;
 
-      font-size: 32rpx;
+      font-size: calc(32rpx * var(--font-scale));
       font-style: normal;
       font-weight: 600;
-      color: #ffffff;
+      color: var(--bg-card);
       text-align: center;
       background: #ff6b03;
     }

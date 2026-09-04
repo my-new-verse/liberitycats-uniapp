@@ -46,7 +46,7 @@
         <view class="cnt1">
           <view class="commonTitleBox">
             <view class="title navTitle">
-              <image src="/static/images/hot@2x.png" class="tb" alt="" />
+              <view class="tb tb-hot"></view>
               {{ t('home.title.newArrivals') }}
             </view>
             <view class="more" @click="toMall">
@@ -105,7 +105,8 @@
           <!-- 群聊start -->
           <view class="commonTitleBox">
             <view class="title navTitle">
-              <image src="/static/images/circus.svg" class="tb" alt="" />
+              <view class="tb tb-circus"></view>
+              <!-- <image src="/static/images/circus.svg" class="tb" alt="" /> -->
               {{ t('home.title.groupChat') }}
             </view>
           </view>
@@ -122,7 +123,7 @@
           </view>
           <view class="commonTitleBox">
             <view class="title navTitle">
-              <image src="/static/images/nft@2x.png" class="tb" alt="" />
+              <view class="tb tb-nft"></view>
               {{ t('home.title.nftTradings') }}
             </view>
             <!-- <view class="more">
@@ -153,7 +154,7 @@
         <view class="cnt2">
           <view class="commonTitleBox">
             <view class="title navTitle">
-              <image src="/static/images/msg@2x.png" class="tb" alt="" />
+              <view class="tb tb-msg"></view>
               {{ t('home.title.bulletins') }}
             </view>
             <view class="more" @click="toUrl('/pages/cats/bulletins/list')">
@@ -389,7 +390,7 @@ const toChatGroup = () => {
     }
 
     .homeSwiper {
-      background-color: #f7f6f4;
+      background-color: var(--bg-primary);
     }
 
     .userInfoBox {
@@ -405,11 +406,11 @@ const toChatGroup = () => {
       padding: 10rpx 48rpx;
 
       .username {
-        font-size: 36rpx;
+        font-size: calc(36rpx * var(--font-scale));
         font-style: normal;
         font-weight: 500;
-        line-height: 42rpx;
-        color: #ffffff;
+        line-height: calc(42rpx * var(--font-scale));
+        color: var(--bg-card);
         text-align: left;
         text-shadow: 0px 2px 0px rgba(0, 0, 0, 0.15);
       }
@@ -420,7 +421,7 @@ const toChatGroup = () => {
         height: 48rpx;
         padding: 16rpx;
         cursor: pointer;
-        background-color: #ffffff;
+        background-color: var(--bg-card);
         border-radius: 76rpx;
         .msgDot {
           position: absolute;
@@ -431,9 +432,9 @@ const toChatGroup = () => {
           align-items: center;
           justify-content: center;
           padding: 4rpx 10rpx;
-          font-size: 14rpx;
+          font-size: calc(14rpx * var(--font-scale));
           font-style: normal;
-          color: #ffffff;
+          color: var(--bg-card);
           background-color: #ff6b03;
           border-radius: 12rpx;
         }
@@ -445,7 +446,7 @@ const toChatGroup = () => {
     position: relative; /* 修改为 relative */
     width: 100%;
     margin-top: -64rpx; /* 保持重叠效果 */
-    background: #fff;
+    background: var(--bg-card);
     border-radius: var(--liberty-cats-page-border-radius) var(--liberty-cats-page-border-radius) 0 0;
 
     .cnt1 {
@@ -455,7 +456,7 @@ const toChatGroup = () => {
       width: 100%;
       height: fit-content;
       padding-bottom: 96rpx;
-      background: #ffffff;
+      background: var(--bg-card);
       border-radius: var(--liberty-cats-page-border-radius) var(--liberty-cats-page-border-radius) 0
         0;
 
@@ -489,7 +490,7 @@ const toChatGroup = () => {
       justify-content: start;
       width: 100%;
       margin-top: -64rpx;
-      background-color: #f7f6f4;
+      background-color: var(--bg-primary);
       border-radius: var(--liberty-cats-page-border-radius) var(--liberty-cats-page-border-radius) 0
         0;
 
@@ -525,7 +526,7 @@ const toChatGroup = () => {
   padding: 10rpx;
   margin-right: 32rpx;
   margin-bottom: 40rpx;
-  background-color: #f7f6f4;
+  background-color: var(--bg-primary);
   border-radius: 48rpx;
 
   .goodsImg {
@@ -533,7 +534,7 @@ const toChatGroup = () => {
     width: 390rpx;
     height: 388rpx;
     overflow: hidden;
-    background-color: #ffffff;
+    background-color: var(--bg-card);
     border-radius: 48rpx;
     image {
       width: 100%;
@@ -551,9 +552,9 @@ const toChatGroup = () => {
       padding: 5rpx 10rpx;
 
       font-family: Montserrat;
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       font-weight: 500;
-      color: #ffffff;
+      color: var(--bg-card);
       text-transform: uppercase;
       white-space: nowrap;
       background: #ff6b03;
@@ -599,11 +600,11 @@ const toChatGroup = () => {
     .name {
       min-height: 48rpx;
       overflow: hidden; //超出的文本隐藏
-      font-size: 32rpx;
+      font-size: calc(32rpx * var(--font-scale));
       font-style: normal;
       font-weight: normal;
-      line-height: 38rpx;
-      color: #261000;
+      line-height: calc(38rpx * var(--font-scale));
+      color: var(--text-primary);
       text-align: center;
       text-overflow: ellipsis; //溢出用省略号显示
       text-transform: none;
@@ -628,11 +629,11 @@ const toChatGroup = () => {
       }
       .price {
         margin-right: 6rpx;
-        font-size: 28rpx;
+        font-size: calc(28rpx * var(--font-scale));
       }
       .unit {
-        //color: #261000;
-        font-size: 20rpx;
+        //color: var(--text-primary);
+        font-size: calc(20rpx * var(--font-scale));
       }
     }
   }
@@ -648,20 +649,40 @@ const toChatGroup = () => {
   .title {
     display: flex;
     align-items: center;
-    font-size: 40rpx;
+    font-size: calc(40rpx * var(--font-scale));
     font-weight: 600;
-    color: #261000;
+    color: var(--text-primary);
     .tb {
       width: 64rpx;
       height: 64rpx;
       margin-right: 12rpx;
+    }
+    .tb-circus {
+      background-color: var(--text-primary);
+      -webkit-mask: url('@/static/images/circus.svg') no-repeat center / 100% 100%;
+      mask: url('@/static/images/circus.svg') no-repeat center / 100% 100%;
+    }
+    .tb-hot {
+      background-color: var(--text-primary);
+      -webkit-mask: url('@/static/images/hot.svg') no-repeat center / 100% 100%;
+      mask: url('@/static/images/hot.svg') no-repeat center / 100% 100%;
+    }
+    .tb-nft {
+      background-color: var(--text-primary);
+      -webkit-mask: url('@/static/images/nft.svg') no-repeat center / 100% 100%;
+      mask: url('@/static/images/nft.svg') no-repeat center / 100% 100%;
+    }
+    .tb-msg {
+      background-color: var(--text-primary);
+      -webkit-mask: url('@/static/images/msg.svg') no-repeat center / 100% 100%;
+      mask: url('@/static/images/msg.svg') no-repeat center / 100% 100%;
     }
   }
   .more {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 24rpx;
+    font-size: calc(24rpx * var(--font-scale));
     font-weight: 500;
     color: #ff6b03;
     .moreIcon {

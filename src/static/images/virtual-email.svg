@@ -1,0 +1,17 @@
+<svg width="235" height="222" viewBox="0 0 235 222" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- 白色区域为可见（信封体），黑色区域镂空（缝线） -->
+    <mask id="m">
+      <rect width="235" height="222" fill="white"/>
+      <path d="M45.3625 65.9805L115.363 118.48L185.363 65.9805" fill="none" stroke="black" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+      <!-- 补回顶边，让 V 缝线只从顶边下方开始，边缘保持完整 -->
+      <path d="M115.363 65.9805H45.3625" fill="none" stroke="white" stroke-width="14" stroke-linecap="round"/>
+      <path d="M185.363 65.9805H115.363" fill="none" stroke="white" stroke-width="14" stroke-linecap="round"/>
+    </mask>
+  </defs>
+  <g mask="url(#m)">
+    <path d="M45.3625 170.98H185.363V118.48V65.9805H115.363H45.3625V118.48V170.98Z" fill="black" stroke="black" stroke-width="14" stroke-linejoin="round"/>
+    <path d="M115.363 65.9805H45.3625V118.48" fill="none" stroke="black" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M185.363 118.48V65.9805H115.363" fill="none" stroke="black" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

@@ -64,7 +64,7 @@
                   class="tab-text"
                   :class="{ active: activeSubtype === option.value && !isShowingAll }"
                 >
-                  {{ option.label }}
+                  <text class="tab-text-inner">{{ option.label }}</text>
                 </view>
               </view>
             </template>
@@ -1449,8 +1449,8 @@ onUnmounted(() => {
   padding-top: 200rpx;
 
   .emptyText {
-    font-size: 28rpx;
-    color: #999;
+    font-size: calc(28rpx * var(--font-scale));
+    color: var(--text-secondary);
   }
 }
 
@@ -1568,7 +1568,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 48rpx;
+  font-size: calc(48rpx * var(--font-scale));
 }
 
 // 三个图标对应不同背景色
@@ -1596,9 +1596,12 @@ onUnmounted(() => {
 
 // 文字样式
 .tab-text {
-  font-size: 24rpx;
+  display: flex;
+  width: 100%;
+  overflow-x: auto;
+  font-size: calc(24rpx * var(--font-scale));
   font-weight: 500;
-  color: #333;
+  color: var(--actions-text);
   transition: color 0.3s ease;
   // font-family: Alibaba PuHuiTi2;
   font-family: 'Alimama FangYuanTi VF' !important;
@@ -1608,6 +1611,11 @@ onUnmounted(() => {
   span {
     font-family: 'Alimama FangYuanTi VF' !important;
     color: red;
+  }
+  // 不溢出居中，溢出时可左右滑动且两端都到
+  .tab-text-inner {
+    margin: auto;
+    white-space: nowrap;
   }
 }
 ::v-deep .wd-swipe-action__right {
@@ -1653,11 +1661,11 @@ onUnmounted(() => {
   align-items: center;
   padding: 16rpx;
   .label {
-    font-size: 32rpx;
+    font-size: calc(32rpx * var(--font-scale));
     font-style: normal;
     font-weight: 500;
-    line-height: 48rpx;
-    color: #261000;
+    line-height: calc(48rpx * var(--font-scale));
+    color: var(--text-primary);
   }
 }
 
@@ -1672,8 +1680,8 @@ onUnmounted(() => {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #fff;
-    font-size: 28rpx;
+    color: var(--bg-card);
+    font-size: calc(28rpx * var(--font-scale));
     border-radius: 0 34rpx 34rpx 0;
     &.delete {
       background-color: #ff6b03;
@@ -1690,16 +1698,16 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 16rpx 24rpx;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   font-weight: 600;
-  color: #999;
+  color: var(--text-secondary);
 }
 
 /* 日期分组标题文本 */
 .time-header-date-text {
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   font-weight: 600;
-  color: #999;
+  color: var(--text-secondary);
 }
 
 .time-header-empty {
@@ -1728,7 +1736,7 @@ onUnmounted(() => {
 
 /* 分组日期文案 */
 .time-header-date {
-  font-size: 22rpx;
+  font-size: calc(22rpx * var(--font-scale));
   font-weight: 500;
   color: #ff6b03;
 }
@@ -1754,7 +1762,7 @@ onUnmounted(() => {
   border-radius: 50%;
   background-size: cover;
   background-position: center;
-  background-color: #f5f5f5;
+  background-color: var(--wot-action-sheet-active-color);
 }
 .community-unread-dot {
   position: absolute;
@@ -1764,7 +1772,7 @@ onUnmounted(() => {
   height: 20rpx;
   background: var(--liberty-cats-primary-color);
   border-radius: 50%;
-  border: 2rpx solid #fff;
+  border: 2rpx solid var(--bg-card);
 
   &.hide {
     display: none;
@@ -1808,14 +1816,14 @@ onUnmounted(() => {
   min-width: 0;
 }
 .community-name {
-  font-size: 26rpx;
+  font-size: calc(26rpx * var(--font-scale));
   // font-weight: 600;
   // color: #333;
-  color: #000;
+  color: var(--text-black);
 }
 .community-time {
-  font-size: 22rpx;
-  color: #999;
+  font-size: calc(22rpx * var(--font-scale));
+  color: var(--text-secondary);
   flex-shrink: 0;
 }
 .community-subtext {
@@ -1824,7 +1832,7 @@ onUnmounted(() => {
   overflow: hidden;
 }
 .community-preview-text {
-  color: #666;
+  color: var(--wot-message-box-content-color);
   display: flex;
   // align-items: center;
   flex-wrap: wrap;
@@ -1851,14 +1859,14 @@ onUnmounted(() => {
     -webkit-line-clamp: 2; /* 最多展示两行，超出部分省略号 */
   }
   .action {
-    color: #999 !important;
-    font-size: 24rpx !important;
+    color: var(--text-secondary) !important;
+    font-size: calc(24rpx * var(--font-scale)) !important;
   }
 
   .interactionTargetSummary,
   .commentContent {
-    color: #000;
-    font-size: 26rpx;
+    color: var(--text-black);
+    font-size: calc(26rpx * var(--font-scale));
   }
 }
 
@@ -1866,21 +1874,21 @@ onUnmounted(() => {
 .follow-back-btn {
   flex-shrink: 0;
   padding: 8rpx 28rpx;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   font-weight: 500;
   border-radius: 32rpx;
   line-height: 1.4;
 
   // 未关注：主色背景，白色文字
   &.follow {
-    color: #fff;
+    color: var(--bg-card);
     background-color: #ff6b03;
   }
 
   // 已关注/特别关注/互相关注：浅灰背景，深色文字
   &.followed {
-    color: #666;
-    background-color: #f5f5f5;
+    color: var(--wot-message-box-content-color);
+    background-color: var(--wot-action-sheet-active-color);
   }
 }
 
@@ -1892,7 +1900,7 @@ onUnmounted(() => {
   margin-left: 8rpx;
   border-radius: 12rpx;
   overflow: hidden;
-  background-color: #f5f5f5;
+  background-color: var(--wot-action-sheet-active-color);
 }
 .thumbnail-placeholder {
   width: 100%;
@@ -1918,11 +1926,11 @@ onUnmounted(() => {
   height: calc(100% - 16rpx);
   box-sizing: border-box;
   padding: 8rpx;
-  background-color: #fbf7f3;
+  background-color: var(--thumbnail-text-bg-color);
 
   .thumbnail-text-inner {
-    font-size: 22rpx;
-    color: #666;
+    font-size: calc(22rpx * var(--font-scale));
+    color: var(--wot-message-box-content-color);
     line-height: 1.5;
     text-align: center;
     overflow: hidden;

@@ -10,7 +10,7 @@
 
   <template v-if="tabType === -1">
     <view class="" :style="{ paddingTop: cntPaddingTop + 36 + 20 + 'rpx' }">
-      <view style="padding: 32rpx; background-color: #ffffff; border-radius: 32rpx">
+      <view style="padding: 32rpx; background-color: var(--bg-card); border-radius: 32rpx">
         <template v-if="newsList.data.length > 0">
           <wd-steps :active="2" vertical dot class="kxBox">
             <template v-for="(item, index) in newsList.data" :key="index">
@@ -266,6 +266,8 @@ const changeTab = async (type: NewsTabType) => {
 
 <style lang="scss" scoped>
 @import '/src/style/base';
+:deep(.page-container) {
+}
 
 :deep(.kxBox) {
   .coverBox {
@@ -278,14 +280,14 @@ const changeTab = async (type: NewsTabType) => {
   .kx-step {
     .wd-step__title,
     .wd-step__description {
-      font-size: 28rpx !important;
+      font-size: calc(28rpx * var(--font-scale)) !important;
       font-family: Alibaba PuHuiTi2 !important;
     }
     .wd-step__description {
-      color: #333;
+      color: var(--text-primary);
     }
     .wd-step__title {
-      color: var(--wot-steps-description-color, rgba(0, 0, 0, 0.45));
+      color: var(--text-secondary);
     }
   }
 }
@@ -315,15 +317,15 @@ const changeTab = async (type: NewsTabType) => {
   justify-content: center;
   height: 64rpx;
   margin-bottom: 20rpx;
-  color: #999;
+  color: var(--text-secondary);
   background-color: #efefef;
 }
 // news start
 .newsItem {
   display: flex;
   align-items: center;
-  color: #999;
-  background-color: #fff;
+  color: var(--text-secondary);
+  background-color: var(--bg-card);
   .imgBox {
     width: 218rpx;
     height: 144rpx;
@@ -340,22 +342,22 @@ const changeTab = async (type: NewsTabType) => {
     width: calc(100% - 218rpx - 32rpx);
     .title {
       display: -webkit-box;
-      max-height: 80rpx;
+      max-height: calc(80rpx * var(--font-scale));
       overflow: hidden;
-      font-size: 32rpx;
+      font-size: calc(32rpx * var(--font-scale));
       font-weight: 400;
-      line-height: 40rpx;
-      color: #261000;
+      line-height: calc(40rpx * var(--font-scale));
+      color: var(--text-primary);
       text-overflow: ellipsis;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
     }
     .time {
       margin-top: 20rpx;
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       font-weight: 400;
-      line-height: 28rpx;
-      color: rgba(0, 0, 0, 0.3);
+      line-height: calc(28rpx * var(--font-scale));
+      color: var(--black-30);
     }
   }
 }
@@ -367,10 +369,10 @@ const changeTab = async (type: NewsTabType) => {
   margin-bottom: 36rpx;
   .opItem {
     margin-right: 16rpx;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-weight: 400;
-    line-height: 33rpx;
-    color: #999999;
+    line-height: calc(33rpx * var(--font-scale));
+    color: var(--text-secondary);
   }
 
   .opItem.active {
@@ -379,7 +381,7 @@ const changeTab = async (type: NewsTabType) => {
   }
 }
 ::v-deep .wd-step.is-wait .wd-step__description {
-  color: var(--wot-steps-description-color, rgba(0, 0, 0, 0.45));
+  color: var(--text-secondary, var(--wot-steps-description-color, rgba(0, 0, 0, 0.45)));
 }
 ::v-deep .wd-step.is-process .wd-step__title,
 ::v-deep .wd-step.is-finished .wd-step__title {
@@ -390,7 +392,7 @@ const changeTab = async (type: NewsTabType) => {
   width: 100vw;
   z-index: 10;
   align-items: flex-end !important;
-  background-color: var(--liberty-cats-page-background-color);
+  background-color: var(--bg-primary);
   padding-bottom: 12rpx;
 }
 // news end

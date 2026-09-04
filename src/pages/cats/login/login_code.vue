@@ -197,11 +197,14 @@ const doLogin = async () => {
 <style lang="scss" scoped>
 @import '/src/style/base';
 
+:deep(.page2) {
+  background-color: var(--bg-card) !important;
+  height: 100vh;
+}
+
 .headBg {
   height: 142rpx;
-  background:
-    linear-gradient(360deg, #ffffff 0%, rgba(255, 255, 255, 0) 100%),
-    linear-gradient(90deg, #fefcf5 0%, #fcfdd4 25%, #ffe8d7 71%);
+  background: var(--login-head-bg);
 }
 
 .nav {
@@ -219,12 +222,12 @@ const doLogin = async () => {
   margin-top: 54rpx;
   //background: green;
   .title {
-    height: 56rpx;
-    font-size: 48rpx;
+    min-height: calc(56rpx * var(--font-scale));
+    font-size: calc(48rpx * var(--font-scale));
     font-style: normal;
     font-weight: 600;
-    line-height: 56rpx;
-    color: #261000;
+    line-height: calc(56rpx * var(--font-scale));
+    color: var(--text-primary);
   }
   .subTitle {
     display: flex;
@@ -234,10 +237,10 @@ const doLogin = async () => {
   .custom-count-down,
   .retrieve {
     margin-top: 24rpx;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-style: normal;
     font-weight: 400;
-    line-height: 36rpx;
+    line-height: calc(36rpx * var(--font-scale));
     color: #999999;
   }
   .custom-count-down {
@@ -257,10 +260,10 @@ const doLogin = async () => {
       width: 100%;
       height: 88rpx;
 
-      font-size: 32rpx;
+      font-size: calc(32rpx * var(--font-scale));
       font-style: normal;
       font-weight: 600;
-      color: #ffffff;
+      color: var(--bg-card);
       text-align: center;
       background: #ff6b03;
     }
@@ -272,7 +275,7 @@ const doLogin = async () => {
 ::v-deep .wd-password-input__item {
   width: 80rpx;
   height: 80rpx;
-  background-color: #f7f6f4;
+  background-color: var(--bg-primary);
   border-radius: 16rpx;
 }
 </style>

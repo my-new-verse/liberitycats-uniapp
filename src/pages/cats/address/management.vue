@@ -32,9 +32,7 @@
                   {{ t('common.set_default') }}
                 </view>
                 <view class="editBox">
-                  <view class="icon">
-                    <image src="@/static/images/edit@2x.png" mode="widthFix" />
-                  </view>
+                  <view class="icon iconEdit"></view>
                   <view
                     class="txt"
                     @click="toUrl('/pages/cats/address/add?bak=mgt&id=' + item.id, true, true)"
@@ -43,9 +41,7 @@
                   </view>
                 </view>
                 <view class="deleteBox">
-                  <view class="icon">
-                    <image src="@/static/images/delete@2x.png" mode="widthFix" />
-                  </view>
+                  <view class="icon iconDelete"></view>
                   <view class="txt" @click="deleteAddress(item.id)">{{ t('common.delete') }}</view>
                 </view>
               </view>
@@ -171,7 +167,13 @@ const setDefaultAddress = (id: number) => {
 
 <style lang="scss" scoped>
 @import '/src/style/base';
-//
+:deep(.cnt) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
+:deep(.fbg) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
 .page {
   background-color: var(--liberty-cats-page-background-color);
   .cnt {
@@ -187,26 +189,26 @@ const setDefaultAddress = (id: number) => {
       justify-content: start;
       margin-bottom: 12rpx;
       .name {
-        font-size: 36rpx;
+        font-size: calc(36rpx * var(--font-scale));
         font-style: normal;
         font-weight: 600;
-        line-height: 52rpx;
-        color: #261000;
+        line-height: calc(52rpx * var(--font-scale));
+        color: var(--text-primary);
       }
       .phone {
         margin: 0 24rpx;
-        font-size: 32rpx;
+        font-size: calc(32rpx * var(--font-scale));
         font-style: normal;
         font-weight: 400;
-        line-height: 48rpx;
-        color: #261000;
+        line-height: calc(48rpx * var(--font-scale));
+        color: var(--text-primary);
       }
     }
     .address {
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       font-style: normal;
       font-weight: 400;
-      line-height: 40rpx;
+      line-height: calc(40rpx * var(--font-scale));
       color: #999999;
     }
   }
@@ -217,21 +219,27 @@ const setDefaultAddress = (id: number) => {
     justify-content: space-between;
     padding-top: 24rpx;
     margin-top: 24rpx;
-    border-top: 1rpx solid #e7e7e7;
+    border-top: 1rpx solid var(--opBox-border-color);
     .icon {
       width: 32rpx;
       height: 32rpx;
       margin-right: 12rpx;
-      image {
-        width: 100%;
-        height: 100%;
-        margin-top: -6rpx;
-      }
+    }
+    .iconEdit {
+      background-color: var(--text-primary);
+      -webkit-mask: url('@/static/images/edit.svg') no-repeat center / 100% 100%;
+      mask: url('@/static/images/edit.svg') no-repeat center / 100% 100%;
+    }
+    .iconDelete {
+      background-color: var(--text-primary);
+      -webkit-mask: url('@/static/images/delete.svg') no-repeat center / 100% 100%;
+      mask: url('@/static/images/delete.svg') no-repeat center / 100% 100%;
     }
     .defaultBox {
       display: flex;
       align-items: center;
       justify-content: center;
+      color: var(--text-black);
       .radioBox {
         margin-right: 12rpx;
       }
@@ -240,10 +248,10 @@ const setDefaultAddress = (id: number) => {
     .deleteBox {
       display: flex;
       justify-content: center;
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       font-style: normal;
       font-weight: 400;
-      color: #261000;
+      color: var(--text-primary);
     }
   }
 }

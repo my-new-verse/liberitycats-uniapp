@@ -361,7 +361,7 @@ const toInFocusDetail = (item: any) => {
   position: relative;
   width: 100%;
   // min-height: 400rpx;
-  background-color: #f3f3f4;
+  background-color: var(--fixedCommentBox-color);
   border-radius: 12rpx;
   overflow: hidden;
 }
@@ -369,7 +369,7 @@ const toInFocusDetail = (item: any) => {
 .imgItemWrap {
   width: 100%;
   min-height: 180rpx;
-  background-color: #f3f3f4;
+  background-color: var(--fixedCommentBox-color);
   border-radius: 12rpx;
   overflow: hidden;
 }
@@ -381,17 +381,17 @@ const toInFocusDetail = (item: any) => {
   margin-bottom: 12rpx;
 
   .translateIcon {
-    font-size: 24rpx;
+    font-size: calc(24rpx * var(--font-scale));
     color: #1d9bf0;
   }
 
   .translateLabel {
-    font-size: 24rpx;
-    color: #536471;
+    font-size: calc(24rpx * var(--font-scale));
+    color: var(--translateLabel-color);
   }
 
   .translateToggle {
-    font-size: 24rpx;
+    font-size: calc(24rpx * var(--font-scale));
     color: #1d9bf0;
     margin-left: 4rpx;
   }
@@ -399,10 +399,10 @@ const toInFocusDetail = (item: any) => {
 
 .articleCard {
   margin-top: 16rpx;
-  border: 1rpx solid #e8e8e8;
+  border: 1rpx solid var(--isSupporter-border-color);
   border-radius: 16rpx;
   overflow: hidden;
-  background-color: #fafafa;
+  background-color: var(--avatar-color);
 
   .articleCover {
     width: 100%;
@@ -413,18 +413,18 @@ const toInFocusDetail = (item: any) => {
     padding: 20rpx 24rpx;
 
     .articleTitle {
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       font-weight: 700;
-      color: #261000;
-      line-height: 40rpx;
+      color: var(--text-primary);
+      line-height: calc(40rpx * var(--font-scale));
     }
 
     .articlePreview {
       margin-top: 8rpx;
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       font-weight: 400;
-      color: #666666;
-      line-height: 36rpx;
+      color: var(--wot-message-box-content-color);
+      line-height: calc(36rpx * var(--font-scale));
       display: -webkit-box;
       -webkit-box-orient: vertical;
       -webkit-line-clamp: 3;

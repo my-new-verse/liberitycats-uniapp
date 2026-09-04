@@ -21,7 +21,7 @@
               @click="toAdUrl('https://www.libertycatsnfts.com')"
               v-if="getServerOnOff('about_exchange_link')"
             >
-              <view style="color: #000 !important">https://libertycatsnfts.com</view>
+              <view style="color: var(--text-black) !important">https://libertycatsnfts.com</view>
               <view class="dot"></view>
             </view>
           </view>
@@ -117,6 +117,15 @@ onLoad(() => {
 
 <style lang="scss" scoped>
 @import '/src/style/base';
+
+:deep(.cnt) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
+:deep(.fbg) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
 .webBox {
   display: flex;
   flex-direction: column;
@@ -124,10 +133,13 @@ onLoad(() => {
   justify-content: center;
   width: 100%;
   padding-top: 60rpx;
-  background-color: #f7f7f7;
+  background-color: var(--recentMemberItem-bg-color);
 
   .cell {
     width: calc(100% - 80rpx);
+    font-size: calc(32rpx * var(--font-scale));
+    font-style: normal;
+    line-height: calc(37rpx * var(--font-scale));
   }
 
   .logo {
@@ -138,7 +150,7 @@ onLoad(() => {
     height: 240rpx;
     margin-bottom: 60rpx;
     overflow: hidden;
-    background-color: #ffffff;
+    background-color: var(--bg-card);
     border: 2rpx solid #ffef6c;
     border-radius: 50%;
     image {
@@ -150,14 +162,14 @@ onLoad(() => {
 .partnerBox {
   padding: 40rpx;
   margin: 40rpx auto;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
   border-radius: 40rpx;
 
   .partnerTitle {
     margin-bottom: 30rpx;
-    font-size: 32rpx;
+    font-size: calc(32rpx * var(--font-scale));
     font-weight: normal;
-    color: #261000;
+    color: var(--text-primary);
   }
 
   .partnerItemBox {
@@ -175,11 +187,11 @@ onLoad(() => {
     }
     .partnerName {
       margin-top: 24rpx;
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       font-style: normal;
       font-weight: normal;
-      line-height: 33rpx;
-      color: #261000;
+      line-height: calc(33rpx * var(--font-scale));
+      color: var(--text-primary);
       text-align: center;
       text-transform: none;
     }
@@ -213,6 +225,22 @@ onLoad(() => {
   background-size: 100% 100%;
 }
 
+// 特大字号档（1.5x）溢出适配：仅挂 font-scale-xlarge 类时生效，1 倍样式保持原样
+.font-scale-xlarge {
+  .cell {
+    > view:first-child {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    .dot {
+      flex-shrink: 0;
+    }
+  }
+}
+
 .xyBox {
   display: flex;
   flex-wrap: wrap; // 允许自动换行
@@ -220,8 +248,8 @@ onLoad(() => {
   align-items: center;
   justify-content: center; // 居中
   margin-top: 40rpx;
-  font-size: 24rpx;
-  color: rgba(38, 16, 0, 0.3);
+  font-size: calc(24rpx * var(--font-scale));
+  color: var(--commentTextArea-color);
   text-align: center; // 内容居中
 }
 .xyBox > view {

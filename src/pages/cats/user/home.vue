@@ -790,18 +790,16 @@ const openMoreActions = () => {
   const actions: any[] = []
 
   if (isFollowing) {
-    actions.push({ name: t('social.index.user.unfollow'), type: 'follow', color: '#333' })
+    actions.push({ name: t('social.index.user.unfollow'), type: 'follow' })
     actions.push({
       name: isSpecial ? t('social.index.user.special.cancel') : t('social.index.user.special.set'),
       type: 'specialFollow',
-      color: '#333',
     })
   } else {
     actions.push({ name: t('social.index.user.follow'), type: 'follow', color: '#ff6b03' })
     actions.push({
       name: t('social.index.user.special.set'),
       type: 'specialFollow',
-      color: '#333',
     })
   }
 
@@ -847,7 +845,7 @@ const updateBanAction = (isBanned: boolean) => {
     }
   }
   if (isBanned) {
-    actions.push({ name: t('report.admin.unban_post.action'), type: 'unban', color: '#333' })
+    actions.push({ name: t('report.admin.unban_post.action'), type: 'unban' })
   } else {
     actions.push({ name: t('report.admin.ban_post.action'), type: 'ban', color: '#FF3B30' })
   }
@@ -1262,7 +1260,7 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
         width: 176rpx;
         height: 176rpx;
         overflow: hidden;
-        background-color: #ffffff;
+        background-color: var(--bg-card);
         border-radius: 50%;
         image {
           width: 100%;
@@ -1274,17 +1272,17 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
         flex: 1;
         margin-left: 32rpx;
         .name {
-          font-size: 48rpx;
+          font-size: calc(48rpx * var(--font-scale));
           font-style: normal;
           font-weight: 600;
-          line-height: 56rpx;
-          color: #ffffff;
+          line-height: calc(56rpx * var(--font-scale));
+          color: var(--bg-card);
         }
         .pointsRow {
-          font-size: 24rpx;
+          font-size: calc(24rpx * var(--font-scale));
           font-style: normal;
-          line-height: 40rpx;
-          color: #ffffff;
+          line-height: calc(40rpx * var(--font-scale));
+          color: var(--bg-card);
           display: flex;
           align-items: center;
           width: 100%;
@@ -1325,26 +1323,28 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
       // justify-content: center;
       width: 100%;
       margin-top: 20rpx;
+      // 英文大字号时统计项变宽，整行左右滑动
+      overflow-x: auto;
       .statItem {
         display: flex;
         flex: 1;
         align-items: baseline;
-        justify-content: center;
-        min-width: 0;
-        padding: 0 8rpx;
+        padding: 0 24rpx;
+        flex-shrink: 0;
+        white-space: nowrap;
         .statCount {
-          font-size: 44rpx;
+          font-size: calc(44rpx * var(--font-scale));
           font-weight: 600;
-          color: #ffffff;
+          color: var(--bg-card);
           margin-right: 8rpx;
         }
         .statLabel {
-          font-size: 24rpx;
+          font-size: calc(24rpx * var(--font-scale));
           color: rgba(255, 255, 255, 0.9);
         }
       }
       .statDivider {
-        font-size: 24rpx;
+        font-size: calc(24rpx * var(--font-scale));
         color: rgba(255, 255, 255, 0.5);
       }
     }
@@ -1366,7 +1366,7 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
         :deep(.follow-btn) {
           width: 100%;
           height: 64rpx !important;
-          font-size: 30rpx;
+          font-size: calc(30rpx * var(--font-scale));
           font-family: 'Alibaba PuHuiTi2', 'PingFang SC', sans-serif;
           border-radius: 40rpx;
           color: #ff6b03;
@@ -1377,7 +1377,7 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
       .moreActionsBtn {
         width: 64rpx;
         height: 64rpx;
-        background-color: #fff;
+        background-color: var(--bg-card);
         background-color: #fef2e7;
         border-radius: 50%;
         background-image: url('@/static/images/more_1.png');
@@ -1412,7 +1412,7 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
 .postFilterBar {
   position: relative;
   display: flex;
-  background: #fff;
+  background: var(--bg-card);
   border-radius: 32rpx;
   padding: 6rpx;
   margin-bottom: 20rpx;
@@ -1427,14 +1427,14 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
     z-index: 1;
 
     .postFilterTabText {
-      font-size: 28rpx;
-      color: #333;
+      font-size: calc(28rpx * var(--font-scale));
+      color: var(--actions-text);
       position: relative;
       z-index: 2;
     }
 
     &.active .postFilterTabText {
-      color: #fff;
+      color: var(--bg-card);
       font-weight: 500;
     }
   }
@@ -1513,10 +1513,10 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
 
   &.followed {
     :deep(.follow-btn) {
-      background: #ffffff !important;
+      background: var(--bg-card) !important;
       background-color: #fef2e7 !important;
 
-      color: #999 !important;
+      color: var(--text-secondary) !important;
       color: var(--wot-button-primary-bg-color) !important;
       // border-color: #ddd !important;
     }
@@ -1526,8 +1526,8 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
   .follow-btn {
     background: var(--wot-button-primary-bg-color) !important;
     background: #fef2e7 !important;
-    border-color: #fff !important;
-    color: #fff !important;
+    border-color: var(--bg-card) !important;
+    color: var(--bg-card) !important;
     color: var(--wot-button-primary-bg-color) !important;
     // background-image: linear-gradient(90deg, rgba(232, 82, 18, 1) 0.00%, rgba(245, 148, 0, 1) 100.00%) !important;
     // width: 140rpx;
@@ -1540,7 +1540,7 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
 .moreActionsBtn {
   width: 40rpx;
   height: 40rpx;
-  background-color: #fff;
+  background-color: var(--bg-card);
   border-radius: 50%;
   background-image: url('@/static/images/more_1.png');
   background-repeat: no-repeat;
@@ -1568,7 +1568,7 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
   min-height: 2rpx !important;
   margin: 16rpx 0;
   padding: 0 !important;
-  background: #f0f0f0;
+  background: var(--divider-color);
   pointer-events: none;
   border: none !important;
   overflow: hidden;
@@ -1588,13 +1588,13 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
     align-items: flex-start;
     .tag {
       padding: 4rpx 16rpx;
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       // text-transform: uppercase;
       border-radius: 8rpx;
       line-height: 1.4;
     }
     .tag1 {
-      color: #fff;
+      color: var(--bg-card);
       background: var(--wot-color-primary);
     }
     .tag2 {
@@ -1608,10 +1608,10 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
   }
   .title {
     flex: 1;
-    color: #1d1d1f !important;
+    color: var(--text-color) !important;
   }
   .content {
-    color: #666666 !important;
+    color: var(--wot-message-box-content-color) !important;
   }
 }
 
@@ -1623,7 +1623,7 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
 }
 
 .adTagChip {
-  font-size: 22rpx;
+  font-size: calc(22rpx * var(--font-scale));
   color: var(--liberty-cats-primary-color);
   padding: 4rpx 0;
   border-radius: 8rpx;
@@ -1656,13 +1656,13 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
 .banDialog {
   padding: 16rpx 0;
   .banLabel {
-    font-size: 28rpx;
-    color: #333;
+    font-size: calc(28rpx * var(--font-scale));
+    color: var(--actions-text);
     margin-bottom: 24rpx;
   }
   .banDaysTitle {
-    font-size: 26rpx;
-    color: #666;
+    font-size: calc(26rpx * var(--font-scale));
+    color: var(--wot-message-box-content-color);
     margin-bottom: 12rpx;
   }
   .banDaysRow {
@@ -1673,12 +1673,12 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
       flex: 1;
       padding: 16rpx 0;
       text-align: center;
-      font-size: 28rpx;
-      color: #333;
-      background: #f5f5f5;
+      font-size: calc(28rpx * var(--font-scale));
+      color: var(--actions-text);
+      background: var(--wot-action-sheet-active-color);
       border-radius: 12rpx;
       &.active {
-        color: #fff;
+        color: var(--bg-card);
         background: #ff6b03;
       }
     }
@@ -1698,6 +1698,25 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
     background-image: url('@/static/images/trush@2x.png');
     background-repeat: no-repeat;
     background-size: 100%;
+  }
+}
+
+// 特大字号档（1.5x）溢出适配：仅挂 font-scale-xlarge 类时生效，1 倍样式保持原样
+.font-scale-xlarge {
+  .headCnt {
+    .topRow {
+      .avatar {
+        flex-shrink: 0;
+      }
+      .info {
+        min-width: 0;
+        .name {
+          overflow: hidden;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+        }
+      }
+    }
   }
 }
 </style>

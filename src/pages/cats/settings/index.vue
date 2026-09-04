@@ -60,6 +60,24 @@
               <view class="arrow"></view>
             </view>
           </view>
+          <view class="menuItem" @click="showThemeSheet = true">
+            <view class="menuItemTitle">
+              <view class="title">{{ t('setting.index.theme') }}</view>
+            </view>
+            <view class="menuItemRight">
+              <view class="rightTitle">{{ themeModeLabel }}</view>
+              <view class="arrow"></view>
+            </view>
+          </view>
+          <view class="menuItem" @click="showFontSheet = true">
+            <view class="menuItemTitle">
+              <view class="title">{{ t('setting.index.font_size') }}</view>
+            </view>
+            <view class="menuItemRight">
+              <view class="rightTitle">{{ fontScaleLabel }}</view>
+              <view class="arrow"></view>
+            </view>
+          </view>
           <view class="menuItem" @click="toUrl('/pages/cats/settings/currency', true)">
             <view class="menuItemTitle">
               <view class="title">{{ t('setting.index.pricing_currency') }}</view>
@@ -112,12 +130,22 @@
         <wd-message-box selector="wd-message-box-slot" />
       </template>
     </custom-nav>
+    <wd-action-sheet v-model="showThemeSheet" :actions="themeActions" @select="onThemeSelect" />
+    <wd-action-sheet
+      v-model="showFontSheet"
+      :actions="fontScaleActions"
+      @select="onFontScaleSelect"
+    />
   </view>
 </template>
 
 <script lang="ts" setup>
+import { ref, computed } from 'vue'
 import i18n, { t } from '@/locale/index'
 import { useUserStore } from '@/store/user'
+import { useSystemStore } from '@/store/system'
+import { applyTheme, getStoredTheme, type ThemeMode } from '@/utils/theme'
+import { applyFontScale, getStoredFontScale, type FontScaleMode } from '@/utils/fontScale'
 
 import CustomNav from '@/components/CustomNav/CustomNav.vue'
 
@@ -129,6 +157,53 @@ const message = useMessage('wd-message-box-slot')
 
 // 语言
 const locale = uni.getLocale()
+
+// 夜间模式（浅色/深色/跟随系统 三档）
+const themeMode = ref<ThemeMode>(getStoredTheme())
+const themeModeLabel = computed(() => {
+  if (themeMode.value === 'light') return t('setting.index.theme_light')
+  if (themeMode.value === 'dark') return t('setting.index.theme_dark')
+  return t('setting.index.theme_system')
+})
+const showThemeSheet = ref(false)
+const themeActions = computed(() => [
+  { name: t('setting.index.theme_light'), value: 'light' },
+  { name: t('setting.index.theme_dark'), value: 'dark' },
+  { name: t('setting.index.theme_system'), value: 'system' },
+])
+const systemStore = useSystemStore()
+const onThemeSelect = ({ item }: any) => {
+  const mode = item.value as ThemeMode
+  themeMode.value = mode
+  uni.setStorageSync('app_theme', mode)
+  applyTheme(mode)
+  // 主题切换：清协议缓存并广播，富文本页面按新主题重新请求
+  systemStore.resetAgreements()
+  uni.$emit('themeChanged', mode)
+}
+
+// 字体大小（标准/大/特大 三档）
+const fontScaleMode = ref<FontScaleMode>(getStoredFontScale())
+const fontScaleLabel = computed(() => {
+  if (fontScaleMode.value === 'large') return t('setting.index.font_size_large')
+  if (fontScaleMode.value === 'xlarge') return t('setting.index.font_size_xlarge')
+  return t('setting.index.font_size_standard')
+})
+const showFontSheet = ref(false)
+const fontScaleActions = computed(() => [
+  { name: t('setting.index.font_size_standard'), value: 'standard' },
+  { name: t('setting.index.font_size_large'), value: 'large' },
+  { name: t('setting.index.font_size_xlarge'), value: 'xlarge' },
+])
+const onFontScaleSelect = ({ item }: any) => {
+  const mode = item.value as FontScaleMode
+  fontScaleMode.value = mode
+  uni.setStorageSync('app_font_scale', mode)
+  // 通知 layout 的 renderjs 更新视图层变量（App 端生效入口）
+  uni.$emit('fontScaleChanged', mode)
+  // H5 端直接注入
+  applyFontScale()
+}
 
 const logout = () => {
   message
@@ -175,6 +250,13 @@ const logoffAccount = () => {
 <style lang="scss" scoped>
 @import '/src/style/base';
 
+:deep(.cnt) {
+  background-color: var(--bg-primary) !important;
+}
+
+:deep(.fbg) {
+  background-color: var(--bg-primary) !important;
+}
 .page {
   position: relative;
   .btnBox {
@@ -186,10 +268,10 @@ const logoffAccount = () => {
       width: 100%;
       height: 88rpx;
 
-      font-size: 32rpx;
+      font-size: calc(32rpx * var(--font-scale));
       font-style: normal;
       font-weight: 600;
-      color: #ffffff;
+      color: var(--bg-card);
       text-align: center;
       background: #ff6b03;
     }
@@ -199,7 +281,7 @@ const logoffAccount = () => {
       height: 88rpx;
       margin-bottom: 20rpx;
 
-      font-size: 32rpx;
+      font-size: calc(32rpx * var(--font-scale));
       font-style: normal;
       font-weight: 600;
       color: #ff6b03;
@@ -211,12 +293,17 @@ const logoffAccount = () => {
   }
 }
 
+.menuItemRight {
+  font-size: calc(28rpx * var(--font-scale));
+  line-height: calc(33rpx * var(--font-scale));
+}
+
 .avatar {
   width: 112rpx;
   height: 112rpx;
   margin-right: 16rpx;
   overflow: hidden;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
   border-radius: 50%;
   image {
     width: 100%;

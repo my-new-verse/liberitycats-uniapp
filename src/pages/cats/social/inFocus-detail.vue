@@ -301,10 +301,10 @@ const openXApp = () => {
 
 .articleCard {
   margin-top: 16rpx;
-  border: 1rpx solid #e8e8e8;
+  border: 1rpx solid var(--isSupporter-border-color);
   border-radius: 16rpx;
   overflow: hidden;
-  background-color: #fafafa;
+  background-color: var(--avatar-color);
 
   .articleCover {
     width: 100%;
@@ -315,18 +315,18 @@ const openXApp = () => {
     padding: 20rpx 24rpx;
 
     .articleTitle {
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       font-weight: 700;
-      color: #261000;
-      line-height: 40rpx;
+      color: var(--text-primary);
+      line-height: calc(40rpx * var(--font-scale));
     }
 
     .articlePreview {
       margin-top: 8rpx;
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       font-weight: 400;
-      color: #666666;
-      line-height: 36rpx;
+      color: var(--wot-message-box-content-color);
+      line-height: calc(36rpx * var(--font-scale));
     }
   }
 }
@@ -346,7 +346,7 @@ const openXApp = () => {
 .socialBox {
   padding: 40rpx;
   padding-bottom: 20rpx;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
 }
 
 .translateBar {
@@ -356,12 +356,12 @@ const openXApp = () => {
   margin-bottom: 12rpx;
 
   .translateLabel {
-    font-size: 24rpx;
-    color: #536471;
+    font-size: calc(24rpx * var(--font-scale));
+    color: var(--translateLabel-color);
   }
 
   .translateToggle {
-    font-size: 24rpx;
+    font-size: calc(24rpx * var(--font-scale));
     color: #1d9bf0;
     margin-left: 4rpx;
   }
@@ -387,7 +387,7 @@ const openXApp = () => {
   z-index: 9;
   padding: 24rpx 40rpx;
   padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
-  border-top: 1rpx solid #f3f3f4;
+  border-top: 1rpx solid var(--fixedCommentBox-color);
 
   .twitterBtn {
     display: flex;
@@ -405,9 +405,9 @@ const openXApp = () => {
     }
 
     .twitterText {
-      font-size: 30rpx;
+      font-size: calc(30rpx * var(--font-scale));
       font-weight: 600;
-      color: #ffffff;
+      color: var(--bg-card);
       line-height: 1;
     }
   }
@@ -416,22 +416,22 @@ const openXApp = () => {
 .installPopup {
   width: 560rpx;
   padding: 48rpx 40rpx 32rpx;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
   border-radius: 24rpx;
   text-align: center;
 
   .installPopupTitle {
-    font-size: 32rpx;
+    font-size: calc(32rpx * var(--font-scale));
     font-weight: 600;
-    color: #261000;
+    color: var(--text-primary);
   }
 
   .installPopupContent {
     margin-top: 24rpx;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-weight: 400;
-    line-height: 44rpx;
-    color: #666666;
+    line-height: calc(44rpx * var(--font-scale));
+    color: var(--wot-message-box-content-color);
   }
 
   .installPopupBtns {
@@ -443,22 +443,22 @@ const openXApp = () => {
   .installPopupCancel {
     flex: 1;
     height: 80rpx;
-    line-height: 80rpx;
-    font-size: 28rpx;
+    line-height: calc(80rpx * var(--font-scale));
+    font-size: calc(28rpx * var(--font-scale));
     font-weight: 500;
     color: #999999;
     text-align: center;
-    background-color: #f3f3f4;
+    background-color: var(--fixedCommentBox-color);
     border-radius: 40rpx;
   }
 
   .installPopupConfirm {
     flex: 1;
     height: 80rpx;
-    line-height: 80rpx;
-    font-size: 28rpx;
+    line-height: calc(80rpx * var(--font-scale));
+    font-size: calc(28rpx * var(--font-scale));
     font-weight: 500;
-    color: #ffffff;
+    color: var(--bg-card);
     text-align: center;
     background-color: #ff6b03;
     border-radius: 40rpx;

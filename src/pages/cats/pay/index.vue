@@ -281,6 +281,14 @@ const pay = async () => {
 <style lang="scss" scoped>
 @import '/src/style/base';
 
+:deep(.cnt) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
+:deep(.fbg) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
 .page {
   background-color: var(--liberty-cats-page-background-color);
   .cnt {
@@ -289,20 +297,20 @@ const pay = async () => {
 }
 
 .payTitle {
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   font-weight: 400;
   color: #999999;
 }
 
 .orderSn {
-  font-size: 22rpx;
+  font-size: calc(22rpx * var(--font-scale));
   font-weight: 400;
   color: #999999;
 }
 
 .payMethod {
   margin: 48rpx 0 24rpx 0;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   font-weight: 400;
   color: #999999;
 }
@@ -313,13 +321,13 @@ const pay = async () => {
   justify-content: center;
   margin: 48rpx 0;
   .price {
-    font-size: 72rpx;
+    font-size: calc(72rpx * var(--font-scale));
     font-weight: 500;
     color: #ff6b03;
   }
   .priceUnit {
     margin-left: 12rpx;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-weight: 400;
     color: #999999;
     text-transform: uppercase;
@@ -354,7 +362,7 @@ const pay = async () => {
 .wrapper {
   padding: 24rpx;
   padding-top: 64rpx;
-  background-color: #fff;
+  background-color: var(--bg-card);
   .block {
     display: flex;
     flex-direction: column;

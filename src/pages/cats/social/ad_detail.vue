@@ -150,12 +150,7 @@
                 >
                   <!-- <view class="promotionCardTitle">{{ t('adDetail.promotion_info') }}</view> -->
                   <view class="promotionRow" v-if="postDetail.contact_email">
-                    <wd-img
-                      width="36rpx"
-                      height="36rpx"
-                      :src="'/static/images/email.png'"
-                      custom-class="promotionIcon"
-                    />
+                    <view class="promotionIcon promotionEmailIcon"></view>
                     <text class="promotionLabel">{{ t('adDetail.contact_email') }}</text>
                     <text class="promotionValue">{{ postDetail.contact_email }}</text>
                     <text class="copyBtn" @click.stop="copyText(postDetail.contact_email)">
@@ -163,12 +158,7 @@
                     </text>
                   </view>
                   <view class="promotionRow" v-if="postDetail.contact_wechat">
-                    <wd-img
-                      width="36rpx"
-                      height="36rpx"
-                      :src="'/static/images/wechat.png'"
-                      custom-class="promotionIcon"
-                    />
+                    <view class="promotionIcon promotionWechatIcon"></view>
                     <text class="promotionLabel">{{ t('adDetail.contact_wechat') }}</text>
                     <text class="promotionValue">{{ postDetail.contact_wechat }}</text>
                     <text class="copyBtn" @click.stop="copyText(postDetail.contact_wechat)">
@@ -701,15 +691,14 @@ const reportPost = (post: any) => {
 
   // 关注相关操作
   if (isFollowing) {
-    actions.push({ name: t('social.index.user.unfollow'), type: 'follow', color: '#333' })
+    actions.push({ name: t('social.index.user.unfollow'), type: 'follow' })
     actions.push({
       name: isSpecial ? t('social.index.user.special.cancel') : t('social.index.user.special.set'),
       type: 'specialFollow',
-      color: '#333',
     })
   } else {
     actions.push({ name: t('social.index.user.follow'), type: 'follow', color: '#ff6b03' })
-    actions.push({ name: t('social.index.user.special.set'), type: 'specialFollow', color: '#333' })
+    actions.push({ name: t('social.index.user.special.set'), type: 'specialFollow' })
   }
 
   actions.push({ name: '', type: 'divider', disabled: true })
@@ -1998,6 +1987,12 @@ const handleEditPost = () => {
 <style lang="scss" scoped>
 @import '/src/style/base';
 @import '/src/style/social';
+.emptyTxt {
+  color: var(--text-black);
+}
+:deep(.cnt2) {
+  background: var(--fixedCommentBox-color) !important;
+}
 :deep(.reportSheet) {
   font-family:
     Alimama FangYuanTi VF,
@@ -2008,7 +2003,7 @@ const handleEditPost = () => {
     min-height: 2rpx !important;
     margin: 16rpx 0;
     padding: 0 !important;
-    background: #f0f0f0;
+    background: var(--divider-color);
     pointer-events: none;
     border: none !important;
     overflow: hidden;
@@ -2038,7 +2033,7 @@ const handleEditPost = () => {
 .socialBox .socialItem .socialCntBox .socialCnt {
   -webkit-user-select: text;
   user-select: text;
-  color: #666666;
+  color: var(--wot-message-box-content-color);
   margin-bottom: 24rpx;
 }
 
@@ -2049,7 +2044,7 @@ const handleEditPost = () => {
   margin-top: 16rpx;
 
   .adTagChip {
-    font-size: 24rpx;
+    font-size: calc(24rpx * var(--font-scale));
     color: #ff6b03;
     // background: rgba(255, 107, 3, 0.08);
     border-radius: 8rpx;
@@ -2104,16 +2099,20 @@ const handleEditPost = () => {
       background-size: 100% 100%;
     }
     .opIcon.keyboard {
-      background-image: url('/static/images/keyboard@2x.png');
+      background-color: var(--text-primary);
+      -webkit-mask: url('@/static/images/keyboard.svg') no-repeat center / 100% 100%;
+      mask: url('@/static/images/keyboard.svg') no-repeat center / 100% 100%;
     }
     .opIcon.expression {
-      background-image: url('/static/images/expiression@2x.png');
+      background-color: var(--text-primary);
+      -webkit-mask: url('@/static/images/expiression@.svg') no-repeat center / 100% 100%;
+      mask: url('@/static/images/expiression@.svg') no-repeat center / 100% 100%;
     }
   }
 
   .pubCommentBox {
     .commentTextAreaBox {
-      background-color: #f3f3f4 !important;
+      background-color: var(--fixedCommentBox-color) !important;
       border-radius: 32rpx;
 
       .emojiBox2 {
@@ -2150,12 +2149,12 @@ const handleEditPost = () => {
     min-height: 108rpx;
     padding: 24rpx !important;
     padding-bottom: 0 !important;
-    background-color: #f3f3f4 !important;
+    background-color: var(--fixedCommentBox-color) !important;
     border-radius: 32rpx;
   }
   .commentHidden {
     width: 100%;
-    background-color: #fff;
+    background-color: var(--bg-card);
   }
 
   // 表情包 start
@@ -2164,7 +2163,7 @@ const handleEditPost = () => {
     height: 600rpx;
     padding-top: 24rpx;
     margin-top: 24rpx;
-    border-top: 1rpx solid #f3f3f4;
+    border-top: 1rpx solid var(--fixedCommentBox-color);
 
     .category {
       display: flex;
@@ -2186,7 +2185,7 @@ const handleEditPost = () => {
         }
       }
       .categoryItem.active {
-        background: #f3f3f4;
+        background: var(--fixedCommentBox-color);
         border-radius: 84rpx;
       }
     }
@@ -2219,7 +2218,7 @@ const handleEditPost = () => {
         margin-right: 38rpx;
         margin-bottom: 12rpx;
         .emoji {
-          font-size: 48rpx;
+          font-size: calc(48rpx * var(--font-scale));
         }
       }
       .emojiItem:nth-child(7n) {
@@ -2240,17 +2239,17 @@ const handleEditPost = () => {
   height: calc(120rpx - 48rpx);
   padding: 24rpx;
   padding-bottom: env(safe-area-inset-bottom);
-  background-color: #ffffff;
-  border-top: 1rpx solid #f3f3f4;
+  background-color: var(--bg-card);
+  border-top: 1rpx solid var(--fixedCommentBox-color);
   .commentTextArea {
     width: calc(100% - 48rpx);
     height: calc(100% - 36rpx);
     padding: 18rpx 24rpx;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-weight: 400;
-    line-height: 36rpx;
-    color: rgba(38, 16, 0, 0.3);
-    background: #f3f3f4;
+    line-height: calc(36rpx * var(--font-scale));
+    color: var(--commentTextArea-color);
+    background: var(--fixedCommentBox-color);
     border-radius: 64rpx;
   }
 }
@@ -2264,23 +2263,23 @@ const handleEditPost = () => {
 .socialBox {
   padding: 40rpx;
   padding-bottom: 20rpx;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
 }
 .commentBox {
   flex: 1;
   padding: 40rpx;
   margin-top: 32rpx;
   overflow-y: auto;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
   .commentFilterBox {
     display: flex;
     align-items: center;
     justify-content: space-between;
     .opTitle {
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       font-weight: 600;
-      line-height: 44rpx;
-      color: #261000;
+      line-height: calc(44rpx * var(--font-scale));
+      color: var(--text-primary);
     }
     .opBox {
       display: flex;
@@ -2288,6 +2287,7 @@ const handleEditPost = () => {
       justify-content: end;
       .opBtn {
         margin-left: 16rpx;
+        color: var(--text-primary);
       }
       .opBtn.active {
         color: #ff6b03;
@@ -2309,8 +2309,8 @@ const handleEditPost = () => {
         width: 64rpx;
         height: 64rpx;
         overflow: hidden;
-        background-color: #fafafa;
-        border: 2rpx solid #f3f3f4;
+        background-color: var(--avatar-color);
+        border: 2rpx solid var(--fixedCommentBox-color);
         border-radius: 50%;
       }
       .levelIcon {
@@ -2332,17 +2332,17 @@ const handleEditPost = () => {
       justify-content: center;
       width: calc(100% - 64rpx - 16rpx);
       .nickname {
-        font-size: 24rpx;
+        font-size: calc(24rpx * var(--font-scale));
         font-weight: 400;
-        line-height: 36rpx;
-        color: #999999;
+        line-height: calc(36rpx * var(--font-scale));
+        color: var(--text-secondary);
         // margin-bottom: 6rpx;
       }
       .commentCnt {
-        font-size: 28rpx;
+        font-size: calc(28rpx * var(--font-scale));
         font-weight: 400;
-        line-height: 40rpx;
-        color: #261000;
+        line-height: calc(40rpx * var(--font-scale));
+        color: var(--text-primary);
         word-break: break-all;
       }
       .commentMedia {
@@ -2364,10 +2364,10 @@ const handleEditPost = () => {
         justify-content: space-between;
         margin-top: 12rpx;
         .time {
-          font-size: 24rpx;
+          font-size: calc(24rpx * var(--font-scale));
           font-weight: 400;
-          line-height: 36rpx;
-          color: #999999;
+          line-height: calc(36rpx * var(--font-scale));
+          color: var(--text-secondary);
         }
 
         .rightBox {
@@ -2402,9 +2402,9 @@ const handleEditPost = () => {
             }
             .likeTxt {
               margin-left: 4rpx;
-              font-size: 24rpx;
+              font-size: calc(24rpx * var(--font-scale));
               font-weight: 400;
-              color: #999999;
+              color: var(--text-secondary);
             }
           }
 
@@ -2425,7 +2425,7 @@ const handleEditPost = () => {
     }
   }
   .highlight {
-    background-color: #f0f0f0 !important; // 加!important确保覆盖原有样式
+    background-color: var(--border-light) !important; // 加!important确保覆盖原有样式
     transition: background-color 0.3s ease;
   }
 }
@@ -2438,14 +2438,14 @@ const handleEditPost = () => {
   display: flex;
   align-items: center;
   gap: 8rpx;
-  font-size: 24rpx;
-  color: #999;
+  font-size: calc(24rpx * var(--font-scale));
+  color: var(--text-secondary);
   .arrow {
     width: 0;
     height: 0;
     border-left: 6rpx solid transparent;
     border-right: 6rpx solid transparent;
-    border-top: 6rpx solid #999;
+    border-top: 6rpx solid var(--text-secondary);
     transition: transform 0.2s;
     &.up {
       transform: rotate(180deg);
@@ -2457,7 +2457,7 @@ const handleEditPost = () => {
 }
 .authorTag {
   padding: 0 18rpx;
-  font-size: 22rpx;
+  font-size: calc(22rpx * var(--font-scale));
   margin-left: 8rpx;
   font-weight: 400;
   line-height: 1;
@@ -2482,7 +2482,7 @@ const handleEditPost = () => {
   width: 36rpx;
   height: 36rpx;
   border-radius: 50%;
-  background: #f5f5f5;
+  background: var(--wot-action-sheet-active-color);
 }
 .replyAvatarWrap {
   position: relative;
@@ -2509,7 +2509,7 @@ const handleEditPost = () => {
 }
 
 .share-container {
-  background-color: #fff;
+  background-color: var(--bg-card);
   padding: 40rpx 0 60rpx;
   position: relative;
 
@@ -2529,10 +2529,10 @@ const handleEditPost = () => {
     text-align: center;
     margin-bottom: 50rpx;
 
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-weight: 600;
-    line-height: 44rpx;
-    color: #261000;
+    line-height: calc(44rpx * var(--font-scale));
+    color: var(--text-primary);
     font-family:
       Alimama FangYuanTi VF,
       sans-serif;
@@ -2557,8 +2557,8 @@ const handleEditPost = () => {
       }
 
       .share-text {
-        font-size: 24rpx;
-        color: #666;
+        font-size: calc(24rpx * var(--font-scale));
+        color: var(--wot-message-box-content-color);
         font-family:
           Alimama FangYuanTi VF,
           sans-serif;
@@ -2595,7 +2595,7 @@ const handleEditPost = () => {
   gap: 12rpx;
   // margin: 24rpx 0;
   padding: 24rpx 0;
-  background: #ffffff;
+  background: var(--bg-card);
   border-radius: 16rpx;
   font-family: Alibaba PuHuiTi2 !important;
   flex-direction: column;
@@ -2603,17 +2603,17 @@ const handleEditPost = () => {
   .adTypeTag {
     flex-shrink: 0;
     padding: 4rpx 16rpx;
-    font-size: 24rpx;
-    color: #fff;
+    font-size: calc(24rpx * var(--font-scale));
+    color: var(--bg-card);
     background: var(--wot-color-primary);
     border-radius: 8rpx;
     line-height: 1.4;
     font-family: Alibaba PuHuiTi2 !important;
   }
   .adTitle {
-    font-size: 32rpx;
+    font-size: calc(32rpx * var(--font-scale));
     font-weight: 600;
-    color: #261000;
+    color: var(--text-primary);
     line-height: 1.4;
     font-family: Alibaba PuHuiTi2 !important;
     span {
@@ -2628,21 +2628,21 @@ const handleEditPost = () => {
   margin-top: 24rpx;
   padding: 24rpx;
   padding-bottom: 0;
-  background: #fff2eb;
+  background: var(--promotionCard-bg-color);
   border-radius: 16rpx;
   font-family: Alibaba PuHuiTi2 !important;
-  border: 1px solid #f8efe6;
+  border: 1px solid var(--promotionCard-border-color);
   .promotionCardTitle {
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-weight: 600;
-    color: #261000;
+    color: var(--text-primary);
     margin-bottom: 16rpx;
   }
   .promotionRow {
     display: flex;
     align-items: center;
     padding: 24rpx 0;
-    border-bottom: 1px solid #f8efe6;
+    border-bottom: 1px solid var(--promotionCard-border-color);
     // padding-bottom: 18rpx;
     .promotionIcon {
       margin-right: 18rpx;
@@ -2650,21 +2650,35 @@ const handleEditPost = () => {
       display: inline-flex;
       align-items: center;
     }
+    .promotionEmailIcon {
+      width: 36rpx;
+      height: 36rpx;
+      background-color: var(--text-primary);
+      -webkit-mask: url('@/static/images/email.svg') no-repeat center / 100% 100%;
+      mask: url('@/static/images/email.svg') no-repeat center / 100% 100%;
+    }
+    .promotionWechatIcon {
+      width: 36rpx;
+      height: 36rpx;
+      background-color: var(--text-primary);
+      -webkit-mask: url('@/static/images/wechat.svg') no-repeat center / 100% 100%;
+      mask: url('@/static/images/wechat.svg') no-repeat center / 100% 100%;
+    }
     .promotionLabel {
       width: 140rpx;
-      font-size: 26rpx;
-      color: #666;
+      font-size: calc(26rpx * var(--font-scale));
+      color: var(--wot-message-box-content-color);
       flex-shrink: 0;
     }
     .promotionValue {
       flex: 1;
-      font-size: 26rpx;
-      color: #333;
+      font-size: calc(26rpx * var(--font-scale));
+      color: var(--actions-text);
     }
     .copyBtn {
       flex-shrink: 0;
-      font-size: 26rpx;
-      color: #666;
+      font-size: calc(26rpx * var(--font-scale));
+      color: var(--wot-message-box-content-color);
       margin-left: 16rpx;
     }
   }
@@ -2680,8 +2694,8 @@ const handleEditPost = () => {
     flex-shrink: 0;
   }
   .reportTipText {
-    font-size: 24rpx;
-    color: #999;
+    font-size: calc(24rpx * var(--font-scale));
+    color: var(--text-secondary);
   }
 }
 
@@ -2697,20 +2711,20 @@ const handleEditPost = () => {
     font-family: Alibaba PuHuiTi2 !important;
     margin-left: 16rpx;
     .metaTime {
-      font-size: 24rpx;
-      color: #999;
+      font-size: calc(24rpx * var(--font-scale));
+      color: var(--text-secondary);
     }
     .metaSeparator {
-      font-size: 24rpx;
-      color: #999;
+      font-size: calc(24rpx * var(--font-scale));
+      color: var(--text-secondary);
       margin: 0 4rpx;
     }
     .metaPublished {
-      font-size: 24rpx;
-      color: #999;
+      font-size: calc(24rpx * var(--font-scale));
+      color: var(--text-secondary);
     }
     .metaZone {
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       color: #ff6b03;
       margin-left: 4rpx;
     }
@@ -2723,20 +2737,20 @@ const handleEditPost = () => {
   height: 40rpx;
   padding: 0 20rpx;
   border-radius: 22rpx;
-  font-size: 22rpx;
+  font-size: calc(22rpx * var(--font-scale));
   line-height: 1;
   white-space: nowrap;
   flex-shrink: 0;
   box-sizing: border-box;
   border: 1rpx solid transparent;
   background-color: #ff6b03;
-  color: #fff;
+  color: var(--bg-card);
   position: absolute;
   right: 48rpx;
   top: 0;
   &.followed {
-    background-color: #ffffff;
-    color: #999;
+    background-color: var(--bg-card);
+    color: var(--text-secondary);
     border-color: #ddd;
   }
   &.special {

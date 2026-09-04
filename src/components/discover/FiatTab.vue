@@ -43,6 +43,7 @@ import { t } from '@/locale'
 import { getImageUrl } from '@/utils'
 import { getFiatItemResponse, getFiatListApi, getFiatListApiResponse } from '@/service/api/fiat'
 import { useToast } from 'wot-design-uni'
+import { getStoredFontScale, resolveFontScale, type FontScaleMode } from '@/utils/fontScale'
 
 const toast = useToast()
 
@@ -115,12 +116,21 @@ const getCurrencyRate = async (page = 1) => {
   }
 }
 
+// 字号缩放系数：输入框宽度按字符数计算，需随字号同步放大
+const fontScale = ref(resolveFontScale(getStoredFontScale()))
+uni.$on('fontScaleChanged', (mode: FontScaleMode) => {
+  fontScale.value = resolveFontScale(mode)
+})
+onUnmounted(() => {
+  uni.$off('fontScaleChanged')
+})
+
 const getMaxWidth = (item: any) => {
   // 计算输入框的最大宽度，兼容 input 和 placeholder 可能为 undefined
   const inputLen = (item.input ?? '').toString().length
   const placeholderLen = (item.placeholdertxt ?? '').toString().length
-  // 每个字符按 15rpx 宽度，最小宽度 40rpx，左右加 10rpx
-  return Math.max(inputLen, placeholderLen, 4) * 15 + 20 + 'rpx'
+  // 每个字符按 15rpx 宽度，最小宽度 40rpx，左右加 10rpx；整体随字号系数放大
+  return (Math.max(inputLen, placeholderLen, 4) * 15 + 20) * fontScale.value + 'rpx'
 }
 
 // 监听加载状态变化
@@ -219,7 +229,7 @@ const handleFiatBlur = (selectItem: any, e: any) => {
   justify-content: center;
   height: 64rpx;
   margin-bottom: 20rpx;
-  color: #999;
+  color: var(--text-secondary);
   background-color: #efefef;
 }
 // fiat start
@@ -229,7 +239,7 @@ const handleFiatBlur = (selectItem: any, e: any) => {
   justify-content: space-between;
   height: 64rpx;
   margin-bottom: 30rpx;
-  color: #999;
+  color: var(--text-secondary);
   background-color: #efefef;
 }
 .fiatItem {
@@ -255,15 +265,15 @@ const handleFiatBlur = (selectItem: any, e: any) => {
       margin-left: 16rpx;
       .fiatName {
         margin-bottom: 4rpx;
-        font-size: 32rpx;
+        font-size: calc(32rpx * var(--font-scale));
         font-weight: 600;
-        line-height: 38rpx;
-        color: #261000;
+        line-height: calc(38rpx * var(--font-scale));
+        color: var(--text-primary);
       }
       .fiatSubName {
-        font-size: 24rpx;
+        font-size: calc(24rpx * var(--font-scale));
         font-weight: 500;
-        line-height: 28rpx;
+        line-height: calc(28rpx * var(--font-scale));
         color: #999999;
       }
     }
@@ -274,15 +284,15 @@ const handleFiatBlur = (selectItem: any, e: any) => {
     justify-content: center;
     height: 64rpx;
     padding: 0 20rpx;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-weight: 600;
-    line-height: 33rpx;
+    line-height: calc(33rpx * var(--font-scale));
     color: #ff6b03;
     background: rgba(255, 107, 3, 0.1);
     border-radius: 24rpx;
 
     &.active {
-      color: #ffffff;
+      color: var(--bg-card);
       background: #ff6b03;
     }
   }
@@ -296,7 +306,7 @@ const handleFiatBlur = (selectItem: any, e: any) => {
   text-align: right;
   background-color: transparent;
   .wd-input__inner {
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-weight: 600;
     color: #ff6b03;
   }
@@ -304,11 +314,32 @@ const handleFiatBlur = (selectItem: any, e: any) => {
 .active {
   :deep(.fiatPriceInput) {
     .wd-input__inner {
-      color: #fff;
+      color: var(--bg-card);
     }
   }
 }
 :deep(.wd-input__placeholder) {
-  color: #999;
+  color: var(--text-secondary);
+}
+
+// 特大字号档（1.5x）溢出适配：仅挂 font-scale-xlarge 类时生效，1 倍样式保持原样
+// 法币名称超宽时单行省略，不换行、不挤压右侧价格标签；价格标签完整显示
+.font-scale-xlarge {
+  .fiatItem {
+    .fiatBox {
+      min-width: 0;
+      .fiatInfo {
+        min-width: 0;
+        .fiatName {
+          overflow: hidden;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+        }
+      }
+    }
+    .fiatPrice {
+      flex-shrink: 0;
+    }
+  }
 }
 </style>

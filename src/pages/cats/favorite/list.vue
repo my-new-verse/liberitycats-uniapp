@@ -143,12 +143,33 @@ const addFavorite = (item: GoodFavoriteList) => {
 <style lang="scss" scoped>
 @import '/src/style/base';
 @import '/src/style/goods';
+:deep(.cnt) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
+:deep(.fbg) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
 .page {
-  background-color: #fff;
+  background-color: var(--bg-card);
   .pbl,
   .pbr {
     .fbg {
-      background-color: #fff;
+      background-color: var(--bg-card);
+    }
+  }
+}
+
+// 特大字号档（1.5x）溢出适配：仅挂 font-scale-xlarge 类时生效，1 倍样式保持原样
+// 商品信息区写死 80rpx 高度装不下放大后的文字，改为内容撑开，卡片高度同步放开
+.font-scale-xlarge {
+  .goodsBox {
+    .goodsItem {
+      height: auto;
+    }
+    .goodsInfo {
+      height: auto;
     }
   }
 }

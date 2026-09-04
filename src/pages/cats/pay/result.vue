@@ -183,6 +183,14 @@ onUnmounted(() => {
 <style lang="scss" scoped>
 @import '/src/style/base';
 
+:deep(.cnt) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
+:deep(.fbg) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
 .page {
   background-color: var(--liberty-cats-page-background-color);
   .cnt {
@@ -191,7 +199,7 @@ onUnmounted(() => {
 }
 
 .payTitle {
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   font-weight: 400;
   color: #999999;
 }
@@ -214,7 +222,7 @@ onUnmounted(() => {
 
   .payResultText {
     margin-top: 24rpx;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-weight: 400;
     color: #999999;
   }
@@ -228,17 +236,17 @@ onUnmounted(() => {
     margin-bottom: 24rpx;
 
     .label {
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       font-weight: 400;
       line-height: 28 rpx;
-      color: rgba(38, 16, 0, 0.6);
+      color: var(--goodsAttr-color);
     }
 
     .value {
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       font-weight: 400;
-      line-height: 28rpx;
-      color: #261000;
+      line-height: calc(28rpx * var(--font-scale));
+      color: var(--text-primary);
     }
   }
 

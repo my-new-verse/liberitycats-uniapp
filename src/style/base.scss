@@ -7,7 +7,7 @@
   z-index: 10;
   height: 0;
   padding-bottom: env(safe-area-inset-bottom);
-  background-color: #ffffff;
+  background-color: var(--bg-card);
 }
 
 .page {
@@ -59,23 +59,23 @@
   width: calc(100% - 80rpx);
   padding: 40rpx;
   margin-bottom: 32rpx;
-  color: #261000;
-  background-color: #ffffff;
+  color: var(--text-primary);
+  background-color: var(--bg-card);
   border-radius: 48rpx;
 
   .messageTitle {
-    font-size: 36rpx;
+    font-size: calc(36rpx * var(--font-scale));
     font-weight: 600;
-    line-height: 50rpx;
+    line-height: calc(50rpx * var(--font-scale));
   }
 
   .messageTime {
     margin-top: 16rpx;
-    font-size: 24rpx;
+    font-size: calc(24rpx * var(--font-scale));
     font-style: normal;
     font-weight: normal;
-    line-height: 28rpx;
-    color: rgba(0, 0, 0, 0.3);
+    line-height: calc(28rpx * var(--font-scale));
+    color: var(--black-30);
     text-align: left;
     text-transform: none;
   }
@@ -93,10 +93,10 @@
 }
 
 .messageItem.active {
-  color: #ffffff;
+  color: var(--bg-card);
   background-color: #ff6b03;
   .messageTime {
-    color: #ffffff;
+    color: var(--bg-card);
   }
   .messageDot {
     background-image: url('/static/images/messageDot2@2x.png');
@@ -111,13 +111,14 @@
   justify-content: space-between;
   padding: 28rpx 32rpx;
   margin-bottom: 24rpx;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
   border-radius: 40rpx;
 
   .menuItemTitle {
     display: flex;
     align-items: center;
     justify-content: start;
+    flex-shrink: 0;
     .icon2 {
       width: 40rpx;
       height: 40rpx;
@@ -129,24 +130,32 @@
       }
     }
     .title {
-      font-size: 32rpx;
+      font-size: calc(32rpx * var(--font-scale));
       font-style: normal;
       font-weight: 500;
-      line-height: 38rpx;
-      color: #261000;
+      line-height: calc(38rpx * var(--font-scale));
+      color: var(--text-primary);
     }
   }
   .menuItemRight {
     display: flex;
     align-items: center;
     justify-content: end;
+    min-width: 0;
+    color: var(--text-primary);
     .rightTitle {
       margin-right: 16rpx;
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       font-style: normal;
       font-weight: 500;
-      line-height: 33rpx;
-      color: #999999;
+      line-height: calc(33rpx * var(--font-scale));
+      color: var(--text-secondary);
+      // 值过长时省略号展示，左侧标题不压缩
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .arrow {
       width: 56rpx;
@@ -163,10 +172,10 @@
   width: 100%;
   height: 88rpx !important;
 
-  font-size: 32rpx;
+  font-size: calc(32rpx * var(--font-scale));
   font-style: normal;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--bg-card);
   text-align: center;
   background: #ff6b03 !important;
 }
@@ -175,15 +184,15 @@
 .cell {
   padding: 32rpx;
   margin-bottom: 24rpx;
-  background: #ffffff;
+  background: var(--bg-card);
   border-radius: 32rpx;
 
   .label {
-    font-size: 32rpx;
+    font-size: calc(32rpx * var(--font-scale));
     font-style: normal;
     font-weight: 500;
-    line-height: 48rpx;
-    color: #261000;
+    line-height: calc(48rpx * var(--font-scale));
+    color: var(--text-primary);
   }
 }
 
@@ -245,7 +254,7 @@
   /* #ifdef APP */
   padding-bottom: env(safe-area-inset-bottom);
   /* #endif */
-  background-color: #ffffff;
+  background-color: var(--bg-card);
 }
 // 底部fixed btn box end
 
@@ -273,17 +282,17 @@
       justify-content: space-between;
       min-height: 100%;
       margin: 0 24rpx;
-      color: #261000;
+      color: var(--text-primary);
       .goodsName {
-        font-size: 28rpx;
+        font-size: calc(28rpx * var(--font-scale));
         font-weight: 500;
-        line-height: 33rpx;
+        line-height: calc(33rpx * var(--font-scale));
       }
       .goodsAttr {
-        font-size: 28rpx;
+        font-size: calc(28rpx * var(--font-scale));
         font-weight: 400;
         line-height: 33 rpx;
-        color: rgba(38, 16, 0, 0.6);
+        color: var(--goodsAttr-color);
       }
     }
 
@@ -296,25 +305,25 @@
       min-height: 100%;
       font-style: normal;
       font-weight: 500;
-      color: #261000;
+      color: var(--text-primary);
       .goodsPriceTxt {
         display: flex;
         align-items: baseline;
-        font-size: 28rpx;
-        line-height: 33rpx;
+        font-size: calc(28rpx * var(--font-scale));
+        line-height: calc(33rpx * var(--font-scale));
         text-align: right;
         .goodsPriceUnit {
           margin-left: 8rpx;
-          font-size: 20rpx;
-          line-height: 28rpx;
+          font-size: calc(20rpx * var(--font-scale));
+          line-height: calc(28rpx * var(--font-scale));
           text-align: right;
         }
       }
 
       .goodsPriceNum {
         width: 100%;
-        font-size: 24rpx;
-        line-height: 28rpx;
+        font-size: calc(24rpx * var(--font-scale));
+        line-height: calc(28rpx * var(--font-scale));
         text-align: right;
       }
     }
@@ -341,10 +350,10 @@
     background-size: 100% 100%;
   }
   .emptyText {
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-style: normal;
     font-weight: 400;
-    line-height: 48rpx;
+    line-height: calc(48rpx * var(--font-scale));
     color: #999999;
     text-align: center;
   }
@@ -368,15 +377,33 @@
   }
   .price {
     margin: 0 8rpx;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-style: normal;
     font-weight: 500;
     color: #ff6b03;
   }
   .unit {
-    font-size: 24rpx;
+    font-size: calc(24rpx * var(--font-scale));
     font-style: normal;
     font-weight: 400;
     color: #ff6b03;
   }
+}
+
+:deep(.wd-message-box__body) {
+    background-color: var(--bg-card);
+}
+
+:deep(.wd-popup-wrapper .wd-popup) {
+    background-color: var(--bg-card);
+}
+
+:deep(.wd-calendar__range-label-item) {
+    color: var(--wot-action-sheet-color)
+}
+:deep(.wd-calendar__range-sperator) {
+    color: var(--wot-calendar-disabled-color)
+}
+:deep(.wd-calendar__range-label-item.is-placeholder) {
+    color: var(--wot-calendar-disabled-color)
 }

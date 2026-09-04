@@ -436,7 +436,7 @@ const enterSelectedGame = async () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 88rpx;
+  min-height: 88rpx;
   padding: 20rpx 30rpx;
   background: rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(2px);
@@ -451,13 +451,13 @@ const enterSelectedGame = async () => {
     height: 100%;
 
     .name {
-      font-size: 48rpx;
+      font-size: calc(48rpx * var(--font-scale));
       font-weight: 600;
       color: #333333;
     }
 
     .memo {
-      font-size: 22rpx;
+      font-size: calc(22rpx * var(--font-scale));
       font-weight: 400;
       color: rgba(0, 0, 0, 0.3);
     }

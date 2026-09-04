@@ -468,7 +468,11 @@ onLoad((options: any) => {
 
 .page {
   min-height: 100vh;
-  background-color: #fff;
+  background-color: var(--bg-card);
+}
+
+:deep(.wd-search) {
+  background-color: var(--bg-card);
 }
 
 /* ========== 自定义导航栏 ========== */
@@ -508,9 +512,9 @@ onLoad((options: any) => {
     .center {
       flex: 1;
       text-align: center;
-      font-size: 36rpx;
+      font-size: calc(36rpx * var(--font-scale));
       font-weight: 600;
-      color: #fff;
+      color: var(--bg-card);
     }
 
     .right {
@@ -524,7 +528,7 @@ onLoad((options: any) => {
     position: relative;
     width: 100%;
     height: var(--liberty-cats-page-common-border-radius);
-    background-color: #fff;
+    background-color: var(--bg-card);
 
     .pbl2,
     .pbr2 {
@@ -537,7 +541,7 @@ onLoad((options: any) => {
       .fbg {
         width: 100%;
         height: 100%;
-        background-color: #fff;
+        background-color: var(--bg-card);
       }
     }
     .pbl2 {
@@ -562,7 +566,7 @@ onLoad((options: any) => {
   right: 0;
   bottom: 0;
   overflow: hidden;
-  background-color: #fff;
+  background-color: var(--bg-card);
   display: flex;
   flex-direction: column;
 }
@@ -576,7 +580,7 @@ onLoad((options: any) => {
 /* ========== 子 Tab ========== */
 .tabBar {
   display: flex;
-  background: #fff;
+  background: var(--bg-card);
   padding: 0 32rpx;
 
   .tabItem {
@@ -586,8 +590,8 @@ onLoad((options: any) => {
     justify-content: center;
     gap: 4rpx;
     padding: 20rpx 0;
-    font-size: 28rpx;
-    color: #666;
+    font-size: calc(28rpx * var(--font-scale));
+    color: var(--wot-message-box-content-color);
     position: relative;
 
     &.active {
@@ -610,7 +614,7 @@ onLoad((options: any) => {
 }
 
 .tabCount {
-  font-size: 26rpx;
+  font-size: calc(26rpx * var(--font-scale));
 }
 
 /* ========== 搜索框 ========== */
@@ -624,7 +628,7 @@ onLoad((options: any) => {
   align-items: center;
   gap: 20rpx;
   padding: 20rpx 0;
-  border-bottom: 1rpx solid #f0f0f0;
+  border-bottom: 1rpx solid var(--divider-color);
 
   .memberAvatarWrap {
     position: relative;
@@ -663,8 +667,8 @@ onLoad((options: any) => {
       sans-serif;
 
     .memberName {
-      font-size: 28rpx;
-      color: #333;
+      font-size: calc(28rpx * var(--font-scale));
+      color: var(--actions-text);
       font-weight: 500;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -675,36 +679,38 @@ onLoad((options: any) => {
       display: flex;
       align-items: center;
       gap: 16rpx;
-      font-size: 24rpx;
-      color: #999;
+      font-size: calc(24rpx * var(--font-scale));
+      color: var(--text-secondary);
     }
   }
 }
 
-/* ========== 关注按钮（固定宽度） ========== */
+/* ========== 关注按钮 ========== */
 .followBtn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 160rpx;
+  width: auto;
+  min-width: 160rpx;
   height: 56rpx;
+  padding: 0 24rpx;
   border-radius: 28rpx;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   line-height: 1;
   white-space: nowrap;
   flex-shrink: 0;
   box-sizing: border-box;
   background: var(--liberty-cats-primary-color);
-  color: #fff;
+  color: var(--bg-card);
 
   &.followed {
-    background: #fff;
-    color: #999;
+    background: var(--bg-card);
+    color: var(--text-secondary);
     border: 1rpx solid #ddd;
   }
 
   &.special {
-    background: #fff;
+    background: var(--bg-card);
     color: var(--liberty-cats-primary-color);
     border: 1rpx solid var(--liberty-cats-primary-color);
     font-weight: 600;
@@ -717,8 +723,8 @@ onLoad((options: any) => {
   justify-content: center;
   padding-top: 200rpx;
   .emptyText {
-    font-size: 28rpx;
-    color: #999;
+    font-size: calc(28rpx * var(--font-scale));
+    color: var(--text-secondary);
   }
 }
 </style>

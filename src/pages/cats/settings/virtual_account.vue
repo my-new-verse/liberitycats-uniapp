@@ -181,11 +181,19 @@ const switchAccount = (item) => {
 <style lang="scss" scoped>
 @import '/src/style/base';
 
+:deep(.cnt) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
+:deep(.fbg) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
 .opTitle {
   width: 100%;
   margin: 96rpx auto;
-  font-size: 48rpx;
-  color: #261000;
+  font-size: calc(48rpx * var(--font-scale));
+  color: var(--text-primary);
   text-align: center;
 }
 
@@ -194,7 +202,7 @@ const switchAccount = (item) => {
   height: 112rpx;
   margin-right: 16rpx;
   overflow: hidden;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 50%;
   image {
@@ -206,7 +214,7 @@ const switchAccount = (item) => {
 
 .subtitle {
   margin-top: 8rpx;
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   font-style: normal;
   font-weight: normal;
   color: #999999;
@@ -217,14 +225,14 @@ const switchAccount = (item) => {
   display: flex;
   align-items: center;
   .title {
-    font-size: 32rpx;
-    color: #261000;
+    font-size: calc(32rpx * var(--font-scale));
+    color: var(--text-primary);
   }
 
   .tag {
     padding: 6rpx 12rpx;
     margin-left: 8rpx;
-    font-size: 20rpx;
+    font-size: calc(20rpx * var(--font-scale));
     font-weight: 600;
     color: #ff6b03;
     text-transform: uppercase;
@@ -242,6 +250,44 @@ const switchAccount = (item) => {
     }
     .arrow.active {
       background-image: url('@/static/images/checkbox_on.png');
+    }
+  }
+}
+
+// 特大字号档（1.5x）溢出适配：仅挂 font-scale-xlarge 类时生效，1 倍样式保持原样
+.font-scale-xlarge {
+  .menuItem {
+    .menuItemTitle {
+      flex: 1;
+      min-width: 0;
+      .avatar {
+        flex-shrink: 0;
+      }
+      // 头像后的文字容器（无类名）承担收缩，让内部省略号生效
+      > view:not(.avatar) {
+        flex: 1;
+        min-width: 0;
+      }
+    }
+    .menuItemRight {
+      flex-shrink: 0;
+    }
+    .nameBox {
+      min-width: 0;
+      .title {
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+      .tag {
+        flex-shrink: 0;
+      }
+    }
+    .subtitle {
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
     }
   }
 }

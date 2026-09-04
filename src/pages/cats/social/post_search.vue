@@ -362,6 +362,7 @@ import { useMessage, useToast } from 'wot-design-uni'
 import { LoadMoreState } from 'wot-design-uni/components/wd-loadmore/types'
 import SharePopup from '@/components/SharePopup/SharePopup.vue'
 import SocialPostItem from '@/components/PostItem/SocialPostItem.vue'
+import { getStoredFontScale, resolveFontScale, type FontScaleMode } from '@/utils/fontScale'
 
 // ============================================================
 // 导航栏布局
@@ -417,9 +418,15 @@ onMounted(() => {
 onUnmounted(() => {
   uni.$off('refreshNormalPost')
   uni.$off('updateNormalPostItem')
+  uni.$off('fontScaleChanged')
   if (typeof uni.offKeyboardHeightChange === 'function') {
     uni.offKeyboardHeightChange()
   }
+})
+
+// 字号档位变化时重算筛选栏占位高度
+uni.$on('fontScaleChanged', (mode: FontScaleMode) => {
+  fontScale.value = resolveFontScale(mode)
 })
 
 const navigateBack = () => {
@@ -578,7 +585,7 @@ const updateBanAction = (isBanned: boolean) => {
     reportActionIndex.unban = -1
   }
   if (isBanned) {
-    actions.push({ name: t('report.admin.unban_post.action'), type: 'unban', color: '#333' })
+    actions.push({ name: t('report.admin.unban_post.action'), type: 'unban' })
     reportActionIndex.unban = actions.length - 1
   } else {
     actions.push({ name: t('report.admin.ban_post.action'), type: 'ban', color: '#FF3B30' })
@@ -687,12 +694,11 @@ const reportPost = async (post: any) => {
   const actions: any[] = []
 
   if (isFollowing) {
-    actions.push({ name: t('social.index.user.unfollow'), type: 'follow', color: '#333' })
+    actions.push({ name: t('social.index.user.unfollow'), type: 'follow' })
     reportActionIndex.follow = actions.length - 1
     actions.push({
       name: isSpecial ? t('social.index.user.special.cancel') : t('social.index.user.special.set'),
       type: 'special',
-      color: '#333',
     })
     reportActionIndex.special = actions.length - 1
   } else {
@@ -701,7 +707,6 @@ const reportPost = async (post: any) => {
     actions.push({
       name: t('social.index.user.special.set'),
       type: 'special',
-      color: '#333',
     })
     reportActionIndex.special = actions.length - 1
   }
@@ -1247,8 +1252,14 @@ const selectedUsersCache = computed(() => {
   return map
 })
 
-/** sticky 筛选栏占位高度（nav底部到内容区的间距） */
-const filterStickyHeight = computed(() => (confirmedUserIds.value.length > 0 ? 260 : 110))
+/** sticky 筛选栏占位高度（nav底部到内容区的间距）。
+ * 固定尺寸部分保持写死值；仅文字行高（筛选标签≈34rpx、选中用户名≈29rpx）随字号放大，按差值补齐 */
+const fontScale = ref(resolveFontScale(getStoredFontScale()))
+const filterStickyHeight = computed(() => {
+  const hasSelected = confirmedUserIds.value.length > 0
+  const textLineHeight = hasSelected ? 63 : 34
+  return (hasSelected ? 260 : 110) + textLineHeight * (fontScale.value - 1)
+})
 
 /** 筛选栏用户按钮标签 */
 const selectedUserLabel = computed(() => {
@@ -1504,20 +1515,20 @@ const handleLevelIconError = (member: any) => {
       width: calc(100% - 44rpx - 16rpx);
       height: 56rpx;
       padding: 6rpx;
-      background-color: #ffffff;
+      background-color: var(--bg-card);
       border-radius: 34rpx;
     }
 
     .searchDivider {
       width: 1rpx;
       height: 28rpx;
-      background: rgba(0, 0, 0, 0.12);
+      background: var(--black-12);
     }
 
     .searchBtn {
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       font-weight: 500;
-      color: #999;
+      color: var(--text-secondary);
       white-space: nowrap;
       padding: 0 16rpx;
     }
@@ -1646,13 +1657,13 @@ const handleLevelIconError = (member: any) => {
           right: 0;
           width: 32rpx;
           height: 32rpx;
-          background-color: rgba(0, 0, 0, 0.7);
-          color: #fff;
+          background-color: var(--black-70);
+          color: var(--bg-card);
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 22rpx;
+          font-size: calc(22rpx * var(--font-scale));
           font-weight: bold;
           line-height: 1;
           z-index: 2;
@@ -1673,8 +1684,8 @@ const handleLevelIconError = (member: any) => {
       }
 
       .userName {
-        font-size: 24rpx;
-        color: #666;
+        font-size: calc(24rpx * var(--font-scale));
+        color: var(--wot-message-box-content-color);
         width: 100%;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -1696,7 +1707,7 @@ const handleLevelIconError = (member: any) => {
     align-items: center;
     gap: 8rpx;
     padding: 12rpx 24rpx;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     color: var(--liberty-cats-primary-color);
     border: 1rpx solid var(--liberty-cats-primary-color);
     border-radius: 34rpx;
@@ -1709,7 +1720,7 @@ const handleLevelIconError = (member: any) => {
     }
 
     .filterArrow {
-      font-size: 20rpx;
+      font-size: calc(20rpx * var(--font-scale));
     }
   }
 }
@@ -1726,10 +1737,10 @@ const handleLevelIconError = (member: any) => {
     .timePresetItem {
       flex: 1;
       padding: 16rpx 0;
-      font-size: 28rpx;
-      color: #333;
+      font-size: calc(28rpx * var(--font-scale));
+      color: var(--actions-text);
       text-align: center;
-      background: #f5f5f5;
+      background: var(--wot-action-sheet-active-color);
       border-radius: 12rpx;
 
       &.active {
@@ -1742,12 +1753,12 @@ const handleLevelIconError = (member: any) => {
   .customTimeSection {
     margin-top: 32rpx;
     padding-top: 24rpx;
-    border-top: 2rpx solid #f0f0f0;
+    border-top: 2rpx solid var(--divider-color);
 
     .sectionTitle {
-      font-size: 30rpx;
+      font-size: calc(30rpx * var(--font-scale));
       font-weight: 500;
-      color: #333333;
+      color: var(--actions-text);
       margin-bottom: 16rpx;
     }
 
@@ -1758,14 +1769,14 @@ const handleLevelIconError = (member: any) => {
       padding: 18rpx 0;
 
       .timeRowLabel {
-        font-size: 28rpx;
-        color: #333;
+        font-size: calc(28rpx * var(--font-scale));
+        color: var(--actions-text);
       }
     }
 
     .timeDivider {
       height: 1rpx;
-      background: #f0f0f0;
+      background: var(--divider-color);
     }
   }
 
@@ -1788,12 +1799,12 @@ const handleLevelIconError = (member: any) => {
   .recentMembers {
     margin-bottom: 24rpx;
     padding-bottom: 24rpx;
-    border-bottom: 2rpx solid #f0f0f0;
+    border-bottom: 2rpx solid var(--divider-color);
 
     .recentTitle {
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       font-weight: 500;
-      color: #666;
+      color: var(--wot-message-box-content-color);
       margin-bottom: 20rpx;
     }
 
@@ -1807,7 +1818,7 @@ const handleLevelIconError = (member: any) => {
         align-items: center;
         gap: 16rpx;
         padding: 16rpx;
-        background: #f7f7f7;
+        background: var(--recentMemberItem-bg-color);
         border-radius: 12rpx;
         transition: all 0.2s ease;
 
@@ -1851,22 +1862,22 @@ const handleLevelIconError = (member: any) => {
           min-width: 0;
 
           .recentName {
-            font-size: 28rpx;
+            font-size: calc(28rpx * var(--font-scale));
             font-weight: 500;
-            color: #333;
+            color: var(--actions-text);
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
           }
 
           .recentId {
-            font-size: 24rpx;
-            color: #999;
+            font-size: calc(24rpx * var(--font-scale));
+            color: var(--text-secondary);
           }
         }
 
         .recentCheck {
-          font-size: 32rpx;
+          font-size: calc(32rpx * var(--font-scale));
           color: var(--liberty-cats-primary-color);
           font-weight: bold;
           width: 48rpx;
@@ -1886,7 +1897,7 @@ const handleLevelIconError = (member: any) => {
       align-items: center;
       gap: 16rpx;
       padding: 20rpx 0;
-      border-bottom: 1rpx solid #f0f0f0;
+      border-bottom: 1rpx solid var(--divider-color);
 
       .memberAvatarWrap {
         position: relative;
@@ -1917,14 +1928,19 @@ const handleLevelIconError = (member: any) => {
 
       .memberInfo {
         flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
         .memberName {
-          font-size: 28rpx;
-          color: #333;
-          margin-right: 12rpx;
+          font-size: calc(28rpx * var(--font-scale));
+          color: var(--actions-text);
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
         .memberId {
-          font-size: 24rpx;
-          color: #999;
+          font-size: calc(24rpx * var(--font-scale));
+          color: var(--text-secondary);
           margin-top: 4rpx;
         }
       }
@@ -1938,28 +1954,28 @@ const handleLevelIconError = (member: any) => {
         .followBtn {
           padding: 8rpx 24rpx;
           border-radius: 34rpx;
-          font-size: 24rpx;
+          font-size: calc(24rpx * var(--font-scale));
           white-space: nowrap;
 
           &.follow {
             background: var(--liberty-cats-primary-color);
-            color: #fff;
+            color: var(--bg-card);
             border: 1rpx solid var(--liberty-cats-primary-color);
           }
           &.followed {
-            background: #fff;
-            color: #999;
+            background: var(--bg-card);
+            color: var(--text-secondary);
             border: 1rpx solid #d9d9d9;
           }
           &.mutual {
-            background: #fff;
+            background: var(--bg-card);
             color: var(--liberty-cats-primary-color);
             border: 1rpx solid var(--liberty-cats-primary-color);
           }
         }
 
         .memberCheck {
-          font-size: 32rpx;
+          font-size: calc(32rpx * var(--font-scale));
           color: var(--liberty-cats-primary-color);
           width: 48rpx;
           text-align: center;
@@ -1970,13 +1986,13 @@ const handleLevelIconError = (member: any) => {
 
   .emptyHint {
     padding: 48rpx 0;
-    font-size: 28rpx;
-    color: #999;
+    font-size: calc(28rpx * var(--font-scale));
+    color: var(--text-secondary);
     text-align: center;
     &.noResult {
-      font-size: 26rpx;
+      font-size: calc(26rpx * var(--font-scale));
       font-weight: 500;
-      color: #666;
+      color: var(--wot-message-box-content-color);
     }
   }
 
@@ -1987,8 +2003,8 @@ const handleLevelIconError = (member: any) => {
     margin-top: 24rpx;
 
     :deep(.cancelBtn) {
-      background: #f5f5f5 !important;
-      color: #333 !important;
+      background: var(--wot-action-sheet-active-color) !important;
+      color: var(--actions-text) !important;
       border: none !important;
     }
   }
@@ -2009,15 +2025,15 @@ const handleLevelIconError = (member: any) => {
   border-radius: 22rpx;
   border: 1rpx solid transparent;
   background-color: #ff6b03;
-  color: #fff;
-  font-size: 22rpx;
+  color: var(--bg-card);
+  font-size: calc(22rpx * var(--font-scale));
   line-height: 1;
   white-space: nowrap;
   flex-shrink: 0;
   box-sizing: border-box;
   &.followed {
-    background-color: #ffffff;
-    color: #999;
+    background-color: var(--bg-card);
+    color: var(--text-secondary);
     border-color: #ddd;
   }
 }
@@ -2030,7 +2046,7 @@ const handleLevelIconError = (member: any) => {
     right: 48rpx;
     top: 0;
     align-items: self-start;
-    line-height: 42rpx;
+    line-height: calc(42rpx * var(--font-scale));
   }
 }
 
@@ -2062,7 +2078,7 @@ const handleLevelIconError = (member: any) => {
   min-height: 2rpx !important;
   margin: 16rpx 0;
   padding: 0 !important;
-  background: #f0f0f0;
+  background: var(--divider-color);
   pointer-events: none;
   border: none !important;
   overflow: hidden;
@@ -2075,13 +2091,13 @@ const handleLevelIconError = (member: any) => {
 .banDialog {
   padding: 16rpx 0;
   .banLabel {
-    font-size: 28rpx;
-    color: #333;
+    font-size: calc(28rpx * var(--font-scale));
+    color: var(--actions-text);
     margin-bottom: 24rpx;
   }
   .banDaysTitle {
-    font-size: 26rpx;
-    color: #666;
+    font-size: calc(26rpx * var(--font-scale));
+    color: var(--wot-message-box-content-color);
     margin-bottom: 12rpx;
   }
   .banDaysRow {
@@ -2092,12 +2108,12 @@ const handleLevelIconError = (member: any) => {
       flex: 1;
       padding: 16rpx 0;
       text-align: center;
-      font-size: 28rpx;
-      color: #333;
-      background: #f5f5f5;
+      font-size: calc(28rpx * var(--font-scale));
+      color: var(--actions-text);
+      background: var(--wot-action-sheet-active-color);
       border-radius: 12rpx;
       &.active {
-        color: #fff;
+        color: var(--bg-card);
         background: #ff6b03;
       }
     }
@@ -2110,19 +2126,19 @@ const handleLevelIconError = (member: any) => {
   align-items: center;
   justify-content: space-between;
   padding: 24rpx 32rpx;
-  border-bottom: 1rpx solid #eee;
+  border-bottom: 1rpx solid var(--userFilterHeader-border-color);
 }
 .userFilterTitle {
-  font-size: 32rpx;
+  font-size: calc(32rpx * var(--font-scale));
   font-weight: 600;
-  color: #333;
+  color: var(--actions-text);
 }
 .userFilterClose {
   padding: 8rpx 16rpx;
 }
 .closeIcon {
-  font-size: 32rpx;
-  color: #999;
+  font-size: calc(32rpx * var(--font-scale));
+  color: var(--text-secondary);
 }
 
 /* ========== 空状态 ========== */
@@ -2135,7 +2151,7 @@ const handleLevelIconError = (member: any) => {
   padding-bottom: 200rpx;
 
   .emptyText {
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     color: #999999;
   }
 }

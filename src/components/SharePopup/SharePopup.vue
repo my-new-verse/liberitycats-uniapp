@@ -263,7 +263,7 @@ defineExpose({ openSharePopup })
 <style scoped>
 .share-container {
   padding: 30rpx;
-  background: linear-gradient(to top right, #ffffff 0%, #ffffff 60%, #ffecd8 100%);
+  background: var(--share-container-bg);
   border-radius: 24rpx 24rpx 0 0;
   position: relative;
 }
@@ -275,10 +275,10 @@ defineExpose({ openSharePopup })
 .share-title {
   text-align: center;
   margin-bottom: 30rpx;
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   font-weight: 500;
-  line-height: 44rpx;
-  color: #261000;
+  line-height: calc(44rpx * var(--font-scale));
+  color: var(--text-primary);
   font-family:
     Alimama FangYuanTi VF,
     sans-serif;
@@ -300,9 +300,9 @@ defineExpose({ openSharePopup })
   height: 60rpx;
 }
 .share-text {
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   font-weight: 400;
-  line-height: 36rpx;
+  line-height: calc(36rpx * var(--font-scale));
   color: #999999;
   font-family:
     Alimama FangYuanTi VF,
@@ -311,15 +311,15 @@ defineExpose({ openSharePopup })
 
 .poster-divider {
   height: 1rpx;
-  background-color: #ffecd8;
+  background-color: var(--poster-divider-color);
   margin: 12rpx 0 32rpx 0;
 }
 .poster-title {
   text-align: left;
-  font-size: 28rpx;
+  font-size: calc(28rpx * var(--font-scale));
   font-weight: 500;
-  line-height: 44rpx;
-  color: #999;
+  line-height: calc(44rpx * var(--font-scale));
+  color: var(--text-secondary);
   margin-bottom: 20rpx;
   font-family:
     Alimama FangYuanTi VF,
@@ -395,7 +395,7 @@ defineExpose({ openSharePopup })
   justify-content: space-around;
   padding: 30rpx 40rpx;
   padding-bottom: calc(30rpx + env(safe-area-inset-bottom));
-  background: linear-gradient(to top right, #ffffff 0%, #ffffff 60%, #ffecd8 100%);
+  background: var(--share-container-bg);
   border-radius: 24rpx 24rpx 0 0;
 }
 .poster-action-item {
@@ -409,7 +409,7 @@ defineExpose({ openSharePopup })
   height: 60rpx;
 }
 .poster-action-text {
-  font-size: 24rpx;
-  color: #261000;
+  font-size: calc(24rpx * var(--font-scale));
+  color: var(--text-primary);
 }
 </style>

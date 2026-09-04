@@ -129,6 +129,14 @@ const save = () => {
 <style lang="scss" scoped>
 @import '/src/style/base';
 
+:deep(.cnt) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
+:deep(.fbg) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
 .menuItem {
   flex-direction: column;
   .menuItemRight {
@@ -142,20 +150,20 @@ const save = () => {
   .nicknameWordLimit {
     width: 100%;
     margin-top: 30rpx;
-    font-size: 24rpx;
+    font-size: calc(24rpx * var(--font-scale));
     font-style: normal;
     font-weight: 400;
-    color: #999999;
+    color: var(--text-secondary);
     text-align: right;
   }
 }
 
 .nicknameDesc {
   margin-left: 24rpx;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   font-style: normal;
   font-weight: 400;
-  color: #999999;
+  color: var(--text-secondary);
 }
 
 .btnBox {
@@ -164,10 +172,10 @@ const save = () => {
     width: 100%;
     height: 88rpx;
 
-    font-size: 32rpx;
+    font-size: calc(32rpx * var(--font-scale));
     font-style: normal;
     font-weight: 600;
-    color: #ffffff;
+    color: var(--bg-card);
     text-align: center;
     background: #ff6b03;
   }

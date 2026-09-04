@@ -95,6 +95,15 @@ const loadMore = () => {
 
 <style lang="scss" scoped>
 @import '/src/style/base';
+
+:deep(.cnt) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
+:deep(.fbg) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
 .logBox {
   position: relative;
   display: flex;
@@ -102,49 +111,49 @@ const loadMore = () => {
   width: calc(100% - 80rpx);
   padding: 40rpx;
   margin-bottom: 32rpx;
-  color: #261000;
-  background-color: #ffffff;
+  color: var(--text-primary);
+  background-color: var(--bg-card);
   border-radius: 48rpx;
   .logItem {
     display: flex;
     flex-direction: column;
 
     .logRemark {
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       font-weight: 400;
-      line-height: 28rpx;
-      color: rgba(0, 0, 0, 0.3);
+      line-height: calc(28rpx * var(--font-scale));
+      color: var(--black-30);
       text-align: left;
       text-transform: none;
     }
 
     .logTile {
       margin-bottom: 16rpx;
-      font-size: 32rpx;
+      font-size: calc(32rpx * var(--font-scale));
       font-weight: 600;
-      line-height: 50rpx;
+      line-height: calc(50rpx * var(--font-scale));
     }
 
     .logTime {
       margin-top: 16rpx;
-      font-size: 24rpx;
+      font-size: calc(24rpx * var(--font-scale));
       font-style: normal;
       font-weight: normal;
-      line-height: 28rpx;
-      color: rgba(0, 0, 0, 0.3);
+      line-height: calc(28rpx * var(--font-scale));
+      color: var(--black-30);
       text-align: left;
       text-transform: none;
     }
   }
   .logValue {
-    font-size: 38rpx;
+    font-size: calc(38rpx * var(--font-scale));
     font-weight: 600;
-    line-height: 56rpx;
+    line-height: calc(56rpx * var(--font-scale));
     color: #ff6b03;
   }
 
   .logValue2 {
-    color: #333;
+    color: var(--actions-text);
   }
 }
 </style>

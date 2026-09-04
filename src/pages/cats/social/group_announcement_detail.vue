@@ -220,9 +220,16 @@ const handleActionSelect = async ({ item }: any) => {
 </script>
 
 <style lang="scss" scoped>
+:deep(.cnt) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
+:deep(.fbg) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
 .page {
   min-height: 100vh;
-  background: #fff;
+  background: var(--bg-card);
 }
 
 .nav {
@@ -231,8 +238,8 @@ const handleActionSelect = async ({ item }: any) => {
   left: 0;
   right: 0;
   z-index: 20;
-  background: #fff;
-  border-bottom: 1rpx solid rgba(0, 0, 0, 0.04);
+  background: var(--bg-card);
+  border-bottom: 1rpx solid var(--wot-upload-evoke-bg);
 }
 
 .nav-inner {
@@ -251,17 +258,17 @@ const handleActionSelect = async ({ item }: any) => {
   align-items: center;
   justify-content: center;
   color: #111;
-  font-size: 42rpx;
+  font-size: calc(42rpx * var(--font-scale));
   font-weight: 300;
 }
 
 .nav-more {
-  font-size: 34rpx;
+  font-size: calc(34rpx * var(--font-scale));
   letter-spacing: -4rpx;
 }
 
 .nav-title {
-  font-size: 32rpx;
+  font-size: calc(32rpx * var(--font-scale));
   font-weight: 700;
   color: #111;
 }
@@ -285,7 +292,7 @@ const handleActionSelect = async ({ item }: any) => {
   border-radius: 8rpx;
   color: #de8b2f;
   background: #fff3df;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
   margin-right: 12rpx;
 }
 .pin-tag {
@@ -296,8 +303,8 @@ const handleActionSelect = async ({ item }: any) => {
 .title {
   display: block;
   margin-top: 16rpx;
-  color: #121212;
-  font-size: 30rpx;
+  color: var(--group-announcement-detail-color);
+  font-size: calc(30rpx * var(--font-scale));
   font-weight: 800;
   line-height: 1.38;
 }
@@ -307,14 +314,14 @@ const handleActionSelect = async ({ item }: any) => {
   gap: 18rpx;
   margin-top: 18rpx;
   color: #8f8f8f;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
 }
 
 .body {
   display: block;
   margin-top: 34rpx;
-  color: #333;
-  font-size: 28rpx;
+  color: var(--actions-text);
+  font-size: calc(28rpx * var(--font-scale));
   line-height: 1.8;
   white-space: pre-line;
 }
@@ -324,7 +331,7 @@ const handleActionSelect = async ({ item }: any) => {
   height: 360rpx;
   margin-top: 28rpx;
   border-radius: 22rpx;
-  background: #eee;
+  background: var(--userFilterHeader-border-color);
 }
 
 .info-card {
@@ -336,8 +343,8 @@ const handleActionSelect = async ({ item }: any) => {
   display: flex;
   align-items: center;
   padding: 12rpx 0;
-  color: #2b2b2b;
-  font-size: 26rpx;
+  color: var(--group-announcement-detail-info-row-color);
+  font-size: calc(26rpx * var(--font-scale));
   line-height: 1.45;
 }
 
@@ -353,7 +360,7 @@ const handleActionSelect = async ({ item }: any) => {
   display: block;
   margin-top: 18rpx;
   color: #c2a37b;
-  font-size: 24rpx;
+  font-size: calc(24rpx * var(--font-scale));
 }
 ::v-deep .annount-action-sheet {
   display: flex;

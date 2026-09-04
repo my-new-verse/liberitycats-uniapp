@@ -140,10 +140,10 @@ const navigateBack = () => {
         align-items: center;
         justify-content: center;
         overflow: hidden;
-        font-size: 34rpx;
+        font-size: calc(34rpx * var(--font-scale));
         font-weight: 500;
-        line-height: 44rpx;
-        color: #ffffff;
+        line-height: calc(44rpx * var(--font-scale));
+        color: var(--bg-card);
         text-align: center;
         pointer-events: none;
 
@@ -169,8 +169,8 @@ const navigateBack = () => {
         justify-content: center;
         min-width: 60rpx;
         height: 60rpx;
-        color: #fff;
-        font-size: 28rpx;
+        color: var(--bg-card);
+        font-size: calc(28rpx * var(--font-scale));
         font-family: Alibaba PuHuiTi2;
         pointer-events: auto;
       }
@@ -196,7 +196,7 @@ const navigateBack = () => {
       .fbg {
         width: 100%;
         height: 100%;
-        background-color: #fff;
+        background-color: var(--bg-card);
       }
     }
 

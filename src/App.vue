@@ -14,6 +14,8 @@ import { buildGameUrlWithAudioSetting } from '@/utils/gameUrl'
 import { useGameWebViewStore } from '@/store/gameWebview'
 import { usePopupStore } from '@/store/popup'
 import { preloadIosGameWebView } from '@/utils/iosGameWebviewPreload'
+import { initTheme, watchSystemTheme } from '@/utils/theme'
+import { applyFontScale } from '@/utils/fontScale'
 import {
   handleAppBackgroundDownload,
   resumeBackgroundDownloadIfNeeded,
@@ -47,8 +49,20 @@ watch(
 onLaunch(() => {
   console.log('App Launch', uni.getSystemInfoSync())
 
+  // #ifdef APP-PLUS
+  // 尽早注册关闭启动页，避免后续初始化逻辑异常导致卡在启动页
+  setTimeout(() => {
+    plus.navigator.closeSplashscreen()
+  }, 1000)
+  // #endif
+
   // 冷启动时重置活动弹窗会话；切换页面和 App 前后台切换不会重置。
   popupStore.resetStartupSession()
+  // 夜间模式初始化（light/dark/system 三档，system 跟随系统）
+  initTheme()
+  watchSystemTheme()
+  // 字号缩放初始化（H5 端注入变量；App 端由 layout renderjs 在视图层注入）
+  applyFontScale()
 
   const systemInfo = uni.getSystemInfoSync()
   const platform = systemInfo.platform?.toLowerCase() || systemInfo.osName?.toLowerCase()
@@ -131,15 +145,6 @@ onLaunch(() => {
   })
 
   // 请求并缓存广告
-
-  // #ifdef APP-PLUS
-  setTimeout(() => {
-    plus.navigator.closeSplashscreen()
-  }, 1000) // 5秒后关闭启动页
-  // #endif
-
-  // App启动时初始化WebView预加载（无token版本）
-  // initializeGameWebviewPreload()
 
   // #ifdef APP-PLUS
   // 监听新的深链请求（App已在运行时，用户从浏览器再次点击链接）

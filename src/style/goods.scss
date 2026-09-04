@@ -6,7 +6,7 @@
     padding: 8rpx;
     margin-right: 30rpx;
     margin-bottom: 30rpx;
-    background-color: #f7f6f4;
+    background-color: var(--bg-primary);
     border-radius: 32rpx;
 
     .goodsImg {
@@ -14,7 +14,7 @@
       width: 304rpx;
       height: 304rpx;
       overflow: hidden;
-      background-color: #fff;
+      background-color: var(--bg-card);
       border-radius: 32rpx;
       .cover {
         width: 100%;
@@ -33,11 +33,13 @@
         width: 80rpx;
         height: 40rpx;
         font-family: Montserrat;
+        // font-size: calc(22rpx * var(--font-scale));
         font-size: 22rpx;
         font-style: normal;
         font-weight: 500;
+        // line-height: calc(40rpx * var(--font-scale));
         line-height: 40rpx;
-        color: #ffffff;
+        color: var(--bg-card);
         text-transform: uppercase;
         /* 可选：消除字体渲染差异 */
         vertical-align: middle;
@@ -81,10 +83,10 @@
       text-align: center;
       .name {
         overflow: hidden;
-        font-size: 28rpx;
+        font-size: calc(28rpx * var(--font-scale));
         font-style: normal;
         font-weight: normal;
-        color: #261000;
+        color: var(--text-primary);
         text-align: center;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -108,11 +110,11 @@
         }
         .price {
           margin-right: 6rpx;
-          font-size: 24rpx;
+          font-size: calc(24rpx * var(--font-scale));
         }
         .unit {
           //color: #261000;
-          font-size: 20rpx;
+          font-size: calc(20rpx * var(--font-scale));
         }
       }
     }

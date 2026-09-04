@@ -158,13 +158,22 @@ const buildFormData = ({ file, formData, resolve }) => {
 
 <style lang="scss" scoped>
 @import '/src/style/base';
+
+:deep(.cnt) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
+:deep(.fbg) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
 .avatarBox {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 482rpx;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
   border-radius: 40rpx;
   .avatar {
     display: flex;
@@ -173,7 +182,7 @@ const buildFormData = ({ file, formData, resolve }) => {
     width: 320rpx;
     height: 320rpx;
     overflow: hidden;
-    background-color: #f7f7f7;
+    background-color: var(--recentMemberItem-bg-color);
     border-radius: 50%;
     image {
       width: 100%;
@@ -183,7 +192,7 @@ const buildFormData = ({ file, formData, resolve }) => {
   }
   .title {
     margin-top: 32rpx;
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-style: normal;
     font-weight: 500;
     color: #ff6b03;
@@ -193,14 +202,14 @@ const buildFormData = ({ file, formData, resolve }) => {
 .selectBox {
   padding: 32rpx;
   margin-top: 24rpx;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
   border-radius: 40rpx;
   .titleBox {
-    font-size: 28rpx;
+    font-size: calc(28rpx * var(--font-scale));
     font-style: normal;
     font-weight: 500;
-    line-height: 33rpx;
-    color: #261000;
+    line-height: calc(33rpx * var(--font-scale));
+    color: var(--text-primary);
   }
   .selectList {
     margin-top: 24rpx;
@@ -233,10 +242,10 @@ const buildFormData = ({ file, formData, resolve }) => {
       width: 100%;
       height: 88rpx;
 
-      font-size: 32rpx;
+      font-size: calc(32rpx * var(--font-scale));
       font-style: normal;
       font-weight: 600;
-      color: #ffffff;
+      color: var(--bg-card);
       text-align: center;
       background: #ff6b03;
     }

@@ -140,12 +140,20 @@ const loadMore = () => {
 <style lang="scss" scoped>
 @import '/src/style/base';
 
+:deep(.cnt) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
+:deep(.fbg) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
+
 .rankingBox {
   padding: 40rpx;
-  font-size: 28rpx;
-  line-height: 33rpx;
-  color: #261000;
-  background-color: #fff;
+  font-size: calc(28rpx * var(--font-scale));
+  line-height: calc(33rpx * var(--font-scale));
+  color: var(--text-primary);
+  background-color: var(--bg-card);
   border-radius: 40rpx;
 
   .rankingItem {
@@ -164,9 +172,9 @@ const loadMore = () => {
         width: 48rpx;
         height: 48rpx;
         margin-right: 16rpx;
-        font-size: 24rpx;
-        line-height: 32rpx;
-        color: #261000;
+        font-size: calc(24rpx * var(--font-scale));
+        line-height: calc(32rpx * var(--font-scale));
+        color: var(--text-primary);
         text-align: center;
       }
       .memberBox {
@@ -189,17 +197,17 @@ const loadMore = () => {
         }
 
         .nickname {
-          font-size: 28rpx;
-          line-height: 40rpx;
-          color: #261000;
+          font-size: calc(28rpx * var(--font-scale));
+          line-height: calc(40rpx * var(--font-scale));
+          color: var(--text-primary);
         }
       }
     }
 
     .point {
-      font-size: 28rpx;
-      line-height: 40rpx;
-      color: #261000;
+      font-size: calc(28rpx * var(--font-scale));
+      line-height: calc(40rpx * var(--font-scale));
+      color: var(--text-primary);
     }
 
     .pointHeader {
@@ -217,7 +225,7 @@ const loadMore = () => {
   width: 590rpx;
   max-width: calc(100vw - 80rpx);
   overflow: visible;
-  background-color: #fff;
+  background-color: var(--bg-card);
   border-radius: 40rpx;
   box-shadow: 0 24rpx 80rpx rgba(70, 34, 8, 0.2);
 }
@@ -240,7 +248,7 @@ const loadMore = () => {
   justify-content: center;
   width: 56rpx;
   height: 56rpx;
-  background: #f7f3f0;
+  background: var(--revenueHelpClose-bg-color);
   border-radius: 50%;
 }
 
@@ -258,10 +266,10 @@ const loadMore = () => {
 
 .revenueHelpTitle {
   margin-bottom: 20rpx;
-  font-size: 36rpx;
+  font-size: calc(36rpx * var(--font-scale));
   font-weight: 600;
-  line-height: 50rpx;
-  color: #261000;
+  line-height: calc(50rpx * var(--font-scale));
+  color: var(--text-primary);
 }
 
 .revenueHelpDescription {
@@ -269,12 +277,12 @@ const loadMore = () => {
   box-sizing: border-box;
   padding: 28rpx 32rpx;
   margin-bottom: 36rpx;
-  font-size: 28rpx;
-  line-height: 44rpx;
-  color: #6f5c50;
+  font-size: calc(28rpx * var(--font-scale));
+  line-height: calc(44rpx * var(--font-scale));
+  color: var(--revenueHelpDescription-color);
   text-align: left;
-  background: #fff8f3;
-  border: 2rpx solid #ffe6d4;
+  background: var(--revenueHelpDescription-bg-color);
+  border: 2rpx solid var(--revenueHelpDescription-border-color);
   border-radius: 24rpx;
   display: flex;
   justify-content: center;
@@ -286,9 +294,9 @@ const loadMore = () => {
   justify-content: center;
   width: 100%;
   height: 88rpx;
-  font-size: 30rpx;
+  font-size: calc(30rpx * var(--font-scale));
   font-weight: 600;
-  color: #fff;
+  color: var(--bg-card);
   background: linear-gradient(135deg, #ff842e 0%, #ff6b03 100%);
   border-radius: 44rpx;
   box-shadow: 0 12rpx 28rpx rgba(255, 107, 3, 0.24);

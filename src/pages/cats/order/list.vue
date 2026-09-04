@@ -375,7 +375,7 @@ const handleFilter = () => {
         width: calc(100% - 48rpx - 16rpx - 12rpx);
         height: 56rpx;
         padding: 6rpx;
-        background-color: #ffffff;
+        background-color: var(--bg-card);
         border-radius: 34rpx;
 
         .searchBtn {
@@ -396,7 +396,7 @@ const handleFilter = () => {
             width: 100%;
             height: 100%;
             padding: 0;
-            font-size: 28rpx;
+            font-size: calc(28rpx * var(--font-scale));
             color: #000000;
             background-color: transparent;
             border-radius: 34rpx;
@@ -489,25 +489,25 @@ const handleFilter = () => {
       justify-content: flex-start;
       width: 100%;
       margin-left: auto;
-      color: #261000;
+      color: var(--text-primary);
 
       .label {
-        font-size: 28rpx;
+        font-size: calc(28rpx * var(--font-scale));
         font-weight: 400;
-        line-height: 33rpx;
+        line-height: calc(33rpx * var(--font-scale));
       }
 
       .price {
         margin: 24rpx 8rpx;
-        font-size: 28rpx;
+        font-size: calc(28rpx * var(--font-scale));
         font-weight: 500;
-        line-height: 33rpx;
+        line-height: calc(33rpx * var(--font-scale));
       }
 
       .priceUnit {
-        font-size: 20rpx;
+        font-size: calc(20rpx * var(--font-scale));
         font-weight: 400;
-        color: #261000;
+        color: var(--text-primary);
       }
     }
 
@@ -517,7 +517,7 @@ const handleFilter = () => {
       justify-content: flex-end;
       width: 100%;
       margin-left: auto;
-      font-size: 28rpx;
+      font-size: calc(28rpx * var(--font-scale));
       font-weight: bold;
       color: var(--liberty-cats-primary-color);
     }
@@ -544,9 +544,10 @@ const handleFilter = () => {
     margin-bottom: 40rpx;
 
     .filter-title {
-      font-size: 32rpx;
+      font-size: calc(32rpx * var(--font-scale));
       font-weight: 600;
       margin: auto;
+      color: var(--text-black);
     }
   }
 
@@ -572,11 +573,11 @@ const handleFilter = () => {
     }
 
     .section-title {
-      font-size: 32rpx;
+      font-size: calc(32rpx * var(--font-scale));
       font-style: normal;
       font-weight: 500;
-      line-height: 38rpx;
-      color: #261000;
+      line-height: calc(38rpx * var(--font-scale));
+      color: var(--text-primary);
       margin-bottom: 20rpx;
       display: block;
     }
@@ -596,10 +597,10 @@ const handleFilter = () => {
     .mainBtn1 {
       width: 100%;
       height: 88rpx;
-      font-size: 32rpx;
+      font-size: calc(32rpx * var(--font-scale));
       font-style: normal;
       font-weight: 600;
-      color: #ffffff;
+      color: var(--bg-card);
       text-align: center;
       background: #ff6b03;
     }
