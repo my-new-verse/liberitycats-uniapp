@@ -18,5 +18,5 @@ export const getCheckInDataApi = () => {
 }
 
 export const checkInApi = () => {
-  return http.post('/v1/checkin/checkin/checkin')
+  return http.post('/v1/checkins')
 }

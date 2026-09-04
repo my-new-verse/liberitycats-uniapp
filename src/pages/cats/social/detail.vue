@@ -37,6 +37,22 @@
                 </view>
                 <view class="nameWrap">
                   <view class="name">{{ formatNickname(postDetail?.member?.nickname, 22) }}</view>
+                  <!-- 徽章图标 - 显示在昵称右边 -->
+                  <wd-img
+                    width="42rpx"
+                    height="42rpx"
+                    v-if="postDetail?.member?.equippedCommunityBadge?.iconUrl"
+                    class="badge-icon"
+                    :src="getImageUrl(postDetail.member.equippedCommunityBadge.iconUrl)"
+                    mode="aspectFit"
+                    :enable-preview="false"
+                    @click.stop="
+                      handleBadgeClick(
+                        postDetail.member.equippedCommunityBadge.code,
+                        postDetail.member_id,
+                      )
+                    "
+                  />
                   <!-- <view
                     v-if="getMemberFollowInfo(postDetail?.member)"
                     class="followBtn"
@@ -193,6 +209,19 @@
                 <view class="commentCntBox">
                   <view class="nameWrap">
                     <text class="nickname">{{ item._nickname }}</text>
+                    <!-- 徽章图标 - 显示在昵称右边 -->
+                    <wd-img
+                      width="42rpx"
+                      height="42rpx"
+                      v-if="item.member?.equippedCommunityBadge?.iconUrl"
+                      class="badge-icon"
+                      :src="item.member.equippedCommunityBadge.iconUrl"
+                      mode="aspectFit"
+                      :enable-preview="false"
+                      @click.stop="
+                        handleBadgeClick(item.member.equippedCommunityBadge.code, item.member_id)
+                      "
+                    />
                     <text class="authorTag" v-if="item.member_id === postDetail.member_id">
                       {{ t('social.detail.authorTag') }}
                     </text>
@@ -296,6 +325,22 @@
                             >
                               {{ reply.member.nickname }}
                             </text>
+                            <!-- 徽章图标 - 显示在昵称右边 -->
+                            <wd-img
+                              v-if="reply.member?.equippedCommunityBadge?.iconUrl"
+                              width="42rpx"
+                              height="42rpx"
+                              class="badge-icon"
+                              :src="getImageUrl(reply.member.equippedCommunityBadge.iconUrl)"
+                              mode="aspectFit"
+                              enable-preview="false"
+                              @click.stop="
+                                handleBadgeClick(
+                                  reply.member.equippedCommunityBadge.code,
+                                  reply.member_id || reply.member.id,
+                                )
+                              "
+                            />
                             <text class="authorTag" v-if="reply.member_id === postDetail.member_id">
                               {{ t('social.detail.authorTag') }}
                             </text>
@@ -833,6 +878,7 @@ const publishComment = async () => {
               return {
                 ...re,
                 _nickname: formatNickname(re?.member?.nickname || '', 22),
+                // _badgeIcon: re?.member?.equippedCommunityBadge?.iconUrl || '',
                 _time: formatRelativeTime(re?.create_time),
                 _images: reProcessedImgs,
                 _previewImages: reProcessedImgs,
@@ -1191,6 +1237,7 @@ const getCommentList = async () => {
           return {
             ...re,
             _nickname: formatNickname(re?.member?.nickname || '', 22),
+            // _badgeIcon: re?.member?.equippedCommunityBadge?.iconUrl || '',
             _time: formatRelativeTime(re?.create_time),
             _images: reProcessedImgs,
             _previewImages: reProcessedImgs,
@@ -1201,6 +1248,7 @@ const getCommentList = async () => {
       return {
         ...it,
         _nickname: formatNickname(it?.member?.nickname || '', 22),
+        // _badgeIcon: re?.member?.equippedCommunityBadge?.iconUrl || '',
         _time: formatRelativeTime(it?.create_time),
         _images: processedImages,
         _previewImages: processedImages,
@@ -1687,6 +1735,14 @@ const toUserHome = (memberId: number) => {
   })
 }
 
+// 处理徽章点击
+const handleBadgeClick = (badgeCode: string, memberId: number) => {
+  if (!badgeCode || !memberId) return
+  toUrl(
+    `/pages/cats/badge/detail?code=${encodeURIComponent(badgeCode)}&memberId=${encodeURIComponent(memberId)}`,
+  )
+}
+
 // 二级评论点赞
 const likeReply = async (replyItem: any, itemId: number) => {
   if (userStore.isLogin === false) {
@@ -1788,6 +1844,7 @@ const expandReplies = async (item: any) => {
         return {
           ...re,
           _nickname: formatNickname(re?.member?.nickname || '', 22),
+          // _badgeIcon: re?.member?.equippedCommunityBadge?.iconUrl || '',
           _time: formatRelativeTime(re?.create_time),
           _images: reProcessedImgs,
           _previewImages: reProcessedImgs,

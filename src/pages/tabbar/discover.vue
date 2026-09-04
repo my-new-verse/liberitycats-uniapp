@@ -21,7 +21,6 @@
 </route>
 
 <template>
-  <page-meta :page-style="isPromotionTabActive ? 'overflow: hidden;' : 'overflow: visible;'" />
   <view
     class="page3"
     :class="[locale, isFixed ? 'is-fixed' : '']"
@@ -169,7 +168,6 @@ const tabs = computed(() => [
   t('discover.tabs.promotion'),
 ])
 const activeTab = ref(t('discover.tabs.social'))
-const isPromotionTabActive = computed(() => activeTab.value === t('discover.tabs.promotion'))
 const activatedTabs = ref<string[]>([activeTab.value])
 
 /** 先切换 Discover 主 Tab，再通知 SocialTab 定位群聊。 */

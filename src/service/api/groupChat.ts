@@ -183,6 +183,8 @@ export interface ChatMessage {
   server_message_id?: number
   local_id?: string
   local_status?: 'sending' | 'failed' | 'sent'
+  /** 本地保留的 @提及用户映射，用于撤回后重新编辑。 */
+  mentioned_users?: Array<[number, string]>
   reply_to?: ChatMessageReplyTo
   reply_message?: ChatMessage
 }
