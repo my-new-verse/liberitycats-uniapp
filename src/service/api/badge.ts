@@ -1,11 +1,22 @@
 import { http } from '@/utils/http'
 
 export type BadgeStatus = 'LOCKED' | 'IN_PROGRESS' | 'EARNED' | 'EQUIPPED'
-export type BadgeListStatus = BadgeStatus | 'ALL'
+export type BadgeListStatus = 'ALL' | 'EARNED' | 'IN_PROGRESS'
+export type BadgeCategory = 'GROWTH' | 'CREATION' | 'INTERACTION' | 'TENURE'
+export type BadgeCategoryFilter = BadgeCategory | 'ALL'
+export type NavigationParams = Record<string, string | number | boolean | null>
+
+export type NavigationTarget =
+  | { type: 'none' }
+  | { type: 'post' | 'comment' | 'member' | 'agreement'; id: string; params?: NavigationParams }
+  | { type: 'feature'; name: string; params?: NavigationParams }
+  | { type: 'webview'; url: string; params?: NavigationParams }
+  | { type: 'external_url'; url: string }
 
 export interface BadgeItem {
   code: string
   seriesCode: string
+  catalogVersion?: string
   tier: number
   name: string
   description: string
@@ -16,15 +27,8 @@ export interface BadgeItem {
   progressTarget: number
   progressUnit: string
   actionType: string
+  target?: NavigationTarget
   earnedAt: string | null
-  // 引导操作配置
-  guidanceAction?: {
-    label: string
-    target: {
-      name: string
-      params?: Record<string, any>
-    }
-  }
 }
 
 export interface NearestBadge {
@@ -35,6 +39,49 @@ export interface NearestBadge {
   progressTarget: number
   remaining: number
   actionType: string
+  target?: NavigationTarget
+}
+
+export interface BadgeStage {
+  code: string
+  tier: number
+  name: string
+  iconUrl: string
+  progressTarget: number
+  unit: string
+  status: BadgeStatus
+  isCurrent: boolean
+  earnedAt: string | null
+}
+
+export interface BadgeDetail extends BadgeItem {
+  series: {
+    code: string
+    name: string
+    type: 'ONE_TIME' | 'STAGED'
+    category: string
+    visualTheme: string
+  }
+  condition: { metricCode: string; description: string }
+  progress: {
+    current: number
+    target: number
+    remaining: number
+    unit: string
+    percentage: number
+  }
+  stages: BadgeStage[]
+  acquisition: { method: string; earnedAt: string | null }
+  display: {
+    preview: EquippedCommunityBadge
+    placements: string[]
+  }
+  guidanceAction: { label: string; target: NavigationTarget } | null
+  capabilities: {
+    canEquip: boolean
+    canUnequip: boolean
+    equipDisabledReasonCode: 'BADGE_NOT_EARNED' | 'ALREADY_EQUIPPED' | 'NOT_OWNER' | null
+  }
 }
 
 export interface MyBadgeList {
@@ -55,12 +102,30 @@ export interface UpdateEquippedBadgeResponse {
   equippedCommunityBadge: EquippedCommunityBadge | null
 }
 
-export const getMyBadgesApi = (category: BadgeListStatus = 'ALL') => {
-  return http.get<MyBadgeList>('/v1/me/badges', { category })
+export const getMyBadgesApi = (
+  status: BadgeListStatus = 'ALL',
+  category: BadgeCategoryFilter = 'ALL',
+) => {
+  return http.get<MyBadgeList>('/v1/me/badges', { status, category })
 }
 
 export const getBadgeDetailApi = (badgeCode: string) => {
-  return http.get<BadgeItem>(`/v1/badges/${encodeURIComponent(badgeCode)}`)
+  return http.get<BadgeDetail>(`/v1/badges/${encodeURIComponent(badgeCode)}`)
+}
+
+export const getUserBadgeDetailApi = (memberId: string | number, badgeCode: string) => {
+  return http.get<BadgeDetail>(
+    `/v1/users/${encodeURIComponent(String(memberId))}/badges/${encodeURIComponent(badgeCode)}`,
+  )
+}
+
+export const getUserBadgesApi = (
+  memberId: string | number,
+  category: BadgeCategoryFilter = 'ALL',
+) => {
+  return http.get<MyBadgeList>(`/v1/users/${encodeURIComponent(String(memberId))}/badges`, {
+    category,
+  })
 }
 
 export const equipBadgeApi = (badgeCode: string) => {

@@ -109,6 +109,11 @@
             <text class="statCount">{{ formatCount(stats?.special_following_count || 0) }}</text>
             <text class="statLabel">{{ t('social.index.stats.special_following') }}</text>
           </view>
+          <view class="statDivider">|</view>
+          <view class="statItem" @click="toUrl('/pages/cats/badge/index?memberId=' + memberId)">
+            <text class="statCount">{{ formatCount(achievementCount) }}</text>
+            <text class="statLabel">{{ t('badge.achievement_count') }}</text>
+          </view>
         </view>
         <view class="followActions">
           <view class="followBtn" :class="followBtnInfo.style" @click="handleFollow">
@@ -399,6 +404,7 @@ import {
 import SharePopup from '@/components/SharePopup/SharePopup.vue'
 import SocialPostItem from '@/components/PostItem/SocialPostItem.vue'
 import PromotionPostItem from '@/components/PostItem/PromotionPostItem.vue'
+import { getUserBadgesApi } from '@/service/api/badge'
 
 const userStore = useUserStore()
 const toast = useToast()
@@ -490,6 +496,17 @@ const stats = ref<{
   fans_count: number
   special_following_count: number
 } | null>(null)
+const achievementCount = ref(0)
+
+const loadAchievementCount = async () => {
+  try {
+    const badgeRes = await getUserBadgesApi(memberId.value, 'ALL')
+    if (badgeRes.code === 1 && badgeRes.data)
+      achievementCount.value = badgeRes.data.earnedCount || 0
+  } catch (error) {
+    console.warn('[UserHome] 获取成就数量失败:', error)
+  }
+}
 
 const formatCount = (count: number) => {
   if (count >= 10000) return (count / 10000).toFixed(1) + t('user.home.unit.wan')
@@ -710,6 +727,7 @@ const loadAllData = async () => {
       const data = userRes.data as any
       if (data.stats) stats.value = data.stats
     }
+    await loadAchievementCount()
     // }
 
     await loadMoreData(true)
@@ -1309,8 +1327,11 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
       margin-top: 20rpx;
       .statItem {
         display: flex;
+        flex: 1;
         align-items: baseline;
-        padding: 0 24rpx;
+        justify-content: center;
+        min-width: 0;
+        padding: 0 8rpx;
         .statCount {
           font-size: 44rpx;
           font-weight: 600;

@@ -23,6 +23,22 @@
       </view>
       <view class="nameWrap">
         <view class="name">{{ formatNickname(item.member?.nickname, 22) }}</view>
+        <!-- 徽章图标 - 显示在昵称右边 -->
+        <wd-img
+          width="42rpx"
+          height="42rpx"
+          v-if="item.member?.equippedCommunityBadge?.iconUrl"
+          class="badge-icon"
+          :src="getImageUrl(item.member.equippedCommunityBadge.iconUrl)"
+          mode="aspectFit"
+          :enable-preview="false"
+          @click.stop="
+            handleBadgeClick(
+              item.member.equippedCommunityBadge.code,
+              item.member_id || item.member?.member_id || item.member?.id,
+            )
+          "
+        />
       </view>
     </view>
     <view class="socialCntBox" @click="$emit('click', item)">
@@ -74,7 +90,7 @@
 
 <script lang="ts" setup>
 import { ref, watch } from 'vue'
-import { formatNickname, formatRelativeTime, getImageUrl } from '@/utils'
+import { formatNickname, formatRelativeTime, getImageUrl, toUrl } from '@/utils'
 
 const props = withDefaults(
   defineProps<{
@@ -116,6 +132,14 @@ defineEmits<{
   like: [item: any]
   share: [item: any]
 }>()
+
+// 处理徽章点击
+const handleBadgeClick = (badgeCode: string, memberId: number) => {
+  if (!badgeCode || !memberId) return
+  toUrl(
+    `/pages/cats/badge/detail?code=${encodeURIComponent(badgeCode)}&memberId=${encodeURIComponent(memberId)}`,
+  )
+}
 </script>
 
 <style lang="scss">

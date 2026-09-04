@@ -328,7 +328,7 @@
       "type": "page",
       "style": {
         "navigationStyle": "custom",
-        "navigationBarTitleText": "我的徽章"
+        "navigationBarTitleText": ""
       }
     },
     {

@@ -454,29 +454,18 @@
               </view>
             </view>
 
-            <!-- <view class="menuItem" @click="toGame">
+            <!-- 我的成就 (徽章) -->
+            <view class="menuItem" @click="toBadge">
               <view class="menuItemTitle">
                 <view class="icon2">
-                  <image class="iconImg" src="@/static/images/about.png" mode="widthFix" />
+                  <image class="iconImg" src="@/static/images/badge.png" mode="widthFix" />
                 </view>
-                <view class="title">小游戏</view>
+                <view class="title">我的成就</view>
               </view>
               <view class="menuItemRight">
                 <view class="arrow"></view>
               </view>
-            </view> -->
-
-            <!-- <view class="menuItem" @click="shareToSystem('xxx')">
-              <view class="menuItemTitle">
-                <view class="icon2">
-                  <image class="iconImg" src="@/static/images/about.png" mode="widthFix" />
-                </view>
-                <view class="title">测试</view>
-              </view>
-              <view class="menuItemRight">
-                <view class="arrow"></view>
-              </view>
-            </view> -->
+            </view>
           </view>
 
           <!--新增一个版本号的显示，每次build版本号变更-->
@@ -889,6 +878,11 @@ const onRefreshAbort = () => {
 
 const toGame = () => {
   toUrl('/pages/game/index', true)
+}
+
+// 跳转到徽章页面
+const toBadge = () => {
+  toUrl('/pages/cats/badge/index', true)
 }
 
 // 版本更新相关

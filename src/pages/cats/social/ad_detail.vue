@@ -63,6 +63,22 @@
                 </view>
                 <view class="nameWrapTitle">
                   <view class="name">{{ formatNickname(postDetail?.member?.nickname, 22) }}</view>
+                  <!-- 徽章图标 - 显示在昵称右边 -->
+                  <wd-img
+                    width="42rpx"
+                    height="42rpx"
+                    v-if="postDetail?.member?.equippedCommunityBadge?.iconUrl"
+                    class="badge-icon"
+                    :src="getImageUrl(postDetail.member.equippedCommunityBadge.iconUrl)"
+                    mode="aspectFit"
+                    :enable-preview="false"
+                    @click.stop="
+                      handleBadgeClick(
+                        postDetail.member.equippedCommunityBadge.code,
+                        postDetail.member_id,
+                      )
+                    "
+                  />
                   <view class="metaRow">
                     <text class="metaTime">
                       {{
@@ -251,6 +267,19 @@
                 <view class="commentCntBox">
                   <view class="nameWrap">
                     <text class="nickname">{{ item._nickname }}</text>
+                    <!-- 徽章图标 - 显示在昵称右边 -->
+                    <wd-img
+                      width="42rpx"
+                      height="42rpx"
+                      v-if="item.member?.equippedCommunityBadge?.iconUrl"
+                      class="badge-icon"
+                      :src="getImageUrl(item.member.equippedCommunityBadge.iconUrl)"
+                      mode="aspectFit"
+                      enable-preview="false"
+                      @click.stop="
+                        handleBadgeClick(item.member.equippedCommunityBadge.code, item.member_id)
+                      "
+                    />
                     <text class="authorTag" v-if="item.member_id === postDetail.member_id">
                       {{ t('social.detail.authorTag') }}
                     </text>
@@ -354,6 +383,22 @@
                             >
                               {{ reply.member.nickname }}
                             </text>
+                            <!-- 徽章图标 - 显示在昵称右边 -->
+                            <wd-img
+                              width="42rpx"
+                              height="42rpx"
+                              v-if="reply.member?.equippedCommunityBadge?.iconUrl"
+                              class="badge-icon"
+                              :src="getImageUrl(reply.member.equippedCommunityBadge.iconUrl)"
+                              mode="aspectFit"
+                              enable-preview="false"
+                              @click.stop="
+                                handleBadgeClick(
+                                  reply.member.equippedCommunityBadge.code,
+                                  reply.member_id || reply.member.id,
+                                )
+                              "
+                            />
                             <text class="authorTag" v-if="reply.member_id === postDetail.member_id">
                               {{ t('social.detail.authorTag') }}
                             </text>
@@ -1785,6 +1830,14 @@ const toUserHome = (memberId: number) => {
   uni.navigateTo({
     url: `/pages/cats/user/home?member_id=${memberId}`,
   })
+}
+
+// 查看消息发送者的公开徽章详情
+const handleBadgeClick = (badgeCode: string, memberId: number) => {
+  if (!badgeCode || !memberId) return
+  toUrl(
+    `/pages/cats/badge/detail?code=${encodeURIComponent(badgeCode)}&memberId=${encodeURIComponent(memberId)}`,
+  )
 }
 
 // 二级评论点赞

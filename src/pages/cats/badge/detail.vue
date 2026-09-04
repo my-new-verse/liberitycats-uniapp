@@ -11,13 +11,22 @@
     <!-- 自定义导航栏 -->
     <custom-nav2 title="徽章详情" pageBackgroundColor="#ffffff">
       <template #default>
-        <scroll-view class="content-scroll" scroll-y sticky-scroll-bar :upper-threshold="10">
+        <view v-if="loading" class="loading-state"><wd-loading /></view>
+        <scroll-view
+          v-else-if="badgeData"
+          class="content-scroll"
+          scroll-y
+          sticky-scroll-bar
+          :upper-threshold="10"
+        >
           <!-- 徽章卡片 -->
           <view class="badge-card">
             <image class="badge-large-icon" :src="badgeData.iconUrl" mode="aspectFit"></image>
             <text class="badge-title">{{ badgeData.name }}</text>
-            <text class="badge-category">{{ badgeData.category }}</text>
-            <text class="badge-desc">{{ badgeData.description }}</text>
+            <text class="badge-category">{{ categoryLabel }}</text>
+            <text class="badge-desc">
+              {{ badgeData.condition?.description || badgeData.description }}
+            </text>
           </view>
 
           <!-- 未获得状态 -->
@@ -25,9 +34,7 @@
             <view class="unlock-progress">
               <view class="progress-labels">
                 <text class="label">解锁进度</text>
-                <text class="num">
-                  {{ badgeData.progressCurrent }} / {{ badgeData.progressTarget }}
-                </text>
+                <text class="num">{{ progressCurrent }} / {{ progressTarget }}</text>
               </view>
               <view class="progress-bar">
                 <view class="progress-fill" :style="{ width: progressPercentage + '%' }"></view>
@@ -41,12 +48,18 @@
             </view>
 
             <!-- <view class="action-btn" @click="handleGoParticipate">去参与评论</view> -->
-            <wd-button custom-class="action-btn" plain hairline @click="handleActionClick">
-              {{ getActionButtonText() }}
+            <wd-button
+              v-if="badgeData.guidanceAction"
+              custom-class="action-btn"
+              plain
+              hairline
+              @click="handleActionClick"
+            >
+              {{ badgeData.guidanceAction.label }}
             </wd-button>
 
-            <!-- 佩戴后展示预览 -->
-            <view class="preview-section">
+            <!-- 佩戴后展示预览 - 只在自己的徽章页显示 -->
+            <view v-if="!isPublicView" class="preview-section">
               <text class="preview-title">佩戴后展示</text>
               <view class="nickname-preview">
                 <!-- 头像 + 会员等级角标 -->
@@ -68,13 +81,8 @@
                 <!-- 昵称 -->
                 <text class="nickname">{{ userStore.userInfo.nickname }}</text>
                 <!-- 徽章图标 -->
-                <image class="badge-small-icon" :src="badgeData?.iconUrl" mode="aspectFit"></image>
+                <image class="badge-small-icon" :src="previewIconUrl" mode="aspectFit"></image>
               </view>
-            </view>
-
-            <!-- 底部按钮 -->
-            <view class="bottom-action">
-              <wd-button custom-class="disable-btn" disabled>获得后可佩戴</wd-button>
             </view>
           </view>
 
@@ -84,11 +92,15 @@
             <view class="info-list">
               <view class="info-item">
                 <text class="info-label">获得方式</text>
-                <text class="info-value">{{ badgeData.description }}</text>
+                <text class="info-value">
+                  {{ badgeData.acquisition?.method || badgeData.description }}
+                </text>
               </view>
               <view class="info-item">
                 <text class="info-label">获得时间</text>
-                <text class="info-value">{{ badgeData.earnedAt || '-' }}</text>
+                <text class="info-value">
+                  {{ badgeData.acquisition?.earnedAt || badgeData.earnedAt || '-' }}
+                </text>
               </view>
               <view class="info-item obtained-status">
                 <text class="info-label">状态</text>
@@ -98,8 +110,8 @@
               </view>
             </view>
 
-            <!-- 昵称展示预览 -->
-            <view class="preview-section">
+            <!-- 昵称展示预览 - 只在自己的徽章页显示 -->
+            <view v-if="!isPublicView" class="preview-section">
               <text class="preview-title">昵称展示预览</text>
               <view class="nickname-preview">
                 <!-- 头像 + 会员等级角标 -->
@@ -121,17 +133,44 @@
                 <!-- 昵称 -->
                 <text class="nickname">{{ userStore.userInfo.nickname }}</text>
                 <!-- 徽章图标 -->
-                <image class="badge-small-icon" :src="badgeData?.iconUrl" mode="aspectFit"></image>
+                <image class="badge-small-icon" :src="previewIconUrl" mode="aspectFit"></image>
               </view>
               <text class="preview-desc">会员等级使用头像角标；昵称旁只展示徽章图形</text>
             </view>
+          </view>
 
-            <!-- 底部按钮 -->
-            <view class="bottom-action">
-              <button class="primary-btn" :disabled="submitting" @click="handleEquippedAction">
-                {{ isEquipped ? '取消佩戴' : '佩戴这枚徽章' }}
-              </button>
+          <view
+            v-if="badgeData.series?.type === 'STAGED' && badgeData.stages?.length"
+            class="stages-section"
+          >
+            <text class="section-title">{{ badgeData.series.name }}</text>
+            <view
+              v-for="stage in badgeData.stages"
+              :key="stage.code"
+              class="stage-item"
+              :class="{ current: stage.isCurrent }"
+            >
+              <image class="stage-icon" :src="stage.iconUrl" mode="aspectFit" />
+              <view class="stage-info">
+                <text class="stage-name">{{ stage.name }}</text>
+                <text class="stage-progress">{{ stage.progressTarget }}{{ stage.unit }}</text>
+              </view>
+              <text class="stage-status">{{ getStageStatusText(stage.status) }}</text>
             </view>
+          </view>
+
+          <!-- 底部按钮 -->
+          <view v-if="!isEarned && showDisabledEquipAction" class="bottom-action">
+            <wd-button custom-class="disable-btn" disabled>{{ equipActionText }}</wd-button>
+          </view>
+          <view v-else-if="isEarned && showEquipmentAction" class="bottom-action">
+            <button
+              class="primary-btn"
+              :disabled="submitting || !canRunEquipmentAction"
+              @click="handleEquippedAction"
+            >
+              {{ equipActionText }}
+            </button>
           </view>
         </scroll-view>
       </template>
@@ -142,39 +181,92 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { t } from '@/locale/index'
-import { onLoad, onHide } from '@dcloudio/uni-app'
-import { toUrl } from '@/utils'
+import { onLoad } from '@dcloudio/uni-app'
 import CustomNav2 from '@/components/CustomNav/CustomNav2.vue'
 import {
   equipBadgeApi,
   getBadgeDetailApi,
+  getUserBadgeDetailApi,
   unequipBadgeApi,
-  type BadgeItem,
+  type BadgeDetail,
+  type BadgeStatus,
 } from '@/service/api/badge'
 import { useUserStore } from '@/store/user'
+import { executeBadgeNavigationTarget } from '@/utils/badgeNavigation'
 
 // 当前徽章数据 - 初始设置为空对象或默认值
-const badgeData = ref<BadgeItem | null>(null)
+const badgeData = ref<BadgeDetail | null>(null)
 const loading = ref(false)
 const submitting = ref(false)
 const userStore = useUserStore()
+const viewedMemberId = ref<number | null>(null)
 
 const isEarned = computed(
   () => badgeData.value?.status === 'EARNED' || badgeData.value?.status === 'EQUIPPED',
 )
 const isEquipped = computed(() => badgeData.value?.status === 'EQUIPPED')
+const progressCurrent = computed(
+  () => badgeData.value?.progress?.current ?? badgeData.value?.progressCurrent ?? 0,
+)
+const progressTarget = computed(
+  () => badgeData.value?.progress?.target ?? badgeData.value?.progressTarget ?? 0,
+)
+const previewIconUrl = computed(
+  () => badgeData.value?.display?.preview?.iconUrl || badgeData.value?.iconUrl || '',
+)
+const categoryLabel = computed(() => {
+  const category = badgeData.value?.category?.toUpperCase()
+  const keyMap: Record<string, string> = {
+    GROWTH: 'badge.category.growth',
+    CREATION: 'badge.category.creation',
+    INTERACTION: 'badge.category.interaction',
+    TENURE: 'badge.category.tenure',
+  }
+  return category ? (keyMap[category] ? t(keyMap[category]) : category) : ''
+})
+const showEquipmentAction = computed(() => {
+  const capabilities = badgeData.value?.capabilities
+  return (
+    !!capabilities &&
+    (capabilities.canEquip ||
+      capabilities.canUnequip ||
+      capabilities.equipDisabledReasonCode !== 'NOT_OWNER')
+  )
+})
+const showDisabledEquipAction = computed(
+  () => badgeData.value?.capabilities?.equipDisabledReasonCode === 'BADGE_NOT_EARNED',
+)
+const canRunEquipmentAction = computed(() =>
+  isEquipped.value
+    ? badgeData.value?.capabilities?.canUnequip === true
+    : badgeData.value?.capabilities?.canEquip === true,
+)
+const equipActionText = computed(() => {
+  if (badgeData.value?.capabilities?.equipDisabledReasonCode === 'BADGE_NOT_EARNED')
+    return '获得后可佩戴'
+  if (isEquipped.value) return '取消佩戴'
+  if (badgeData.value?.capabilities?.equipDisabledReasonCode === 'ALREADY_EQUIPPED') return '已佩戴'
+  return '佩戴这枚徽章'
+})
 
 // 计算属性
 const progressPercentage = computed(() => {
-  if (!badgeData.value?.progressTarget) return 0
-  return Math.min(100, (badgeData.value.progressCurrent / badgeData.value.progressTarget) * 100)
+  if (badgeData.value?.progress) return Math.min(100, badgeData.value.progress.percentage || 0)
+  if (!progressTarget.value) return 0
+  return Math.min(100, (progressCurrent.value / progressTarget.value) * 100)
 })
 
 const progressTip = computed(() => {
-  if (!badgeData.value?.progressTarget) return ''
-  const remaining = Math.max(0, badgeData.value.progressTarget - badgeData.value.progressCurrent)
-  return `再完成 ${remaining}${badgeData.value.progressUnit || ''}即可获得`
+  if (!progressTarget.value) return ''
+  const remaining =
+    badgeData.value?.progress?.remaining ??
+    Math.max(0, progressTarget.value - progressCurrent.value)
+  const unit = badgeData.value?.progress?.unit || badgeData.value?.progressUnit || ''
+  return `再完成 ${remaining}${unit}即可获得`
 })
+
+// 判断是否是查看他人的徽章
+const isPublicView = computed(() => viewedMemberId.value !== null)
 
 // 生命周期
 onLoad((options) => {
@@ -184,14 +276,19 @@ onLoad((options) => {
     uni.showToast({ title: t('common.request.not_found'), icon: 'none' })
     return
   }
-  void loadBadgeDetail(badgeCode)
+  // 判断是否是查看他人的徽章
+  const memberId = Number(options?.memberId || options?.member_id || 0)
+  viewedMemberId.value = memberId > 0 ? memberId : null
+  void loadBadgeDetail(badgeCode, memberId ? String(memberId) : undefined)
 })
 
 // 方法
-const loadBadgeDetail = async (code: string) => {
+const loadBadgeDetail = async (code: string, memberId?: string) => {
   loading.value = true
   try {
-    const response = await getBadgeDetailApi(code)
+    const response = memberId
+      ? await getUserBadgeDetailApi(memberId, code)
+      : await getBadgeDetailApi(code)
     if (response.code === 1 && response.data) {
       badgeData.value = response.data
       return
@@ -205,7 +302,7 @@ const loadBadgeDetail = async (code: string) => {
 }
 
 const handleEquippedAction = async () => {
-  if (!badgeData.value || submitting.value || !isEarned.value) return
+  if (!badgeData.value || submitting.value || !canRunEquipmentAction.value) return
   submitting.value = true
   try {
     const wasEquipped = isEquipped.value
@@ -220,6 +317,12 @@ const handleEquippedAction = async () => {
     badgeData.value = {
       ...badgeData.value,
       status: wasEquipped ? 'EARNED' : 'EQUIPPED',
+      capabilities: {
+        ...badgeData.value.capabilities,
+        canEquip: wasEquipped,
+        canUnequip: !wasEquipped,
+        equipDisabledReasonCode: wasEquipped ? null : 'ALREADY_EQUIPPED',
+      },
     }
 
     // 成功修改佩戴状态后，广播事件通知 index 页面刷新数据
@@ -259,94 +362,18 @@ const getLevelClass = (level: number): string => {
   return `level-${level}`
 }
 
-// 获取操作按钮文字
-const getActionButtonText = () => {
-  if (badgeData.value?.guidanceAction) {
-    return badgeData.value.guidanceAction.label
-  }
-  // 默认文字
-  return isEquipped.value ? '查看详情' : '去参与'
+// 处理点击事件
+const handleActionClick = () => {
+  const guidanceAction = badgeData.value?.guidanceAction
+  if (guidanceAction && !executeBadgeNavigationTarget(guidanceAction.target))
+    console.warn('[Badge] Guidance target ignored:', guidanceAction.target)
 }
 
-// 处理点击事件
-const handleActionClick = async () => {
-  const guidanceAction = badgeData.value?.guidanceAction
-  if (!guidanceAction) {
-    uni.showToast({
-      title: '该徽章暂不支持此操作',
-      icon: 'none',
-    })
-    return
-  }
-
-  try {
-    const { name, params } = guidanceAction.target
-
-    // 根据不同的目标名称执行不同的跳转逻辑
-    switch (name) {
-      case 'profile_edit':
-        // 完善头像和昵称，打开资料设置入口
-        toUrl('/pages/cats/settings/index', params)
-        break
-
-      case 'post_create':
-        if (params.category === 'normal') {
-          toUrl('/pages/cats/social/publish', params || {}) // 读取 params.category
-        } else {
-          toUrl('/pages/cats/social/publish?category=promotion', params || {}) // 读取 params.category
-        }
-        break
-
-      case 'community_discussion':
-        // 参与社区评论，切换至社区发现页
-        uni.switchTab({
-          url: '/pages/tabbar/discover',
-          complete: () => {
-            // 可以在这里添加定位到评论区的相关逻辑
-            // uni.showToast({
-            //   title: '已切换至社区发现页',
-            //   icon: 'success',
-            // })
-          },
-        })
-        break
-
-      case 'check_in':
-        // 前往签到入口，切换至“我的”页并定位签到区域
-        uni.switchTab({
-          url: '/pages/tabbar/my',
-          complete: () => {
-            // 延迟后定位签到区域（等待页面加载完成后）
-            setTimeout(() => {
-              // 这里可以添加滚动到签到区域的逻辑
-              // 如果有相应的 API 或方法的话
-              uni.showToast({
-                title: '请查看顶部签到区域',
-                icon: 'none',
-              })
-            }, 300)
-          },
-        })
-        break
-
-      case 'staking':
-        // 查看质押，打开质押页
-        toUrl('/pages/cats/pledge/index', params)
-        break
-
-      default:
-        uni.showToast({
-          title: '未定义的操作',
-          icon: 'none',
-        })
-    }
-  } catch (error) {
-    console.error('[Badge] 跳转失败:', error)
-    uni.showToast({
-      title: '跳转失败，请重试',
-      icon: 'none',
-    })
-  }
+const getStageStatusText = (status: BadgeStatus) => {
+  if (status === 'EQUIPPED') return '已佩戴'
+  if (status === 'EARNED') return '已获得'
+  if (status === 'IN_PROGRESS') return '进行中'
+  return '未解锁'
 }
 </script>
 
@@ -368,6 +395,65 @@ const handleActionClick = async () => {
   height: 100vh;
 }
 
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+}
+
+.stages-section {
+  margin: 0 24rpx 40rpx;
+  padding: 32rpx;
+  background: #ffffff;
+  border-radius: 24rpx;
+
+  .section-title {
+    display: block;
+    margin-bottom: 20rpx;
+    font-size: 32rpx;
+    font-weight: 600;
+  }
+
+  .stage-item {
+    display: flex;
+    align-items: center;
+    gap: 20rpx;
+    padding: 20rpx 0;
+    border-bottom: 1rpx solid #f0f0f0;
+
+    &:last-child {
+      border-bottom: 0;
+    }
+
+    &.current .stage-name {
+      color: var(--liberty-cats-primary-color);
+    }
+  }
+
+  .stage-icon {
+    width: 64rpx;
+    height: 64rpx;
+  }
+
+  .stage-info {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+  }
+
+  .stage-name {
+    font-size: 26rpx;
+    font-weight: 500;
+  }
+
+  .stage-progress,
+  .stage-status {
+    font-size: 22rpx;
+    color: #999999;
+  }
+}
+
 // 徽章卡片
 .badge-card {
   margin: 40rpx 24rpx;
@@ -379,14 +465,14 @@ const handleActionClick = async () => {
 
   .badge-large-icon {
     display: flex;
-    width: 240rpx;
-    height: 240rpx;
+    width: 260rpx;
+    height: 260rpx;
     justify-content: center;
     align-items: center;
     border-radius: 50%;
-    border: 7px solid rgba(255, 255, 255, 0.75);
-    background: #dcecff;
-    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.04) inset;
+    // border: 7px solid rgba(255, 255, 255, 0.75);
+    // background: #dcecff;
+    // box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.04) inset;
     margin: auto;
   }
 
@@ -622,6 +708,10 @@ const handleActionClick = async () => {
     font-weight: 600;
     color: #333333;
     margin-bottom: 20rpx;
+  }
+  .preview-desc {
+    font-size: 26rpx;
+    color: #999999;
   }
 }
 
