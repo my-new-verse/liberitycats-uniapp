@@ -1307,11 +1307,11 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
       overflow-x: auto;
       .statItem {
         display: flex;
-        flex: 1;
+        flex: 1 0 auto;
         align-items: baseline;
         justify-content: center;
-        min-width: 0;
         padding: 0 8rpx;
+        white-space: nowrap;
         .statCount {
           font-size: calc(44rpx * var(--font-scale));
           font-weight: 600;

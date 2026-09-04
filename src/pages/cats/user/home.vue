@@ -1327,11 +1327,11 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
       overflow-x: auto;
       .statItem {
         display: flex;
-        flex: 1;
+        flex: 1 0 auto;
         align-items: baseline;
         justify-content: center;
-        min-width: 0;
         padding: 0 8rpx;
+        white-space: nowrap;
         .statCount {
           font-size: calc(44rpx * var(--font-scale));
           font-weight: 600;
@@ -1344,6 +1344,7 @@ const debouncedHandleRefreshPost = debounce(handleRefreshPost, 500)
         }
       }
       .statDivider {
+        flex-shrink: 0;
         font-size: calc(24rpx * var(--font-scale));
         color: rgba(255, 255, 255, 0.5);
       }
