@@ -944,6 +944,8 @@ onLoad(() => {
 <style scoped lang="scss">
 .pubCommentBox {
   position: relative;
+  color: var(--l-editor-text);
+  background: var(--l-editor-bg);
 }
 
 .commentTextAreaBox {
@@ -960,7 +962,7 @@ onLoad(() => {
 
   :deep(.editor-wrap) {
     padding: 12rpx 20rpx;
-    background: #f3f3f4;
+    background: var(--l-editor-surface);
     border-radius: 20rpx;
   }
 
@@ -982,7 +984,7 @@ onLoad(() => {
     margin-top: 8rpx;
   }
   :deep(.text-atom) {
-    color: #261000 !important;
+    color: var(--l-editor-text) !important;
   }
 }
 
@@ -1091,7 +1093,7 @@ onLoad(() => {
     white-space: nowrap;
 
     &.has-draft {
-      color: #261000;
+      color: var(--l-editor-text);
     }
 
     &.is-muted {
