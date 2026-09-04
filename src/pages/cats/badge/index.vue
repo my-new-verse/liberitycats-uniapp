@@ -11,7 +11,7 @@
     <!-- 自定义导航栏 -->
     <custom-nav2
       :title="isPublicView ? t('badge.user_achievements') : t('my.badge.title')"
-      pageBackgroundColor="#f7f6f4"
+      pageBackgroundColor="var(--bg-primary)"
     >
       <template #default>
         <view class="current-badge-card">
@@ -109,9 +109,10 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { t } from '@/locale/index'
-import { onLoad, onShow, onHide } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import CustomNav2 from '@/components/CustomNav/CustomNav2.vue'
 import { toUrl } from '@/utils'
+import { consumeBadgeListRefreshRequired } from '@/utils/badgeRefresh'
 import {
   getBadgeDetailApi,
   getMyBadgesApi,
@@ -121,6 +122,9 @@ import {
   type BadgeItem,
   type MyBadgeList,
 } from '@/service/api/badge'
+import { useUserStore } from '@/store/user'
+
+const userStore = useUserStore()
 
 // 分类标签
 const badgeTags = computed<Array<{ label: string; value: BadgeCategoryFilter }>>(() => [
@@ -149,7 +153,9 @@ let loadSequence = 0
 // 激活的分类标签
 const activeTag = ref<BadgeCategoryFilter>('ALL')
 const viewedMemberId = ref<number | null>(null)
-const isPublicView = computed(() => viewedMemberId.value !== null)
+const isPublicView = computed(
+  () => viewedMemberId.value !== null && viewedMemberId.value != userStore.userInfo?.member_id,
+)
 
 onLoad((options) => {
   const memberId = Number(options?.memberId || options?.member_id || 0)
@@ -252,33 +258,10 @@ const loadBadges = async () => {
 }
 
 onShow(() => {
-  // 公开用户徽章只读，无需监听当前用户的佩戴变化。
-  if (!isPublicView.value) uni.$on('badge_equipment_updated', handleBadgeEquipmentUpdate)
+  // 详情页佩戴/取下成功后会写入标记，返回时在列表页消费。
+  if (!isPublicView.value) consumeBadgeListRefreshRequired()
   void loadBadges()
 })
-
-// 在 onHide 时移除事件监听，避免内存泄漏
-onHide(() => {
-  uni.$off('badge_equipment_updated', handleBadgeEquipmentUpdate)
-})
-
-// 监听徽章佩戴状态更新事件
-const handleBadgeEquipmentUpdate = (data: {
-  badgeCode: string
-  newStatus: string
-  timestamp: number
-}) => {
-  console.log('[Badge List] 收到徽章佩戴状态更新:', data)
-  if (data.newStatus === 'UNEQUIPPED') {
-    equippedBadge.value = null
-  } else if (data.newStatus === 'EQUIPPED') {
-    void getBadgeDetailApi(data.badgeCode).then((response) => {
-      if (response.code === 1 && response.data) equippedBadge.value = response.data
-    })
-  }
-  // 立即刷新当前分类的数据
-  void loadBadges()
-}
 
 // 处理规则点击
 const handleRulesClick = () => {
@@ -294,7 +277,7 @@ const handleRulesClick = () => {
 }
 
 // 全局变量
-$badge-page-bg: #f7f6f4;
+$badge-page-bg: var(--bg-primary);
 $card-gradient-start: #ff6b03;
 $card-gradient-end: #ee941a;
 $card-bg: linear-gradient(135deg, $card-gradient-start 0%, $card-gradient-end 100%);
@@ -312,7 +295,7 @@ $gray-bg: #f5f5f5;
   .loading-spinner {
     width: 48rpx;
     height: 48rpx;
-    border: 3rpx solid #f3f3f3;
+    border: 3rpx solid var(--border-light);
     border-top: 3rpx solid $primary-orange;
     border-radius: 50%;
     animation: spin 1s linear infinite;
@@ -321,7 +304,7 @@ $gray-bg: #f5f5f5;
   .loading-text {
     margin-top: 20rpx;
     font-size: 24rpx;
-    color: #999;
+    color: var(--text-secondary);
   }
 }
 
@@ -341,7 +324,7 @@ $gray-bg: #f5f5f5;
 .badge-page {
   height: 100vh;
   overflow: hidden;
-  background: #ffffff;
+  background: var(--bg-primary);
 }
 
 :deep(.page) {
@@ -483,10 +466,10 @@ $gray-bg: #f5f5f5;
     .filter-tag {
       display: inline-block;
       padding: 14rpx 24rpx;
-      background: #ffffff;
+      background: var(--bg-card);
       border-radius: 50rpx;
       font-size: 26rpx;
-      color: #6f6f73;
+      color: var(--text-secondary);
       transition: all 0.3s ease;
 
       &.active {
@@ -523,14 +506,14 @@ $gray-bg: #f5f5f5;
       flex-direction: column;
       align-items: center;
       padding: 32rpx 20rpx;
-      background: #ffffff;
+      background: var(--bg-card);
       border-radius: 20rpx;
-      box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.06);
+      box-shadow: 0 4rpx 12rpx var(--black-03);
       transition: all 0.2s ease;
 
       &:active {
         transform: scale(0.97);
-        box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
+        box-shadow: 0 2rpx 8rpx var(--black-12);
       }
 
       .badge-content {
@@ -549,7 +532,7 @@ $gray-bg: #f5f5f5;
 
         .badge-title {
           font-size: 26rpx;
-          color: #333333;
+          color: var(--text-primary);
           text-align: center;
           margin-bottom: 6rpx;
           line-height: 1.3;
@@ -558,7 +541,7 @@ $gray-bg: #f5f5f5;
 
         .badge-progress {
           font-size: 20rpx;
-          color: #999999;
+          color: var(--text-secondary);
           font-weight: 400;
         }
       }

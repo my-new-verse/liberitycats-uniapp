@@ -136,6 +136,11 @@ export interface ChatMessageSender {
   avatar: string
   role: string
   member_status?: number
+  equippedCommunityBadge?: {
+    code: string
+    iconUrl: string
+    accessibilityLabel?: string
+  } | null
 }
 
 export interface ChatMessagePlaceholder {

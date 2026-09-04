@@ -9,170 +9,172 @@
 <template>
   <view class="badge-detail-page">
     <!-- 自定义导航栏 -->
-    <custom-nav2 title="徽章详情" pageBackgroundColor="#ffffff">
+    <custom-nav2 title="徽章详情" pageBackgroundColor="var(--bg-primary)">
       <template #default>
-        <view v-if="loading" class="loading-state"><wd-loading /></view>
-        <scroll-view
-          v-else-if="badgeData"
-          class="content-scroll"
-          scroll-y
-          sticky-scroll-bar
-          :upper-threshold="10"
-        >
-          <!-- 徽章卡片 -->
-          <view class="badge-card">
-            <image class="badge-large-icon" :src="badgeData.iconUrl" mode="aspectFit"></image>
-            <text class="badge-title">{{ badgeData.name }}</text>
-            <text class="badge-category">{{ categoryLabel }}</text>
-            <text class="badge-desc">
-              {{ badgeData.condition?.description || badgeData.description }}
-            </text>
-          </view>
+        <view class="content-scroll-wrap">
+          <view v-if="loading" class="loading-state"><wd-loading /></view>
+          <scroll-view
+            v-else-if="badgeData"
+            class="content-scroll"
+            scroll-y
+            sticky-scroll-bar
+            :upper-threshold="10"
+          >
+            <!-- 徽章卡片 -->
+            <view class="badge-card">
+              <image class="badge-large-icon" :src="badgeData.iconUrl" mode="aspectFit"></image>
+              <text class="badge-title">{{ badgeData.name }}</text>
+              <text class="badge-category">{{ categoryLabel }}</text>
+              <text class="badge-desc">
+                {{ badgeData.condition?.description || badgeData.description }}
+              </text>
+            </view>
 
-          <!-- 未获得状态 -->
-          <view v-if="!isEarned" class="unlocked-section">
-            <view class="unlock-progress">
-              <view class="progress-labels">
-                <text class="label">解锁进度</text>
-                <text class="num">{{ progressCurrent }} / {{ progressTarget }}</text>
-              </view>
-              <view class="progress-bar">
-                <view class="progress-fill" :style="{ width: progressPercentage + '%' }"></view>
-              </view>
-              <!-- <wd-progress
+            <!-- 未获得状态 -->
+            <view v-if="!isEarned" class="unlocked-section">
+              <view class="unlock-progress">
+                <view class="progress-labels">
+                  <text class="label">解锁进度</text>
+                  <text class="num">{{ progressCurrent }} / {{ progressTarget }}</text>
+                </view>
+                <view class="progress-bar">
+                  <view class="progress-fill" :style="{ width: progressPercentage + '%' }"></view>
+                </view>
+                <!-- <wd-progress
                 :percentage="progressPercentage"
                 hide-text
                 custom-class="custom-progress"
               /> -->
-              <text class="progress-tip">{{ progressTip }}</text>
-            </view>
+                <text class="progress-tip">{{ progressTip }}</text>
+              </view>
 
-            <!-- <view class="action-btn" @click="handleGoParticipate">去参与评论</view> -->
-            <wd-button
-              v-if="badgeData.guidanceAction"
-              custom-class="action-btn"
-              plain
-              hairline
-              @click="handleActionClick"
-            >
-              {{ badgeData.guidanceAction.label }}
-            </wd-button>
+              <!-- <view class="action-btn" @click="handleGoParticipate">去参与评论</view> -->
+              <wd-button
+                v-if="badgeData.guidanceAction"
+                custom-class="action-btn"
+                plain
+                hairline
+                @click="handleActionClick"
+              >
+                {{ badgeData.guidanceAction.label }}
+              </wd-button>
 
-            <!-- 佩戴后展示预览 - 只在自己的徽章页显示 -->
-            <view v-if="!isPublicView" class="preview-section">
-              <text class="preview-title">佩戴后展示</text>
-              <view class="nickname-preview">
-                <!-- 头像 + 会员等级角标 -->
-                <view class="avatar-container">
-                  <image
-                    class="avatar"
-                    :src="userStore.userInfo.avatar || '/static/images/user/default-avatar.png'"
-                    mode="aspectFill"
-                  ></image>
-                  <!-- 会员等级角标 -->
-                  <view
-                    v-if="userStore.userInfo.level"
-                    class="level-badge"
-                    :class="getLevelClass(userStore.userInfo.level)"
-                  >
-                    {{ getLevelText(userStore.userInfo.level) }}
+              <!-- 佩戴后展示预览 - 只在自己的徽章页显示 -->
+              <view v-if="!isPublicView" class="preview-section">
+                <text class="preview-title">佩戴后展示</text>
+                <view class="nickname-preview">
+                  <!-- 头像 + 会员等级角标 -->
+                  <view class="avatar-container">
+                    <image
+                      class="avatar"
+                      :src="userStore.userInfo.avatar || '/static/images/user/default-avatar.png'"
+                      mode="aspectFill"
+                    ></image>
+                    <!-- 会员等级角标 -->
+                    <view class="levelIcon">
+                      <view
+                        v-if="userStore.userInfo.level?.level"
+                        class="levelBadge"
+                        :style="getLevelClass(userStore.userInfo.level?.level)"
+                      ></view>
+                    </view>
                   </view>
+                  <!-- 昵称 -->
+                  <text class="nickname">{{ userStore.userInfo.nickname }}</text>
+                  <!-- 徽章图标 -->
+                  <image class="badge-small-icon" :src="previewIconUrl" mode="aspectFit"></image>
                 </view>
-                <!-- 昵称 -->
-                <text class="nickname">{{ userStore.userInfo.nickname }}</text>
-                <!-- 徽章图标 -->
-                <image class="badge-small-icon" :src="previewIconUrl" mode="aspectFit"></image>
-              </view>
-            </view>
-          </view>
-
-          <!-- 已获得状态 -->
-          <view v-else class="obtained-section">
-            <!-- 获取信息 -->
-            <view class="info-list">
-              <view class="info-item">
-                <text class="info-label">获得方式</text>
-                <text class="info-value">
-                  {{ badgeData.acquisition?.method || badgeData.description }}
-                </text>
-              </view>
-              <view class="info-item">
-                <text class="info-label">获得时间</text>
-                <text class="info-value">
-                  {{ badgeData.acquisition?.earnedAt || badgeData.earnedAt || '-' }}
-                </text>
-              </view>
-              <view class="info-item obtained-status">
-                <text class="info-label">状态</text>
-                <text class="info-value obtained-tag">
-                  {{ isEquipped ? '已佩戴' : '已获得' }}
-                </text>
               </view>
             </view>
 
-            <!-- 昵称展示预览 - 只在自己的徽章页显示 -->
-            <view v-if="!isPublicView" class="preview-section">
-              <text class="preview-title">昵称展示预览</text>
-              <view class="nickname-preview">
-                <!-- 头像 + 会员等级角标 -->
-                <view class="avatar-container">
-                  <image
-                    class="avatar"
-                    :src="userStore.userInfo.avatar || '/static/images/user/default-avatar.png'"
-                    mode="aspectFill"
-                  ></image>
-                  <!-- 会员等级角标 -->
-                  <view
-                    v-if="userStore.userInfo.level"
-                    class="level-badge"
-                    :class="getLevelClass(userStore.userInfo.level)"
-                  >
-                    {{ getLevelText(userStore.userInfo.level) }}
+            <!-- 已获得状态 -->
+            <view v-else class="obtained-section">
+              <!-- 获取信息 -->
+              <view class="info-list">
+                <view class="info-item">
+                  <text class="info-label">获得方式</text>
+                  <text class="info-value">
+                    {{ badgeData.acquisition?.method || badgeData.description }}
+                  </text>
+                </view>
+                <view class="info-item">
+                  <text class="info-label">获得时间</text>
+                  <text class="info-value">
+                    {{ badgeData.acquisition?.earnedAt || badgeData.earnedAt || '-' }}
+                  </text>
+                </view>
+                <view class="info-item obtained-status">
+                  <text class="info-label">状态</text>
+                  <text class="info-value obtained-tag">
+                    {{ isEquipped ? '已佩戴' : '已获得' }}
+                  </text>
+                </view>
+              </view>
+
+              <!-- 昵称展示预览 - 只在自己的徽章页显示 -->
+              <view v-if="!isPublicView" class="preview-section">
+                <text class="preview-title">昵称展示预览</text>
+                <view class="nickname-preview">
+                  <!-- 头像 + 会员等级角标 -->
+                  <view class="avatar-container">
+                    <image
+                      class="avatar"
+                      :src="userStore.userInfo.avatar || '/static/images/user/default-avatar.png'"
+                      mode="aspectFill"
+                    ></image>
+                    <!-- 会员等级角标 -->
+                    <view class="levelIcon">
+                      <view
+                        v-if="userStore.userInfo.level?.level"
+                        class="levelBadge"
+                        :style="getLevelClass(userStore.userInfo.level?.level)"
+                      ></view>
+                    </view>
                   </view>
+                  <!-- 昵称 -->
+                  <text class="nickname">{{ userStore.userInfo.nickname }}</text>
+                  <!-- 徽章图标 -->
+                  <image class="badge-small-icon" :src="previewIconUrl" mode="aspectFit"></image>
                 </view>
-                <!-- 昵称 -->
-                <text class="nickname">{{ userStore.userInfo.nickname }}</text>
-                <!-- 徽章图标 -->
-                <image class="badge-small-icon" :src="previewIconUrl" mode="aspectFit"></image>
+                <text class="preview-desc">会员等级使用头像角标；昵称旁只展示徽章图形</text>
               </view>
-              <text class="preview-desc">会员等级使用头像角标；昵称旁只展示徽章图形</text>
             </view>
-          </view>
 
-          <view
-            v-if="badgeData.series?.type === 'STAGED' && badgeData.stages?.length"
-            class="stages-section"
-          >
-            <text class="section-title">{{ badgeData.series.name }}</text>
             <view
-              v-for="stage in badgeData.stages"
-              :key="stage.code"
-              class="stage-item"
-              :class="{ current: stage.isCurrent }"
+              v-if="badgeData.series?.type === 'STAGED' && badgeData.stages?.length"
+              class="stages-section"
             >
-              <image class="stage-icon" :src="stage.iconUrl" mode="aspectFit" />
-              <view class="stage-info">
-                <text class="stage-name">{{ stage.name }}</text>
-                <text class="stage-progress">{{ stage.progressTarget }}{{ stage.unit }}</text>
+              <text class="section-title">{{ badgeData.series.name }}</text>
+              <view
+                v-for="stage in badgeData.stages"
+                :key="stage.code"
+                class="stage-item"
+                :class="{ current: stage.isCurrent }"
+              >
+                <image class="stage-icon" :src="stage.iconUrl" mode="aspectFit" />
+                <view class="stage-info">
+                  <text class="stage-name">{{ stage.name }}</text>
+                  <text class="stage-progress">{{ stage.progressTarget }}{{ stage.unit }}</text>
+                </view>
+                <text class="stage-status">{{ getStageStatusText(stage.status) }}</text>
               </view>
-              <text class="stage-status">{{ getStageStatusText(stage.status) }}</text>
             </view>
-          </view>
 
-          <!-- 底部按钮 -->
-          <view v-if="!isEarned && showDisabledEquipAction" class="bottom-action">
-            <wd-button custom-class="disable-btn" disabled>{{ equipActionText }}</wd-button>
-          </view>
-          <view v-else-if="isEarned && showEquipmentAction" class="bottom-action">
-            <button
-              class="primary-btn"
-              :disabled="submitting || !canRunEquipmentAction"
-              @click="handleEquippedAction"
-            >
-              {{ equipActionText }}
-            </button>
-          </view>
-        </scroll-view>
+            <!-- 底部按钮 -->
+            <view v-if="!isEarned && showDisabledEquipAction" class="bottom-action">
+              <wd-button custom-class="disable-btn" disabled>{{ equipActionText }}</wd-button>
+            </view>
+            <view v-else-if="isEarned && showEquipmentAction" class="bottom-action">
+              <button
+                class="primary-btn"
+                :disabled="submitting || !canRunEquipmentAction"
+                @click="handleEquippedAction"
+              >
+                {{ equipActionText }}
+              </button>
+            </view>
+          </scroll-view>
+        </view>
       </template>
     </custom-nav2>
   </view>
@@ -193,6 +195,8 @@ import {
 } from '@/service/api/badge'
 import { useUserStore } from '@/store/user'
 import { executeBadgeNavigationTarget } from '@/utils/badgeNavigation'
+import { markBadgeListRefreshRequired } from '@/utils/badgeRefresh'
+import { getLevelBadgeStyle, getCachedMemberAvatar, cacheMemberAvatars } from '@/utils/avatarCache'
 
 // 当前徽章数据 - 初始设置为空对象或默认值
 const badgeData = ref<BadgeDetail | null>(null)
@@ -264,9 +268,11 @@ const progressTip = computed(() => {
   const unit = badgeData.value?.progress?.unit || badgeData.value?.progressUnit || ''
   return `再完成 ${remaining}${unit}即可获得`
 })
-
+console.log('=====', userStore.userInfo?.member_id)
 // 判断是否是查看他人的徽章
-const isPublicView = computed(() => viewedMemberId.value !== null)
+const isPublicView = computed(
+  () => viewedMemberId.value !== null && viewedMemberId.value != userStore.userInfo?.member_id,
+)
 
 // 生命周期
 onLoad((options) => {
@@ -286,9 +292,10 @@ onLoad((options) => {
 const loadBadgeDetail = async (code: string, memberId?: string) => {
   loading.value = true
   try {
-    const response = memberId
-      ? await getUserBadgeDetailApi(memberId, code)
-      : await getBadgeDetailApi(code)
+    const response =
+      memberId && memberId != userStore.userInfo?.member_id
+        ? await getUserBadgeDetailApi(memberId, code)
+        : await getBadgeDetailApi(code)
     if (response.code === 1 && response.data) {
       badgeData.value = response.data
       return
@@ -325,13 +332,8 @@ const handleEquippedAction = async () => {
       },
     }
 
-    // 成功修改佩戴状态后，广播事件通知 index 页面刷新数据
-    const currentCode = badgeData.value.code
-    uni.$emit('badge_equipment_updated', {
-      badgeCode: currentCode,
-      newStatus: wasEquipped ? 'UNEQUIPPED' : 'EQUIPPED',
-      timestamp: Date.now(),
-    })
+    // 列表页此时处于隐藏状态，持久化标记保证返回时能够刷新。
+    markBadgeListRefreshRequired()
 
     uni.showToast({
       title: wasEquipped ? '已取消佩戴' : '佩戴成功',
@@ -345,21 +347,9 @@ const handleEquippedAction = async () => {
   }
 }
 
-// 获取会员等级文本
-const getLevelText = (level: number): string => {
-  const levelMap: Record<number, string> = {
-    1: '铜牌',
-    2: '银牌',
-    3: '金牌',
-    4: '钻石',
-    5: '皇冠',
-  }
-  return levelMap[level] || `Lv.${level}`
-}
-
 // 获取会员等级样式类名
 const getLevelClass = (level: number): string => {
-  return `level-${level}`
+  return getLevelBadgeStyle(level)
 }
 
 // 处理点击事件
@@ -387,25 +377,56 @@ const getStageStatusText = (status: BadgeStatus) => {
   font-family: Alibaba PuHuiTi2 !important;
 }
 .badge-detail-page {
-  min-height: 100vh;
-  background: #f7f6f4;
+  height: 100vh;
+  overflow: hidden;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+}
+
+:deep(.page) {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+:deep(.cnt2) {
+  box-sizing: border-box;
+  height: 100%;
+  overflow: hidden;
+}
+
+:deep(.default-cnt) {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0 !important;
+  overflow: hidden;
+}
+
+.content-scroll-wrap {
+  flex: 1;
+  height: 0;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .content-scroll {
-  height: 100vh;
+  width: 100%;
+  height: 100%;
 }
 
 .loading-state {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 60vh;
+  height: 100%;
 }
 
 .stages-section {
   margin: 0 24rpx 40rpx;
   padding: 32rpx;
-  background: #ffffff;
+  background: var(--bg-card);
   border-radius: 24rpx;
 
   .section-title {
@@ -420,7 +441,7 @@ const getStageStatusText = (status: BadgeStatus) => {
     align-items: center;
     gap: 20rpx;
     padding: 20rpx 0;
-    border-bottom: 1rpx solid #f0f0f0;
+    border-bottom: 1rpx solid var(--border-light);
 
     &:last-child {
       border-bottom: 0;
@@ -450,7 +471,7 @@ const getStageStatusText = (status: BadgeStatus) => {
   .stage-progress,
   .stage-status {
     font-size: 22rpx;
-    color: #999999;
+    color: var(--text-secondary);
   }
 }
 
@@ -458,7 +479,7 @@ const getStageStatusText = (status: BadgeStatus) => {
 .badge-card {
   margin: 40rpx 24rpx;
   padding: 40rpx;
-  background: #ffffff;
+  background: var(--bg-card);
   // border-radius: 24rpx;
   text-align: center;
   // box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
@@ -479,7 +500,7 @@ const getStageStatusText = (status: BadgeStatus) => {
   .badge-category {
     display: inline-block;
     padding: 6rpx 16rpx;
-    background: #fff3e8;
+    background: var(--promotionCard-bg-color);
     color: var(--liberty-cats-primary-color);
     font-size: 24rpx;
     border-radius: 18rpx;
@@ -501,7 +522,7 @@ const getStageStatusText = (status: BadgeStatus) => {
   }
 
   .badge-desc {
-    color: #777;
+    color: var(--text-secondary);
     text-align: center;
     font-size: 26rpx;
     font-weight: 400;
@@ -513,7 +534,7 @@ const getStageStatusText = (status: BadgeStatus) => {
 .unlocked-section {
   margin: 0 24rpx 24rpx;
   padding: 32rpx;
-  background: #ffffff;
+  background: var(--bg-card);
   // border-radius: 24rpx;
   // box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
 
@@ -532,7 +553,7 @@ const getStageStatusText = (status: BadgeStatus) => {
       .label {
         font-size: 32rpx;
         font-weight: 600;
-        color: #333333;
+        color: var(--text-primary);
       }
 
       .num {
@@ -544,7 +565,7 @@ const getStageStatusText = (status: BadgeStatus) => {
 
     .progress-bar {
       height: 16rpx;
-      background: #f0f0f0;
+      background: var(--border-light);
       border-radius: 6rpx;
 
       overflow: hidden;
@@ -562,7 +583,7 @@ const getStageStatusText = (status: BadgeStatus) => {
       display: block;
       margin-top: 12rpx;
       font-size: 28rpx;
-      color: #999999;
+      color: var(--text-secondary);
     }
   }
 
@@ -571,7 +592,7 @@ const getStageStatusText = (status: BadgeStatus) => {
     height: 88rpx;
     line-height: 88rpx;
     text-align: center;
-    background: #ffffff;
+    background: var(--bg-card);
     border: 2rpx solid #ff6b03;
     border-radius: 44rpx;
     font-size: 28rpx;
@@ -585,7 +606,7 @@ const getStageStatusText = (status: BadgeStatus) => {
 .obtained-section {
   margin: 0 24rpx 24rpx;
   padding: 32rpx;
-  background: #ffffff;
+  background: var(--bg-card);
   border-radius: 24rpx;
   // box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
 
@@ -605,12 +626,12 @@ const getStageStatusText = (status: BadgeStatus) => {
 
       .info-label {
         font-size: 26rpx;
-        color: #999999;
+        color: var(--text-secondary);
       }
 
       .info-value {
         font-size: 26rpx;
-        color: #333333;
+        color: var(--text-primary);
         font-weight: 500;
       }
 
@@ -628,7 +649,7 @@ const getStageStatusText = (status: BadgeStatus) => {
   display: flex;
   align-items: center;
   padding: 24rpx;
-  background: #f7f6f4;
+  background: var(--bg-primary);
   border-radius: 16rpx;
   margin-bottom: 16rpx;
 
@@ -646,40 +667,19 @@ const getStageStatusText = (status: BadgeStatus) => {
       object-fit: cover;
     }
 
-    .level-badge {
+    .levelIcon {
       position: absolute;
-      bottom: -4rpx;
       right: -4rpx;
-      padding: 6rpx 10rpx;
-      min-width: 44rpx;
+      bottom: 6rpx;
+      width: 28rpx;
       height: 28rpx;
-      line-height: 24rpx;
-      text-align: center;
-      font-size: 18rpx;
-      font-weight: 600;
-      color: #ffffff;
-      border-radius: 14rpx;
 
-      &.level-1 {
-        background: linear-gradient(135deg, #cd7f32 0%, #a0522d 100%);
-      }
-
-      &.level-2 {
-        background: linear-gradient(135deg, #c0c0c0 0%, #808080 100%);
-      }
-
-      &.level-3 {
-        background: linear-gradient(135deg, #ffd700 0%, #daa520 100%);
-      }
-
-      &.level-4 {
-        background: linear-gradient(135deg, #b9f2ff 0%, #00ced1 100%);
-        color: #006666;
-      }
-
-      &.level-5 {
-        background: linear-gradient(135deg, #e6e6fa 0%, #9370db 100%);
-        color: #4b0082;
+      .levelBadge {
+        width: 100%;
+        height: 100%;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: contain;
       }
     }
   }
@@ -687,7 +687,7 @@ const getStageStatusText = (status: BadgeStatus) => {
   .nickname {
     // flex: 1;
     font-size: 28rpx;
-    color: #333333;
+    color: var(--text-primary);
     font-weight: 500;
   }
 
@@ -706,12 +706,12 @@ const getStageStatusText = (status: BadgeStatus) => {
     display: block;
     font-size: 32rpx;
     font-weight: 600;
-    color: #333333;
+    color: var(--text-primary);
     margin-bottom: 20rpx;
   }
   .preview-desc {
     font-size: 26rpx;
-    color: #999999;
+    color: var(--text-secondary);
   }
 }
 
@@ -723,10 +723,10 @@ const getStageStatusText = (status: BadgeStatus) => {
   .disable-btn {
     width: 100%;
     height: 96rpx;
-    background: #f5f5f5;
+    background: var(--wot-button-info-bg-color);
     border-radius: 48rpx;
     font-size: 28rpx;
-    color: #999999;
+    color: var(--text-secondary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -749,7 +749,7 @@ const getStageStatusText = (status: BadgeStatus) => {
 // 关闭按钮
 .close-btn {
   font-size: 48rpx;
-  color: #333333;
+  color: var(--text-primary);
   padding: 8rpx;
   line-height: 1;
 }

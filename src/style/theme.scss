@@ -126,6 +126,18 @@
   --promotionCard-border-color: #f8efe6;
   --draft-btn-disabled-color: #cccccc;
   --publish-btn-disabled-bg-color: #ffd4b8;
+  --l-editor-bg: #ffffff;
+  --l-editor-surface: #f3f3f4;
+  --l-editor-text: #261000;
+  --l-editor-placeholder: rgba(38, 16, 0, 0.3);
+  --l-editor-disabled-bg: #eeeeee;
+  --l-editor-text-muted: #999999;
+  --l-editor-btn-disabled-bg: #e0e0e0;
+  --l-editor-btn-disabled-color: #999999;
+  --l-editor-primary: #ff6b03;
+  --l-editor-btn-active-color: #ffffff;
+  --l-editor-link: #167fff;
+  --l-editor-danger: #f56c6c;
 }
 
 // 夜间变量组（与 src/utils/theme.ts 的 darkVars 保持同步）
@@ -235,5 +247,17 @@
     --promotionCard-border-color: #684f43;
     --draft-btn-disabled-color: #4f4f4f;
     --publish-btn-disabled-bg-color: #704e3a;
+    --l-editor-bg: #2d2d2d;
+    --l-editor-surface: #1e1e1e;
+    --l-editor-text: #e0e0e0;
+    --l-editor-placeholder: rgba(226, 226, 226, 0.5);
+    --l-editor-disabled-bg: #242424;
+    --l-editor-text-muted: #888888;
+    --l-editor-btn-disabled-bg: #4f4f4f;
+    --l-editor-btn-disabled-color: #999999;
+    --l-editor-primary: #ff6b03;
+    --l-editor-btn-active-color: #ffffff;
+    --l-editor-link: #6ca9ff;
+    --l-editor-danger: #ff7875;
   }
 }
