@@ -294,12 +294,16 @@ const handleRulesClick = () => {
 }
 
 // 全局变量
-$badge-page-bg: #f7f6f4;
+$badge-page-bg: var(--bg-primary);
 $card-gradient-start: #ff6b03;
 $card-gradient-end: #ee941a;
 $card-bg: linear-gradient(135deg, $card-gradient-start 0%, $card-gradient-end 100%);
 $primary-orange: #ff6b03;
-$gray-bg: #f5f5f5;
+$gray-bg: var(--wot-action-sheet-active-color);
+
+:deep(.cnt2) {
+  background-color: var(--liberty-cats-page-background-color) !important;
+}
 
 // Loading 样式
 .badge-list-loading {
@@ -320,8 +324,8 @@ $gray-bg: #f5f5f5;
 
   .loading-text {
     margin-top: 20rpx;
-    font-size: 24rpx;
-    color: #999;
+    font-size: calc(24rpx * var(--font-scale));
+    color: var(--text-secondary);
   }
 }
 
@@ -341,7 +345,7 @@ $gray-bg: #f5f5f5;
 .badge-page {
   height: 100vh;
   overflow: hidden;
-  background: #ffffff;
+  background: var(--bg-card);
 }
 
 :deep(.page) {
@@ -381,8 +385,8 @@ $gray-bg: #f5f5f5;
     margin-bottom: 32rpx; // 增加间距
 
     .label {
-      font-size: 24rpx;
-      color: rgba(255, 255, 255, 0.8);
+      font-size: calc(24rpx * var(--font-scale));
+      color: var(--white-80);
     }
 
     .chevron {
@@ -391,8 +395,8 @@ $gray-bg: #f5f5f5;
       justify-content: center;
 
       wd-icon {
-        font-size: 22rpx;
-        color: rgba(255, 255, 255, 0.8);
+        font-size: calc(22rpx * var(--font-scale));
+        color: var(--white-80);
       }
     }
   }
@@ -426,19 +430,19 @@ $gray-bg: #f5f5f5;
       justify-content: center;
       gap: 12rpx;
       .label {
-        color: #ffffff;
-        font-size: 24rpx;
+        color: var(--bg-card);
+        font-size: calc(24rpx * var(--font-scale));
       }
       .badge-name {
         display: block;
-        font-size: 36rpx;
+        font-size: calc(36rpx * var(--font-scale));
         font-weight: 600;
-        color: #ffffff;
+        color: var(--bg-card);
       }
 
       .badge-desc {
-        font-size: 24rpx;
-        color: rgba(255, 255, 255, 0.9);
+        font-size: calc(24rpx * var(--font-scale));
+        color: var(--white-90);
         line-height: 1.4;
       }
     }
@@ -449,15 +453,15 @@ $gray-bg: #f5f5f5;
     align-items: baseline;
 
     .progress-num {
-      font-size: 48rpx;
+      font-size: calc(48rpx * var(--font-scale));
       font-weight: 700;
-      color: #ffffff;
+      color: var(--bg-card);
       margin-right: 12rpx;
     }
 
     .progress-text {
-      font-size: 24rpx;
-      color: rgba(255, 255, 255, 0.9);
+      font-size: calc(24rpx * var(--font-scale));
+      color: var(--white-90);
     }
   }
 }
@@ -483,15 +487,15 @@ $gray-bg: #f5f5f5;
     .filter-tag {
       display: inline-block;
       padding: 14rpx 24rpx;
-      background: #ffffff;
+      background: var(--bg-card);
       border-radius: 50rpx;
-      font-size: 26rpx;
-      color: #6f6f73;
+      font-size: calc(26rpx * var(--font-scale));
+      color: var(--filter-tag-color);
       transition: all 0.3s ease;
 
       &.active {
         background: $primary-orange;
-        color: #ffffff;
+        color: var(--bg-card);
         font-weight: 500;
       }
     }
@@ -523,7 +527,7 @@ $gray-bg: #f5f5f5;
       flex-direction: column;
       align-items: center;
       padding: 32rpx 20rpx;
-      background: #ffffff;
+      background: var(--bg-card);
       border-radius: 20rpx;
       box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.06);
       transition: all 0.2s ease;
@@ -548,8 +552,8 @@ $gray-bg: #f5f5f5;
         }
 
         .badge-title {
-          font-size: 26rpx;
-          color: #333333;
+          font-size: calc(26rpx * var(--font-scale));
+          color: var(--actions-text);
           text-align: center;
           margin-bottom: 6rpx;
           line-height: 1.3;
@@ -557,8 +561,8 @@ $gray-bg: #f5f5f5;
         }
 
         .badge-progress {
-          font-size: 20rpx;
-          color: #999999;
+          font-size: calc(20rpx * var(--font-scale));
+          color: var(--text-secondary);
           font-weight: 400;
         }
       }

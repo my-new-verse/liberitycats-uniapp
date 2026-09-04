@@ -460,7 +460,7 @@
                 <view class="icon2">
                   <image class="iconImg" src="@/static/images/badge.png" mode="widthFix" />
                 </view>
-                <view class="title">我的成就</view>
+                <view class="title">{{ t('my.badge.achievements') }}</view>
               </view>
               <view class="menuItemRight">
                 <view class="arrow"></view>

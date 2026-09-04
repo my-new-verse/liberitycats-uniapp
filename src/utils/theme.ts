@@ -105,6 +105,11 @@ const lightVars: Record<string, string> = {
   '--promotionCard-border-color': '#f8efe6',
   '--draft-btn-disabled-color': '#cccccc',
   '--publish-btn-disabled-bg-color': '#ffd4b8',
+  '--white-90': 'rgba(255, 255, 255, 0.9)',
+  '--white-80': 'rgba(255, 255, 255, 0.8)',
+  '--filter-tag-color': '#6f6f73',
+  '--badge-desc-color': '#777',
+  '--badge-category-bg-color': '#fff3e8',
 }
 
 const darkVars: Record<string, string> = {
@@ -210,6 +215,11 @@ const darkVars: Record<string, string> = {
   '--promotionCard-border-color': '#684f43',
   '--draft-btn-disabled-color': '#4f4f4f',
   '--publish-btn-disabled-bg-color': '#704e3a',
+  '--white-90': 'rgba(0, 0, 0, 0.9)',
+  '--white-80': 'rgba(0, 0, 0, 0.8)',
+  '--filter-tag-color': '#94949b',
+  '--badge-desc-color': '#9c9c9c',
+  '--badge-category-bg-color': '#3f3731',
 }
 
 export function applyTheme(mode: ThemeMode) {
