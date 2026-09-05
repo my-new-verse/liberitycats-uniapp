@@ -139,7 +139,9 @@
             </view>
 
             <view
-              v-if="badgeData.series?.type === 'STAGED' && badgeData.stages?.length"
+              v-if="
+                !isPublicView && badgeData.series?.type === 'STAGED' && badgeData.stages?.length
+              "
               class="stages-section"
             >
               <text class="section-title">{{ badgeData.series.name }}</text>
