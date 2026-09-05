@@ -353,7 +353,7 @@ onNavigationBarButtonTap(() => {
 
   .loading-subtext {
     font-size: calc(24rpx * var(--font-scale));
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--white-60);
   }
 }
 

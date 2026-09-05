@@ -101,7 +101,7 @@ const close = () => emit('update:modelValue', false)
   align-items: center;
   justify-content: center;
   padding: 32rpx;
-  background: rgba(0, 0, 0, 0.42);
+  background: var(--black-42);
 }
 
 .resource-dialog {
@@ -111,7 +111,7 @@ const close = () => emit('update:modelValue', false)
   padding: 58rpx 40rpx 34rpx;
   overflow: hidden;
   text-align: center;
-  background: #ffffff;
+  background: var(--bg-card);
   border-radius: 34rpx;
   box-shadow: 0 24rpx 80rpx rgba(35, 20, 10, 0.18);
 }
@@ -156,7 +156,7 @@ const close = () => emit('update:modelValue', false)
   margin-top: 22rpx;
   font-size: calc(27rpx * var(--font-scale));
   line-height: 1.65;
-  color: #888888;
+  color: var(--chat-user-name-color);
 }
 
 .resource-dialog-description-line,
@@ -184,13 +184,13 @@ const close = () => emit('update:modelValue', false)
   gap: 12rpx;
   margin-top: 28rpx;
   padding-top: 24rpx;
-  border-top: 1rpx solid #eeeeee;
+  border-top: 1rpx solid var(--resource-dialog-notice-border-color);
 }
 
 .resource-dialog-notice-text {
   font-size: calc(23rpx * var(--font-scale));
   line-height: 1.55;
-  color: #888888;
+  color: var(--chat-user-name-color);
   text-align: left;
 }
 
@@ -198,7 +198,7 @@ const close = () => emit('update:modelValue', false)
   padding: 22rpx 20rpx 36rpx;
   font-size: calc(28rpx * var(--font-scale));
   line-height: 1.6;
-  color: #888888;
+  color: var(--chat-user-name-color);
 }
 
 .resource-dialog-action {
@@ -206,7 +206,7 @@ const close = () => emit('update:modelValue', false)
   font-size: calc(30rpx * var(--font-scale));
   font-weight: 600;
   color: #ff6b03;
-  border-top: 1rpx solid #eeeeee;
+  border-top: 1rpx solid var(--resource-dialog-notice-border-color);
 }
 
 @keyframes resource-dialog-spin {

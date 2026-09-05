@@ -122,6 +122,9 @@ const lightVars: Record<string, string> = {
   '--filter-tag-color': '#6f6f73',
   '--badge-desc-color': '#777',
   '--badge-category-bg-color': '#fff3e8',
+  '--white-60': 'rgba(255, 255, 255, 0.6)',
+  '--black-42': 'rgba(0, 0, 0, 0.42)',
+  '--resource-dialog-notice-border-color': '#eeeeee',
 }
 
 const darkVars: Record<string, string> = {
@@ -244,6 +247,9 @@ const darkVars: Record<string, string> = {
   '--filter-tag-color': '#94949b',
   '--badge-desc-color': '#9c9c9c',
   '--badge-category-bg-color': '#3f3731',
+  '--white-60': 'rgba(0, 0, 0, 0.6)',
+  '--black-42': 'rgba(255, 255, 255, 0.42)',
+  '--resource-dialog-notice-border-color': '#38383c',
 }
 
 export function applyTheme(mode: ThemeMode) {
