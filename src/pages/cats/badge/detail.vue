@@ -127,9 +127,7 @@
                       v-if="userStore.userInfo.level"
                       class="level-badge"
                       :class="getLevelClass(userStore.userInfo.level)"
-                    >
-                      {{ getLevelText(userStore.userInfo.level) }}
-                    </view>
+                    ></view>
                   </view>
                   <!-- 昵称 -->
                   <text class="nickname">{{ userStore.userInfo.nickname }}</text>
