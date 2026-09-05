@@ -138,6 +138,7 @@ const handleBadgeClick = (badgeCode: string, memberId: number) => {
   if (!badgeCode || !memberId) return
   toUrl(
     `/pages/cats/badge/detail?code=${encodeURIComponent(badgeCode)}&memberId=${encodeURIComponent(memberId)}`,
+    true,
   )
 }
 </script>
