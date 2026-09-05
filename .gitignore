@@ -67,6 +67,7 @@ mp-360/
 !.claude/skills/vitest
 !.claude/skills/vue
 !.claude/skills/vue-best-practices
+!.claude/skills/web-design-engineer
 .codex/
 .cursor/
 .codegraph/

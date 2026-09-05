@@ -41,7 +41,10 @@ Codex discovers repository skills directly from `.agents/skills`; do not create 
 
 ## Required External Skills
 
-This project uses exactly these external skills from [antfu/skills](https://github.com/antfu/skills): `antfu`, `vue`, `vue-best-practices`, `pinia`, `vite`, and `vitest`. Do not install the repository wildcard set unless this list is intentionally expanded.
+This project uses these external skills:
+
+- From [antfu/skills](https://github.com/antfu/skills): `antfu`, `vue`, `vue-best-practices`, `pinia`, `vite`, and `vitest`.
+- From [ConardLi/garden-skills](https://github.com/ConardLi/garden-skills): `web-design-engineer`.
 
 On a fresh checkout, restore the pinned set from the committed `skills-lock.json`:
 
@@ -49,13 +52,7 @@ On a fresh checkout, restore the pinned set from the committed `skills-lock.json
 pnpx skills experimental_install
 ```
 
-Only when intentionally creating or changing the required set, regenerate it explicitly and review the resulting `skills-lock.json` diff:
-
-```bash
-pnpx skills add antfu/skills \
-  --skill antfu vue vue-best-practices pinia vite vitest \
-  --yes
-```
+Only when intentionally creating or changing the required set, regenerate it explicitly and review the resulting `skills-lock.json` diff.
 
 The generated external skill directories under `.agents/skills/` are ignored by Git; `skills-lock.json` is the reproducible source of truth. Codex discovers them directly from `.agents/skills/`. Claude Code uses the committed per-skill links under `.claude/skills/`, all pointing back to the same canonical directories. Do not copy skill directories into tool-specific locations.
 
@@ -65,7 +62,7 @@ Verify the installed project skills with:
 pnpx skills list --json
 ```
 
-The output must contain the six required external skills plus the repository-owned `using-uni-app-official-docs` skill, and no other external skills. Restart an already-running agent only if its skill list does not refresh.
+The output must contain the required external skills plus the repository-owned `using-uni-app-official-docs` skill, and no other external skills. Restart an already-running agent only if its skill list does not refresh.
 
 Consult these skills when relevant, but do not paste their detailed contents into this file:
 
@@ -75,6 +72,7 @@ Consult these skills when relevant, but do not paste their detailed contents int
 - [`skills/vite`](https://github.com/antfu/skills/tree/main/skills/vite)
 - [`skills/vitest`](https://github.com/antfu/skills/tree/main/skills/vitest)
 - [`skills/antfu`](https://github.com/antfu/skills/tree/main/skills/antfu)
+- [`skills/web-design-engineer`](https://github.com/ConardLi/garden-skills/tree/main/skills/web-design-engineer)
 
 Use those skills for general Vue, Vite, Pinia, Vitest, and TypeScript guidance. Apply them only after checking this repository's actual patterns.
 

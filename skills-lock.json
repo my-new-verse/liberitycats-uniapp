@@ -36,6 +36,12 @@
       "sourceType": "github",
       "skillPath": "skills/vue-best-practices/SKILL.md",
       "computedHash": "d7d22c8cb343583c3904692c4d1d7b50382945e433e4f6e053f4aabb9846cbc3"
+    },
+    "web-design-engineer": {
+      "source": "ConardLi/garden-skills",
+      "sourceType": "github",
+      "skillPath": "skills/web-design-engineer/SKILL.md",
+      "computedHash": "82e5bd4aec3752c4dd8d22939c46d24f2fa4b03e24088420dabcd4ada0ef6884"
     }
   }
 }
