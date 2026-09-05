@@ -522,32 +522,24 @@ const scrollIntoViewById = async (id: string, offset: number = 500) => {
   // 检查当前消息列表中是否已存在目标消息
   const findInCurrent = () => messages.value.some((m: any) => m.id === targetId)
 
-  // 如果当前列表中不存在，循环加载历史消息直到找到或没有更多数据
-  while (!findInCurrent() && hasMoreHistory.value) {
-    const earliestId =
-      messages.value.length > 0 ? Math.min(...messages.value.map((m: any) => m.id)) : undefined
-    if (!earliestId) break
-    // 使用 silent=true 避免触发 paging.complete，手动控制消息追加
-    await getChatMessageList(earliestId, true)
-    // 从缓存中取出刚加载的消息并追加到列表头部
-    const cached = messageCache.get(earliestId)
-    if (cached) {
-      const filtered = filterExistingMessages(messages.value, cached.messages)
-      messages.value = [...filtered, ...messages.value]
-      lastestMessageId.value = cached.newLastestId
-      messageCache.delete(earliestId)
-    }
-    await nextTick()
+  // 目标不在当前虚拟列表时，通过上下文接口重建分页数据。
+  // 不能直接改 messages.value 插入历史消息，否则 z-paging 的虚拟高度与索引会失步。
+  if (!findInCurrent()) {
+    pendingScrollToMessageId.value = id
+    isFromContext.value = true
+    isFromHistory.value = true
+    contextAfterMessageId.value = null
+    contextLoadArmed.value = false
+    paging.value?.reload()
+    return
   }
 
   // 找到后滚动并高亮
-  if (findInCurrent()) {
-    paging.value.scrollIntoViewById('msg-row-' + id, offset)
-    highlightedMsgId.value = id
-    setTimeout(() => {
-      highlightedMsgId.value = ''
-    }, 1000)
-  }
+  paging.value.scrollIntoViewById('msg-row-' + id, offset)
+  highlightedMsgId.value = id
+  setTimeout(() => {
+    highlightedMsgId.value = ''
+  }, 1000)
 }
 onHide(() => {
   // console.log('onHide')
@@ -640,11 +632,11 @@ const loadAfterContextMessages = (afterId: number, limit: number = 50) => {
     .then((afterRes) => {
       if (afterRes.code === 1 && afterRes.data?.messages?.length > 0) {
         const afterMessages = [...afterRes.data.messages]
-        paging.value?.addChatRecordData(afterMessages, false, false)
+        const filtered = filterExistingMessages(messages.value, afterMessages)
+        if (filtered.length > 0) paging.value?.addChatRecordData(filtered, false, false)
         setTimeout(() => {
           // scrollIntoViewById(String(afterId) ,25)
           paging.value.scrollIntoViewById('msg-row-' + afterId, 50)
-          uni.hideLoading()
         }, 10)
       }
       if (
@@ -663,6 +655,7 @@ const loadAfterContextMessages = (afterId: number, limit: number = 50) => {
     })
     .finally(() => {
       contextLoadingMore.value = false
+      uni.hideLoading()
     })
 }
 
@@ -1497,7 +1490,7 @@ const handleFloatAction = () => {
   if (showFloatBtn.value && msgs.length > 0) {
     // 重要消息优先：取第一条未读重要消息，跳转后从数组中移除。
     const msg = msgs[0]
-    scrollIntoViewById(String(msg.message_id))
+    scrollIntoViewById(String(msg.message_id), 100)
     importantUnreadMessages.value = msgs.slice(1)
 
     if (importantUnreadMessages.value.length === 0) {
@@ -1509,7 +1502,7 @@ const handleFloatAction = () => {
 
   if (!showUnreadFloatBtn.value) return
   hasHandledUnreadPosition.value = true
-  scrollIntoViewById(String(lastReadMessageId.value))
+  scrollIntoViewById(String(lastReadMessageId.value), 100)
 }
 //  向下的箭头 ⬇️⬇️⬇️⬇️⬇️⬇️⬇️⬇️⬇️ end
 const messageCache = new Map()
@@ -1535,10 +1528,13 @@ const queryList = async (pageNo, pageSize) => {
           await nextTick()
           setTimeout(async () => {
             await scrollIntoViewById(targetId)
-            // 等 scrollIntoViewById 的滚动动画完全停止后，再设置 after_message_id
+            // 等定位动画结束后再开放向较新消息的分页。
             // 这样只有用户后续手动滚动才会触发 loadAfterContextMessages
             setTimeout(() => {
-              contextAfterMessageId.value = Number(messages[0]?.id)
+              contextAfterMessageId.value =
+                res.data.has_more_latest === 1 && res.data.next_after_message_id
+                  ? Number(res.data.next_after_message_id)
+                  : null
             }, 800)
           }, 500)
         }
